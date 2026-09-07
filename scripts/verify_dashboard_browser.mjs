@@ -131,7 +131,7 @@ try {
     assert.equal(await page.evaluate(async () => (await import("/app.js")).bootstrappedDashboard.state.control.stale), false);
     report.interactions.at(-1).failure = {retainsRevision: true, visibleStaleMarker: true, requestId, consoleCorrelated: true, recovered: true};
     for (const method of ["refreshControlPlane", "refreshAll"]) {
-      for (const fault of ["missing-schema", "wrong-schema", "null-payload", "malformed-json"]) {
+      for (const fault of ["missing-endpoint", "network", "missing-schema", "wrong-schema", "null-payload", "malformed-json"]) {
         const controlState = () => page.evaluate(async () => {
           const {state} = (await import("/app.js")).bootstrappedDashboard;
           return JSON.stringify({config: state.config, pendingConfig: state.pendingConfig,
@@ -141,17 +141,23 @@ try {
         const lastGood = await controlState();
         const firstRequest = requestPaths.length;
         let sentId;
+        let responseId = null;
         await page.route("**/api/control", async route => {
           sentId = route.request().headers()["x-agency-request-id"];
+          if (fault === "network") return route.abort("failed");
           const response = await route.fetch();
           const headers = {...response.headers()};
+          responseId = headers["x-agency-request-id"];
+          assert.equal(responseId, sentId, "The real server must echo the actual request ID");
           delete headers["content-length"];
           delete headers["content-encoding"];
           let payload = await response.json();
+          assert.equal(payload.schema_version, "agency.dashboard.control.v1");
+          if (fault === "missing-endpoint") payload = {error: "control endpoint unavailable"};
           if (fault === "missing-schema") delete payload.schema_version;
           if (fault === "wrong-schema") payload.schema_version = "agency.dashboard.control.v2";
           if (fault === "null-payload") payload = null;
-          await route.fulfill({status: response.status(), headers,
+          await route.fulfill({status: fault === "missing-endpoint" ? 404 : response.status(), headers,
             ...(fault === "malformed-json" ? {body: "{"} : {body: JSON.stringify(payload)})});
         });
         await page.evaluate(async name => (await import("/app.js")).bootstrappedDashboard[name](), method);
@@ -175,7 +181,7 @@ try {
         assert.equal(await page.evaluate(async () => (await import("/app.js")).bootstrappedDashboard.refreshAll()), true);
         assert.equal(await page.evaluate(async () => (await import("/app.js")).bootstrappedDashboard.state.control.stale), false);
         report.controlFailures.push({width: viewport.width, method, fault, requestId: sentId,
-          retainedState: true, legacyRequests: 0, recovered: true});
+          responseRequestId: responseId, retainedState: true, legacyRequests: 0, recovered: true});
       }
     }
     assert.equal(errors.filter(error => error.kind === "pageerror").length, 0);
@@ -185,7 +191,7 @@ try {
   report.failures.push(String(error.stack || error).replaceAll(process.env.QA_TOKEN, "[fixture-token]"));
 } finally {
   await browser.close();
-  report.passed = report.views.length === 21 && report.controlFailures.length === 24
+  report.passed = report.views.length === 21 && report.controlFailures.length === 36
     && report.postRequests === 0 && report.failures.length === 0 && report.unexpectedErrors.length === 0;
   writeFileSync(path.join(output, "report.json"), JSON.stringify(report, null, 2) + "\n", {flag: "wx"});
 }

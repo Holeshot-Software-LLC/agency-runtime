@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [dashboard, traceability, performance, compatibility, security]
 related:
+  - docs/roadmap/acceptance/issue-AR-175.md
   - docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
@@ -59,7 +60,12 @@ API boundary repairs them without restoring fallback. Twenty direct regression
 cases now pass, including HTTP/network failures and quiet cancellation/lifecycle
 races. All 224 UI tests pass at current coverage floors. The ten assets total
 386,965 bytes, 107 below the unchanged current 378-KiB strict ceiling; this
-repair removes 74 bytes. Browser proof and isolated acceptance remain pending.
+repair removes 74 bytes. A fresh private installed-wheel Chromium run passes
+21 views and 36 fault/recovery cases across both refresh methods and three
+widths. All 30 response-bearing faults preserve the real echoed request ID;
+six network faults preserve the sent ID without a response. No legacy GETs or
+POSTs occur; all ten served resource hashes match the checked source.
+Six isolated acceptance verdicts remain pending.
 
 ## Approach
 

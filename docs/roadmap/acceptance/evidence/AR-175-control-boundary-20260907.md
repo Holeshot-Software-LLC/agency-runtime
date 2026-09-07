@@ -391,3 +391,174 @@ Actual stdout, exit zero:
 ........                                                                 [100%]
 1085 passed, 3 skipped in 69.72s (0:01:09)
 ```
+
+## Installed artifact identity
+
+Built from clean source/ledger checkpoint
+a96483ad93c3023b47e7de016095ac20b6e31393 (the dashboard repair is 96f6b49b).
+The optional browser driver was then expanded to include HTTP 404 and network
+faults for both refresh methods; no packaged runtime or dashboard bytes changed
+between the two browser runs. Later acceptance/documentation commits do not
+claim rebuilt artifacts.
+
+```bash
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m scripts.build_distributions /tmp/agency-ar175-browser.PrWwR8/dist --expected-commit a96483ad93c3023b47e7de016095ac20b6e31393
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_distribution.py /tmp/agency-ar175-browser.PrWwR8/dist --expected-commit a96483ad93c3023b47e7de016095ac20b6e31393 --artifact-set portable
+/tmp/agency-ar404-venv.AUBJlC/bin/python -m twine check --strict /tmp/agency-ar175-browser.PrWwR8/dist/agency_runtime-0.1.0-py3-none-any.whl /tmp/agency-ar175-browser.PrWwR8/dist/agency_runtime-0.1.0.tar.gz
+/tmp/agency-ar404-venv.AUBJlC/bin/python -m pip install --no-deps --target /tmp/agency-ar175-browser.PrWwR8/wheel /tmp/agency-ar175-browser.PrWwR8/dist/agency_runtime-0.1.0-py3-none-any.whl
+```
+
+Actual outputs (all exit zero; Twine's line wrapping compacted):
+```text
+Canonical distribution build passed: agency_runtime-0.1.0-py3-none-any.whl, agency_runtime-0.1.0.tar.gz
+Distribution verification passed (artifact contents match release policy).
+Checking /tmp/agency-ar175-browser.PrWwR8/dist/agency_runtime-0.1.0-py3-none-any.whl: PASSED
+Checking /tmp/agency-ar175-browser.PrWwR8/dist/agency_runtime-0.1.0.tar.gz: PASSED
+Successfully installed agency-runtime-0.1.0
+```
+
+SHA-256:
+- Wheel: `9ba064363169c978a9968a4575f273b8ad45cb2b0bbf3d49d7f6560d939b4d3d`.
+- Sdist: `59668dec6e3b4ea8b3fe567ab8fc9cc71812ce4123590ef6ff35669a2fe5f840`.
+
+Dependencies are reused from the isolated development venv, not asserted to
+have been independently installed. This is private installed-wheel browser QA,
+not a publication, Windows artifact, normal-profile or native-host canary.
+
+## Loaded browser verification
+
+The reusable Python driver requires the exact installed package parent, creates
+a private five-agent Store, authenticates the real HTTP server, stubs native
+host inventory, and denies Python server outbound connections. Chromium's
+sandbox stays enabled. Faults alter real HTTP responses only after checking the
+real server's v1 schema and matching correlation header; network faults abort
+before any response. No owner profile, provider or native host is exercised.
+
+```bash
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python scripts/context_handoff_status.py --json --threshold 50
+env PYTHONPATH=/tmp/agency-ar175-browser.PrWwR8/wheel /tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_dashboard_browser.py --tools /tmp/agency-ar138-browser.uQUVCv --package-root /tmp/agency-ar175-browser.PrWwR8/wheel --output /tmp/agency-ar175-browser.PrWwR8/browser-expanded --browser /snap/bin/chromium
+```
+
+Immediately preceding telemetry was 60.9 percent remaining; no checkpoint was
+required. The earlier 24-schema-fault run also passed; this expanded run adds
+404 and network cases. Both refresh methods run all six faults at all three
+widths (1280/1024/375). Every case asserts full last-good state retention,
+visible stale failure with the actual sent ID, no legacy GETs and successful
+live-server recovery. The independent lifecycle/obsolete races remain in the
+20 deterministic cases, not mislabeled as browser timing measurements.
+
+Actual expanded-run stdout, exit zero:
+```text
+{"width":1280,"view":"overview","violations":[],"clippedMetrics":[]}
+{"width":1280,"view":"routing","violations":[],"clippedMetrics":[]}
+{"width":1280,"view":"evidence","violations":[],"clippedMetrics":[]}
+{"width":1280,"view":"roster","violations":[],"clippedMetrics":[]}
+{"width":1280,"view":"workforce","violations":[],"clippedMetrics":[]}
+{"width":1280,"view":"hosts","violations":[],"clippedMetrics":[]}
+{"width":1280,"view":"settings","violations":[],"clippedMetrics":[]}
+{"width":1024,"view":"overview","violations":[],"clippedMetrics":[]}
+{"width":1024,"view":"routing","violations":[],"clippedMetrics":[]}
+{"width":1024,"view":"evidence","violations":[],"clippedMetrics":[]}
+{"width":1024,"view":"roster","violations":[],"clippedMetrics":[]}
+{"width":1024,"view":"workforce","violations":[],"clippedMetrics":[]}
+{"width":1024,"view":"hosts","violations":[],"clippedMetrics":[]}
+{"width":1024,"view":"settings","violations":[],"clippedMetrics":[]}
+{"width":375,"view":"overview","violations":[],"clippedMetrics":[]}
+{"width":375,"view":"routing","violations":[],"clippedMetrics":[]}
+{"width":375,"view":"evidence","violations":[],"clippedMetrics":[]}
+{"width":375,"view":"roster","violations":[],"clippedMetrics":[]}
+{"width":375,"view":"workforce","violations":[],"clippedMetrics":[]}
+{"width":375,"view":"hosts","violations":[],"clippedMetrics":[]}
+{"width":375,"view":"settings","violations":[],"clippedMetrics":[]}
+{"passed":true,"views":21,"interactions":[{"width":1280,"preservesDirtyFieldFocusSelectionAndDetails":true,"keyboardScrollsConfiguration":true,"failure":{"retainsRevision":true,"visibleStaleMarker":true,"requestId":"cb933986-9733-49c7-a9c1-e981adb3d2b8","consoleCorrelated":true,"recovered":true}},{"width":1024,"preservesDirtyFieldFocusSelectionAndDetails":true,"keyboardScrollsConfiguration":true,"failure":{"retainsRevision":true,"visibleStaleMarker":true,"requestId":"83b7f51a-3166-47a7-b9c5-1f0d974d8e8e","consoleCorrelated":true,"recovered":true}},{"width":375,"preservesDirtyFieldFocusSelectionAndDetails":true,"keyboardScrollsConfiguration":true,"failure":{"retainsRevision":true,"visibleStaleMarker":true,"requestId":"c43ac9c7-9c92-4a61-be15-708a557c93a8","consoleCorrelated":true,"recovered":true}}],"controlFailures":36,"postRequests":0,"failures":[],"unexpectedErrors":[]}
+```
+
+## Browser result projection
+
+This projection is computed from the retained [raw report](AR-175-browser-20260907/report.json).
+It is not a substitute for the raw per-case IDs, viewport, accessibility and
+interaction results. Screenshot inspection covered the actual stale notices in
+[desktop](AR-175-browser-20260907/1280-control-schema.png) and
+[mobile](AR-175-browser-20260907/375-control-schema.png) settings; automated text
+assertions prove the exact IDs. No full accessibility certification is claimed.
+
+```json
+{
+  "observed": "2026-09-07T21:04:36.419Z",
+  "browser": "152.0.7977.64",
+  "playwright": "1.63.0",
+  "axe": "4.13.0",
+  "passed": true,
+  "views": 21,
+  "controlFailures": 36,
+  "realServerEchoes": 30,
+  "networkFaultsWithoutResponse": 6,
+  "uniqueFaultRequestIds": 36,
+  "legacyRequests": 0,
+  "postRequests": 0,
+  "failures": [],
+  "unexpectedErrors": []
+}
+```
+
+## Served bytes and headers
+
+The report hashes all ten installed dashboard resources. This executable
+readback compares every hash with the checked source and checks uniqueness and
+exact header correlation across all faults:
+
+```bash
+node --input-type=module -e 'import {readFileSync} from "node:fs"; import {createHash} from "node:crypto"; import assert from "node:assert/strict"; const r=JSON.parse(readFileSync("docs/roadmap/acceptance/evidence/AR-175-browser-20260907/report.json")); for(const [name,hash] of Object.entries(r.assets)) assert.equal(createHash("sha256").update(readFileSync("agency_runtime/dashboard/"+name)).digest("hex"),hash); assert.equal(new Set(r.controlFailures.map(x=>x.requestId)).size,36); assert.ok(r.controlFailures.every(x=>x.fault==="network" ? x.responseRequestId===null : x.responseRequestId===x.requestId)); console.log(JSON.stringify({sourceAssetHashesMatch:10,uniqueFaultRequestIds:36,realServerEchoes:30,networkFaultsWithoutResponse:6,passed:r.passed}));'
+```
+
+Actual stdout, exit zero:
+```text
+{"sourceAssetHashesMatch":10,"uniqueFaultRequestIds":36,"realServerEchoes":30,"networkFaultsWithoutResponse":6,"passed":true}
+```
+
+## Record checks
+
+Before freezing the pending acceptance record, the current substantive source,
+browser driver and evidence pass these strict checks. The worklog ledger is
+current through its preceding checkpoint; the immediately following ledger
+records this candidate.
+
+```bash
+set -e
+export PYTHONPATH=.
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/docs_metadata.py --check
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/update_policy_availability.py --check
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/update_worklog.py --check
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_docs.py --require-tracker
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_tracker.py
+/tmp/agency-ar404-venv.AUBJlC/bin/ruff check agency_runtime tests scripts
+/tmp/agency-ar404-venv.AUBJlC/bin/ruff format --check agency_runtime tests scripts
+git diff --check
+```
+
+Actual stdout, exit zero:
+```text
+checked 1213 Markdown documents
+worklog index is current (2032 commits)
+documentation validation passed for 1213 Markdown files
+tracker validation passed for 397 roadmap items (2 PR-tracked historical item(s) skipped)
+All checks passed!
+766 files already formatted
+```
+
+The exhaustive corpus, coverage shards and compatibility matrix were not
+requested and did not run. This local delivery is not new hosted CI, native
+Windows, credential readiness or normal-session staffing certification.
+
+The first draft omitted the empty Verification table header; strict docs
+rejected it before any isolated verifier ran. Adding the required empty table
+fixed the draft shape without adding any verdict. Fresh staged-packet check:
+
+```text
+checked 1215 Markdown documents
+worklog index is current (2032 commits)
+documentation validation passed for 1215 Markdown files
+tracker validation passed for 397 roadmap items (2 PR-tracked historical item(s) skipped)
+All checks passed!
+766 files already formatted
+```

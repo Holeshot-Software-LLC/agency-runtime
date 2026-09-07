@@ -1,0 +1,3488 @@
+{
+  "observed": "2026-09-07T21:04:36.419Z",
+  "browser": "152.0.7977.64",
+  "playwright": "1.63.0",
+  "axe": "4.13.0",
+  "scope": "Installed wheel; private five-agent Store; host inspection stubbed; server outbound connections denied. Not a native-host canary or full WCAG certification.",
+  "assets": {
+    "app.css": "ea1859c1544437ed34e903f81c9c3fac72e69ea83dc211b5b39046bb2ae09347",
+    "app.js": "dec1f70ad9c4f8b71812847920411dbb422583f876d22a3b8e1c95249f86868a",
+    "charts.js": "1cb7f13ca32e6dc1fbed9489a7edd9e73ba8975acb5758afc5251019a5aec8cf",
+    "dashboard-actions.js": "51e003a5a2cd95a601558846d23a167101316e5ef231860f7aa22bcd363c354b",
+    "dashboard-config.js": "14f6d57319d38febda5ee8fc05c6858eb334b72b761d7be118c3773346b7a902",
+    "dashboard-core.js": "62a2f817e8ff63e929969839cd29bb5b3695de654919b18ef1f53c8cab3799e1",
+    "dashboard-live.js": "7072ac88c60b0b5d1b9a4f90643529d044417fb414ebd5d9e781af5ff7e0e53d",
+    "dashboard-render.js": "f0d4c62b98a48a70f42e893be59fc935cfc782375c06ee6a036652dcaba35c6d",
+    "favicon.svg": "66544fb89f10717e4b029b0b138287baedff3a96789c9d5f9b3424f01786ca3f",
+    "index.html": "b496b053f41d4ea027dbc2b607f5c976c9f37fce63bbfb26f6038114c651f7b6"
+  },
+  "views": [
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "view": "overview",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-intro > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-lede"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-metrics > .primary.metric > span"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#metric-runtime"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-metrics > .primary.metric > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "text[y=\"25\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  "text[y=\"197\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  "text[data-chart-label=\"start\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+              },
+              {
+                "target": [
+                  ".axis-label-end"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+              },
+              {
+                "target": [
+                  ".outcome-total"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".outcome-caption"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  "#metric-evidence-freshness"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 28
+      },
+      "layout": {
+        "viewport": 1280,
+        "document": 1280,
+        "headingHeight": 132.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "view": "routing",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 24
+      },
+      "layout": {
+        "viewport": 1280,
+        "document": 1280,
+        "headingHeight": 75.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "view": "evidence",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".vision-evidence-head > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#vision-evidence-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#vision-evidence-refresh"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".vision-evidence > .panel-copy"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 24
+      },
+      "layout": {
+        "viewport": 1280,
+        "document": 1280,
+        "headingHeight": 132.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "view": "roster",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#roster-operations-form > .filter-title-row > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#roster-filter-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#roster-operations-form > .filter-title-row > .panel-tag"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-query\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-division\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-capability\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-authority\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-host\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-platform\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-tool\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#upstream-status"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+              }
+            ]
+          }
+        ],
+        "passes": 26
+      },
+      "layout": {
+        "viewport": 1280,
+        "document": 1280,
+        "headingHeight": 132.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "view": "workforce",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".workforce-metrics > .primary.metric > span"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#workforce-employees"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".workforce-metrics > .primary.metric > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#hiring-filter-form > .filter-title-row > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#hiring-filter-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#hiring-filter-form > .filter-title-row > .panel-tag"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "label[for=\"hiring-filter-status\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"hiring-filter-type\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"hiring-filter-risk\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 25
+      },
+      "layout": {
+        "viewport": 1280,
+        "document": 1280,
+        "headingHeight": 132.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "view": "hosts",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 20
+      },
+      "layout": {
+        "viewport": 1280,
+        "document": 1280,
+        "headingHeight": 132.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "view": "settings",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#setup-journey > .panel-head > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#setup-journey-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#setup-journey > .panel-copy"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(1) > .setup-step-index"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(1) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(1) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-index"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-copy > code"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-index"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-copy > code"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-index"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-copy > code"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-caveat"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 31
+      },
+      "layout": {
+        "viewport": 1280,
+        "document": 1280,
+        "headingHeight": 132.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "view": "overview",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-intro > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-lede"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-metrics > .primary.metric > span"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#metric-runtime"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-metrics > .primary.metric > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "text[y=\"25\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  "text[y=\"197\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  "text[data-chart-label=\"start\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+              },
+              {
+                "target": [
+                  ".axis-label-end"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+              },
+              {
+                "target": [
+                  ".outcome-total"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".outcome-caption"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  "#metric-evidence-freshness"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 27
+      },
+      "layout": {
+        "viewport": 1024,
+        "document": 1024,
+        "headingHeight": 110.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "view": "routing",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 24
+      },
+      "layout": {
+        "viewport": 1024,
+        "document": 1024,
+        "headingHeight": 64.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "view": "evidence",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".vision-evidence-head > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#vision-evidence-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#vision-evidence-refresh"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".vision-evidence > .panel-copy"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 24
+      },
+      "layout": {
+        "viewport": 1024,
+        "document": 1024,
+        "headingHeight": 110.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "view": "roster",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#roster-operations-form > .filter-title-row > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#roster-filter-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#roster-operations-form > .filter-title-row > .panel-tag"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-query\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-division\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-capability\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-authority\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-host\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-platform\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-tool\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#upstream-status"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+              }
+            ]
+          }
+        ],
+        "passes": 26
+      },
+      "layout": {
+        "viewport": 1024,
+        "document": 1024,
+        "headingHeight": 110.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "view": "workforce",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".workforce-metrics > .primary.metric > span"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#workforce-employees"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".workforce-metrics > .primary.metric > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#hiring-filter-form > .filter-title-row > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#hiring-filter-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#hiring-filter-form > .filter-title-row > .panel-tag"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "label[for=\"hiring-filter-status\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"hiring-filter-type\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"hiring-filter-risk\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 25
+      },
+      "layout": {
+        "viewport": 1024,
+        "document": 1024,
+        "headingHeight": 110.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "view": "hosts",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 20
+      },
+      "layout": {
+        "viewport": 1024,
+        "document": 1024,
+        "headingHeight": 110.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "view": "settings",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#setup-journey > .panel-head > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#setup-journey-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#setup-journey > .panel-copy"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(1) > .setup-step-index"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(1) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(1) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-index"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-copy > code"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-index"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-copy > code"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-index"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-copy > code"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-caveat"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 31
+      },
+      "layout": {
+        "viewport": 1024,
+        "document": 1024,
+        "headingHeight": 110.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "view": "overview",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-intro > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-lede"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-metrics > .primary.metric > span"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#metric-runtime"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".observatory-metrics > .primary.metric > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "text[y=\"25\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  "text[y=\"197\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  "text[data-chart-label=\"start\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+              },
+              {
+                "target": [
+                  ".axis-label-end"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+              },
+              {
+                "target": [
+                  ".outcome-total"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".outcome-caption"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+              },
+              {
+                "target": [
+                  "#metric-evidence-freshness"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 28
+      },
+      "layout": {
+        "viewport": 375,
+        "document": 375,
+        "headingHeight": 56.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "view": "routing",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 25
+      },
+      "layout": {
+        "viewport": 375,
+        "document": 375,
+        "headingHeight": 56.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "view": "evidence",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".vision-evidence-head > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#vision-evidence-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#vision-evidence-refresh"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".vision-evidence > .panel-copy"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#evidence-head > tr > th:nth-child(5)"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+              },
+              {
+                "target": [
+                  "th:nth-child(6)"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+              }
+            ]
+          }
+        ],
+        "passes": 25
+      },
+      "layout": {
+        "viewport": 375,
+        "document": 375,
+        "headingHeight": 56.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "view": "roster",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".brand-mark"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#roster-operations-form > .filter-title-row > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#roster-filter-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-query\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-division\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-capability\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-authority\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-host\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-platform\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"roster-filter-tool\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 27
+      },
+      "layout": {
+        "viewport": 375,
+        "document": 375,
+        "headingHeight": 56.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "view": "workforce",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "button[data-view=\"overview\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because it's partially obscured by another element"
+              },
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".workforce-metrics > .primary.metric > span"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#workforce-employees"
+                ],
+                "summary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+              },
+              {
+                "target": [
+                  ".workforce-metrics > .primary.metric > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"3d-scene-developer\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accessibility-auditor\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"account-strategist\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"accounts-payable-agent\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > .workforce-card-head > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > .workforce-card-head > .worker-state"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > .workforce-card-slug"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "button[data-worker=\"ad-creative-strategist\"] > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#hiring-filter-form > .filter-title-row > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#hiring-filter-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"hiring-filter-status\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"hiring-filter-type\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "label[for=\"hiring-filter-risk\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 26
+      },
+      "layout": {
+        "viewport": 375,
+        "document": 375,
+        "headingHeight": 56.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "view": "hosts",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              }
+            ]
+          }
+        ],
+        "passes": 21
+      },
+      "layout": {
+        "viewport": 375,
+        "document": 375,
+        "headingHeight": 56.796875,
+        "clippedMetrics": []
+      }
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "view": "settings",
+      "accessibility": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".topbar-heading > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#view-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#master-label"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#master-generation"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element"
+              },
+              {
+                "target": [
+                  "#local-clock"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#last-sync"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#refresh-button"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#update-detail"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#setup-journey > .panel-head > div > .eyebrow"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#setup-journey-title"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#setup-journey > .panel-copy"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(1) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(1) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(2) > .setup-step-copy > code"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(3) > .setup-step-copy > code"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-copy > strong"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-copy > small"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-step:nth-child(4) > .setup-step-copy > code"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  ".setup-caveat"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+              },
+              {
+                "target": [
+                  "#config-path"
+                ],
+                "summary": "Fix any of the following:\n  Element's background color could not be determined because it partially overlaps other elements"
+              }
+            ]
+          }
+        ],
+        "passes": 31
+      },
+      "layout": {
+        "viewport": 375,
+        "document": 375,
+        "headingHeight": 56.796875,
+        "clippedMetrics": []
+      }
+    }
+  ],
+  "interactions": [
+    {
+      "width": 1280,
+      "preservesDirtyFieldFocusSelectionAndDetails": true,
+      "keyboardScrollsConfiguration": true,
+      "failure": {
+        "retainsRevision": true,
+        "visibleStaleMarker": true,
+        "requestId": "cb933986-9733-49c7-a9c1-e981adb3d2b8",
+        "consoleCorrelated": true,
+        "recovered": true
+      }
+    },
+    {
+      "width": 1024,
+      "preservesDirtyFieldFocusSelectionAndDetails": true,
+      "keyboardScrollsConfiguration": true,
+      "failure": {
+        "retainsRevision": true,
+        "visibleStaleMarker": true,
+        "requestId": "83b7f51a-3166-47a7-b9c5-1f0d974d8e8e",
+        "consoleCorrelated": true,
+        "recovered": true
+      }
+    },
+    {
+      "width": 375,
+      "preservesDirtyFieldFocusSelectionAndDetails": true,
+      "keyboardScrollsConfiguration": true,
+      "failure": {
+        "retainsRevision": true,
+        "visibleStaleMarker": true,
+        "requestId": "c43ac9c7-9c92-4a61-be15-708a557c93a8",
+        "consoleCorrelated": true,
+        "recovered": true
+      }
+    }
+  ],
+  "controlFailures": [
+    {
+      "width": 1280,
+      "method": "refreshControlPlane",
+      "fault": "missing-endpoint",
+      "requestId": "6e4a6e94-2d9a-4b4c-9b51-cb0fa11bf754",
+      "responseRequestId": "6e4a6e94-2d9a-4b4c-9b51-cb0fa11bf754",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshControlPlane",
+      "fault": "network",
+      "requestId": "23ef5404-b9d7-4568-8781-f7289aabfb66",
+      "responseRequestId": null,
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshControlPlane",
+      "fault": "missing-schema",
+      "requestId": "fb9d7db5-b6fd-4cbe-99a0-ef8e5c1f4195",
+      "responseRequestId": "fb9d7db5-b6fd-4cbe-99a0-ef8e5c1f4195",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshControlPlane",
+      "fault": "wrong-schema",
+      "requestId": "40cd47d4-d05a-48c9-aa17-b8ba526a5600",
+      "responseRequestId": "40cd47d4-d05a-48c9-aa17-b8ba526a5600",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshControlPlane",
+      "fault": "null-payload",
+      "requestId": "eeadc9a7-a2a9-4023-aaf5-4b9056c36dbc",
+      "responseRequestId": "eeadc9a7-a2a9-4023-aaf5-4b9056c36dbc",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshControlPlane",
+      "fault": "malformed-json",
+      "requestId": "85c6b4b6-dce3-4af3-a854-9babca696599",
+      "responseRequestId": "85c6b4b6-dce3-4af3-a854-9babca696599",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshAll",
+      "fault": "missing-endpoint",
+      "requestId": "b44b0787-d613-4295-8caf-3213ebc37d32",
+      "responseRequestId": "b44b0787-d613-4295-8caf-3213ebc37d32",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshAll",
+      "fault": "network",
+      "requestId": "4d8eed30-4368-4358-8387-ce89c69dde4d",
+      "responseRequestId": null,
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshAll",
+      "fault": "missing-schema",
+      "requestId": "bef83702-7609-412b-97e9-4c8af2f92a13",
+      "responseRequestId": "bef83702-7609-412b-97e9-4c8af2f92a13",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshAll",
+      "fault": "wrong-schema",
+      "requestId": "c0f7732c-05e6-4e88-af3f-cd763fa7c314",
+      "responseRequestId": "c0f7732c-05e6-4e88-af3f-cd763fa7c314",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshAll",
+      "fault": "null-payload",
+      "requestId": "285512db-a5af-4e78-9a03-783fa26ab5f4",
+      "responseRequestId": "285512db-a5af-4e78-9a03-783fa26ab5f4",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1280,
+      "method": "refreshAll",
+      "fault": "malformed-json",
+      "requestId": "0e6ab7b3-c5b6-40ac-ac97-bac6571faf46",
+      "responseRequestId": "0e6ab7b3-c5b6-40ac-ac97-bac6571faf46",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshControlPlane",
+      "fault": "missing-endpoint",
+      "requestId": "d2debac1-81b9-4bc9-beda-a4f7507d71f1",
+      "responseRequestId": "d2debac1-81b9-4bc9-beda-a4f7507d71f1",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshControlPlane",
+      "fault": "network",
+      "requestId": "56c8ae9e-9130-4775-aa9c-bf3f05b6772a",
+      "responseRequestId": null,
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshControlPlane",
+      "fault": "missing-schema",
+      "requestId": "90b99efd-09de-4908-8201-d255163716ec",
+      "responseRequestId": "90b99efd-09de-4908-8201-d255163716ec",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshControlPlane",
+      "fault": "wrong-schema",
+      "requestId": "aef48478-f394-4cdb-a528-8e6a59126235",
+      "responseRequestId": "aef48478-f394-4cdb-a528-8e6a59126235",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshControlPlane",
+      "fault": "null-payload",
+      "requestId": "8210e79b-f19e-4207-800c-540d21f1be28",
+      "responseRequestId": "8210e79b-f19e-4207-800c-540d21f1be28",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshControlPlane",
+      "fault": "malformed-json",
+      "requestId": "6b375f55-8fda-4fd5-858b-2ad437de61f0",
+      "responseRequestId": "6b375f55-8fda-4fd5-858b-2ad437de61f0",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshAll",
+      "fault": "missing-endpoint",
+      "requestId": "1c4e61da-7555-4332-acae-47c2e67420e1",
+      "responseRequestId": "1c4e61da-7555-4332-acae-47c2e67420e1",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshAll",
+      "fault": "network",
+      "requestId": "596be616-6716-4d85-9ba9-fa5cb5d5d398",
+      "responseRequestId": null,
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshAll",
+      "fault": "missing-schema",
+      "requestId": "acef8f08-b7a3-401a-824f-02463da61bb8",
+      "responseRequestId": "acef8f08-b7a3-401a-824f-02463da61bb8",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshAll",
+      "fault": "wrong-schema",
+      "requestId": "575cc9c1-2c87-47c2-a5d5-7e183e84a630",
+      "responseRequestId": "575cc9c1-2c87-47c2-a5d5-7e183e84a630",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshAll",
+      "fault": "null-payload",
+      "requestId": "649fd240-eaae-4726-831b-8e1ba80430b5",
+      "responseRequestId": "649fd240-eaae-4726-831b-8e1ba80430b5",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 1024,
+      "method": "refreshAll",
+      "fault": "malformed-json",
+      "requestId": "d17406e5-3b49-4df3-91f5-310292ed2af5",
+      "responseRequestId": "d17406e5-3b49-4df3-91f5-310292ed2af5",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshControlPlane",
+      "fault": "missing-endpoint",
+      "requestId": "e7d72c85-b643-4194-9236-9b02f59b62c8",
+      "responseRequestId": "e7d72c85-b643-4194-9236-9b02f59b62c8",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshControlPlane",
+      "fault": "network",
+      "requestId": "91057b87-fcb6-4abb-95d1-9c9652153ad7",
+      "responseRequestId": null,
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshControlPlane",
+      "fault": "missing-schema",
+      "requestId": "e12ad83f-7e81-4198-9a8d-846e4fa787a4",
+      "responseRequestId": "e12ad83f-7e81-4198-9a8d-846e4fa787a4",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshControlPlane",
+      "fault": "wrong-schema",
+      "requestId": "3bc2d636-7aed-440d-8001-5bd3ff6d1ff7",
+      "responseRequestId": "3bc2d636-7aed-440d-8001-5bd3ff6d1ff7",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshControlPlane",
+      "fault": "null-payload",
+      "requestId": "7c40f7db-1104-47d0-96c5-60f0d2163d48",
+      "responseRequestId": "7c40f7db-1104-47d0-96c5-60f0d2163d48",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshControlPlane",
+      "fault": "malformed-json",
+      "requestId": "bea1e37d-bc34-4fd0-8cf7-3258e68c5662",
+      "responseRequestId": "bea1e37d-bc34-4fd0-8cf7-3258e68c5662",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshAll",
+      "fault": "missing-endpoint",
+      "requestId": "8ce04219-8b97-4fee-88da-ff7ad15295ba",
+      "responseRequestId": "8ce04219-8b97-4fee-88da-ff7ad15295ba",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshAll",
+      "fault": "network",
+      "requestId": "579e5efb-b017-4476-81c9-7ab0a8bef148",
+      "responseRequestId": null,
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshAll",
+      "fault": "missing-schema",
+      "requestId": "ac434892-9ac6-400b-ba23-1d4938c2cad9",
+      "responseRequestId": "ac434892-9ac6-400b-ba23-1d4938c2cad9",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshAll",
+      "fault": "wrong-schema",
+      "requestId": "5b7da185-ba18-471e-908c-89e4866a9265",
+      "responseRequestId": "5b7da185-ba18-471e-908c-89e4866a9265",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshAll",
+      "fault": "null-payload",
+      "requestId": "9d026a3a-7c26-456a-af9e-301c62d5ffd4",
+      "responseRequestId": "9d026a3a-7c26-456a-af9e-301c62d5ffd4",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    },
+    {
+      "width": 375,
+      "method": "refreshAll",
+      "fault": "malformed-json",
+      "requestId": "bce329ad-3ce6-4e81-873b-c65a785166de",
+      "responseRequestId": "bce329ad-3ce6-4e81-873b-c65a785166de",
+      "retainedState": true,
+      "legacyRequests": 0,
+      "recovered": true
+    }
+  ],
+  "postRequests": 0,
+  "unexpectedErrors": [],
+  "failures": [],
+  "passed": true
+}

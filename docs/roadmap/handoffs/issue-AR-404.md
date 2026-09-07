@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md
@@ -49,18 +50,19 @@ removes 74 bytes. Fresh named spine: 1085 passes/three existing skips, 69.72s.
 Receipt keeps all eight red failures. Draft docs validation rejected file-URI
 stack prefixes; only display schemes are stripped, not failure evidence.
 
-The reusable browser checker now tests 24 schema/JSON faults across both
-refresh methods at three viewport widths, recording safe IDs, no legacy GETs,
-retained state, recovery and zero POSTs. It has not run yet. Commit clean source
-and ledger before building the exact wheel and executing this private fixture.
-Source 96f6b49b and ledger 26b0135d are now clean; browser QA is next.
+Clean source/ledger a96483ad built the fresh wheel and sdist; canonical portable
+verification, strict Twine and private wheel installation pass. Real Chromium
+passes 21 views and 36 faults across both refresh methods/three widths: HTTP
+404, network, missing/wrong schema, null and malformed JSON. All 30 responses
+echo sent IDs; six network faults retain sent IDs. Zero legacy GETs or POSTs;
+all ten source/served hashes match. Raw report and screenshots are retained.
 Only obsolete criterion 6 follows existing ADR-0105; originals preserved.
 
 ## Exact blocker
 
-AR-175 is not accepted. Private wheel-backed browser proof, complete current
-record evidence and six isolated criteria remain. No native host evidence is
-claimed. Do not close AR-170's separate remaining obligations.
+AR-175 is not accepted. Final record evidence and six isolated criteria remain.
+Browser proof is complete, not native-host proof. Do not close AR-170's
+separate remaining obligations.
 
 AR-174's eight final criteria satisfy at 5a003a05; first verdicts remain at
 5d20ec28. ADR-0233 separates dated raw timing from account repair. Historical
@@ -81,9 +83,9 @@ Preserve first verdicts before corrections; two review passes by default.
 
 ## Next bounded work package
 
-1. Checkpoint AR-175's tested source/receipt and exact ledger.
-2. Build a clean candidate wheel and run the private loaded-browser checker.
-3. Finish six isolated criteria, normal PR/merge/readback, then AR-176.
+1. Freeze AR-175's complete evidence and run six isolated criteria.
+2. Finish normal PR/merge/readback, then AR-176.
+3. Retain fresh native failure evidence and continue safe live diagnostics.
 4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification
@@ -99,3 +101,10 @@ No credentials, provider policy, billing/settings or trust bypass changes.
 Installed Codex refresh previously exited 1 with unverified trust and mixed
 package projections; do not retry absent a new directive or replace OpenClaw.
 Do not claim ordinary-session activation or specialist staffing.
+
+Fresh header/injection diagnostic is retained in AR-404-live-header-audit-20260907.
+The connected Agency tools return Transport closed; installed status is degraded
+with missing provider-credential receipts. One requested Codex refresh exits 1.
+One verification-only live canary actually runs but fails parent spawn, response
+and header/preflight proof; no attestation or trust bypass. Do not misreport it
+as solely a pre-invocation trust refusal or repeat without a changed condition.

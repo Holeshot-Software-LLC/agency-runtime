@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
   - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
@@ -312,9 +313,14 @@ despite the legacy fallback already being absent. Eight new cases fail before
 the API-boundary repair; all 20 now pass, including cancellation/lifecycle races.
 UI 224/current floors, four asset/floor tests and fresh spine 1085/three existing
 skips pass. Assets shrink 74 bytes to 386965 under the unchanged 378-KiB ceiling.
-The reusable browser checker is extended for 24 real schema/JSON fault cases;
-private wheel-backed proof and six isolated acceptance checks remain pending.
-No native Windows or AR-170 completion claim.
+Private installed-wheel Chromium proof now passes 21 views and 36 faults across
+both refresh paths and three widths, including actual 404/network failures and
+schema/JSON corruption. Thirty server response headers match sent IDs; six
+network faults retain sent IDs without responses. No legacy GETs or POSTs;
+all ten served-resource hashes match checked source. Six isolated checks remain.
+No native Windows or AR-170 completion claim. A separate fresh current-profile
+Codex canary actually ran but failed parent-spawn, response and header evidence;
+its missing-credential/transport observations are retained in the live audit.
 
 Current main and branch counts: 40 actual open trackers plus 80 unfinished legacy
 records, 120 total; AR-175 is not accepted yet.
@@ -550,7 +556,7 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Finish AR-175's private browser proof and six isolated criteria, publish one
+Finish AR-175's six isolated criteria after passing private browser proof, publish one
 normal PR/merge, then review AR-176.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
