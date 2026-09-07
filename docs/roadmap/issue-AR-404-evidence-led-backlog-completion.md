@@ -111,10 +111,11 @@ count/truncation projection. Fresh focused worker-detail tests pass six; complet
 workforce lifecycle passes 25; UI passes 176/current floors. Product/tests/scripts
 equal 99e05d1f, supporting explicit 274-dashboard/1085-spine receipt reuse.
 ADR-0105 replaces only the stale mandatory-full-corpus criterion with current
-bounded verification; original wording remains. Four isolated criteria pending.
+bounded verification; original wording remains. All four isolated criteria
+satisfy at ea577285; AR-153 is done. Merge PR #705 normally, then AR-154.
 
-Current counts: 40 actual open trackers plus 94 unfinished legacy records,
-134 total after AR-151 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 93 unfinished legacy records,
+133 total after AR-153 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

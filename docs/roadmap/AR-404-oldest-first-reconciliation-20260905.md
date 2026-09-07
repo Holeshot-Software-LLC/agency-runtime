@@ -57,7 +57,8 @@ per-host authority; first verdicts remain at f954d1e9. All four second-pass
 criteria satisfy at 791820bb; AR-151 is done, PR #704 merged at 5a12f357.
 AR-153 confirms existing worker-filter-before-limit and bounded evidence:
 focused six, workforce lifecycle 25 and UI 176 pass. ADR-0105 reconciles only
-its obsolete full-corpus criterion; four isolated criteria remain.
+its obsolete full-corpus criterion; all four isolated criteria satisfy at ea577285.
+AR-153 is done, publication through PR #705 pending before AR-154.
 
 Previous pause: the owner asked to conserve credits and publish AR-130 through
 [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696),
@@ -105,7 +106,7 @@ not the 99 legacy count.
 | 12 | AR-145 | Retire duplicate mandatory coverage checklist under ADR-0224, not accepted. Existing observation/ownership/synthetic-performance repairs and authority tests pass 41 focused cases under branch instrumentation (12.08s). No aggregate percentage is claimed. ADR-0105 already made exhaustive delivery gates optional; AR-176 explicitly owns remaining fixtures/requested aggregate gaps with the unchanged 97-percent floor. AR-156 owns observed release-checklist UI command drift. | [PR #702](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/702) merged at cd061668; legacy count 97 → 96, actual open trackers remain 40. |
 | 13 | AR-150 | Done: existing epoch/cancellation verified with four new direct inverse-order cases, both scope directions and response orders. First missing-evidence review preserved at 4e820ff4; all four second-pass criteria satisfy at ae71761f. UI 176 passes 95/86/93 floors; server/auth/transaction 180 pass. Unchanged product bytes bind the 21-case wheel receipt; no runtime change. | [PR #703](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/703) merged at 460f319b. Legacy count 96 → 95; actual open trackers remain 40. |
 | 14 | AR-151 | Done: existing host rejection verified by 13 direct UI-to-POST cases. Nine stale dashboard fixtures repaired; full six-module suite 274 pass, UI 176/current floors pass, named spine 1085/three skips. ADR-0225 explicitly revises only the old blanket duplicate criterion; original wording and first contradicted verdict remain at f954d1e9. All four second-pass criteria satisfy at 791820bb. No runtime change. | [PR #704](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/704) merged at 5a12f357. Legacy count 95 → 94; actual open trackers remain 40. |
-| 15 | AR-153 | In verification: hiring filter precedes limit; lineage/evidence pages are bounded with exact totals/truncation and one read snapshot. HTTP detail is capped at 200 rows/collection and 2 MiB. Fresh targeted six, full workforce lifecycle 25 and UI 176 pass. Byte-identical dashboard/spine receipts reused. ADR-0105 explicitly reconciles obsolete full-corpus criterion; isolated verdicts pending. | Owned branch; count unchanged. |
+| 15 | AR-153 | Done: hiring filter precedes limit; lineage/evidence pages have exact totals/truncation and one read snapshot. HTTP detail is capped at 200 rows/collection and 2 MiB. Fresh targeted six, full workforce lifecycle 25 and UI 176 pass; byte-identical dashboard/spine receipts reused. ADR-0105 explicitly reconciles only the obsolete full-corpus criterion. All four isolated criteria satisfy at ea577285. No code/test change. | [PR #705](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/705) carries completion. Legacy count 94 → 93; actual open trackers remain 40. |
 
 After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers
 and 140 unfinished local records (41 mapped plus 99 legacy) before AR-127.
@@ -122,6 +123,8 @@ Accepted AR-150 reduces the queue to **135** (40 mapped plus **95 legacy**),
 without creating or closing an unrelated tracker.
 Accepted AR-151 reduces the queue to **134** (40 mapped plus **94 legacy**),
 with ADR-0225's requirement reconciliation and first verdict preserved.
+Accepted AR-153 reduces the queue to **133** (40 mapped plus **93 legacy**),
+under ADR-0105's already-established bounded verification policy.
 Windows-specific work remains with the owner.
 This is record reconciliation, not completion of retained implementation or
 platform-evidence work.

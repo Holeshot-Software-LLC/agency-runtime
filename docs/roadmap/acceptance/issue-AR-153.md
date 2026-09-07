@@ -46,8 +46,12 @@ tracker_url: null
 
 ## Verification
 
-No verdicts supplied yet; the isolated runner owns this table. Criterion 4 is
+The isolated runner supplied all four verdicts below. Criterion 4 is
 explicitly reconciled with ADR-0105; the issue preserves its historical wording.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-153.1-20260907-2cb1f5f8` | `81f46eda278e863e89386d32e99c708383c85d68964aa8007858ed2dd0144ce8` | 2026-09-07 | workforce.py applies worker identity predicates before ORDER BY and LIMIT; test_workforce_lifecycle.py verifies that three newer unrelated cases cannot hide the target case when evidence_limit is one. |
+| 2 | satisfied | `AR-153.2-20260907-46266bbb` | `e9ca494b438481d95c35ac6e01639de90a118daf1be65894223043ca7814b8ec` | 2026-09-07 | workforce.py:1895-1978 validates and limits lineage retrieval; dashboard.py:2182-2270 applies a 2 MiB response budget, with lineage truncation and oversized-response behavior covered by the cited tests. |
+| 3 | satisfied | `AR-153.3-20260907-90ddf430` | `b774efc8b6a53f20dbe052eece9f3fb9269644891b3c4d6cd00a71444b87ce37` | 2026-09-07 | workforce.py derives truncation from totals and returned rows; test_dashboard.py asserts HTTP count parity; dashboard-render.js and dashboard_ui.test.mjs demonstrate matching records, bounded labels, and malformed-total handling. |
+| 4 | satisfied | `AR-153.4-20260907-09a3aca5` | `7bece28dc9d452b0d24cf84bb0fc48138e8460dc5c98591f024bc03a24f883b8` | 2026-09-07 | AR-153’s focused-check receipts show 6 focused, 25 Store and 176 UI tests passing; its exact-byte reuse of AR-151’s verification records 274 dashboard passes and 1,085 named warning-strict spine passes with three existing skips. |

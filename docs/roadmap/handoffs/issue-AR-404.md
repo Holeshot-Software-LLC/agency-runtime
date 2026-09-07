@@ -56,7 +56,8 @@ full workforce lifecycle 25 pass (8.08s), UI 176 pass (223.89ms), production
 coverage 96.93/86.70/95.71. Product/tests/scripts equal 99e05d1f: explicitly reuse
 its 274 dashboard/1085-spine results. No product or test change needed.
 ADR-0105 replaces only the stale mandatory-full-corpus criterion with the named
-bounded gate; original wording is retained. Candidate ea577285 is frozen for review.
+bounded gate; original wording is retained. All four isolated criteria satisfy
+at ea577285. AR-153 is done; normal PR #705 publication remains, then AR-154.
 
 ## Completed evidence
 
@@ -75,8 +76,8 @@ bounded gate; original wording is retained. Candidate ea577285 is frozen for rev
   184/184 protected mutations killed, zero survived/invalid, source unchanged.
   Broader 380-pass/one-failure/eight-skip run is not green: the unchanged
   fallback-roster fixture also fails on prior main and belongs to AR-176.
-- Current count: 40 actual open trackers plus 94 unfinished legacy records,
-  134 local unfinished after AR-151 completion. No duplicate tracker.
+- Current count: 40 actual open trackers plus 93 unfinished legacy records,
+  133 local unfinished after AR-153 completion. No duplicate tracker.
 - AR-135 source: independent ZCode renderer/config registration, exact seven
   hooks, idempotency, preservation, toggle/rollback/drift and host identity exist.
   Current tests: 16 installer/header (4.74s), 13 selected hook/Stop (5.80s),
@@ -115,7 +116,7 @@ bounded gate; original wording is retained. Candidate ea577285 is frozen for rev
 
 ## Exact blocker
 
-AR-153: current implementation verified; four isolated acceptance checks remain.
+AR-153: all four isolated criteria satisfy; normal PR #705 publication remains.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -137,9 +138,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Obtain four isolated verdicts against frozen AR-153 candidate ea577285 before
-   any completion/count change; preserve ADR-0105's explicit gate reconciliation.
-2. Complete documentation/tracker checks and merge one AR-153 PR normally.
+1. AR-153 is accepted at ea577285; preserve ADR-0105's explicit gate reconciliation.
+2. Complete documentation/tracker checks and merge PR #705 normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-154 worktree and record the prior merge. AR-152 is done;
    Windows-only AR-147 stays with the owner and is not closed.

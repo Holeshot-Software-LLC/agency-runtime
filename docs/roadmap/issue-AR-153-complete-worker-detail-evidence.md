@@ -1,6 +1,6 @@
 ---
 title: "AR-153: Complete and bound worker-detail evidence"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-07
@@ -48,7 +48,9 @@ Fresh verification: six focused worker-detail Store/HTTP regressions pass in
 176 in 223.89ms at unchanged 95/86/93 floors (96.93/86.70/95.71 observed).
 Product/tests/scripts equal AR-151 candidate 99e05d1f, so its 274-pass dashboard
 suite and 1085-pass/three-skip named spine are exact-byte reuse, not new runs.
-No runtime or test change is needed; isolated acceptance remains.
+No runtime or test change is needed. All four isolated criteria satisfy against
+ea577285 on September 7; the acceptance record contains exact run IDs/digests.
+PR #705 carries completion, with no duplicate legacy tracker.
 
 ADR-0105 supersedes the old mandatory exhaustive-corpus requirement. Criterion
 4 now names the focused Store/dashboard suites and warning-strict production
@@ -67,10 +69,10 @@ evidence attribution.
 
 ## Acceptance
 
-- [ ] More than the limit of newer unrelated cases cannot hide matching worker evidence.
-- [ ] Lineage work and response size are explicitly bounded or paginated.
-- [ ] Counts, records, and truncation indicators agree from SQL through UI.
-- [ ] Focused Store and dashboard suites and the named warning-strict production spine pass.
+- [x] More than the limit of newer unrelated cases cannot hide matching worker evidence.
+- [x] Lineage work and response size are explicitly bounded or paginated.
+- [x] Counts, records, and truncation indicators agree from SQL through UI.
+- [x] Focused Store and dashboard suites and the named warning-strict production spine pass.
 
 ## Historical fourth criterion
 
