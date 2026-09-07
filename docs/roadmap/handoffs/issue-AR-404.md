@@ -19,7 +19,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar185-activation-proof
+branch: codex/ar408-staffing-failure-receipts
 evidence_commit: 51af465da9b03c6e0225c5aea39d1b9b93933c19
 minimum_ledger_commit: 5c46594cd4785a66d466842ed1a962b9751a1637
 hard_checkpoint_percent: 50
@@ -52,7 +52,10 @@ passes at08fab1c4; same-SHA Windows equality/merged release set remain held.
 AR183 merged PR #733/30214408. AR184 reuses that exact producer receipt;
 both retain only their meaningful cross-platform proof obligations. AR184
 merged PR734/c64ce3ce. AR185 allnine isolated criteria satisfy at500de085;
-localdone reduces legacy byone to77 before separate AR409 filing.
+localdone reduces legacy byone to77 before separate AR409 filing. PR736 merged
+00fc1aef at23:55:01Z, including only AR409/#735 filing to preserve parity.
+AR408 allthree criteria now satisfy at d9dde3cd; PR/closure next. Combined
+local queue is118 (41 mapped/77 legacy), with AR409 still open.
 
 ## Completed evidence
 
@@ -111,7 +114,7 @@ Parent owns publication, acceptance and shared-registry changes.
 
 ## Next bounded work package
 
-1. Publish accepted AR185, then AR408 reviewed diagnostics fix (acceptance running).
+1. Publish accepted AR408 diagnostics fix and close732 after merge.
 2. Publish retained AR189 Windows hold and actual UV-installed AR190 proof.
 3. AR409 reserves mandatory stage calls within owner limits; independent review
    passes. Integrate AR408, verify, publish and run fresh installed/live checks.
