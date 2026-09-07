@@ -84,3 +84,7 @@ acceptance and normal PR/merge. Continue oldest-first until the owner's cutoff.
 ## Bounded review correction
 
 5df50bc1 (5df50bc1099ca843758fa840e30c545ffd8a5197) makes the two argv doubles require and compare executable-namespace inputs and preserve roots identity through freezing. Sixty focused service/real-Store activation checks pass. Queue-cache isolation is not claimed as full authority proof; the final packet must include the original six-failure summary. Acceptance wording and production runtime remain unchanged.
+
+## Final reviewed candidate
+
+8b4c1fca (8b4c1fca2205e3132133e6ecc4c4ef62238bc653) seals the current 15-module run (525 passes, one skip, 64 Windows-named deselections; 84.33s), fresh named spine (1085 passes, three skips; 72.16s) and strict records. Prior UI and Node contracts remain unchanged. The final isolated review will rerun all eight criteria at this new candidate; first verdicts remain at 969f7190.

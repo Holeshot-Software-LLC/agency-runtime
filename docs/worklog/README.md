@@ -2070,6 +2070,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9a42c162` | 2026-09-07 | docs(acceptance): freeze AR-176 current contract evidence | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
 | `969f7190` | 2026-09-07 | docs(acceptance): retain AR-176 first isolated verdicts | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
 | `5df50bc1` | 2026-09-07 | test(service): assert retained executable namespace arguments | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `8b4c1fca` | 2026-09-07 | docs(evidence): seal AR-176 reviewed regression package | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
