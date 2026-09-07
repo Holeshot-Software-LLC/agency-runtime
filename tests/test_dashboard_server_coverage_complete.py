@@ -38,9 +38,11 @@ def _running_dashboard(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     reset_config_cache()
     store = Store(tmp_path / "agency.db")
     token = "coverage-token"
+    broker_token = "coverage-broker-token"
     server = dashboard.DashboardHTTPServer(
         store,
         auth_token=token,
+        broker_token=broker_token,
         port=0,
         host_inspector=lambda: [_verified_codex_record()],
         runtime_control_home=tmp_path,
@@ -52,6 +54,7 @@ def _running_dashboard(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
             base=f"http://127.0.0.1:{server.server_address[1]}",
             port=int(server.server_address[1]),
             token=token,
+            broker_token=broker_token,
             store=store,
             server=server,
         )
@@ -70,8 +73,9 @@ def _request(
     body: object | None = None,
     content_type: str = "application/json",
     origin: str | None = None,
+    token: str | None = None,
 ) -> tuple[int, dict[str, Any]]:
-    headers = {"Authorization": f"Bearer {server.token}"}
+    headers = {"Authorization": f"Bearer {server.token if token is None else token}"}
     if origin is not None:
         headers["Origin"] = origin
     data = None
@@ -177,9 +181,10 @@ def test_dashboard_miscellaneous_get_post_and_options_routes(
                 "/api/config",
                 method="POST",
                 body=body,
+                token=server.broker_token,
             )
             assert status == 403
-            assert "read-only" in payload["error"]
+            assert payload["error"] == "owner control required"
 
 
 def test_dashboard_confirmation_helper_and_default_host_inspector(
@@ -694,9 +699,15 @@ def test_dashboard_trim_is_denied_before_payload_validation(
     body: dict[str, Any],
 ) -> None:
     with _running_dashboard(tmp_path, monkeypatch) as server:
-        status, payload = _request(server, "/api/maintenance/trim", method="POST", body=body)
+        status, payload = _request(
+            server,
+            "/api/maintenance/trim",
+            method="POST",
+            body=body,
+            token=server.broker_token,
+        )
         assert status == 403
-        assert "read-only" in payload["error"]
+        assert payload["error"] == "owner control required"
 
 
 def test_dashboard_roster_actions_are_denied_before_dispatch(
@@ -727,9 +738,10 @@ def test_dashboard_roster_actions_are_denied_before_dispatch(
                 "/api/roster/action",
                 method="POST",
                 body=body,
+                token=server.broker_token,
             )
             assert status == 403
-            assert "read-only" in payload["error"]
+            assert payload["error"] == "owner control required"
     assert calls == []
 
 
@@ -755,9 +767,15 @@ def test_dashboard_host_toggle_is_denied_before_payload_validation(
             },
         ]
         for body in bodies:
-            status, payload = _request(server, "/api/hosts/toggle", method="POST", body=body)
+            status, payload = _request(
+                server,
+                "/api/hosts/toggle",
+                method="POST",
+                body=body,
+                token=server.broker_token,
+            )
             assert status == 403
-            assert "read-only" in payload["error"]
+            assert payload["error"] == "owner control required"
 
 
 def test_dashboard_json_serialization_failure_is_redacted() -> None:
@@ -829,6 +847,7 @@ def test_host_inspection_coordinator_error_stale_and_invalidation() -> None:
             dashboard.monotonic() + 10,
             {"host": "codex", "inspection_status": "complete"},
         )
+        coordinator._stale_after["codex"] = coordinator._cache["codex"][0]
         assert coordinator.inspect()[0]["inspection_status"] == "complete"
 
         stale_future: Future[dict[str, Any]] = Future()

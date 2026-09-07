@@ -120,4 +120,52 @@ Product and scripts equal accepted AR-138 candidate 2ecde1a5 (`git diff
 --exit-code 2ecde1a5 -- agency_runtime scripts` returns zero). Its rebuilt wheel
 and 21 loaded-view checks remain byte-identical evidence, not a new run.
 No native Windows, full corpus, aggregate coverage matrix or hosted dispatch.
-Do not mark AR-151 done before fixture repair, rerun and isolated acceptance.
+The initial failure state above is committed at 58285009, not erased.
+
+## Fixture reconciliation
+
+Only tests change. The denial cases now explicitly send a separate broker
+bearer and assert the existing exact `owner control required` 403. Owner-token
+behavior is unchanged, and roster dispatch must still remain untouched.
+The fresh-cache fixture supplies both cache and stale deadlines. The inference
+test now separately verifies optional keyless Ollama, an explicitly configured
+legacy judge chain, and an explicit typed provider. It does not turn a missing
+provider into successful inference or relabel unavailable runtime state.
+
+The first fixture rerun passed the cache/inference cases but retained seven
+obsolete `read-only` message assertions. After correcting those to the current
+broker-denial message, all nine focused cases pass (53 deselected, 4.71s).
+A broader run started before the message correction completed 267 pass/seven
+fail (54.42s); it is not a fresh corrected-candidate result.
+
+## Final current verification
+
+The following command was started after the fixture edits finished:
+
+```bash
+PYTHONPATH=. python -m pytest tests/test_dashboard.py \
+  tests/test_dashboard_auth_boundary_regression.py \
+  tests/test_dashboard_transaction_refactors.py \
+  tests/test_dashboard_disconnects.py \
+  tests/test_dashboard_server_coverage_complete.py \
+  tests/test_dashboard_operational.py -q -W error
+```
+
+**274 passed**, zero failures/skips, **52.54s**. This includes all 13 new
+UI-to-POST scenarios, all nine repaired cases and the complete named dashboard
+API, auth, transaction, disconnect, server-branch and operational modules.
+The separate complete UI run above passes 176 with unchanged production floors;
+no JavaScript changed after that run.
+
+The exact 29-module named Python production spine from AGENTS.md also ran:
+**1,085 passed, three existing skips, 68.98s**. Current routing evaluation
+returned `passed: true` for its 39 candidate-recall/policy/synthetic-performance
+gates. Ruff check and format check pass (765 Python files); diff check passes.
+
+Decision-conformance's earlier 184/184 killed, zero survived/invalid result is
+scoped reuse: product/scripts and tests/test_decision_conformance.py are equal
+to 2ecde1a5. The modified fixtures are not a new decision implementation. No new
+conformance execution, exhaustive Python corpus or hosted workflow is claimed.
+
+All four original AR-151 criteria still require isolated verdicts. The builder
+supplies these commands, artifacts and limitations without judging acceptance.

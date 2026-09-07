@@ -53,8 +53,12 @@ The broader six-module dashboard run is not green: 265 pass, nine fail (53.81s).
 All nine reproduce on unchanged main 460f319b (4.81s). Seven denial cases use
 an owner token despite ADR-0117; one cache fixture omits its stale deadline;
 one inference fixture treats the configured legacy chain as unconfigured.
-Repair these bounded fixture mismatches before claiming the full-suite
-criterion. Preserve all original criteria; no isolated acceptance yet.
+These nine fixture mismatches are repaired without runtime changes: broker
+denials retain 403/no-dispatch, fresh cache evidence has both deadlines, and
+optional local acceleration is distinguished from a declared judge chain.
+The corrected six-module suite passes 274 in 52.54s; focused nine pass in 4.71s.
+The named Python spine passes 1085 with three existing skips in 68.98s; routing,
+Ruff and diff checks pass. Preserve all original criteria; isolated review remains.
 
 ## Approach
 

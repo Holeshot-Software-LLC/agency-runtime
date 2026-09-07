@@ -95,9 +95,10 @@ and fast-forwarded before the separate AR-151 worktree was created.
 AR-151 confirms the original host-eligibility repair already exists. Thirteen
 direct GET → production JavaScript → POST contract cases pass; core dashboard
 193 pass and UI 176/current floors pass. The broader six-module run is
-265 pass/nine failures; all nine reproduce on unchanged main 460f319b. Fix the
-bounded owner-token, cache and inference-projection fixtures under AR-151's
-original full-dashboard criterion, then obtain independent acceptance.
+265 pass/nine failures; all nine reproduce on unchanged main 460f319b. The
+bounded owner-token, cache and inference-projection fixtures are now repaired:
+274 dashboard cases pass, and the named spine passes 1085/three existing skips.
+No runtime change. AR-151's four original isolated criteria remain before closure.
 
 Current counts: 40 actual open trackers plus 95 unfinished legacy records,
 135 total after AR-150 completion; no duplicate tracker or false acceptance.

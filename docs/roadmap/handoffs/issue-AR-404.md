@@ -53,7 +53,9 @@ Broader six-module dashboard run: 265 pass/nine fail, 53.81s. All nine reproduce
 on unchanged main 460f319b, 4.81s. Seven denial tests use an owner token despite
 ADR-0117; cache fixture lacks its stale deadline; inference fixture mislabels
 the configured legacy chain. Repair these fixtures for the original full-suite
-criterion, without runtime changes, then freeze evidence and isolated review.
+criterion. Fixture-only repair now passes all 274 dashboard cases (52.54s),
+nine focused (4.71s), named spine 1085/three skips (68.98s), routing and Ruff.
+Freeze the current candidate for four isolated verdicts; no runtime change.
 
 ## Completed evidence
 
@@ -108,7 +110,7 @@ criterion, without runtime changes, then freeze evidence and isolated review.
 
 ## Exact blocker
 
-AR-151: nine reproduced dashboard fixture failures before full-suite acceptance.
+AR-151: fixture repair and full dashboard checks pass; isolated acceptance pending.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -130,8 +132,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Repair the nine AR-151 dashboard fixture mismatches; preserve the baseline
-   failures. Rerun focused/full dashboard checks, freeze and independently verify.
+1. Freeze AR-151's repaired dashboard evidence, then independently verify all
+   four criteria. Baseline failures remain at 58285009; no done/count flip yet.
 2. Complete documentation/tracker checks and merge one AR-151 PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
 3. Start an owned AR-153 worktree and record the prior merge. AR-152 is done;
@@ -143,10 +145,10 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
 checks per package, with focused checks for touched behavior. AR-151 adds a
-direct host contract driver and tests; pending fixture repair is test-only.
+direct host contract driver and test-only fixture repairs.
 Product/scripts equal accepted AR-138 candidate 2ecde1a5; wheel/conformance
-reuse is explicitly same-byte, not a new run. Run the named spine after fixture
-changes and full dashboard suite before acceptance. No exhaustive corpus, matrix,
+reuse is explicitly same-byte, not a new run. Fresh named spine and six-module
+dashboard suite pass after fixture changes. No exhaustive corpus, matrix,
 hosted dispatch or release/installed-live proof.
 The graphify graph is absent; bounded source inspection was used, with no
 graph build, specialist selection or native subagent staffing.
