@@ -1,0 +1,52 @@
+---
+title: "Restore owner provider selection"
+status: active
+category: worklog
+created: 2026-09-07
+updated: 2026-09-07
+tags: [dashboard, security, evidence, backlog]
+related:
+  - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
+  - docs/roadmap/acceptance/evidence/AR-166-dashboard-authority-20260907.md
+  - docs/decisions/0229-reconcile-dashboard-disclosure-with-owner-authority.md
+  - docs/worklog/README.md
+supersedes: []
+superseded_by: null
+type: worklog
+commit: a4be59b05d1918861f8d117e68c57331a681021b
+short: a4be59b0
+date: 2026-09-07
+pr: null
+related_issues:
+  - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
+---
+
+# Worklog detail: Owner provider selection
+
+## Approach and decision
+
+ADR-0117 restored owner controls, but AR-166's first criterion and one selector
+still enforce the superseded read-only policy. Two tests fail against baseline
+because valid options remain disabled. Change only the nonempty-list assignment.
+The new interaction case checks second-provider selection, re-render stability,
+exact staged secret target, redaction, four empty/invalid lists and recovery.
+No backend/authentication/broker policy changes.
+
+ADR-0229 explicitly reconciles only criterion 1 before review; original wording
+and other five criteria remain. AR-298 already owns full bounded definitions;
+do not restore the historical short preview or claim its broader issue complete.
+
+## Verification
+
+UI 189 passes, production coverage 96.93/86.71/95.71 against unchanged 95/86/93
+floors, no skips/failures. Backend/owner five-module package 235 passes, 46.37s.
+Fresh named spine 1085 passes/three existing skips, 67.88s. Ruff 766 files,
+metadata/strict docs 1188 files, strict tracker 397 mapped/two historical PR
+exceptions, policy/worklog/diff checks pass.
+
+## Follow-ups
+
+This is the clean repair checkpoint before a focused source-served browser
+interaction. Then freeze all six rowsets, obtain isolated verdicts, publish one
+PR and normal merge before AR-168. No installed-wheel, native Windows, attended
+host activation, complete accessibility or real-provider staffing claim.
