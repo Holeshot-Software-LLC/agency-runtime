@@ -94,8 +94,12 @@ Response identity, last-good state and the seven-view/six-tab gate remain.
 
 ## Publication validation
 
-Metadata/policy, exact worklog, strict docs/tracker, Ruff and diff checks pass on
-the current records. No exhaustive corpus, four-shard coverage or matrix dispatch.
+The initial acceptance draft failed structural validation because its empty
+Verification table header was missing. No isolated verifier ran. The table
+schema is corrected before re-freezing. Current metadata/policy, worklog,
+strict docs/tracker and diff checks now pass: 1196 Markdown files, 397 mapped
+items and two historical PR exceptions. Ruff already passes.
+No exhaustive corpus, four-shard coverage or matrix dispatch.
 AR-165's earlier 184/184 curated decision receipt is reused for unchanged Python
 production code; it is not a fresh JS mutation run.
 

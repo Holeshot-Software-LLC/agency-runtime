@@ -13,7 +13,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-170
-candidate_commit: 9419e68899194057f6ae8697d0ca17101ec16205
+candidate_commit: pending
 evidence_cutoff: 2026-09-07
 tracker_url: null
 ---
@@ -71,3 +71,6 @@ tracker_url: null
 ## Verification
 
 Pending isolated checks at the frozen candidate.
+
+| Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
+|---|---|---|---|---|---|
