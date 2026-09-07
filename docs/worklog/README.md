@@ -2093,6 +2093,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `30214408` | 2026-09-07 | Merge pull request #733 from Holeshot-Software-LLC/codex/ar183-private-producer-evidence | [AR-183](../roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md) | [Detail](2026-09-07-6cc0b176-detached-private-mode-producer.md) |
 | `81cf8000` | 2026-09-07 | docs(backlog): reconcile AR-184 with detached Linux producer proof | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
 | `c64ce3ce` | 2026-09-07 | Merge pull request #734 from Holeshot-Software-LLC/codex/ar184-linux-producer-reconciliation | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
+| `500de085` | 2026-09-07 | docs(backlog): bind AR-185 to exact installed activation proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
