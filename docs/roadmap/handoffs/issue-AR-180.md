@@ -3,21 +3,21 @@ title: "AR-180 active recovery capsule"
 status: active
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-09-07
 tags: [handoff, codex, native-child, hooks, compatibility]
 related:
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
-  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
-  - docs/roadmap/AR-180-codex-0149-compatibility-evidence.md
-  - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
-  - docs/worklog/2026-08-25-cc41b21f-codex-0149-opaque-compatibility.md
+  - docs/roadmap/acceptance/evidence/AR-180-current-profile-v6-delivery-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
+  - docs/decisions/0179-admit-exact-codex-canary-delivery-at-subagent-start.md
+  - docs/decisions/0193-admit-newer-codex-releases-under-the-newest-proven-child-contract.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-180
-branch: codex/ar180-codex-0149-subagent-context
-evidence_commit: 04a23ebedc465add25d8355ccb3171d37744b443
-minimum_ledger_commit: ba482055466167b75098ccbfb12024483e77f4a2
+branch: codex/ar180-live-proof-reconciliation
+evidence_commit: fdb010ffb0a5eab4b545781b047a2743e6372418
+minimum_ledger_commit: 6220ca6134a1aa5ddd5fc34b9d6e703d9ac32631
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -26,91 +26,61 @@ tracker_url: null
 
 ## checkpoint
 
-- Worktree `/tmp/agency-runtime-ar180-codex-0149.HK2zvZ` is on branch
-  `codex/ar180-codex-0149-subagent-context`, based on current `origin/main`
-  `04057072`.
-- The latest complete substantive/ledger pair is `04a23ebe` / `ba482055`.
-  The branch is clean apart from ignored disposable hook-probe files.
-- Codex CLI is `0.149.1`. Agency was not installed into Codex and no Agency
-  canary, login, logout, OAuth reconfiguration, or host configuration change
-  was performed.
-- Persistent Codex config SHA-256 remains
-  `f593344782256a0f6d5346b6e132893a030ae325fea2152fb49484011a04a5a8`;
-  effective Agency config SHA-256 remains
-  `8cebe127352000a7e8a238e7fa842f428f985721a4d58fc3f1b5e2ffb8fe354b`.
+The September 7 reconciliation replaces the stale August 25 capsule.
+AR-180 stays open; original acceptance states remain unchanged.
+Main source checkpoint fdb010ff includes accepted AR-407; its merge ledger is
+6220ca61. The current bounded package records existing live evidence and
+changes no runtime behavior or owner configuration.
 
 ## completed-evidence
 
-- Four initial fresh depth-one children persisted only `fork_turns`, encrypted
-  `message`, and `task_name`; none exposed `encrypted_function_args`.
-- Three additional fresh depth-one children tested project, session `-c`, and
-  named-profile `PreToolUse` hook sources with the one-shot trust bypass. All
-  parent messages remained encrypted and no redacted hook artifact appeared.
-- A changed match-all named profile captured one read-only Bash `PreToolUse`
-  event. This proves the hook engine, profile layer, trust bypass, and redacting
-  script are active; the missing evidence is now spawn-specific.
-- A final changed match-all child captured `collaborationspawn_agent` and
-  `collaborationwait_agent`. The spawn message was already 228-character Fernet
-  ciphertext and did not contain the fixed plaintext marker. Agency's current
-  exact matcher already includes the observed spawn spelling.
-- The installed feature inventory calls hooks and multi-agent stable. Official
-  docs say `spawn_agent` matches `Agent` at `PreToolUse` and supports argument
-  rewrite, while `SubagentStart` lacks assignment and parent-call identity.
-- The missing hook artifact is an activation gap, not evidence that live hook
-  input is encrypted. No exact 0.149 attestation profile was added.
-- Focused verification passed 382 tests. The named fast spine passed 856 with
-  3 skips, dashboard UI passed 134, routing passed, and decision conformance
-  passed with its baseline green, every curated mutation killed, and source
-  unchanged. Documentation and Ruff gates passed before this checkpoint.
+- Codex CLI 0.153.4 Linux exec depth one current-profile activation completed
+  at 22:04:41Z, runtime4329d760, install c482c4e2, bundle0734429d.
+- Trace01a07de5-15c3-7350-86c4-b38e886caa61 binds exact parent, one child,
+  inference decision, one code-reviewer card and immutable delivery receipt.
+- Child record8 contains complete v6 additional context at22:04:05.696Z,
+  preceding first non-input response at22:04:05.698Z and final at22:04:21.161Z.
+- Card bytes, envelope, nonce, lineage and sealed artifact prefix agree.
+  Read-only immutable-receipt verification returns verified/pre-speech/v6.
+- Actual five-field parent header and final body hash match the sole accepted
+  finalization; the installation-bound v4 attestation persists.
+- No new provider request was needed for this correlation. SQLite was opened
+  mode=ro/query_only; no Store construction or new evidence row.
 
 ## exact-blocker
 
-Exact Codex 0.149.1 encrypts the assignment before the observable `PreToolUse`
-boundary. Agency cannot infer a specialist from that ciphertext or bind
-`SubagentStart` to authenticated plaintext. This is an upstream host-surface
-prerequisite, not a missing Agency matcher or adapter repair.
+This is restricted one-card exec proof under ADR-0179/0193, not ordinary
+encrypted-spawn, TUI, Desktop or multi-card proof. The same card occurs in
+the parent's developer context, so criterion8's "only in child context" is
+not literally met. The restricted canary forbids companions and cannot
+satisfy criterion9 by repetition. No original criterion is silently waived.
 
 ## same-task-continuity
 
-Continue in this task after the required clean checkpoint. Do not start a new
-task or transfer ownership because the telemetry threshold was crossed.
+Continue in the same task after a clean checkpoint. Owner authorized fanout
+and normal PR/merge publication, oldest-first, until September8 01:00UTC.
+No threshold-driven task transfer, empty commit or waiting requirement.
 
 ## next-bounded-work-package
 
-1. Close the bounded 0.149.1 compatibility package after final documentation
-   and ledger validation; retain unstaffed fail-open behavior.
-2. On a future Codex release, repeat one content-safe match-all child probe only
-   when the host claims a new plaintext or causal-binding surface.
-3. If authenticated plaintext is then observed, add a regression first and
-   design the smallest Codex-only pre-spawn rewrite.
+1. Publish this exact proof/retained disposition by normal PR/merge.
+2. Continue AR-181 smoke reconciliation, then183/184/185.
+3. When addressing AR-180 itself, reconcile child-only wording explicitly and
+   use appropriate separate TUI/Desktop/multi-card live surfaces.
+4. Do not repeat an unchanged one-card canary for impossible shape coverage.
 
 ## verification
 
-~~~text
-python scripts/docs_metadata.py --check
-python scripts/update_policy_availability.py --check
-python scripts/update_worklog.py --check
-python scripts/verify_docs.py
-ruff check agency_runtime tests scripts
-ruff format --check agency_runtime tests scripts
-python -m pytest <focused Codex hook/provenance tests> -q -W error
-python -m pytest <named fast spine from AGENTS.md> -q -W error
-node --test tests/dashboard_ui.test.mjs
-agency eval routing --json --no-details
-agency eval decision-conformance --repository . --json
-git diff --check
-~~~
+The read-only card/artifact/receipt/finalization correlation passed.
+This records package runs metadata, policy, worklog, docs, tracker, Ruff and
+diff checks. Latest reused AR-407 production checks:1085/three skips, UI224,
+fresh-wheel MCP/dashboard and generated all-host smoke8/0/0.
+These are not newly run AR-180 tests or new host canaries.
 
 ## constraints
 
-- Do not install Agency into Codex, run an Agency Codex canary, or alter Codex
-  OAuth/config while testing the new host surface.
-- Do not widen exact 0.147 transcript attestation to 0.149 based on similar
-  ciphertext shape or undocumented behavior.
-- Do not restore AR-209 plan-row transport, infer from `task_name`, or weaken
-  staffing, finalization, or child-delivery checks.
-- Never retain plaintext hook assignments; keep only bounded content-free
-  projections and artifact hashes.
-- Do not touch Claude, ZCode, OpenClaw, or Hermes configuration.
-- Do not push, open a PR, alter trackers, or dispatch hosted workflows without
-  separate authorization.
+No new credentials, trust bypass, provider-profile changes or native Windows.
+No raw private card/rollout body in the repository; portable hashes and exact
+identities are retained in the evidence receipt. Do not restore removed grant
+organs, weaken current host-artifact validation or copy the canary's header
+into the still-unverified ongoing parent session.

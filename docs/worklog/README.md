@@ -2083,6 +2083,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `dcd58720` | 2026-09-07 | test(install): record exact AR-407 artifact and live-state checks | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
 | `625a1488` | 2026-09-07 | docs(acceptance): freeze AR-407 scoped drift evidence | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
 | `d5aed828` | 2026-09-07 | docs(backlog): accept scoped install drift repair | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
+| `fdb010ff` | 2026-09-07 | Merge pull request #729 from Holeshot-Software-LLC/codex/ar407-scope-install-drift | [AR-407](../roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md) | [Detail](2026-09-07-15a18861-scoped-install-drift.md) |
+| `bb83cd60` | 2026-09-07 | docs(backlog): bind AR-180 to current live child evidence | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [Detail](2026-09-07-bb83cd60-current-codex-child-proof.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

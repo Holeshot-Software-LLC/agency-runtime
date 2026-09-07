@@ -66,3 +66,5 @@ Evidence freeze `dcd58720` adds the exact ef6523b3 portable artifact under produ
 Builder packet `625a1488` freezes all three criteria at dcd58720 with bounded source/test/live-state/artifact excerpts. The builder supplies evidence, not verdicts.
 
 Acceptance `d5aed828` records allthree satisfied at dcd58720 and marks AR-407 done. Initial unavailable verifier produced no verdict; exact Claude package/bin group-write removal restored trusted execution, then unchanged packet passed. Tracker closure is queued with normal PR merge.
+
+Publication `fdb010ff` merged PR #729 at 2026-09-07T23:01:56Z; tracker #727 read back CLOSED. Main contains the accepted scoped fix; this is not an owner CLI upgrade or ordinary native-turn certification.
