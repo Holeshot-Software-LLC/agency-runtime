@@ -6,6 +6,7 @@ created: 2026-08-26
 updated: 2026-08-27
 tags: [codex, canary, native-child, hooks, evidence, security]
 related:
+  - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
   - docs/decisions/0159-authenticate-codex-plaintext-spawns-from-host-transcripts.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
