@@ -16,7 +16,7 @@ type: worklog
 commit: ea57728532d99b5da0da60c7c6cec4dfa340fdba
 short: ea577285
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/705
 related_issues:
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
 ---
@@ -46,5 +46,8 @@ with explicit scope. Earlier wheel/conformance evidence is also scoped reuse.
 
 ## Follow-ups
 
-Freeze the candidate, obtain four isolated verdicts, then PR/normal merge and
-continue at AR-154. No Windows execution or unrelated AR-176 fixture repair.
+All four isolated criteria satisfy against ea577285; closure b060e96a records
+completion without a new tracker. Fresh enumeration is 40 actual open trackers
+plus 93 unfinished legacy records (133 local unfinished). PR #705 carries this
+bounded completion; merge normally, then continue at AR-154. No Windows execution
+or unrelated AR-176 fixture repair.
