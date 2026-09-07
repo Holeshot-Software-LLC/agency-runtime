@@ -74,14 +74,20 @@ still needs evidence, including the owner's Windows arm. ADR-0121 governs
 candidate recall/synthetic cache evidence; AR-253 retains real staffing latency.
 Its disposition merged in PR #701 at 7afa4b4d.
 
-Current package AR-145 retires a duplicate mandatory-coverage checklist under
+AR-145 retires a duplicate mandatory-coverage checklist under
 ADR-0224, not an accepted 97-percent pass. Its original repairs pass 41 focused
 tests under branch instrumentation; AR-176 explicitly retains actual fixture
 and requested aggregate-diagnostic work. ADR-0105 already made exhaustive
 checks optional. Keep the configured 97-percent floor and all historical
 failures. AR-156 records the release checklist's stale UI coverage command for
-its upcoming reconciliation. Publish this disposition, then AR-150: 146/148/149
-are done and Windows-only AR-147 stays with the owner.
+its upcoming reconciliation. PR #702 merged at cd061668. AR-146/148/149 are done
+and Windows-only AR-147 stays with the owner.
+
+Current AR-150 verifies existing shared dashboard commit epochs. Fresh 172 UI
+cases pass the current coverage floors, and server/auth/transaction checks pass
+180 in 28.82s. Exact source equality binds the existing 21-case installed-wheel
+receipt; no new production code or broad artifact claim. Its four original
+criteria remain pending isolated acceptance before any done/count change.
 
 Current counts: 40 actual open trackers plus 96 unfinished legacy records,
 136 total after AR-145 retirement; no duplicate tracker or false acceptance.
@@ -316,8 +322,8 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish and merge AR-145's retired duplicate-coverage disposition. Then review
-AR-150; AR-146/148/149 are done and Windows-only AR-147 stays with the owner.
+Finish AR-150's isolated acceptance and publish one PR/merge. Then review AR-151.
+AR-146/148/149 are done and Windows-only AR-147 stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override
 the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
 visible, exclude Windows execution, and do not close the full backlog until

@@ -16,6 +16,7 @@ related:
   - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
   - docs/roadmap/issue-AR-140-scale-routing-and-retrieval.md
   - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
+  - docs/roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
@@ -24,9 +25,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar145-oldest-first-reconciliation
-evidence_commit: 7afa4b4d7c6aabef572b3671784894fe54181311
-minimum_ledger_commit: 826dc59317e9f451921c573a7cbb0e22a405e7f2
+branch: codex/ar150-oldest-first-reconciliation
+evidence_commit: cd0616686d462a1c21bad7feedc2fe91db9f350d
+minimum_ledger_commit: 4f3d22fac289f2794e54bea9f95c9500752f06ba
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -40,13 +41,14 @@ routine approval stops. Windows stays with the owner. AR-131 is done and PR
 #698 merged at ac1ce173 (September 7, 04:12:09Z). AR-135 retention merged in
 PR #699 at e2f7a5f2. AR-138 merged through PR #700 at 1ada216c on September 7,
 05:28:53Z. AR-140 retention merged in PR #701 at 7afa4b4d, 05:44:10Z;
-main is clean there. Merge ledger 826dc593 starts AR-145.
+AR-145 retirement merged in PR #702 at cd061668, 05:53:46Z; main is clean there.
+Merge ledger 4f3d22fa starts AR-150; Windows-only AR-147 is left to the owner.
 
-Current package: AR-145 retired under ADR-0224, not accepted. The mandatory
-exhaustive-release checklist was superseded by ADR-0105; AR-176 absorbs remaining
-fixture/requested aggregate diagnostic work. Existing repairs pass 41 focused
-tests under branch instrumentation; no aggregate percentage claimed and no
-threshold/source/workflow changed. Publish one disposition PR, then AR-150.
+Current package: AR-150 in verification. Shared refresh commit epoch and scope
+cancellation exist, with AR-138's late-error guards. Fresh UI coverage: 172 pass,
+96.93/86.58/95.71 above unchanged 95/86/93 floors. Server integration: 180 pass,
+28.82s. Product/test/script equality to 2ecde1a5 binds the existing installed-wheel
+browser proof. Freeze this evidence, obtain four isolated verdicts, then PR/merge.
 
 ## Completed evidence
 
@@ -101,6 +103,7 @@ threshold/source/workflow changed. Publish one disposition PR, then AR-150.
 
 ## Exact blocker
 
+AR-150 remains open pending its four isolated acceptance verdicts.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -122,11 +125,11 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Commit AR-145's retirement, explicit AR-176 ownership and evidence, then its
-   immediate exact ledger. No acceptance flip or duplicate tracker.
-2. Complete documentation/tracker checks and merge one disposition PR normally.
+1. Commit/freeze AR-150's current evidence with its immediate exact ledger, then
+   run the four isolated acceptance checks. No done/count flip before satisfaction.
+2. Complete documentation/tracker checks and merge one PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
-3. Start an owned AR-150 worktree and record the prior merge. AR-146/148/149
+3. Start an owned AR-151 worktree and record the prior merge. AR-146/148/149
    are done; Windows-only AR-147 stays with the owner and is not closed.
 4. AR-135 retains its attended installed Agent/record-zero/full-Stop plan;
    it does not block an independent backlog disposition.
@@ -134,11 +137,11 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 ## Verification
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
-checks per package, with focused checks for touched behavior. AR-145 changes
+checks per package, with focused checks for touched behavior. AR-150 changes
 only documentation/evidence. Git comparison proves product/tests/scripts equal
 to accepted AR-138 candidate 2ecde1a5: reuse its named spine/UI/conformance with
-that explicit scope, not a newly run claim. AR-145's focused instrumented tests
-and AR-140's standalone evaluation are distinct. No exhaustive corpus, matrix,
+that explicit scope, not a newly run claim. AR-150 UI/server tests are fresh;
+its wheel evidence is same-byte reuse. No exhaustive corpus, matrix,
 hosted dispatch or release/installed-live proof.
 The graphify graph is absent; bounded source inspection was used, with no
 graph build, specialist selection or native subagent staffing.
