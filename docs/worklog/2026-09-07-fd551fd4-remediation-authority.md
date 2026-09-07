@@ -52,3 +52,9 @@ Freeze all eight builder rowsets at fd551fd4, then require isolated checks befor
 completion. Publish one normal PR and read back its merge before AR-164.
 Native Windows, hosted enforcement and attended host activation remain outside
 this scoped record. No exhaustive diagnostics or trust bypass were performed.
+
+## Frozen review
+
+b9d91243 freezes all eight rowsets to fd551fd4, records its governing decision's
+implementation/evidence SHAs and updates the active capsule. Strict docs pass
+1177 Markdown files. No builder verdict is carried into the isolated review.
