@@ -1935,6 +1935,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d7231df3` | 2026-09-07 | fix(dashboard): repair accessible scroll and metric layout [AR-138] | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | [detail](2026-09-07-d7231df3-dashboard-browser-repair.md) |
 | `fa4d042b` | 2026-09-07 | test(dashboard): capture loaded wheel browser evidence [AR-138] | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
 | `4fafe9d2` | 2026-09-07 | docs(acceptance): freeze AR-138 browser candidate | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | null |
+| `25b9a67a` | 2026-09-07 | docs(acceptance): preserve AR-138 stale-error finding | [AR-138](../roadmap/issue-AR-138-coherent-observable-dashboard-ui.md) | [detail](2026-09-07-d7231df3-dashboard-browser-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

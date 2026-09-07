@@ -16,7 +16,7 @@ type: worklog
 commit: d7231df3d7c01a8ea2518c7e3d8ee07a287dfabc
 short: d7231df3
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/700
 related_issues:
   - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
 ---
@@ -81,6 +81,9 @@ The final view-loaded browser receipt is committed at fa4d042b: 21 checks pass,
 142 UI tests pass, and every focus-preservation check must issue a real control
 poll. The acceptance schema required adding unchecked task markers to the
 original six unchanged statements and classifying script citations as file
-evidence rather than tests-directory evidence. No isolated verdict exists yet.
-AR-138 still owns the six verdicts and PR/merge. Windows and native ZCode
+evidence rather than tests-directory evidence. First isolated verdicts are
+preserved verbatim at 25b9a67a: criteria 2–6 satisfy; criterion 1 contradicts
+because an obsolete full refresh can apply its late error to newer connection
+state. Repair this generation-boundary gap and reverify before merging PR #700.
+AR-138 still owns repaired acceptance and PR/merge. Windows and native ZCode
 activation remain separate operator holds; no backlog count changed here.
