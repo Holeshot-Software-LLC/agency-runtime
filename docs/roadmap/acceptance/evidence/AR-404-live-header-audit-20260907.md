@@ -95,3 +95,31 @@ conversion was used. Preserve this live failure, inspect source-labelled
 invocation/Store evidence and available harness readiness without claiming an
 unverified session is working. An actual credential or human trust requirement
 remains distinct from code that can be repaired unattended.
+
+## Claude namespace correction and fresh all-host readiness
+
+The owner installation's Linux ELF Claude launcher was refused because the
+package parent directory allowed group writes (mode 0775). Only that exact
+directory was changed to 0755; no recursive chmod, ownership, file contents,
+credentials or hook trust changed:
+```bash
+chmod g-w /home/holeshot/.npm-global/lib/node_modules/@anthropic-ai/claude-code
+```
+The first immediate status still returned the old refusal. A later fresh CLI
+and direct source inspection both report Claude 2.1.263, registered/enabled,
+inventory_error=null, maturity=enabled-runtime-unverified. The complete
+launcher symlink and resolved namespace were inspected with `namei -l`;
+all executable parents are owner-controlled and non-group-writable.
+
+Read-only native readiness:
+- Claude: ready=true for the existing isolated native-child canary; no pass
+  claimed yet. Exact confirmation is `RUN LIVE claude CANARY`.
+- OpenClaw and Hermes: ready=false; the implementation has no proven bounded
+  read-only native-child noninteractive canary for either host.
+- ZCode: ready=false; additionally no executable or native version discovered.
+- All five fresh installation inventory rows had loaded=null and no current
+  canary attestation. Installed/enabled is not proof of injected instructions.
+
+The lack of a supported canary is a tooling coverage gap, not evidence that
+these hosts are inherently impossible to test unattended. The existing
+AR-199/309 activation and AR-119/125 cross-host proof records remain open.

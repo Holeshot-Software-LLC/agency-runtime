@@ -54,17 +54,19 @@ tracker_url: null
 | 5 | command-output | Resource and coverage-floor selectors pass with actual byte count | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md#asset-gate |
 | 5 | command-output | All ten served-resource hashes equal checked source | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md#served-bytes-and-headers |
 | 5 | command-output | Wheel and sdist identity, canonical verification and strict Twine | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md#installed-artifact-identity |
-| 6 | file | Existing bounded delivery authority and exhaustive integration scope | 2026-09-07 | docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md#decision |
-| 6 | command-output | Current focused regressions | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md#focused-green-transcript |
-| 6 | command-output | Complete current UI and unchanged coverage floors | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md#full-ui-and-current-coverage-transcript |
-| 6 | command-output | Actual strict current asset gate | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md#asset-gate |
-| 6 | command-output | Fresh named production spine command and complete stdout | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md#production-spine-transcript |
-| 6 | command-output | Fresh installed-wheel loaded browser execution | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md#loaded-browser-verification |
-| 6 | command-output | Strict metadata policy worklog docs tracker Ruff and diff | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md#record-checks |
+| 6 | file | Existing bounded delivery authority and exhaustive integration scope | 2026-09-07 | docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md:62-84 |
+| 6 | command-output | Current focused regressions | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md:243-292 |
+| 6 | command-output | Complete current UI and unchanged coverage floors | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md:313-352 |
+| 6 | command-output | Actual strict current asset gate | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md:293-312 |
+| 6 | command-output | Fresh named production spine command and complete stdout | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md:367-393 |
+| 6 | command-output | Fresh installed-wheel loaded browser execution | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md:428-474 |
+| 6 | command-output | Strict metadata policy worklog docs tracker Ruff and diff | 2026-09-07 | docs/roadmap/acceptance/evidence/AR-175-control-boundary-20260907.md:519-564 |
 
 ## Verification
 
-Pending isolated verification; the builder supplies evidence, not verdicts.
+First verdicts are preserved in 8ed3c516. Criteria 1–5 are satisfied at the
+unchanged candidate. Only criterion 6 is rechecked after limiting overlapping
+heading excerpts to exact lines; no source, criterion or prior verdict is changed.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
@@ -73,4 +75,3 @@ Pending isolated verification; the builder supplies evidence, not verdicts.
 | 3 | satisfied | `AR-175.3-20260907-8c4727fe` | `fafb9335c06c44b983a63a9aeb9ebe5d326e794f1414f8f58a4d672810b7f204` | 2026-09-07 | dashboard-live.js:2076-2201 suppresses abort, lifecycle and obsolete-generation failures, while dashboard_ui.test.mjs:4677-4754 asserts unchanged notices and fresh state for eight cancellation cases recorded as passing in the focused transcript. |
 | 4 | satisfied | `AR-175.4-20260907-50e2f9bd` | `1627fbee6f8433da001d2ac9ccf30bd122af5bda9c21767b95e39f52e625266e` | 2026-09-07 | scripts/verify_dashboard_browser.mjs:127-190 covers 404 and wrong-schema faults with state-retention and zero legacy-request assertions; the cited loaded-browser transcript reports 36 passing fault cases. |
 | 5 | satisfied | `AR-175.5-20260907-925ae671` | `594713e0a12726521d4d1ec4cfb519e7b0dd03f392cb1065639a5b43efa0593a` | 2026-09-07 | tests/test_release_packaging.py retains the strict 378-KiB assertion, and the cited Asset gate transcript records passing tests with 386,965 bytes against the unchanged 387,072-byte ceiling. |
-| 6 | absent | `AR-175.6-20260907-cb188197` | `22f7839906b878ac6541817eca58221ff594e1aadcc20288289b780ed23c0ad0` | 2026-09-07 | AR-175-control-boundary-20260907.md excerpts show passing regression, coverage, asset, spine and record checks, and ADR-0105 makes exhaustive integration optional, but the cited loaded-browser proof is not provided. |

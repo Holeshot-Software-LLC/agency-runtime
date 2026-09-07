@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar175-oldest-first-reconciliation
-evidence_commit: 96f6b49b2a8e92f7b63704853eedcd06b5ebd0c1
-minimum_ledger_commit: 26b0135db7996cb1d063c95562319413b30ffe8b
+evidence_commit: 8ed3c516b0941c098078a31f34661155993691a1
+minimum_ledger_commit: e633f81957dced146680db834fba9f834a35e1a2
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -60,7 +60,11 @@ Only obsolete criterion 6 follows existing ADR-0105; originals preserved.
 
 ## Exact blocker
 
-AR-175 is not accepted. Final record evidence and six isolated criteria remain.
+AR-175 is not accepted. First review satisfies 1–5; 6 was absent because
+overlapping heading excerpts exceeded the packet budget and omitted browser
+proof. First verdicts are at 8ed3c516; exact bounded line citations now include
+all seven excerpts (verified by dry-run) at the unchanged 328c5634 candidate.
+Only criterion 6 gets the second/final review.
 Browser proof is complete, not native-host proof. Do not close AR-170's
 separate remaining obligations.
 
@@ -83,7 +87,7 @@ Preserve first verdicts before corrections; two review passes by default.
 
 ## Next bounded work package
 
-1. Freeze AR-175's complete evidence and run six isolated criteria.
+1. Recheck only AR-175 criterion 6 with the bounded complete packet.
 2. Finish normal PR/merge/readback, then AR-176.
 3. Retain fresh native failure evidence and continue safe live diagnostics.
 4. Stop cleanly by September 8 01:00 UTC.
