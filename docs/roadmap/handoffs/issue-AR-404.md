@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar153-oldest-first-reconciliation
-evidence_commit: 5a12f3574d38b06815e5e48202474c74673ded6c
-minimum_ledger_commit: 26f3556b86c399f42c69accba349e3c631374533
+evidence_commit: ea57728532d99b5da0da60c7c6cec4dfa340fdba
+minimum_ledger_commit: e6c3dba1c3897045cf7f17e374120ca82555e710
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -56,7 +56,7 @@ full workforce lifecycle 25 pass (8.08s), UI 176 pass (223.89ms), production
 coverage 96.93/86.70/95.71. Product/tests/scripts equal 99e05d1f: explicitly reuse
 its 274 dashboard/1085-spine results. No product or test change needed.
 ADR-0105 replaces only the stale mandatory-full-corpus criterion with the named
-bounded gate; original wording is retained. Freeze for four isolated verdicts.
+bounded gate; original wording is retained. Candidate ea577285 is frozen for review.
 
 ## Completed evidence
 
@@ -137,7 +137,7 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Freeze AR-153's current evidence and obtain four isolated verdicts before
+1. Obtain four isolated verdicts against frozen AR-153 candidate ea577285 before
    any completion/count change; preserve ADR-0105's explicit gate reconciliation.
 2. Complete documentation/tracker checks and merge one AR-153 PR normally.
    Read back the actual merged head; update clean main by fast-forward only.

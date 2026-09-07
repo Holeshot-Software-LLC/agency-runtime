@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-137-complete-dashboard-collections.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/acceptance/evidence/AR-153-worker-detail-20260907.md
+  - docs/roadmap/acceptance/issue-AR-153.md
   - docs/worklog/README.md
   - agency_runtime/core/store/workforce.py
 supersedes: []
