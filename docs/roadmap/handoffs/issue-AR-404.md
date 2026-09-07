@@ -46,9 +46,14 @@ explanations are diagnostic-only since e5f4a8c2, before the issue was written.
 - No turn or routing-decision rows are created. Invalid and disabled calls
   cannot allocate a routing trace; disabled mode still bypasses host/catalog.
 - Two focused HTTP tests pass; exact raw stdout is in the receipt.
+- Full dashboard/explanation/observability: 195 pass, 52.75s.
+- UI 204 pass; 96.93/86.78/95.73 meets unchanged floors. Named spine:
+  1085 pass/three existing skips, 69.18s. Raw transcripts are recorded.
 - No production change. ADR-0231 reconciles criteria 1/4/5 with existing bypass,
   diagnostic-only routing and bounded verification. Originals remain.
-- Broader checks and isolated acceptance are pending. Do not mark done.
+- Draft record failures (missing transcript headings, then Node display padding)
+  are preserved. The completed packet passes all record gates: 1206 Markdown
+  files, 397 mapped/two historical PR exceptions, Ruff and diff clean.
 - AR-172 done leaves 40 actual trackers plus 82 legacy, 122 unfinished.
 
 ## Exact blocker
@@ -79,15 +84,15 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 
 ## Next bounded work package
 
-1. Commit AR-173 focused regression/record checkpoint and immediate ledger.
-2. Run broader focused checks/UI/named spine, record raw gates, freeze packet.
+1. Focused checkpoint b2da6eb9/b1f15941 is clean; broader suites pass.
+2. Finish raw record gates, commit complete evidence and ledger, freeze packet.
 3. Five isolated checks, one normal PR/merge/readback, then AR-174.
    No native Windows work and at most two review passes.
 
 ## Verification
 
-Two real loopback regression tests; formatting/lint checks. Full current checks
-follow this checkpoint. No exhaustive corpus/coverage/matrix dispatch.
+Real loopback regression, full focused suites, UI/current floors, named spine
+and full strict record checks pass. No exhaustive corpus/coverage/matrix dispatch.
 AR-165's curated conformance and AR-172's routing results are earlier evidence,
 not new runs or live staffing proof.
 

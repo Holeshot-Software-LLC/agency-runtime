@@ -69,10 +69,164 @@ are emitted as log envelopes, not promised disk-retained or SQLite-persisted
 turn records. The authenticated diagnostic response can include the task; the
 content-free guarantee applies to correlation observations, not that response.
 
-## Remaining verification
+## Full focused transcript
 
-Full dashboard/explanation/observability checks, current UI floors, named spine
-and record gates remain pending at this first clean checkpoint. No acceptance
-verdict, production completion, native-host activation, Windows or release
-claim is made from the focused test alone.
+```bash
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_dashboard.py tests/test_explain.py tests/test_runtime_observability.py tests/test_store_observability.py -q -W error
+```
 
+Exact stdout, exit zero:
+
+```text
+........................................................................ [ 36%]
+........................................................................ [ 73%]
+...................................................                      [100%]
+195 passed in 52.75s
+```
+
+This includes the complete dashboard HTTP suite, diagnostic explanation tests
+and strict runtime/Store observation contracts. No skips or inference spending
+are added by the new regression.
+
+## Full UI and coverage transcript
+
+```bash
+node --test --experimental-test-coverage \
+  '--test-coverage-include=agency_runtime/dashboard/**/*.js' \
+  --test-coverage-lines=95 --test-coverage-branches=86 \
+  --test-coverage-functions=93 tests/dashboard_ui.test.mjs
+```
+
+Exact final stdout excerpt, exit zero; trailing display padding removed and
+coverage floors unchanged:
+
+```text
+type: 'test'
+  ...
+1..200
+# tests 204
+# suites 0
+# pass 204
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 257.107362
+# start of coverage report
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# file                   | line % | branch % | funcs % | uncovered lines
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# agency_runtime         |        |          |         |
+#  dashboard             |        |          |         |
+#   app.js               |  95.45 |    87.96 |   71.70 | 431 467-469 483-490 515-520 524-525 530-536
+#   charts.js            | 100.00 |   100.00 |  100.00 |
+#   dashboard-actions.js |  94.53 |    47.10 |  100.00 | 128-129 132-133 149 159-160 176-177 211-214 243 252-253 276 311 319-320 348 389-390 393-394 429 473
+#   dashboard-config.js  |  99.28 |    96.69 |  100.00 | 230-231 291-292
+#   dashboard-core.js    |  99.05 |    92.98 |  100.00 | 345-346 449 482-483
+#   dashboard-live.js    |  95.34 |    87.39 |   98.77 | 63-64 242-244 276-277 360-363 372-373 676 750-751 798-831 852-854 863 875 903-904 938 1229-1230 1237-1238 1354-1355 1362 1441-1442 1627-1628 1767-1769 1784-1787 1796-1799 1893 1924-1925 1938-1940 1964-1966 1969-1970 2045-2046 2048-2049 2060-2061 2215 2248 2356-2364 2378-2382 2390-2391 2400-2401 2431-2432
+#   dashboard-render.js  |  97.96 |    86.25 |   97.01 | 120-128 777-782 896-897 933-935 1458 1461-1462 1494-1495 1654-1655 1923-1928 2323-2340
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# all files              |  96.93 |    86.78 |   95.73 |
+# -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# end of coverage report
+```
+
+## Production spine transcript
+
+```bash
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_senior_audit_hardening.py tests/test_configuration_namespace_security.py tests/test_executable_namespace_security.py tests/test_storage_file_trust.py tests/test_dashboard_auth_boundary_regression.py tests/test_dashboard_transaction_refactors.py tests/test_routing_correctness.py tests/test_workforce_hiring_contract.py tests/test_workforce_selection_safety.py tests/test_workforce_dynamic_hiring.py tests/test_upstream_selection_eval.py tests/test_decision_conformance.py tests/test_delegation_p1_correctness.py tests/test_store_turn_atomicity.py tests/test_roster_snapshot_generation.py tests/test_mcp_protocol_hardening.py tests/test_cli_parser_contract.py tests/test_cli_upgrade.py tests/test_update_service.py tests/test_native_installer.py tests/test_host_uninstall.py tests/test_cli_uninstall.py tests/test_host_boundary_hardening.py tests/test_cli_owner_authority.py tests/test_security_turn_boundaries.py tests/test_canary_coverage_complete.py tests/test_complexity_refactors.py tests/test_coverage_final_host_cli.py tests/test_resident_manager_lifecycle.py -q -W error
+```
+
+Exact stdout, exit zero:
+
+```text
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 19%]
+..................................s..................................... [ 26%]
+........................................................................ [ 33%]
+........................................................................ [ 39%]
+........................................................................ [ 46%]
+........................................................................ [ 52%]
+........................................................................ [ 59%]
+....................................................................ss.. [ 66%]
+........................................................................ [ 72%]
+........................................................................ [ 79%]
+........................................................................ [ 86%]
+........................................................................ [ 92%]
+........................................................................ [ 99%]
+........                                                                 [100%]
+1085 passed, 3 skipped in 69.18s (0:01:09)
+```
+
+The three existing skips are unchanged; no new skip or xfail.
+
+## Record checks
+
+Commands (set -e; PYTHONPATH=.):
+
+```bash
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/docs_metadata.py --check
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/update_policy_availability.py --check
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/update_worklog.py --check
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_docs.py --require-tracker
+/tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_tracker.py
+/tmp/agency-ar404-venv.AUBJlC/bin/ruff check agency_runtime tests scripts
+/tmp/agency-ar404-venv.AUBJlC/bin/ruff format --check agency_runtime tests scripts
+git diff --check
+```
+
+Exact final stdout, exit zero; silent checks also returned zero:
+
+```text
+checked 1206 Markdown documents
+worklog index is current (2015 commits)
+documentation validation passed for 1206 Markdown files
+tracker validation passed for 397 roadmap items (2 PR-tracked historical item(s) skipped)
+All checks passed!
+766 files already formatted
+```
+
+All current record checks pass for 1206 Markdown documents and 397 mapped
+trackers, with two historical PR exceptions. No hosted CI success is implied.
+
+## Draft packet check
+
+The first draft check ran after adding builder rows but before appending their
+referenced transcript sections. It correctly rejected five missing headings;
+set -e stopped the command group before tracker/lint checks. No commit or
+acceptance invocation claimed that draft was valid. Exact output, exit one:
+
+```text
+checked 1206 Markdown documents
+worklog index is current (2015 commits)
+ERROR: docs/roadmap/acceptance/issue-AR-173.md: criterion 3 builder Source heading is absent
+ERROR: docs/roadmap/acceptance/issue-AR-173.md: criterion 5 builder Source heading is absent
+ERROR: docs/roadmap/acceptance/issue-AR-173.md: criterion 5 builder Source heading is absent
+ERROR: docs/roadmap/acceptance/issue-AR-173.md: criterion 5 builder Source heading is absent
+ERROR: docs/roadmap/acceptance/issue-AR-173.md: criterion 5 builder Source heading is absent
+documentation validation failed with 5 error(s)
+```
+
+The completed packet contains those actual transcripts. A subsequent pass
+completed docs/tracker/Ruff but git diff --check rejected four trailing-padding
+lines copied from Node's coverage stdout. Only display padding is removed;
+test output values and code are unchanged. A fresh full record check, not an
+ignored failure or fabricated output, is required above.
+
+## Unchanged source and limits
+
+Production, scripts and all UI tests/assets are unchanged from AR-172's
+dec1bc512462285cf4d43742c3e666e6d776186e candidate. This Git comparison returns
+zero with empty stdout:
+
+```bash
+git diff --exit-code dec1bc512462285cf4d43742c3e666e6d776186e HEAD -- agency_runtime scripts tests/dashboard_ui.test.mjs
+git diff --exit-code 9effff3f6c4f4fbe59de8793df074a041e64dab9 HEAD -- 'agency_runtime/**/*.py' 'scripts/*.py'
+```
+
+AR-172's routing evaluation and AR-165's 184/184 curated Python conformance
+remain earlier unchanged-source evidence, not new staffing measurements.
+No exhaustive corpus/coverage/matrix, native Windows, host activation, disk-log
+retention or assembled-release claim. The fresh loopback tests validate this
+specific diagnostic response-to-log boundary and absence of turn writes.

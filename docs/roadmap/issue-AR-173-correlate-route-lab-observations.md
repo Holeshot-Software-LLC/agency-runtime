@@ -51,7 +51,10 @@ social requests exercise the production explanation path with inference denied
 by a test guard. Each trace is fresh UUIDv4, already bound before explanation,
 and exactly joins its request-specific emitted observation. Allowed fields are
 bounded and content-free; no diagnostic turn or routing rows appear. The first
-focused run passes. Broader verification and isolated acceptance remain pending.
+focused pair passes, as do all 195 dashboard/explanation/observability tests,
+204 UI tests/current coverage floors and the fresh named spine (1085 passes,
+three existing skips). Full raw receipts are recorded; isolated acceptance
+remains pending before completion.
 
 ## Approach
 

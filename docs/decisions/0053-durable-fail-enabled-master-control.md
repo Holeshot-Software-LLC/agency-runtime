@@ -3,7 +3,7 @@ title: "Use a durable fail-enabled master control before every host boundary"
 status: accepted
 category: decisions
 created: 2026-07-16
-updated: 2026-07-20
+updated: 2026-09-07
 tags: [operations, control-plane, security, cli, dashboard, windows]
 related:
   - docs/decisions/0231-separate-route-lab-correlation-from-turn-persistence.md
