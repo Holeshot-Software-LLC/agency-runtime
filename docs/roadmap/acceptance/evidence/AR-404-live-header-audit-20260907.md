@@ -123,3 +123,64 @@ Read-only native readiness:
 The lack of a supported canary is a tooling coverage gap, not evidence that
 these hosts are inherently impossible to test unattended. The existing
 AR-199/309 activation and AR-119/125 cross-host proof records remain open.
+
+## Actual Claude invocation
+
+After the namespace correction, one native isolated-profile canary ran:
+```bash
+agency host-canary claude --execute --confirm 'RUN LIVE claude CANARY' --timeout 180
+```
+It completed without a timeout and its output passed the header parser. It
+still failed overall: no routed/loaded specialist or accepted finalization,
+two preflight failures, and multiple child artifacts instead of the one exact
+verified delivery. A syntactically valid header is not an injected-card proof.
+The source-labelled command result, with duplicated inventory and non-content
+IDs omitted from this projection, was:
+```json
+{
+  "sampled_at": "2026-09-07T21:17:39.580977+00:00",
+  "host": "claude",
+  "profile_scope": "isolated-profile",
+  "live_attempted": true,
+  "canary_passed": false,
+  "attestation_persisted": false,
+  "trust_bypass_used": false,
+  "invocation": {
+    "backend": "claude",
+    "child_judge_provider_requested": "agency-default",
+    "collaboration": null,
+    "exit_code": 0,
+    "header_missing": [],
+    "header_valid": true,
+    "host_child_collection_reason": "multiple_child_artifacts",
+    "isolated_plugin": {
+      "enabled": true,
+      "invoked": null,
+      "load_requested": true,
+      "loaded": null,
+      "registered": true
+    },
+    "profile_scope": "isolated-profile",
+    "status": "completed",
+    "stderr_truncated": false,
+    "stdout_truncated": false,
+    "timed_out": false
+  },
+  "counts": {
+    "delegations": 0,
+    "finalizations": 0,
+    "preflight_failures": 2,
+    "receipts": 0,
+    "routing": 0,
+    "runs": 2,
+    "specialists": 0
+  },
+  "unmet_prerequisites": [
+    "canary profile plugin registration and enablement were not proven",
+    "verified host-authored Claude child card delivery was not proven (multiple_child_artifacts)"
+  ]
+}
+```
+No trust bypass or current-profile attestation. Do not repeat unchanged
+preconditions; inspect the two captured failure records and the canary's exact
+child collection before claiming any live staffing success.

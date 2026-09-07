@@ -64,9 +64,10 @@ tracker_url: null
 
 ## Verification
 
-First verdicts are preserved in 8ed3c516. Criteria 1–5 are satisfied at the
-unchanged candidate. Only criterion 6 is rechecked after limiting overlapping
-heading excerpts to exact lines; no source, criterion or prior verdict is changed.
+All six criteria satisfy at the unchanged candidate. First verdicts are
+preserved in 8ed3c516; only criterion 6 was rechecked after limiting overlapping
+heading excerpts to exact lines. No source, criterion or prior satisfied verdict
+changed, and no third review ran.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
@@ -75,3 +76,4 @@ heading excerpts to exact lines; no source, criterion or prior verdict is change
 | 3 | satisfied | `AR-175.3-20260907-8c4727fe` | `fafb9335c06c44b983a63a9aeb9ebe5d326e794f1414f8f58a4d672810b7f204` | 2026-09-07 | dashboard-live.js:2076-2201 suppresses abort, lifecycle and obsolete-generation failures, while dashboard_ui.test.mjs:4677-4754 asserts unchanged notices and fresh state for eight cancellation cases recorded as passing in the focused transcript. |
 | 4 | satisfied | `AR-175.4-20260907-50e2f9bd` | `1627fbee6f8433da001d2ac9ccf30bd122af5bda9c21767b95e39f52e625266e` | 2026-09-07 | scripts/verify_dashboard_browser.mjs:127-190 covers 404 and wrong-schema faults with state-retention and zero legacy-request assertions; the cited loaded-browser transcript reports 36 passing fault cases. |
 | 5 | satisfied | `AR-175.5-20260907-925ae671` | `594713e0a12726521d4d1ec4cfb519e7b0dd03f392cb1065639a5b43efa0593a` | 2026-09-07 | tests/test_release_packaging.py retains the strict 378-KiB assertion, and the cited Asset gate transcript records passing tests with 386,965 bytes against the unchanged 387,072-byte ceiling. |
+| 6 | satisfied | `AR-175.6-20260907-705f31a3` | `046b00c6d153b8708d7964e3c2b45c9af7775bd786ea016e2fdd990af4858cc4` | 2026-09-07 | AR-175-control-boundary-20260907.md excerpts show passing focused regressions, UI coverage, asset gate, production spine, private browser proof and record checks; ADR-0105 lines 62-84 explicitly make exhaustive integration optional. |

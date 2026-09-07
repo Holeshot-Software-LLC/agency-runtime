@@ -317,13 +317,15 @@ Private installed-wheel Chromium proof now passes 21 views and 36 faults across
 both refresh paths and three widths, including actual 404/network failures and
 schema/JSON corruption. Thirty server response headers match sent IDs; six
 network faults retain sent IDs without responses. No legacy GETs or POSTs;
-all ten served-resource hashes match checked source. Six isolated checks remain.
+all ten served-resource hashes match checked source. All six criteria satisfy
+at 328c5634; only 6 needed bounded line citations after the first packet omitted
+its browser excerpt. First verdicts remain at 8ed3c516; no third review.
 No native Windows or AR-170 completion claim. A separate fresh current-profile
 Codex canary actually ran but failed parent-spawn, response and header evidence;
 its missing-credential/transport observations are retained in the live audit.
 
-Current main and branch counts: 40 actual open trackers plus 80 unfinished legacy
-records, 120 total; AR-175 is not accepted yet.
+Current accepted branch count: 40 actual open trackers plus 79 unfinished legacy
+records, 119 total. Main remains 120 until AR-175's normal PR merge.
 No duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
@@ -556,8 +558,7 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Finish AR-175's six isolated criteria after passing private browser proof, publish one
-normal PR/merge, then review AR-176.
+Publish accepted AR-175 through one normal PR/merge, then review AR-176.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override

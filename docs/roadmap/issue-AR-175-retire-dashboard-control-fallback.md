@@ -1,6 +1,6 @@
 ---
 title: "AR-175: Retire the non-atomic dashboard control fallback"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -65,7 +65,11 @@ repair removes 74 bytes. A fresh private installed-wheel Chromium run passes
 widths. All 30 response-bearing faults preserve the real echoed request ID;
 six network faults preserve the sent ID without a response. No legacy GETs or
 POSTs occur; all ten served resource hashes match the checked source.
-Six isolated acceptance verdicts remain pending.
+All six isolated criteria satisfy at 328c5634567e6b12a295bb5f8957c5541cc35dba.
+First verdicts remain at 8ed3c516; only criterion 6 needed a second, citation-only
+review after overlapping heading excerpts omitted the browser proof from its
+bounded packet. Exact line citations include all seven excerpts in 17,149
+characters. No criterion, runtime, candidate or first five verdicts changed.
 
 ## Approach
 
@@ -94,7 +98,7 @@ Only obsolete criterion 6 follows ADR-0105; its original wording is retained.
 - [x] Browser tests cover 404 and wrong-schema retention and assert zero legacy
   endpoint calls.
 - [x] The fixed dashboard release-asset ceiling passes without being raised.
-- [ ] Focused control regressions, full UI/current coverage floors, current
+- [x] Focused control regressions, full UI/current coverage floors, current
   asset gate, named production spine, private loaded-browser proof, metadata,
   policy, worklog, strict docs/tracker, Ruff and diff checks pass; exhaustive
   integration remains optional under ADR-0105.

@@ -33,7 +33,8 @@ September 8 at 01:00 UTC. Finish at a clean durable checkpoint by that cutoff.
 One record, one normal PR/merge/readback, then next. Native Windows excluded.
 AR-173 merged PR #722 at 7ad0d33e; AR-174 merged PR #723 at 57a70139,
 September 7 20:41:36Z. Main clean/fast-forwarded before this owned AR-175 tree;
-7f403ab7 records the merge. Current count is 120 (40 mapped/80 legacy).
+7f403ab7 records the merge. Accepted branch count is 119 (40 mapped/79 legacy);
+main remains 120 until AR-175's normal PR merge.
 
 ## Completed evidence
 
@@ -60,11 +61,11 @@ Only obsolete criterion 6 follows existing ADR-0105; originals preserved.
 
 ## Exact blocker
 
-AR-175 is not accepted. First review satisfies 1–5; 6 was absent because
-overlapping heading excerpts exceeded the packet budget and omitted browser
-proof. First verdicts are at 8ed3c516; exact bounded line citations now include
-all seven excerpts (verified by dry-run) at the unchanged 328c5634 candidate.
-Only criterion 6 gets the second/final review.
+AR-175 is accepted at 328c5634: all six criteria satisfy. First review's 6 was
+absent because overlapping heading excerpts exceeded the packet budget and
+omitted browser proof. First verdicts remain at 8ed3c516; exact line citations
+include all seven excerpts/17,149 characters. Only 6 was rechecked and passes;
+no third review. Normal PR/merge/readback remains before AR-176.
 Browser proof is complete, not native-host proof. Do not close AR-170's
 separate remaining obligations.
 
@@ -87,7 +88,7 @@ Preserve first verdicts before corrections; two review passes by default.
 
 ## Next bounded work package
 
-1. Recheck only AR-175 criterion 6 with the bounded complete packet.
+1. Publish AR-175's accepted completion and ledger.
 2. Finish normal PR/merge/readback, then AR-176.
 3. Retain fresh native failure evidence and continue safe live diagnostics.
 4. Stop cleanly by September 8 01:00 UTC.
@@ -112,3 +113,9 @@ with missing provider-credential receipts. One requested Codex refresh exits 1.
 One verification-only live canary actually runs but fails parent spawn, response
 and header/preflight proof; no attestation or trust bypass. Do not misreport it
 as solely a pre-invocation trust refusal or repeat without a changed condition.
+Claude's Linux ELF package parent was group-writable; one exact chmod 0775→0755
+restores direct launcher inspection. Its isolated native canary then completes
+with a parseable header but fails delivery: two preflight failures, zero staffed
+specialists, multiple child artifacts, no attestation. Other three hosts lack
+bounded native canary support (ZCode also lacks an executable). These are actual
+observations, not successful all-harness activation.
