@@ -52,8 +52,14 @@ tracker_url: null
 
 ## Verification
 
-The complete first review is preserved verbatim at 25b9a67a. This repaired
-candidate has no verdicts yet; the isolated runner will supply them.
+The complete first review is preserved verbatim at 25b9a67a. The isolated
+runner supplied all six satisfied verdicts below for repaired candidate 2ecde1a5.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-138.1-20260907-99e8121c` | `35871ca361514a83d2e0a18c77f14dcd4ab0979c0deb342019426d7bbab16cd8` | 2026-09-07 | Generation and controller guards in dashboard-live.js reject obsolete responses, while deferred-race and late-failure tests in dashboard_ui.test.mjs assert newer state remains intact. |
+| 2 | satisfied | `AR-138.2-20260907-7f979c9e` | `cf4af7b855bc50b84e753fa358e5f73564036beceb47fba1e27cb9d464ee0c36` | 2026-09-07 | dashboard-live.js marks failed control refreshes stale and displays a failure notice; dashboard_ui.test.mjs verifies retained state, and the browser evidence records visible staleness and recovery at three viewports. |
+| 3 | satisfied | `AR-138.3-20260907-847c4d0b` | `93fbe2611d3306cf7739837110b530d7172e3216e9b7ffa98f4d00a0153146a6` | 2026-09-07 | dashboard.py:1999-2077 declares one control_revision for configuration, hosts, master, roster, and governance; dashboard_ui.test.mjs:4350-4444 verifies initial refresh and control polling populate related panels from that single response. |
+| 4 | satisfied | `AR-138.4-20260907-290c38af` | `cb4e1ae37cbac13b9eec80dce55cda5a3bfee2a5b643190c68717694546622b2` | 2026-09-07 | dashboard-core.js captures and restores focus, selection and open details; verify_dashboard_browser.mjs asserts preservation across a real poll, and the browser evidence records passes at all three viewports. |
+| 5 | satisfied | `AR-138.5-20260907-b9d04ce0` | `1960e1d26b95becb0238e9dbae467019c0f1b9d5508a9fb4898b762a81cf95d7` | 2026-09-07 | The browser evidence receipt records exit 0 and passed=true for 21 loaded-view checks at 1280, 1024 and 375 px, with zero axe violations, overflow or clipped metrics; the cited browser script implements those assertions. |
+| 6 | satisfied | `AR-138.6-20260907-e5f16c1f` | `210011be341493b63f469bb0c0c752ce22d12c61bf8173d2be1874b0cd0e2cc9` | 2026-09-07 | dashboard-core.js validates UUIDv4 IDs and logs them on network and HTTP failures; verify_dashboard_browser.mjs checks the same ID in the UI notice and console, and the browser evidence records three correlated failures. |

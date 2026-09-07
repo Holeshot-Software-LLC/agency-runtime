@@ -34,13 +34,12 @@ MCP/CLI contract review found and repaired a public identifier-admission gap.
 All six isolated criteria satisfy at 973acdb9 on September 7; first verdicts
 remain preserved at 6a139e23. PR #698 merged at ac1ce173. AR-135's current source
 and generated smoke pass, but native parent/child/Stop evidence still needs an
-attended ZCode call; its retention merged in PR #699 at e2f7a5f2. AR-138 is now
-in fast verification: actual browser review found remaining accessibility and
-desktop clipping defects; four regressions and the fixes are in the current
-bounded package. Final packaged browser evidence passes 21 cases at three
-widths; all 142 UI tests pass. First isolated review satisfies 2–6 but finds a
-stale full-refresh error race in criterion 1. The source repair now passes 30
-new cases and all 172 UI tests. Repeat wheel QA and isolated acceptance before closure.
+attended ZCode call; its retention merged in PR #699 at e2f7a5f2. AR-138 is done:
+browser review found and repaired accessibility/desktop clipping defects, and
+the first isolated review exposed a stale-error race (preserved at 25b9a67a).
+The repair passes 30 new late-error cases, all 172 UI tests and all 21 rebuilt-wheel
+browser checks. All six second-pass criteria satisfy at 2ecde1a5. Publish PR #700
+before reviewing AR-140, the next unfinished record.
 
 Previous pause: the owner asked to conserve credits and publish AR-130 through
 [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696),
@@ -83,7 +82,7 @@ not the 99 legacy count.
 | 7 | AR-130 | Positive trust cache is already removed; Store connections revalidate. Current regression/file-integrity package: 19 pass (0.23s). Broader non-Windows run: 40 pass/two confirmed stale fixtures/39 Windows-named cases deselected (0.84s); AR-176 owns the wrong ACL-double boundary and obsolete 0644 expectation. Retain native Windows and current hook-budget evidence, not a trust-repair rewrite. Historical latency and original criteria preserved. | Published in [PR #696](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/696); legacy record remains open. Exact publication receipt belongs to the worklog. |
 | 8 | AR-131 | Done: original MCP repair verified and remaining public identifier aliasing repaired. Six isolated criteria satisfy at 973acdb9; first verdicts preserved at 6a139e23. New public cases 13 pass; MCP/CLI 126/five skips; spine 1085/three skips; UI 138; routing pass; conformance 184/184 killed, source unchanged. Unchanged fallback fixture fails on main and belongs to AR-176, not hidden as green. | [PR #698](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/698) merged at ac1ce173. Legacy count 99 → 98; actual open trackers remain 40. |
 | 9 | AR-135 | Retain open: installer/rendering/correlation implementations exist. 16 installer/header, 13 selected hook/Stop and four child-adapter/delivery/profile cases pass. Generated ZCode smoke passes 4/4, including isolated SessionStart process, config preservation/idempotency/toggles. Installed inspection is enabled-runtime-unverified, no executable or canary; current native Agent/record-zero/full-Stop proof needs an attended call. Correct only the fixture docstring that called stubbed routing live proof. | [PR #699](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/699) merged at e2f7a5f2. No production, user-profile, acceptance, matrix or count change. |
-| 10 | AR-138 | In verification: original coherent refresh and mobile heading fixes exist. Wheel-backed browser review reproduced remaining contrast, keyboard-scroll/semantic and desktop metric-clipping defects. Four regressions and scoped fixes at d7231df3; dashboard Python 180 pass, named spine 1085/three skips, UI 142. Final view-loaded browser receipt passes 21 cases at 1280/1024/375 px. Six isolated criteria remain. | Current owned branch; remains open and changes no count yet. |
+| 10 | AR-138 | Done: original refresh/mobile repairs verified; remaining accessibility/clipping and stale-error races repaired at d7231df3/cd35aa2c. First failed review preserved at 25b9a67a. All six isolated criteria satisfy at 2ecde1a5. Dashboard Python 180 pass; repeated named spine 1085/three skips; UI 172 and current coverage floors pass; rebuilt wheel passes 21 loaded-view checks at 1280/1024/375 px. | [PR #700](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/700) awaits publication. Legacy count 98 → 97; actual open trackers remain 40. |
 
 After the merged AR-115 retirement, fresh enumeration confirms 41 open trackers
 and 140 unfinished local records (41 mapped plus 99 legacy) before AR-127.
@@ -91,7 +90,8 @@ After merged AR-127 retirement, fresh enumeration is **40 open trackers** and
 139 unfinished local records (40 mapped plus 99 legacy). Retained AR-129 leaves
 both counts unchanged, as does retained AR-130. Accepted AR-131 now reduces the
 local queue to **138** (40 mapped plus **98 legacy**) without a tracker closure.
-Retained AR-135 leaves these counts unchanged; AR-138 is in verification.
+Retained AR-135 leaves those counts unchanged. Accepted AR-138 reduces the local
+queue to **137** (40 mapped plus **97 legacy**), without a tracker closure.
 Windows-specific work remains with the owner.
 This is record reconciliation, not completion of retained implementation or
 platform-evidence work.

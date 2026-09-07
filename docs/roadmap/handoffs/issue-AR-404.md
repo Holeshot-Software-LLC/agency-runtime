@@ -39,17 +39,13 @@ routine approval stops. Windows stays with the owner. AR-131 is done and PR
 PR #699 at e2f7a5f2; local main is clean there. Merge ledger bcaddc1b starts the
 owned AR-138 branch.
 
-Current package: AR-138, live_demo complete and isolated acceptance pending. Existing coherence/mobile fixes
-remain; actual browser review found contrast, keyboard-scroll/semantic and
-desktop metric-clipping defects. Small HTML/CSS fixes and four regressions are
-are checkpointed at d7231df3/7892096d. Final view-loaded browser receipt passes
-21 checks at three widths, including 375 px. First isolated review satisfies
-criteria 2–6 but contradicts 1: a replaced full refresh's late non-abort error
-can mark newer healthy connection state Unavailable. First review preserved at
-25b9a67a, ledger 2f10b993. Thirty late-failure cases now pass after live/full/control
-error guards and cancellation propagation at cd35aa2c/4fd2df4f; full UI 172 pass.
-Repaired-wheel QA passes all 21 checks with ten matching asset hashes. Freeze
-that evidence for the second isolated pass; PR #700 stays draft until accepted.
+Current package: AR-138 accepted, with all six isolated criteria satisfied at
+repaired candidate 2ecde1a5. Browser review found accessibility/clipping defects
+repaired at d7231df3; the first isolated review found a stale-error race and is
+preserved at 25b9a67a. Error guards/cancellation propagation at cd35aa2c pass 30
+new regressions and all 172 UI tests. Repaired-wheel QA passes 21 loaded-view
+checks with ten matching asset hashes. Close the records and publish PR #700
+before reviewing AR-140. No native host/ordinary-session activation claim.
 
 ## Completed evidence
 
@@ -64,8 +60,8 @@ that evidence for the second isolated pass; PR #700 stays draft until accepted.
   184/184 protected mutations killed, zero survived/invalid, source unchanged.
   Broader 380-pass/one-failure/eight-skip run is not green: the unchanged
   fallback-roster fixture also fails on prior main and belongs to AR-176.
-- Current count: 40 actual open trackers plus 98 unfinished legacy records,
-  138 local unfinished. AR-135 retention changes no count. No duplicate tracker.
+- Current count: 40 actual open trackers plus 97 unfinished legacy records,
+  137 local unfinished after AR-138 acceptance. No duplicate tracker.
 - AR-135 source: independent ZCode renderer/config registration, exact seven
   hooks, idempotency, preservation, toggle/rollback/drift and host identity exist.
   Current tests: 16 installer/header (4.74s), 13 selected hook/Stop (5.80s),
@@ -78,20 +74,23 @@ that evidence for the second isolated pass; PR #700 stays draft until accepted.
   unknown, no canary/attestation, enabled-runtime-unverified. Executable null;
   command lookup also finds no zcode CLI. August 19 record-zero evidence stays
   historical, not current-package certification.
-- AR-138: four focused regressions pass after red checks; dashboard Python
-  modules 180 pass (28.80s), named spine 1085/three skips (69.50s). Initial
-  repaired-wheel structural QA passes 21 view/viewport cases with zero axe
-  violations and no unexpected console/HTTP errors. Real control failure keeps
-  the last revision, shows a safe correlated UUID and recovers after restoration.
-  All ten packaged dashboard assets match source. Final receipt at
-  acceptance/evidence/AR-138-browser-20260907/report.json awaits view-scoped
-  reads and requires a real control poll. Twenty-one checks pass; UI 142 pass,
-  coverage 96.92/86.62/95.71 meets the actual 95/86/93 floors. Routing passes.
+- AR-138: dashboard Python 180 pass (28.80s), repeated named spine 1085/three
+  existing skips (99.40s). UI 172 pass; coverage 96.93/86.58/95.71 meets the
+  unchanged 95/86/93 floors. Routing passes. The first-candidate conformance
+  run kills 184/184, zero survived/invalid, source unchanged; no Python decision
+  implementation or selected test changed in the subsequent JavaScript repair.
+- Final browser receipt: acceptance/evidence/AR-138-browser-repaired-20260907/
+  report.json, observed 05:15:13Z September 7. Twenty-one loaded views at
+  1280/1024/375 px pass, zero axe violations/overflow/clipping or unexpected
+  console/HTTP errors. Real polls preserve focus/selection/disclosures; injected
+  control failure retains the revision, shows a correlated safe ID and recovers.
+  All ten wheel assets match source. Full WCAG/screen-reader/native-host proof
+  is not claimed. All six isolated second-pass verdicts are satisfied.
 
 ## Exact blocker
 
-AR-138's rebuilt-wheel proof is complete; the second isolated review remains
-before merge. AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
+AR-138 verification is complete; record publication and normal PR merge remain.
+AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
 success/failure and full parent Stop capture. Do not invent a headless backend
 or promote a stubbed hook test into native proof. This does not block the next
 independent backlog disposition.
@@ -110,23 +109,21 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Final AR-138 evidence is committed at fa4d042b, ledger 6bc9ccb0. The isolated
-   candidate is pinned to fa4d042b. Preserve its first isolated review before
-   changing evidence; criteria 2–6 pass and criterion 1 contradicts.
-2. Commit/freeze the repaired evidence and run the second isolated acceptance
-   pass. All 172 UI tests and 21 rebuilt-wheel browser checks pass; named spine
-   repeats at 1085/three skips, 99.40s. No Python policy source changed after the
-   first-candidate conformance run killed 184/184 with source unchanged.
-3. If satisfied, update the legacy count, open one PR and merge normally.
-   Review AR-140 next; AR-139 is already retired. Windows stays excluded.
-4. AR-135 later retains its attended installed Agent/record-zero/full-Stop plan;
+1. Commit AR-138's supplied satisfied verdicts and done/count records, then its
+   immediate ledger. Repaired candidate 2ecde1a5 and failed first review 25b9a67a
+   remain immutable; do not rewrite evidence or launch another acceptance pass.
+2. Complete documentation/tracker checks, ready and merge PR #700 normally.
+   Read back the actual merged head; update clean main by fast-forward only.
+3. Start an owned AR-140 worktree, record the prior merge in its initial ledger,
+   and inspect that oldest unfinished record. AR-139 is retired; Windows excluded.
+4. AR-135 retains its attended installed Agent/record-zero/full-Stop plan;
    it does not block an independent backlog disposition.
 
 ## Verification
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
 checks per package, with focused checks for touched behavior. AR-138 changes
-only dashboard HTML/CSS plus optional QA tooling/tests. Run the current UI
+dashboard HTML/CSS/JavaScript plus optional QA tooling/tests. Use the current UI
 coverage command with 95/86/93 floors and source inclusion; the mistakenly
 used historical 95/90/96 command failed, not a current CI regression.
 No new exhaustive corpus,

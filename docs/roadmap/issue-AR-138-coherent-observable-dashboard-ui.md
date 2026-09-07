@@ -1,6 +1,6 @@
 ---
 title: "AR-138: Make dashboard refresh coherent, accessible, and observable"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-07
@@ -41,38 +41,31 @@ accessible name.
 
 ## Current state
 
-The original coherence, stale-state, focus, duplicate-render, accessible-name,
-and request-correlation fixes exist. September 7 packaged-browser review also
-confirms that the earlier mobile heading-basis fix exists at 375 px. The July
-test counts below are historical, not a current closure receipt.
+All six original criteria have satisfied isolated verdicts against repaired
+candidate 2ecde1a5 on September 7. The original coherence, focus, request-ID and
+mobile heading fixes were present. Browser review found remaining contrast,
+keyboard-scroll/semantic and desktop metric-clipping defects, repaired at
+d7231df3 with four regressions. The first isolated review then exposed a late
+error from an obsolete refresh overwriting newer healthy connection state;
+that complete review is preserved at 25b9a67a, not relabeled as a pass.
 
-Current browser review reproduced low-contrast navigation/empty-state text,
-unfocusable scroll regions, unnamed generic groups, and clipped metric cards
-inside desktop half-width panels. The bounded repair uses existing accessible
-colors, named keyboard-focusable scroll regions, group roles, and a wrapping
-metric grid. Four focused regressions pass after failing before repair.
-The three dashboard Python modules pass 180 tests; the named production spine
-passes 1085 with three existing skips (69.50s). No staffing or host policy changes.
+Repair cd35aa2c guards live/full/control failures and propagates cancellation.
+Thirty added late-failure cases and all 172 UI tests pass; current network and
+authentication failures still surface. Dashboard Python checks pass 180; the
+repeated named production spine passes 1085 with three existing skips (99.40s).
+UI coverage meets the unchanged 95/86/93 floors. The earlier conformance run
+killed 184/184 mutations with source unchanged; no Python decision code or
+selected test changed in the subsequent JavaScript repair.
 
-Package state: live_demo complete, acceptance pending. The optional browser checker uses a freshly
-installed wheel, private five-agent Store, stubbed host inventory and denied
-outbound server connections. The final view-loaded browser receipt passes all
-21 view/viewport cases with zero axe violations, page overflow, clipped metric
-cards or unexpected console/HTTP errors. Actual control polls preserve focus,
-selection and open details; injected failures retain the last revision, show
-safe correlated IDs and recover. All 142 UI tests pass. Exact hashes, versions,
-screenshots, commands and limits are in the linked current evidence. The record
-stays open; no full WCAG/native-host claim. The first isolated review satisfies
-criteria 2–6 but contradicts criterion 1: full-refresh success is generation
-guarded, while a replaced request's late non-abort error can still overwrite a
-newer healthy connection. Preserve those verdicts and repair both success/error
-generation boundaries consistently before re-verification. The complete first
-review is preserved at 25b9a67a. Thirty added late-failure cases now pass after
-repairing live/full/control failure guards and reconciliation cancellation;
-the full 172-test UI suite passes. Repair cd35aa2c's rebuilt wheel also passes
-all 21 browser checks, with ten matching asset hashes and repeated focus/error
-assertions. Current network/authentication failures still surface. The second
-isolated acceptance pass is the remaining gate before closure and PR #700 merge.
+The rebuilt wheel passes 21 loaded-view checks at 1280/1024/375 px, with ten
+matching asset hashes, zero axe violations, no clipped metrics/page overflow,
+and no unexpected console/HTTP errors. Actual polls preserve focus, selection
+and open details; injected failures retain the revision, show correlated safe
+IDs and recover. The fixture uses a private five-agent Store, stubbed host
+inventory and denied outbound server connections. Exact versions, hashes,
+screenshots and limits are in the repaired evidence. This is not full WCAG,
+screen-reader or native-host certification. No staffing/host policy change.
+Scoped package accepted; publication through PR #700 remains before the next item.
 
 ## Approach
 
@@ -92,12 +85,12 @@ AR-142 defines server-side request instrumentation. AR-137 owns pagination.
 
 ## Acceptance
 
-- [ ] Out-of-order responses cannot overwrite newer state.
-- [ ] Partial refresh failure is visible and never presented as fresh.
-- [ ] Related control panels share one declared revision.
-- [ ] Polling preserves keyboard focus, open details, and selection.
-- [ ] Automated accessibility, desktop, and 375 px mobile tests pass.
-- [ ] Browser console and network failures surface a safe request ID.
+- [x] Out-of-order responses cannot overwrite newer state.
+- [x] Partial refresh failure is visible and never presented as fresh.
+- [x] Related control panels share one declared revision.
+- [x] Polling preserves keyboard focus, open details, and selection.
+- [x] Automated accessibility, desktop, and 375 px mobile tests pass.
+- [x] Browser console and network failures surface a safe request ID.
 
 ## Historical implementation evidence (July)
 
