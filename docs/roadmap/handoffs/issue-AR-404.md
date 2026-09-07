@@ -14,6 +14,7 @@ related:
   - docs/roadmap/acceptance/issue-AR-131.md
   - docs/roadmap/issue-AR-135-complete-zcode-integration.md
   - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
+  - docs/roadmap/issue-AR-140-scale-routing-and-retrieval.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
@@ -22,9 +23,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar138-oldest-first-reconciliation
-evidence_commit: 2ecde1a5be3ac38aa7b7b970945fa8bd42e7fa73
-minimum_ledger_commit: 18367caf80ffe1d4465451f35077381c4286b460
+branch: codex/ar140-oldest-first-reconciliation
+evidence_commit: 1ada216c208777630ec7162acf5a390f420fc0a4
+minimum_ledger_commit: 82fb202882fe973d9120d070eb64db66d29ecc86
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -36,16 +37,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner resumed September 6: oldest first, one record/PR/merge, then next; no
 routine approval stops. Windows stays with the owner. AR-131 is done and PR
 #698 merged at ac1ce173 (September 7, 04:12:09Z). AR-135 retention merged in
-PR #699 at e2f7a5f2; local main is clean there. Merge ledger bcaddc1b starts the
-owned AR-138 branch.
+PR #699 at e2f7a5f2. AR-138 merged through PR #700 at 1ada216c on September 7,
+05:28:53Z; local main is clean there. Merge ledger 82fb2028 starts AR-140.
 
-Current package: AR-138 accepted, with all six isolated criteria satisfied at
-repaired candidate 2ecde1a5. Browser review found accessibility/clipping defects
-repaired at d7231df3; the first isolated review found a stale-error race and is
-preserved at 25b9a67a. Error guards/cancellation propagation at cd35aa2c pass 30
-new regressions and all 172 UI tests. Repaired-wheel QA passes 21 loaded-view
-checks with ten matching asset hashes. Close the records and publish PR #700
-before reviewing AR-140. No native host/ordinary-session activation claim.
+Current package: AR-140 retained. Optimization and budgets are implemented;
+all 39 local Linux routing/performance gates and 202 focused tests pass. No
+code/threshold change. ADR-0121 governs recall/synthetic-cache evidence; AR-253
+owns staffing latency. Preserve AR-140's isolated supported-runner requirement,
+with the Windows arm left to the owner. Publish one disposition PR, then AR-145.
 
 ## Completed evidence
 
@@ -86,10 +85,17 @@ before reviewing AR-140. No native host/ordinary-session activation claim.
   control failure retains the revision, shows a correlated safe ID and recovers.
   All ten wheel assets match source. Full WCAG/screen-reader/native-host proof
   is not claimed. All six isolated second-pass verdicts are satisfied.
+- AR-140: local Linux narrowing/cache p95 1.081/0.201 ms; fresh version-command
+  median 16.989 ms; all three retrieval time/memory budgets pass. Exact report:
+  acceptance/evidence/AR-140-linux-routing-20260907.json. Required recall and
+  top-one relevance 1.0, precision at three 0.6364 above 0.60, forbidden zero.
+  Focused 135 pass/two performance tests deselected, plus 67 pass; standalone
+  complete evaluation supplies performance evidence. Not a staffing decision.
 
 ## Exact blocker
 
-AR-138 verification is complete; record publication and normal PR merge remain.
+AR-140 retains isolated supported-runner proof, including the owner's Windows
+arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
 success/failure and full parent Stop capture. Do not invent a headless backend
 or promote a stubbed hook test into native proof. This does not block the next
@@ -109,25 +115,24 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Commit AR-138's supplied satisfied verdicts and done/count records, then its
-   immediate ledger. Repaired candidate 2ecde1a5 and failed first review 25b9a67a
-   remain immutable; do not rewrite evidence or launch another acceptance pass.
-2. Complete documentation/tracker checks, ready and merge PR #700 normally.
+1. Commit AR-140's current evidence and retained-record reconciliation, then its
+   immediate exact ledger. No acceptance flip or duplicate tracker.
+2. Complete documentation/tracker checks and merge one disposition PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
-3. Start an owned AR-140 worktree, record the prior merge in its initial ledger,
-   and inspect that oldest unfinished record. AR-139 is retired; Windows excluded.
+3. Start an owned AR-145 worktree and record the prior merge. AR-141/142/144
+   are done, AR-143 retired; Windows work remains excluded.
 4. AR-135 retains its attended installed Agent/record-zero/full-Stop plan;
    it does not block an independent backlog disposition.
 
 ## Verification
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
-checks per package, with focused checks for touched behavior. AR-138 changes
-dashboard HTML/CSS/JavaScript plus optional QA tooling/tests. Use the current UI
-coverage command with 95/86/93 floors and source inclusion; the mistakenly
-used historical 95/90/96 command failed, not a current CI regression.
-No new exhaustive corpus,
-coverage/interpreter matrix, hosted dispatch or release/installed-live proof.
+checks per package, with focused checks for touched behavior. AR-140 changes
+only documentation/evidence. Git comparison proves product/tests/scripts equal
+to accepted AR-138 candidate 2ecde1a5: reuse its named spine/UI/conformance with
+that explicit scope, not a newly run claim. Current AR-140 focused/eval results
+are recorded separately. No exhaustive corpus, coverage/interpreter matrix,
+hosted dispatch or release/installed-live proof.
 The graphify graph is absent; bounded source inspection was used, with no
 graph build, specialist selection or native subagent staffing.
 

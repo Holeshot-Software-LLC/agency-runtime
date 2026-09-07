@@ -65,7 +65,8 @@ IDs and recover. The fixture uses a private five-agent Store, stubbed host
 inventory and denied outbound server connections. Exact versions, hashes,
 screenshots and limits are in the repaired evidence. This is not full WCAG,
 screen-reader or native-host certification. No staffing/host policy change.
-Scoped package accepted; publication through PR #700 remains before the next item.
+Scoped package accepted and merged through PR #700 at 1ada216c on September 7,
+05:28:53Z. The exact publication receipt is in the worklog.
 
 ## Approach
 

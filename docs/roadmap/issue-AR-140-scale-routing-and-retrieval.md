@@ -3,11 +3,16 @@ title: "AR-140: Scale routing, retrieval, and CLI startup"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-09-07
 tags: [performance, routing, retrieval, cli, benchmarks]
 related:
   - docs/roadmap/issue-AR-11-routing-evaluation-and-performance.md
   - docs/decisions/0030-versioned-quantitative-evaluation-gates.md
+  - docs/decisions/0121-gate-deterministic-recall-without-selection-authority.md
+  - docs/roadmap/issue-AR-253-dynamic-team-dispatch-on-every-harness.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/roadmap/acceptance/evidence/AR-140-current-performance-20260907.md
+  - docs/worklog/README.md
   - agency_runtime/core/selector/semantic_retrieval.py
   - agency_runtime/core/preflight.py
 supersedes: []
@@ -25,12 +30,39 @@ blocks: []
 
 ## Problem
 
+Historical July 26 report, not a claim that these failures still reproduce:
+
 The isolated cached-routing p95 gate exceeds 2 ms in every current sample.
 Semantic retrieval scales to seconds and hundreds of MiB at 10,000 agents, and
 CLI startup is roughly 840 ms. Full-route warm latency remains tens of
 milliseconds even when the narrow microbenchmark is fast.
 
 ## Current state
+
+September 7 oldest-first review: the bounded implementation is present and its
+current local Linux controls pass. Retain this record for the explicit isolated
+supported-runner evidence in criterion 2; Windows execution remains with the
+owner. There is no new optimization, gate relaxation or acceptance verdict in
+this disposition. The original five criteria and historical observations remain.
+
+ADR-0121 supersedes ADR-0030's selection interpretation. Current routing eval
+v1.5 measures deterministic candidate recall, policy/delegation classification,
+retrieval scale and startup. Its complete-cache-path probe seeds a labelled
+synthetic inference receipt; it is not real staffing or a cold provider call.
+AR-253 separately owns end-to-end staffing rates, latency and host proof.
+
+At source 1ada216c (review checkpoint 82fb2028), all versioned local gates pass:
+required recall/top-one relevance 1.0, forbidden rate zero; narrowing p95
+1.081 ms; complete-cache-path p95 0.201 ms; CLI version startup p50 16.989 ms
+across seven fresh processes. The 263/1,000/10,000-agent budgets all pass,
+including the unchanged 10,000-row result hash. Two focused suites pass 202
+tests, with two separately exercised performance tests deselected from the
+135-test functional arm. The linked evidence preserves every benchmark sample,
+budget, platform, source identity and remaining boundary. No native Windows or
+hosted isolation evidence was acquired, and the local timings are not the
+owner's 75-second staffing measurement.
+
+### Historical pre-repair measurements
 
 Initial cached p95 samples were 2.193-3.579 ms; uncached correctness and the
 20 ms ceiling passed. A first optimization restored isolated results but an
@@ -57,6 +89,21 @@ made no routing-visible change.
 ## Dependencies
 
 AR-130 forbids unsafe trust caching. AR-133 provides safe transaction batching.
+
+## Remaining bounded plan
+
+1. On an isolated supported runner, run the unchanged versioned routing
+   evaluation and focused cache/snapshot tests against one pinned revision.
+   Preserve the whole report and runner/command identity, including failures;
+   do not rerun until one sample happens to pass or alter budgets for closure.
+2. The owner supplies the native Windows arm. This Linux developer-host
+   observation is not a substitute for that arm or hosted isolation proof.
+3. If a gate genuinely regresses, profile that exact failing arm and repair
+   the measured cause without removing mutation/trust checks or inference
+   authority. Otherwise do not reimplement the completed optimization list.
+4. Once the required runner evidence exists, build one acceptance record and
+   obtain isolated verdicts before marking done. AR-253 retains real staffing
+   latency/quality work; no recall/cache result satisfies that separate claim.
 
 ## Acceptance
 
