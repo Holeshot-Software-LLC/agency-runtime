@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
+  - docs/roadmap/acceptance/evidence/AR-191-v2-checklist-retirement-20260907.md
   - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
@@ -19,9 +21,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar184-linux-producer-reconciliation
-evidence_commit: 30214408a0073e69550ba695b99ef68d9238f857
-minimum_ledger_commit: 5ccca3c36e9ee63b833531787e8bddcfcdcaa649
+branch: codex/ar191-v2-checklist-retirement
+evidence_commit: c64ce3ce54c6e51280292298b5e3600611cb72fc
+minimum_ledger_commit: d28ccc232dcc00af0162a2409930dd272bf97b5f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -51,8 +53,19 @@ AR181 merged PR #731/2274823c. AR183 detached Linux producer evidence now
 passes at08fab1c4; same-SHA Windows equality/merged release set remain held.
 AR183 merged PR #733/30214408. AR184 reuses that exact producer receipt;
 both retain only their meaningful cross-platform proof obligations.
+AR-184 merged PR #734/c64ce3ce; its faithful merge ledger is d28ccc23.
+AR-191's records-only retirement is prepared on that source, not yet published:
+obsolete grant checklist becomes wont_do under ADR-0236, successor AR-255.
+All original checkbox states remain; no broader live requirement is waived.
 
 ## Completed evidence
+
+AR-191: exact aliases, argument preservation, truthful exit codes and existing
+Store safeguards remain; 23 fresh offline tests pass. Removed one-use grant
+APIs and deliberately rejected invalid-turn fallback are not restored. Reused
+AR-180 evidence proves only restricted one-card exec, not child-only placement,
+ordinary encrypted spawns, TUI/Desktop or multi-card delivery. Retirement is
+not acceptance of the original nine criteria or closure of AR-180/AR-255.
 
 AR-407: actual scoped-warning repair, 158 focused/one Windows deselection,
 independent review no findings/35 pass, fresh spine1085/three skips and UI224.
@@ -98,21 +111,23 @@ variable. No current-turn header snapshot; do not reinstall OpenClaw.
 
 ## Same-task continuity
 
-Owned tree: codex/ar184-linux-producer-reconciliation. Do not commit main or touch
+Owned tree: codex/ar191-v2-checklist-retirement. Do not commit main or touch
 another worker's dirty tree. Substantive commits get immediate narrow worklog
 ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
 AR-180 remains one-card exec only; parent also contains the same card, so its
 child-only wording is not literally met. AR-181 Windows remains unverified.
-Fanout now prepares AR-185, AR-189 and isolated uv-plan proof for AR-190.
-Parent owns publication, acceptance and shared-registry changes.
+Parent coordinates AR-185/AR-408 publication, followed by AR-189/order43 and
+AR-190/order44. This independent AR-191 checkpoint reserves order45 and waits
+for the parent's publication signal; merge current main normally, never rebase
+away another worker's checkpoint.
 
 ## Next bounded work package
 
-1. Publish AR184 shared Linux proof and retained Windows comparison hold.
-2. Verify AR185 exact activation packet, then189/190; Windows holds stayopen.
-3. Fanout prepares truthful staffing-failure receipts: five calls can exhaust
-   the budget before the critic, and routing drops effective timeout evidence.
+1. Complete parent-coordinated AR-185/AR-408 and AR-189/190 publication first.
+2. Publish AR-191 retirement at order45, then continue AR-192; keep Windows holds.
+3. Keep staffing failure receipts and mandatory-call reservations separate from
+   unproven quality-equivalence or all-host live-staffing claims.
 4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification

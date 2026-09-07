@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
+  - docs/roadmap/acceptance/evidence/AR-191-v2-checklist-retirement-20260907.md
   - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
@@ -360,6 +362,15 @@ The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
 
+AR-191's records-only checkpoint retires the obsolete July V2 activation-grant
+checklist under ADR-0236, superseded by current AR-255 staffing authority.
+Its exact aliases, arguments, exit-code reporting and existing-Store guards
+remain implemented; 23 fresh offline checks pass. All original checkbox states
+are preserved. AR-180's restricted one-card exec proof is not the removed grant
+graph or its broader TUI/Desktop/multi-card/child-only acceptance. Parent
+publishes this retirement at order45 after AR-189/190; until then it is only a
+branch disposition. No tracker action or fresh global count is claimed.
+
 The owner requires oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
 The [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md) is the
@@ -587,7 +598,9 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish accepted AR-175 through one normal PR/merge, then review AR-176.
+Complete parent-coordinated AR-185/AR-408 publication, then AR-189 and AR-190;
+publish AR-191's retirement at order45 before continuing AR-192. Preserve every
+retained Windows and broader live-evidence hold.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override

@@ -256,6 +256,7 @@ Status meanings:
 | [ADR-0229](0229-reconcile-dashboard-disclosure-with-owner-authority.md) | Reconcile dashboard disclosure with current owner authority | Accepted |
 | [ADR-0230](0230-reconcile-response-correlation-with-owner-controls.md) | Reconcile response-correlation acceptance with owner controls | Accepted |
 | [ADR-0234](0234-retire-superseded-manual-ci-checklist.md) | Retire the superseded mandatory manual-CI checklist | Accepted |
+| [ADR-0236](0236-retire-obsolete-codex-v2-grant-checklist.md) | Retire the obsolete Codex V2 activation-grant checklist | Accepted |
 | [ADR-0098](0098-pair-portable-and-win-amd64-wheels.md) | Pair portable and win_amd64 wheels for native delivery | Superseded |
 | [ADR-0099](0099-separate-reproducible-unsigned-builds-from-signed-delivery.md) | Separate reproducible unsigned builds from signed delivery | Superseded |
 | [ADR-0219](0219-retire-removed-helper-release-obligations.md) | Retire removed-helper release obligations without waiving artifact proof | Accepted |
