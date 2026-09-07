@@ -1,11 +1,15 @@
 ---
 title: "AR-177: Make exhaustive Python CI manual"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [ci, github-actions, cost, testing, coverage, performance]
 related:
+  - docs/decisions/0234-retire-superseded-manual-ci-checklist.md
+  - docs/roadmap/acceptance/evidence/AR-177-manual-ci-reconciliation-20260907.md
+  - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
   - docs/decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md
   - docs/decisions/0100-short-circuit-trusted-docs-only-pull-requests.md
@@ -16,7 +20,7 @@ related:
   - tests/test_ci_session_pair.py
   - tests/test_release_packaging.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
 type: issue
 epic: testing
 issue_id: AR-177
@@ -27,6 +31,14 @@ blocks: []
 ---
 
 # AR-177: Make exhaustive Python CI manual
+
+> Retired September 7 under ADR-0234, not accepted against the old checklist.
+> The manual-only implementation exists at 60543e1 and 222 current focused
+> contracts pass. AR-186/ADR-0105 supersede its mandatory manual-run/release
+> completion requirements. One retained manual hosted run failed at whitespace
+> validation; no full topology pass or billing repair is claimed. The four
+> shards, 97-percent floor, six compatibility sessions and original criteria
+> below remain unchanged. No new exhaustive or Windows-native run was launched.
 
 ## Problem
 
@@ -62,7 +74,8 @@ ADR-0097 owns fail-closed fanout and the stable aggregate. ADR-0100 owns the
 documentation-only lane. ADR-0101 records the explicit spend-versus-automatic-
 coverage decision.
 
-Tracker creation remains pending explicit outward-write authorization.
+This is an exempt pre-tracker legacy record; no duplicate tracker is created
+for its retirement. Current local/tracker parity checks still apply.
 
 ## Acceptance
 

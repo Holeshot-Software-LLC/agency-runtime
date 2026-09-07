@@ -3,16 +3,19 @@ title: "AR-186: Bound delivery to live demo checkpoints"
 status: done
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [governance, delivery, testing, demo, cost]
 related:
+  - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
+  - docs/decisions/0234-retire-superseded-manual-ci-checklist.md
   - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - AGENTS.md
   - CONTRIBUTING.md
   - docs/RELEASE_CHECKLIST.md
   - docs/NORTH_STAR_ACCEPTANCE.md
-supersedes: []
+supersedes:
+  - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
 superseded_by: null
 type: issue
 epic: documentation-governance
