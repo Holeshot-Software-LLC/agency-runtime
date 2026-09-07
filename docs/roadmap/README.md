@@ -203,7 +203,7 @@ bounded package are in AR-404's
 | `AR-157` | [Treat public HTTP client disconnects as transport completion](issue-AR-157-quiet-public-http-disconnects.md) | done | p1 | observability | pre-tracker history; verified acceptance |
 | `AR-158` | [Disambiguate multi-surface observation test evidence](issue-AR-158-disambiguate-multi-surface-observation-tests.md) | done | p1 | observability | pre-tracker history; verified acceptance |
 | `AR-159` | [Enforce production branch protection](issue-AR-159-enforce-production-branch-protection.md) | open | p0 | release | pre-tracker history; hosted enforcement awaiting owner |
-| `AR-160` | [Publish platform-honest native release artifacts](issue-AR-160-publish-platform-honest-native-release-artifacts.md) | in_progress | p0 | release | pending authorization |
+| `AR-160` | [Publish platform-honest native release artifacts](issue-AR-160-publish-platform-honest-native-release-artifacts.md) | in_progress | p0 | release | pre-tracker history; current Linux pair verified, Windows/paired proof retained |
 | `AR-161` | [Sign and license Windows operator-presence delivery](issue-AR-161-sign-and-license-windows-operator-presence-delivery.md) | done | p0 | release | retired by AR-197 |
 | `AR-162` | [Collapse unavailable CodeQL fanout](issue-AR-162-collapse-unavailable-codeql-fanout.md) | open | p1 | testing | pending authorization |
 | `AR-163` | [Reopen stale remediation resolution authority](issue-AR-163-reopen-stale-remediation-authority.md) | in_progress | p1 | security | pending authorization |

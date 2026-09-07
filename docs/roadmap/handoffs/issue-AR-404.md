@@ -10,7 +10,8 @@ related:
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
   - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
-  - docs/roadmap/acceptance/evidence/AR-159-branch-protection-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-160-linux-artifacts-20260907.md
+  - docs/roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
@@ -19,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar159-oldest-first-reconciliation
-evidence_commit: b2ea5946515123a95ef4ce13a6ea7c333aec76d4
-minimum_ledger_commit: 7dccf1e182a2c5e3ca13b0227a9ad15e468fdc8e
+branch: codex/ar160-oldest-first-reconciliation
+evidence_commit: f1c7d0b06f23f6683b367c31ff913d5cf7369645
+minimum_ledger_commit: f1c7d0b06f23f6683b367c31ff913d5cf7369645
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -31,38 +32,43 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owner resumed: one oldest record, one PR, normal merge, then next; no routine
-approval pauses. Native Windows remains with the owner. The oldest-first ledger
-owns full history. AR-158 is accepted with seven satisfied criteria at 95085a30;
-PR #710 merged b2ea5946 at 08:41:00Z September 7. Clean main was fast-forwarded
-before this AR-159 tree; 7dccf1e1 records publication.
+approval pauses. Windows remains with the owner. AR-159 is retained open;
+PR #711 merged b499e7fb at 08:57:15Z September 7. Clean main was fast-forwarded
+before this separate AR-160 tree; f1c7d0b0 records that publication.
 
-AR-159 remains open after a current read-only audit. Main is unprotected,
-protection returns 404, rulesets including parents are empty, and current main
-has zero check runs/status contexts. Latest listed CI/repository CodeQL runs
-are August 31/cancelled; dependency review succeeded at that old candidate.
-No current billing diagnosis is established. A separately active dynamic CodeQL
-workflow needs reconciliation before choosing required check identities.
-All seven original acceptance criteria remain unchanged.
+AR-160 retains the current no-helper paired-artifact contract under ADR-0219.
+Both profiles reject executable/valid PE content. Historical helper text is
+now explicitly separated from current state. All five current criteria stay
+unchanged and unchecked. No packaging/runtime/test/workflow change.
 
 ## Completed evidence
 
-- Source snapshot b2ea5946; no runtime, test, script or workflow changes.
-- Focused quality/CodeQL/dependency-review/docs-only contracts: 104 pass,
-  16 deselected, zero skips/failures, 3.02 seconds, warning-strict.
-- API observations and source aggregate names are recorded in
-  acceptance/evidence/AR-159-branch-protection-20260907.md. Names are not approved
-  check/app bindings. Empty rollups and ordinary merges are not CI proof.
-- Reuse AR-156's unchanged named spine (1085/three existing skips), UI
-  (188/current floors), and installed-wheel browser receipt (21 loaded checks).
-- Counts: 40 actual open trackers plus 89 unfinished legacy records, 129 local
-  unfinished. No duplicate legacy tracker or false acceptance.
+- Fresh focused release/build/verifier/isolation tests: 258 pass, one actual
+  native-Windows case deselected, no skips/failures, 35.56s, warning-strict.
+- Clean candidate f1c7d0b0 builds one canonical Linux wheel/source pair.
+  Independent portable verification and strict Twine pass; exact SHA-256 values
+  are retained in acceptance/evidence/AR-160-linux-artifacts-20260907.md.
+- Separate fresh Python 3.12.3 wheel/source installs each pass packaged smoke:
+  ten assets, config, 265-agent roster, two inference-unavailable selection cases,
+  MCP eight-tool/status call and authenticated loopback dashboard health.
+- Each install passes all eight deterministic checks including generated Claude,
+  Codex, Hermes, OpenClaw and ZCode bundles, zero skips. CLI help/version and
+  pip check pass. Imports resolve to separate installed site-packages.
+- AR-156 unchanged-input spine/UI/browser receipts reused, not rerun here.
+- Counts unchanged: 40 actual open trackers plus 89 unfinished legacy records,
+  129 local unfinished. No duplicate tracker or false acceptance.
 
 ## Exact blocker
 
-AR-159 enforcement is waiting_for_operator: explicit hosted-settings, bypass/
-emergency and recoverable demonstration authority plus current successful PR
-check/app evidence. No unsafe main probe, setting change, workflow dispatch or
-subscription action. This hold does not stop independent backlog packages.
+AR-160 awaits owner Windows producer and same-candidate paired-source/shared-
+payload/assembled-release proof, applicable live host evidence and publication
+authority. Linux synthetic Windows fixtures/generated smoke are not those gates.
+Do not retag a Linux wheel, reintroduce the removed helper or claim live loading.
+
+AR-159 awaits explicitly approved hosted enforcement, current check/app identities
+and named bypass/emergency/readback proof. Fresh main is unprotected with no
+rulesets or current checks; old billing cause is not freshly established. The
+extra dynamic CodeQL workflow requires read-only identity reconciliation.
 
 AR-156 retains owner Windows/profile and hosted topology proof; all thirteen
 criteria remain. Its four Windows-profile assumptions fail unchanged Linux
@@ -82,18 +88,17 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Publish AR-159 retention and read-only evidence through one normal PR.
+1. Publish AR-160's current Linux evidence and retained gaps in one normal PR.
 2. Read back the merge and fast-forward clean main.
-3. Start AR-160 separately. ADR-0219 retired removed Windows-helper obligations;
-   retain genuine artifact proof without restoring the helper or performing
-   the owner's native Windows work.
+3. Start AR-162 separately; AR-161 is already retired. Do not alter hosted
+   CodeQL licensing or settings without explicit authority.
 
 ## Verification
 
 Run metadata, policy, exact worklog, strict docs/tracker, Ruff and diff checks.
-No fresh corpus, aggregate coverage, native Windows, exhaustive matrix or host
-canary is claimed. Reused results name unchanged inputs. Bootstrap telemetry:
-84.1 percent at 08:46:36Z. Graphify graph absent; bounded inspection only.
+No fresh corpus, coverage matrix, native Windows or live host canary claimed.
+Pre-installed-smoke telemetry was 57.5 percent at 09:00:21Z with a clean
+candidate. Reused receipts name unchanged inputs. Graphify absent; no graph build.
 
 ## Constraints
 

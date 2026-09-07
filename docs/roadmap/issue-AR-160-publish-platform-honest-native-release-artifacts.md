@@ -3,9 +3,10 @@ title: "AR-160: Publish platform-honest native release artifacts"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-09-05
+updated: 2026-09-07
 tags: [release, packaging, windows, portability, reproducibility]
 related:
+  - docs/roadmap/acceptance/evidence/AR-160-linux-artifacts-20260907.md
   - docs/decisions/0219-retire-removed-helper-release-obligations.md
   - docs/roadmap/AR-404-backlog-dispositions-20260905.md
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
@@ -35,17 +36,72 @@ blocks: []
 
 # AR-160: Publish platform-honest native release artifacts
 
-## Current delivery scope (2026-09-05)
+## Current delivery scope (2026-09-07)
 
 ADR-0219 supersedes the helper-specific contract below. This issue remains open
 for current paired Windows/Linux artifact proof, not for restoring or signing
 the removed Windows Hello helper. Both wheel profiles are deliberately retained
 and neither admits executable or PE payloads. AR-167/169 are retired; their
 general integrity checks remain in the current build and verification tests.
-The following historical sections describe the original implementation, not
+The explicitly historical sections below describe the original implementation, not
 the current product. Their checked boxes do not satisfy the new current gate.
 
 ## Problem
+
+The no-helper package still needs candidate-bound Windows/Linux producer,
+install and paired-artifact evidence. Old helper receipts do not prove the
+current release contract; Linux fixtures cannot certify a Windows producer.
+
+## Current state
+
+Retain in_progress under ADR-0219; no runtime or packaging redesign is needed
+for this disposition. September 7 source inspection and 258 focused tests
+confirm canonical construction, archive/metadata/path integrity, both no-PE
+profiles and independent release-set verification. One native-Windows case
+was deselected for the owner; no tests failed or were skipped.
+
+Clean f1c7d0b06f23f6683b367c31ff913d5cf7369645 produced a new Linux portable
+wheel/source pair. Independent portable verification and strict Twine pass.
+Fresh separate Python 3.12.3 installs of both artifacts pass CLI help/version,
+pip check, packaged MCP/dashboard/config/roster/selection checks, and all eight
+deterministic smoke checks, including all five generated host bundles. There
+were no smoke skips. These are generated/isolated contracts, not live host
+activation or real staffing/hiring proof. Exact hashes, scope and commands are
+in the [Linux receipt](acceptance/evidence/AR-160-linux-artifacts-20260907.md).
+
+The original five current acceptance criteria below remain unchecked and
+unchanged. No current Windows producer, identical two-producer source pair,
+assembled release set, attended host matrix or release publication is claimed.
+AR-159's September 7 audit establishes missing current hosted checks, not a
+current billing diagnosis. Legacy tracker_url remains null under its existing
+exemption; no duplicate issue is created.
+
+## Approach
+
+1. Keep this Linux candidate/receipt explicit. When the owner supplies the
+   native Windows arm, use the same reviewed commit on both producers or
+   regenerate both at one newly agreed clean candidate.
+2. Retain each host-derived wheel/source pair. Compare the two source archives
+   and shared wheel payloads, then independently verify exactly two wheels and
+   one source distribution. Never simulate a Windows producer by retagging the
+   Linux artifact or injecting the removed helper.
+3. Record fresh platform-appropriate installs, supported-host smoke and applicable
+   release-checklist evidence, separating generated contracts, native loading,
+   live canaries and publication authority.
+4. Freeze all five criterion rowsets for isolated acceptance before completion.
+   Hosted controls and actual publication require their own explicit approval.
+
+## Dependencies
+
+AR-107/168/181/183/184 and ADR-0074 provide canonical construction, source
+manifest, bounded launcher and mode integrity. ADR-0219 governs the current
+two-profile no-helper contract. AR-161's removed-helper signing obligation is
+retired, not an unresolved dependency. Native Windows remains with the owner;
+current hosted evidence and release authority remain explicit separate holds.
+
+## Historical implementation before helper removal
+
+### Original problem
 
 The package contains an x86-64 Windows PE executable used by the first operator-
 presence implementation. Before this work package, its only wheel advertised
@@ -55,7 +111,7 @@ specific tag, even though it is not a Python extension module. Publishing that
 former artifact would have overstated compatibility and installed unusable
 Windows-only bytes on Linux, Windows ARM64, and other unsupported systems.
 
-## Current state
+### Historical producer evidence
 
 The source now derives one immutable wheel profile from the actual build host.
 Supported Windows x64 produces `py3-none-win_amd64` with
@@ -75,7 +131,7 @@ executable or PE payload. Current hosted cross-OS proof is still pending because
 repository Actions billing is disabled; no publication claim follows from
 local evidence alone.
 
-## Approach
+### Original approach
 
 Complete and prove ADR-0098 as one same-version release set with a portable
 `py3-none-any` wheel and a `py3-none-win_amd64` wheel. The portable wheel excludes
@@ -95,7 +151,7 @@ release. Reject a missing variant, duplicate or cross-contaminated PE,
 incorrect filename/WHEEL/root tag, metadata drift, non-identical source
 distributions, shared-payload drift, or artifacts from different commits.
 
-## Dependencies
+### Original dependencies
 
 AR-107 and ADR-0074 provide the canonical Git-blob, deterministic-container,
 and independent-verification foundation. AR-161 separately owns publisher
