@@ -3,9 +3,11 @@ title: "AR-163: Reopen stale remediation resolution authority"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [security, roster, remediation, hmac, observability]
 related:
+  - docs/roadmap/acceptance/issue-AR-163.md
+  - docs/roadmap/acceptance/evidence/AR-163-remediation-authority-20260907.md
   - docs/roadmap/issue-AR-95-bind-remediation-resolution-authority-to-complete-durable-evidence.md
   - docs/decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md
   - agency_runtime/core/roster/sync.py
@@ -40,6 +42,12 @@ refresh if the shortened first page remained a prefix of the loaded rows.
 
 ## Current state
 
+September 7 current-code review confirms the original f64ba1e implementation
+remains present. Fresh complete remediation/API-projection tests pass 167 cases
+and all 188 dashboard tests pass. No runtime or test change is needed. All eight
+original acceptance requirements are unchanged and await isolated verification;
+this is a completion candidate, not a newly reopened product defect.
+
 The durable HMAC still proves immutable historical evidence. Queue suppression
 now additionally requires current candidate eligibility: a pending or approved
 candidate must retain its quarantined download and latest passing audit under
@@ -68,30 +76,30 @@ AR-95 owns the durable evidence and signature boundary. ADR-0066 requires every
 upstream repair to remain quarantined and non-executable until governed review,
 approval, and activation complete.
 
-Tracker creation remains pending owner authorization; no outward tracker write
-was performed in this local implementation session.
+AR-347's governed pre-tracker exemption applies. No duplicate tracker is needed;
+strict documentation and tracker parity are checked before publication.
 
 ## Acceptance
 
-- Rejected candidates and stale latest audit bases cannot suppress a remediation
+- [ ] Rejected candidates and stale latest audit bases cannot suppress a remediation
   queue entry or appear in current resolution history.
-- An exact replay of a previously valid signed marker cannot restore current
+- [ ] An exact replay of a previously valid signed marker cannot restore current
   authority after its candidate becomes ineligible.
-- A modified HMAC remains rejected by the existing insertion boundary.
-- Approval and activation continue to fail closed for rejected or audit-stale
+- [ ] A modified HMAC remains rejected by the existing insertion boundary.
+- [ ] Approval and activation continue to fail closed for rejected or audit-stale
   candidates.
-- Reopening projects the original queue event and creates no duplicate queue or
+- [ ] Reopening projects the original queue event and creates no duplicate queue or
   resolution event.
-- Current, stale, and unvalidated resolution counts are disjoint and sum to the
+- [ ] Current, stale, and unvalidated resolution counts are disjoint and sum to the
   raw resolution count.
-- Expanded remediation pages survive a refresh only when the server proves the
+- [ ] Expanded remediation pages survive a refresh only when the server proves the
   same current projection revision and the returned first page remains an exact
   prefix; reopening cannot leave one queue event visible as both pending and
   resolved history.
-- The dashboard labels stale signed authority separately from unvalidated raw
+- [ ] The dashboard labels stale signed authority separately from unvalidated raw
   records without exposing prompt content or signing material.
 
-## Implementation evidence
+## Historical implementation evidence
 
 The current affected suites pass 134 remediation tests and 32 dashboard
 projection tests, including rejection/replay, active-basis drift, revision
@@ -99,3 +107,14 @@ invalidation, and bounded disclosure regressions. The complete dashboard UI
 suite passes 102 tests. Focused Ruff lint and format checks and scoped
 `git diff --check` pass. Full repository integration, the final release gate,
 and tracker creation remain pending outside this bounded local slice.
+
+## Current verification evidence
+
+The [September 7 receipt](acceptance/evidence/AR-163-remediation-authority-20260907.md)
+records 167 warning-strict Python passes (14.39s) and 188 DOM passes (197.292186 ms),
+with no skips or failures. Exact product/test/script/config bytes match fcdcd6eb;
+reuse its named spine receipt, 1085 passes and three existing skips. Existing
+same-byte loaded-browser evidence remains broader context, not a fresh launch.
+No full corpus/matrix, hosted dispatch, Windows or native-host claim is made.
+The earlier integration/tracker-creation tail is historical, not an extra current
+acceptance criterion. No requirement was weakened to obtain completion.
