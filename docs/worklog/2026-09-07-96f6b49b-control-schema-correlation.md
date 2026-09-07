@@ -78,3 +78,7 @@ adbf197e (adbf197e04890d74c445257d6a0a856eb522093f) freezes all six builder pack
 ## First isolated review
 
 8ed3c516 (8ed3c516b0941c098078a31f34661155993691a1) preserves five satisfied criteria and criterion 6 absent. Read-only prompt inspection shows overlapping 120-line heading excerpts exhausted the 32-KiB packet budget, silently omitting the cited browser and spine excerpts. The underlying browser run passed. Narrow criterion 6 to exact line ranges at the same candidate, verify every excerpt fits, and recheck only that failed criterion as the second review; no runtime changes or invented verdicts.
+
+## Bounded final packet
+
+d86a9303 (d86a93036333e430d76cc483943935e5d9e1598d) changes only criterion 6's citations at the unchanged candidate. The dry-run includes all seven excerpts, 17,149 characters, with none omitted. First verdicts stay in 8ed3c516; only criterion 6 is rechecked. It also retains the exact owner-installed Claude namespace permission correction and observed all-host readiness, without claiming native activation.
