@@ -88,3 +88,7 @@ acceptance and normal PR/merge. Continue oldest-first until the owner's cutoff.
 ## Final reviewed candidate
 
 8b4c1fca (8b4c1fca2205e3132133e6ecc4c4ef62238bc653) seals the current 15-module run (525 passes, one skip, 64 Windows-named deselections; 84.33s), fresh named spine (1085 passes, three skips; 72.16s) and strict records. Prior UI and Node contracts remain unchanged. The final isolated review will rerun all eight criteria at this new candidate; first verdicts remain at 969f7190.
+
+## Final verification packet
+
+201d0cfc (201d0cfc8ba1578b3eaf52dd35d94c8a6a3112be) binds all eight criteria to 8b4c1fca. All cited excerpts fit after dry-run validation; real Store authority replaces the deliberately isolated cache helper, and the exact six-failure summary is present. This is the second/final independent pass, not an erased first review.
