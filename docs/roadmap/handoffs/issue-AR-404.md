@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar163-oldest-first-reconciliation
-evidence_commit: a01abe81d75de988526e58acac6adfaddce1a18a
-minimum_ledger_commit: 4103d1b8a341c7ca3b3cb6ba69bcd3961ef187b4
+evidence_commit: fd551fd49bf535c939e66ba5c387fd872621ac67
+minimum_ledger_commit: d102b3cb9dfe33e7329653783573a28ca5d7aeaf
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -88,8 +88,8 @@ continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit AR-163's current evidence and immediate ledger, then freeze its eight
-   builder rowsets to that candidate and run isolated checks once.
+1. Eight builder rowsets are frozen at fd551fd4 with ledger d102b3cb. Commit
+   this freeze and immediate ledger, then run isolated checks once.
 2. If all satisfy, reconcile local completion/counts and publish one normal PR;
    read back its merge before starting the next record.
 3. Next is AR-164's repository-ancestor PATH boundary, in its own worktree.
