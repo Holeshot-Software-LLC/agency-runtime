@@ -106,3 +106,8 @@ tree 3c1ebc98978290931089d92aa45f52cde4cc1710 and test tree
 fe9be82ff397408d31c50ef30252fecf672a2c9c are unchanged from the browser run
 through first review. No code/test/criterion change. All first verdicts remain
 at 662eb947; every criterion is rechecked because this evidence candidate is new.
+
+## Second-pass freeze
+
+9655a104 pins 91273e4128b2a8bc666edd8fcf6023c534a5d55e. The immediate ledger is clean before
+all nine second-pass checks; no satisfied result is carried across candidates.

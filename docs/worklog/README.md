@@ -2029,6 +2029,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5b322e20` | 2026-09-07 | docs(acceptance): freeze corrected AR-170 evidence candidate | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
 | `662eb947` | 2026-09-07 | docs(acceptance): preserve AR-170 first isolated verdicts | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
 | `91273e41` | 2026-09-07 | docs(acceptance): bind AR-170 browser proof to exact source trees | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
+| `9655a104` | 2026-09-07 | docs(acceptance): freeze AR-170 primary browser evidence | [AR-170](../roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md) | [Detail](2026-09-07-90654955-response-correlation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
