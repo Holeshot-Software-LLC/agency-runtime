@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-09-05
+updated: 2026-09-07
 tags: []
 related: []
 supersedes: []
@@ -1923,6 +1923,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `513dd6f4` | 2026-09-05 | docs(roadmap): retain current proof for implemented Store trust [AR-130] | [AR-130](../roadmap/issue-AR-130-revalidate-store-trust.md) | [detail](2026-09-05-513dd6f4-retain-store-trust-proof.md) |
 | `9199e020` | 2026-09-05 | docs(roadmap): pause backlog after saved AR-130 review [AR-404] | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [detail](2026-09-05-9199e020-pause-backlog.md) |
 | `f38720c7` | 2026-09-05 | Merge pull request #696 from Holeshot-Software-LLC/codex/ar130-oldest-first-reconciliation | [AR-130](../roadmap/issue-AR-130-revalidate-store-trust.md), [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [detail](2026-09-05-9199e020-pause-backlog.md) |
+| `fb2e4e23` | 2026-09-06 | test(mcp): verify current host contracts against legacy backlog [AR-131] | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-06-fb2e4e23-verify-mcp-host-contracts.md) |
+| `36af7429` | 2026-09-06 | docs(acceptance): freeze AR-131 current contract candidate | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-06-fb2e4e23-verify-mcp-host-contracts.md) |
+| `6a139e23` | 2026-09-06 | docs(acceptance): preserve AR-131 first review and admission gap | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-06-fb2e4e23-verify-mcp-host-contracts.md) |
+| `973acdb9` | 2026-09-07 | fix(api): reject lossy public delegation identifiers [AR-131] | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-07-973acdb9-reject-lossy-delegation-identifiers.md) |
+| `333e6411` | 2026-09-07 | docs(acceptance): freeze repaired AR-131 candidate | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-07-973acdb9-reject-lossy-delegation-identifiers.md) |
+| `61fbd6a5` | 2026-09-07 | docs(roadmap): complete AR-131 with six verified criteria | [AR-131](../roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md) | [detail](2026-09-07-973acdb9-reject-lossy-delegation-identifiers.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

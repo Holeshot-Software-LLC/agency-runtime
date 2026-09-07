@@ -3,9 +3,11 @@ title: "AR-176: Align full-gate fixtures with hardened runtime contracts"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-09-05
+updated: 2026-09-06
 tags: [testing, security, isolation, traceability, performance]
 related:
+  - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
+  - tests/test_public_api.py
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
   - docs/roadmap/issue-AR-130-revalidate-store-trust.md
   - tests/test_storage_parent_trust.py
@@ -55,6 +57,17 @@ time and would waste hosted budget if the same contract drift escaped fast
 quality gates.
 
 ## Current state
+
+September 6 AR-131 review confirms a sixth unrelated legacy failure:
+`tests/test_public_api.py::test_public_route_repairs_legacy_fallback_roster_without_opening_turns`
+expects two fallback companions under the offline fixture, while
+`selector/pipeline.py` explicitly suppresses fallbacks on inference failure.
+The exact test also fails on untouched main c1c5d9d9 (2.04s), so this is not
+caused by AR-131's delegation-admission repair. The expanded nine-module check
+has 380 passed, this one failed and eight existing skips (59.71s); it is not
+green. Reconcile its intended roster-repair setup with current inference
+authority here, preserving no-implicit-turn and operator-roster assertions.
+Do not restore inference-failure fallback behavior or skip the failing test.
 
 AR-130 reconciliation adds two confirmed stale assertions at d38e9d13 in
 `tests/test_storage_parent_trust.py`. The non-Windows parent/file run records

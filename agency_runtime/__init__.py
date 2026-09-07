@@ -323,10 +323,40 @@ class AgencyRuntime:
         skip_reason: str = "",
         error: str = "",
     ) -> str:
-        """Record one explicitly correlated delegation lifecycle event."""
+        """Record one correlated event with exact, bounded identifiers.
+
+        Public identifiers must already be canonical. Lossy values are rejected
+        before the low-level Store can normalize or merge their evidence.
+        """
         if not self._runtime_enabled():
             return ""
         self._require_active_turn(session_id, trace_id)
+        from agency_runtime.core.delegation_status import (
+            MAX_DELEGATION_AGENT_CHARS,
+            MAX_DELEGATION_BACKEND_CHARS,
+            MAX_DELEGATION_HOST_CHARS,
+            MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+            MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+            MAX_DELEGATION_WORKER_ID_CHARS,
+            MAX_DELEGATION_WORKER_KIND_CHARS,
+            validate_delegation_identifier,
+        )
+
+        # Active-turn validation checks correlation types and UTF-8 byte bounds,
+        # but deliberately permits trimming on other evidence surfaces.
+        for field, value in (("session_id", session_id), ("trace_id", trace_id)):
+            if value != value.strip():
+                raise ValueError(f"{field} must use canonical whitespace")
+        for field, value, maximum in (
+            ("host", host, MAX_DELEGATION_HOST_CHARS),
+            ("work_unit_id", work_unit_id, MAX_DELEGATION_WORK_UNIT_ID_CHARS),
+            ("recommended_agent", recommended_agent, MAX_DELEGATION_AGENT_CHARS),
+            ("backend", backend, MAX_DELEGATION_BACKEND_CHARS),
+            ("executed_worker_kind", executed_worker_kind, MAX_DELEGATION_WORKER_KIND_CHARS),
+            ("executed_worker_id", executed_worker_id, MAX_DELEGATION_WORKER_ID_CHARS),
+            ("native_run_id", native_run_id, MAX_DELEGATION_NATIVE_RUN_ID_CHARS),
+        ):
+            validate_delegation_identifier(value, field=field, maximum=maximum)
         if not str(work_unit_id or "").strip():
             raise ValueError("work_unit_id is required for delegation evidence")
         if not str(recommended_agent or "").strip():

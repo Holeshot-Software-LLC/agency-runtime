@@ -29,6 +29,25 @@ def bounded_delegation_field(value: object, *, maximum: int) -> str:
     return " ".join(str(value or "").split())[:maximum]
 
 
+def validate_delegation_identifier(value: object, *, field: str, maximum: int) -> None:
+    """Reject public identifiers that the defensive Store path would alter.
+
+    Native observations retain bounded normalization. Public evidence callers
+    must supply exact identifiers instead of silently aliasing another worker
+    or work unit through truncation, coercion or whitespace normalization.
+    Required-field checks remain with the lifecycle admission boundary.
+    """
+
+    if not isinstance(value, str):
+        raise ValueError(f"{field} must be a string")
+    if len(value) > maximum:
+        raise ValueError(f"{field} exceeds {maximum} characters")
+    if value and not value.isprintable():
+        raise ValueError(f"{field} must contain only printable characters")
+    if value != bounded_delegation_field(value, maximum=maximum):
+        raise ValueError(f"{field} must use canonical whitespace")
+
+
 def normalize_delegation_status(value: object) -> str:
     """Return one supported lifecycle status or reject ambiguous evidence."""
 
@@ -66,4 +85,5 @@ __all__ = [
     "bounded_delegation_field",
     "dominant_delegation_status",
     "normalize_delegation_status",
+    "validate_delegation_identifier",
 ]
