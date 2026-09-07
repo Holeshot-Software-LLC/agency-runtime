@@ -116,7 +116,8 @@ command for an owner terminal.
 ## Implementation evidence
 
 AR-190 implementation `8c7d8df` binds the attended installer to the owning
-environment. The September 7 [installed uv-plan receipt](../roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md)
+environment. Evidence commit `d1a9260c` and its September 7
+[installed uv-plan receipt](../roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md)
 uses an exact clean detached `c64ce3ce` wheel and the same immutable plan target.
 A legitimate default-directory uv environment without pip produced a usable
 nonexecuting plan, while all 669 compared prefix files, its entrypoint and uv

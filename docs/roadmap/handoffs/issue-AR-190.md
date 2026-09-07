@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-190
 branch: codex/ar190-uv-plan-reconciliation
-evidence_commit: c64ce3ce54c6e51280292298b5e3600611cb72fc
-minimum_ledger_commit: d28ccc232dcc00af0162a2409930dd272bf97b5f
+evidence_commit: d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f
+minimum_ledger_commit: ae1fe0fc79af974d14d5644f393d951bdc2d0918
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -28,7 +28,9 @@ tracker_url: null
 
 Evidence branch begins at exact main
 `c64ce3ce54c6e51280292298b5e3600611cb72fc`, then fast-forwarded to its
-existing clean ledger `d28ccc23`. The worker owns this worktree's substantive/
+existing clean ledger `d28ccc23`. Evidence is now committed at `d1a9260c`,
+with faithful ledger `ae1fe0fc`; the acceptance candidate is frozen at
+`d1a9260c`. The worker owns this worktree's substantive/
 ledger checkpoints and acceptance runs; parent serializes PR publication and
 merge. This evidence-only package is not a done issue. Product implementation
 already exists at `8c7d8df44aa35d4bb7ab7698abaf0f7b2a93e47b`.
@@ -63,7 +65,7 @@ The live installed-uv-plan gap is now evidenced. Normal ledger reconciliation
 resolved the inherited c64ce3ce merge-row failure: docs, metadata, worklog,
 policy-availability and diff checks now pass. Isolated acceptance verification
 is not yet complete.
-The pending builder has no verdict rows, and status remains `in_progress`.
+The frozen builder has no verdict rows yet, and status remains `in_progress`.
 
 The wheel's self-reported source revision is null, truthfully; its full source
 SHA is bound by the clean detached canonical build and independent verifier.
@@ -83,11 +85,10 @@ was reused before the isolated proof; worker checkpoints the completed slice.
 
 ## Next bounded work package
 
-1. Commit the exact c64ce3ce source/artifact/plan chain and clean record gates,
-   then record the faithful substantive commit in its ledger pair.
-2. Freeze the pending builder at its committed documentation
-   candidate, explicitly retaining c64ce3ce runtime-source equivalence.
-3. Run isolated acceptance checks, then change status only if all satisfy.
+1. Commit this frozen acceptance checkpoint and its faithful ledger pair.
+2. Recheck telemetry and verifier executable safety, then run the default
+   isolated verifier for all five criteria under `umask 077`.
+3. Preserve every actual verdict and change status only if all satisfy.
    Parent then authorizes the serialized PR. No owner reinstall or host canary
    is needed for this plan task.
 

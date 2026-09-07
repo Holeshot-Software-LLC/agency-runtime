@@ -1,5 +1,5 @@
 ---
-title: "AR-190 pending acceptance evidence"
+title: "AR-190 frozen acceptance evidence"
 status: active
 category: roadmap
 created: 2026-09-07
@@ -13,18 +13,17 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-190
-candidate_commit: pending
+candidate_commit: d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f
 evidence_cutoff: 2026-09-07
 tracker_url: null
 ---
 
-# AR-190 pending acceptance evidence
+# AR-190 frozen acceptance evidence
 
-Builder evidence only. Parent must integrate the shared ledger, preserve the
-actual documentation gate result, commit the evidence and freeze this record
-before invoking isolated verification. The live installed artifact and plan
+Builder evidence is frozen at committed receipt candidate `d1a9260c`, with
+faithful ledger `ae1fe0fc`. The live installed artifact and plan
 are both bound to c64ce3ce54c6e51280292298b5e3600611cb72fc; a later record-only
-candidate must retain that source-equivalence explanation. No verdict is
+candidate retains that source-equivalence explanation. No verdict is
 claimed from the original checked boxes.
 
 ## Builder evidence
@@ -60,9 +59,9 @@ claimed from the original checked boxes.
 
 ## Verification
 
-No verdict rows: candidate is pending. Do not mark the issue done from builder
-evidence or substitute the earlier 08fab1c4-to-c64ce3ce run for the final
-same-commit installed-candidate proof.
+The isolated runner owns every verdict row below. Do not mark the issue done
+from builder evidence or substitute the earlier 08fab1c4-to-c64ce3ce run for
+the final same-commit installed-candidate proof.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|

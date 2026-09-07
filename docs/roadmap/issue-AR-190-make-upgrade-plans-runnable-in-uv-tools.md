@@ -127,8 +127,9 @@ retained separately and not substituted for the final same-SHA candidate.
 Fresh focused update/CLI tests pass **67 tests in 0.83 seconds**; targeted
 Ruff lint and formatting pass. Normal merge-ledger reconciliation at
 `d28ccc23` restored passing docs, metadata, policy-availability and worklog
-checks. The pending builder contains evidence only, with no verdict or
-done-state change. Its later documentation candidate preserves identical
+checks. The builder is frozen at evidence commit `d1a9260c` with ledger
+`ae1fe0fc`, but has no verdict or done-state change yet. Its documentation
+candidate preserves identical
 runtime, producer, test and packaging-configuration Git objects; the receipt
 distinguishes that record-only candidate from the exact live c64ce3ce artifact.
 
