@@ -87,23 +87,39 @@ jobs:
                   raise SystemExit(f"{name} is not an HTTP status")
               return int(value)
 
+          def unique_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise ValueError("duplicate JSON key")
+                  result[key] = value
+              return result
+
+          def reject_constant(value):
+              raise ValueError("non-JSON numeric constant")
+
           def payload(name):
-              path = Path(os.environ.get(name, ""))
               try:
+                  path = Path(os.environ.get(name, ""))
                   metadata = path.lstat()
-              except OSError as exc:
-                  raise SystemExit(f"{name} is unavailable: {exc}") from None
-              if (
-                  path.is_symlink()
-                  or not stat.S_ISREG(metadata.st_mode)
-                  or int(getattr(metadata, "st_nlink", 0) or 0) != 1
-                  or not 0 < metadata.st_size <= maximum_bytes
-              ):
-                  raise SystemExit(f"{name} failed its bounded regular-file contract")
-              try:
-                  return json.loads(path.read_text(encoding="utf-8"))
-              except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-                  raise SystemExit(f"{name} is not bounded UTF-8 JSON: {exc}") from None
+                  if (
+                      path.is_symlink()
+                      or not stat.S_ISREG(metadata.st_mode)
+                      or metadata.st_nlink != 1
+                      or not 0 < metadata.st_size <= maximum_bytes
+                  ):
+                      raise ValueError("response is not a bounded regular file")
+                  with path.open("rb") as response:
+                      encoded = response.read(maximum_bytes + 1)
+                  if not 0 < len(encoded) <= maximum_bytes:
+                      raise ValueError("response exceeded the byte bound")
+                  return json.loads(
+                      encoded.decode("utf-8"),
+                      object_pairs_hook=unique_object,
+                      parse_constant=reject_constant,
+                  )
+              except (OSError, UnicodeError, ValueError, RecursionError):
+                  raise SystemExit(f"{name} is not bounded valid UTF-8 JSON") from None
 
           repository_status = status("REPOSITORY_HTTP_STATUS")
           comparison_status = status("COMPARISON_HTTP_STATUS")
@@ -128,7 +144,9 @@ jobs:
               raise SystemExit("repository identity and read authority were not proven")
 
           if comparison_status == 200:
-              if not isinstance(comparison, (dict, list)):
+              if not isinstance(comparison, list) or any(
+                  not isinstance(change, dict) for change in comparison
+              ):
                   raise SystemExit("dependency comparison returned malformed success JSON")
               available = True
               reason = "repository_dependency_review_available"

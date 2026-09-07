@@ -214,6 +214,15 @@ remains; no runtime or test change. First review at 083ae8b5 lacked actual tree
 output for criterion 5; its verdict remains at 6ac3b1aa. Exact Git evidence was
 added and all seven current criteria satisfy at 2a7c20c5 in the second review.
 AR-164 is complete within that scope, not a native Windows qualification claim.
+PR #715 merged ba6e55cb at 10:23:29Z September 7 before the AR-165 tree.
+
+AR-165 review reproduced duplicate JSON identity/error keys selecting fallback,
+and malformed object/non-finite success data selecting native review. Strict
+bounded parsing and array-of-objects success shape repair these cases without
+changing permitted paths, action pins or the aggregate. Focus 62, full workflow
+235 and fresh named spine 1085/three existing skips pass. ADR-0228 explicitly
+reconciles only 8/9 to claim-conditional hosted measurement and the legacy
+exemption; no savings or hosted-success claim. Nine isolated checks remain.
 
 Current counts: 40 actual open trackers plus 86 unfinished legacy records,
 126 total after AR-164 completion; no duplicate tracker or false acceptance.

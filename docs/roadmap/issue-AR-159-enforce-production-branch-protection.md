@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [release, security, github, governance, ci]
 related:
+  - docs/decisions/0228-reconcile-dependency-review-evidence-gates.md
   - docs/decisions/0226-gate-codeql-savings-claims-on-matched-measurements.md
   - docs/roadmap/acceptance/evidence/AR-159-branch-protection-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
