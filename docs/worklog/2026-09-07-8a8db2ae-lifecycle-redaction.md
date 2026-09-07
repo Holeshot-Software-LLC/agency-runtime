@@ -61,3 +61,12 @@ preserves the tested source, raw transcripts and recovery record before review.
 
 d85c696e freezes 8a8db2aeeae788829ae7dfc641142d7c04376e6e for all six isolated checks.
 No product/test change follows the observed passing runs.
+
+## Completion
+
+faa5bdb7 (faa5bdb77b86d2289ba4ce45045c0972b053da94) records all six first-pass satisfied verdicts at
+8a8db2ae; no retry or candidate change. AR-171 is done. Strict docs validate
+1199 Markdown files, strict tracker parity 397 mapped/two historical PR
+exceptions, and enumeration confirms 123 unfinished = 40 mapped + 83 legacy.
+No runtime change, new tracker or native Windows claim. Publish one normal PR
+and merge before reviewing the next oldest remaining record.
