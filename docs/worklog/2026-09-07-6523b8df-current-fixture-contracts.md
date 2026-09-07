@@ -15,7 +15,7 @@ type: worklog
 commit: 6523b8dfc8071c12b843f29555d551b3be0b0c74
 short: 6523b8df
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/725
 related_issues:
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
 ---
