@@ -45,6 +45,8 @@ AR-180 exact v6/card/parent-finalization correlation is recorded; remains open
 for TUI/Desktop/multi-card and literal child-only context requirements.
 AR-180 merged PR #730/24eede12. AR-181 remains in_progress for Windows timing;
 its contradictory home criterion is explicitly corrected under ADR-0026.
+New AR-408/#732 records truthful staffing-failure/timeout receipt defects;
+queue119 (41 mapped/78 legacy) until its reviewed repair is accepted.
 
 ## Completed evidence
 

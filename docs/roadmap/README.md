@@ -445,6 +445,7 @@ bounded package are in AR-404's
 | `AR-405` | [Make Windows directory-identity regressions portable](issue-AR-405-make-directory-identity-regressions-portable.md) | done | p1 | testing | [#675](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/675) |
 | `AR-406` | [Restore the configured dashboard UI function-coverage gate](issue-AR-406-restore-dashboard-function-coverage.md) | done | p2 | testing | [#682](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/682) |
 | `AR-407` | [Scope install drift warnings to requested hosts](issue-AR-407-scope-install-drift-to-requested-hosts.md) | done | p2 | install | [#727](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/727) |
+| `AR-408` | [Preserve truthful staffing failure and effective deadline receipts](issue-AR-408-preserve-staffing-failure-receipts.md) | in_progress | p1 | reliability | [#732](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/732) |
 
 ## Traceability
 
@@ -808,6 +809,7 @@ not stable internal identifiers.
 | [AR-405](issue-AR-405-make-directory-identity-regressions-portable.md) | Filed at `6edfa6d8`; `f0f5c386` (backlog disposition/evidence); `593f074f` (portable identity tests); `970293d7` (three isolated verdicts); `24e37e33` (verified closure); `78e501b7` (PR #678 merge; production unchanged) | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-406](issue-AR-406-restore-dashboard-function-coverage.md) | `b9d68e5d` (mixed-scope failure), `12a62393` (scope correction), `52acbe98` (freeze), `d109b094` (first verdicts and Git equality proof), `d6327c2f` (second evidence freeze); `b461c232` (three satisfied criteria); `e3c09d42` (accepted; done); `853de310` (PR #684 merged, #682 closed) | [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md), [ADR-0220](../decisions/0220-measure-dashboard-coverage-over-production-modules.md) |
 | [AR-407](issue-AR-407-scope-install-drift-to-requested-hosts.md) | pending implementation, `15a18861`, `dcd58720`, `625a1488`, `d5aed828`, `fdb010ff`; live mixed-host warning reproduced September 7 | Existing per-host projection authority; no policy change |
+| [AR-408](issue-AR-408-preserve-staffing-failure-receipts.md) | pending implementation; live five-call failure and timeout projection loss reproduced September 7 | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
 | [AR-348](issue-AR-348-enforce-strict-independence-in-production.md) | `2e5454bc` (red public-path reproduction), `c9b678a5` (resolved-chain enforcement and focused verification), `e22b5c32` (two satisfied criteria, 184 protected mutation kills, local completion), `0309f251` (PR #687 merge), `35d7f9b4` (exact installed delivery, 45 hiring regressions and eight smoke passes, tracker closure), `0a716813` (PR #688 publishes delivery evidence) | [ADR-0153](../decisions/0153-adopt-per-stage-inference-profile-routes.md), [ADR-0221](../decisions/0221-enforce-hiring-independence-on-resolved-provider-chains.md) |
 
 ## Dependency summary
