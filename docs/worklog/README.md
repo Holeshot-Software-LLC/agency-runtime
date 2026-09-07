@@ -1968,6 +1968,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6490c4b7` | 2026-09-07 | docs(acceptance): freeze AR-154 initial-page candidate | [AR-154](../roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md) | [detail](2026-09-07-e1c3069c-initial-page-state-proof.md) |
 | `f7557eff` | 2026-09-07 | docs(backlog): close verified initial-page validation [AR-154] | [AR-154](../roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md) | [detail](2026-09-07-e1c3069c-initial-page-state-proof.md) |
 | `434175f0` | 2026-09-07 | Merge pull request #706 from Holeshot-Software-LLC/codex/ar154-oldest-first-reconciliation | [AR-154](../roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md) | [detail](2026-09-07-e1c3069c-initial-page-state-proof.md) |
+| `6ed24943` | 2026-09-07 | docs(backlog): verify bounded hiring evidence [AR-155] | [AR-155](../roadmap/issue-AR-155-bound-dashboard-hiring-evidence.md) | [detail](2026-09-07-6ed24943-bounded-hiring-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
