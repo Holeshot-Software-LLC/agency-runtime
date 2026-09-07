@@ -56,3 +56,8 @@ this evidence candidate precedes any done flip, normal PR and merge.
 
 8a8db2ae (8a8db2aeeae788829ae7dfc641142d7c04376e6e) is the evidence candidate. This immediate ledger
 preserves the tested source, raw transcripts and recovery record before review.
+
+## Acceptance freeze
+
+d85c696e freezes 8a8db2aeeae788829ae7dfc641142d7c04376e6e for all six isolated checks.
+No product/test change follows the observed passing runs.
