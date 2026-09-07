@@ -6,6 +6,7 @@ created: 2026-08-25
 updated: 2026-08-26
 tags: [workforce, prompts, cli, dashboard, observability]
 related:
+  - docs/decisions/0229-reconcile-dashboard-disclosure-with-owner-authority.md
   - README.md
   - CHANGELOG.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md

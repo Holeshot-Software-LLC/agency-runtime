@@ -1,11 +1,16 @@
 ---
 title: "AR-166: Keep dashboard disclosure and correlation truthful"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [dashboard, security, privacy, observability, ui]
 related:
+  - docs/roadmap/acceptance/issue-AR-166.md
+  - docs/roadmap/acceptance/evidence/AR-166-dashboard-authority-20260907.md
+  - docs/decisions/0229-reconcile-dashboard-disclosure-with-owner-authority.md
+  - docs/decisions/0117-unify-owner-control-authority.md
+  - docs/roadmap/issue-AR-298-expose-complete-workforce-prompts.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
   - docs/decisions/0096-require-operator-presence-for-persistent-controls.md
@@ -48,25 +53,39 @@ support correlation, or make the privacy boundary appear broader than it is.
 
 ## Current state
 
-Provider-secret options remain visible for inspection but the selector stays
-disabled after every render. Client request IDs are canonical UUIDv4 values;
+September 7 review found a stale selector restriction after ADR-0117 restored
+owner controls. Two red tests reproduce disabled=true for valid providers.
+The nonempty-list renderer now enables selection and preserves the chosen
+provider. Empty/unparseable/non-array lists remain disabled; keys stay redacted.
+All 189 UI and 235 backend/owner cases pass, with 1085/three existing skips in
+the fresh named spine. ADR-0229 explicitly reconciles only criterion 1 before
+isolated review. Eighteen source-served browser checks pass for the selector.
+Criterion 2 also exposed a null-JSON HTTP error throwing TypeError before
+retaining status/request identity. A null-safe error lookup and 401/403/503
+regression cover it. Latest UI 190 and final source-served browser 20 checks
+pass, including null-401 terminal identity. All six current criteria satisfy at 4a244776 after one
+citation-only reconciliation recheck. First verdicts remain at bc28bf66; no
+source change was needed for the recheck.
+
+Client request IDs are canonical UUIDv4 values;
 HTTP and transport failures append only a validated identifier to their inert
 text notice, and hostile response identifiers fall back to the browser's safe
 request identity. Successful Route Lab receipts show the validated request ID.
 
 The privacy chip now says `Runtime metadata only` or
 `Redacted runtime content`, matching the `observability.capture_content`
-runtime-observation setting. Owner-only worker detail retains its existing
-8,192-character compiled prompt bound and labels that preview as a governed
-specialist definition separate from runtime observation capture. This does not
-broaden broker scope, retention, or content-capture authority.
+runtime-observation setting. AR-298 replaced the historical 8192-character
+preview with a Store-backed complete bounded definition (at most 262144
+characters in dashboard detail). Provenance and stored-definition/not-runtime-
+delivery labeling keep it separate from runtime capture. This slice changes no
+backend, broker scope, retention or content-capture authority.
 
 ## Approach
 
 Centralize bounded request-ID validation and notice formatting in the dashboard
 core, then reuse it for API errors and fixed terminal notices. Render a Route Lab
-request ID only after the same validation. Preserve the read-only invariant in
-the provider-option renderer itself rather than relying on initialization order.
+request ID only after the same validation. Apply ADR-0117 owner authority in
+the provider-option renderer, with empty/invalid-list disabling and key redaction.
 Make runtime-capture wording explicit both during bootstrap and after config or
 overview refresh, and disclose the owner-only compiled-definition distinction at
 the preview.
@@ -74,27 +93,35 @@ the preview.
 ## Dependencies
 
 ADR-0027 requires request-level traceability. ADR-0029 governs local dashboard
-privacy and runtime observation capture. ADR-0096 makes every persistent
-dashboard control read-only. AR-138, AR-149, and AR-153 own the broader coherent
+privacy and runtime observation capture. ADR-0117 restores owner controls while
+preserving model-facing broker restrictions; the old ADR-0096 rule is superseded. AR-138, AR-149, and AR-153 own the broader coherent
 UI, request identity, and bounded worker-detail contracts respectively.
 
-Tracker creation remains pending owner authorization; no outward tracker write
-was performed in this local implementation slice.
+The governed pre-tracker exemption applies while unmapped; no duplicate tracker
+or outward tracker state change is needed.
 
 ## Acceptance
 
-- Provider rendering cannot re-enable the provider-secret selector or any other
-  persistent dashboard control.
-- HTTP, transport, authentication, and reconciliation failures expose a safe
+- [x] Owner-authorized provider choices remain usable after rendering; empty,
+  non-array or unparseable provider lists stay disabled, stored keys are not
+  reflected, and broker write scope remains unchanged.
+- [x] HTTP, transport, authentication, and reconciliation failures expose a safe
   request ID when one exists without reflecting an invalid identifier.
-- Successful Route Lab receipts display their validated request ID; malformed
+- [x] Successful Route Lab receipts display their validated request ID; malformed
   identifiers remain absent from rendered evidence.
-- The privacy chip explicitly describes runtime observation capture.
-- The bounded owner-only compiled specialist definition is labeled separately
+- [x] The privacy chip explicitly describes runtime observation capture.
+- [x] The bounded owner-only compiled specialist definition is labeled separately
   from runtime capture without changing authentication or broker scope.
-- Focused dashboard UI, documentation, formatting, and diff checks pass.
+- [x] Focused dashboard UI, documentation, formatting, and diff checks pass.
 
-## Implementation evidence
+## Requirement reconciliation
+
+Original criterion 1: "Provider rendering cannot re-enable the provider-secret
+selector or any other persistent dashboard control." ADR-0229 explicitly
+replaces that superseded requirement under ADR-0117. Criteria 2–6 remain
+unchanged; all six now satisfy at 4a244776.
+
+## Historical implementation evidence
 
 The complete dashboard UI suite passes 102 tests, including provider re-render,
 hostile request-ID fallback, terminal authentication notice, successful Route

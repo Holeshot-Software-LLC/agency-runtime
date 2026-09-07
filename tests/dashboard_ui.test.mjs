@@ -988,6 +988,24 @@ test("app.js API requests keep credentials in-memory and fail closed on malforme
   )));
 });
 
+test("HTTP null error bodies retain status and safe browser request identity", async () => {
+  for (const status of [401, 403, 503]) {
+    const harness = createAppHarness(async () => ({
+      ok: false,
+      status,
+      headers: { get: () => null },
+      json: async () => null,
+    }));
+    await assert.rejects(
+      harness.api.api("/null-error"),
+      (error) => error.name === "APIError"
+        && error.status === status
+        && error.requestId === "00000000-0000-4000-8000-000000000001"
+        && error.message === `HTTP ${status}. Request ID 00000000-0000-4000-8000-000000000001.`,
+    );
+  }
+});
+
 test("app.js typed confirmations trap focus and reject incorrect phrases", async () => {
   const harness = createAppHarness(() => {
     throw new Error("this test does not fetch");
@@ -1054,7 +1072,7 @@ test("app.js renders provider configuration without reflecting stored API keys",
 
   assert.equal(providers.value.includes("must-not-reach-the-dom"), false);
   assert.deepEqual(JSON.parse(providers.value), [{ name: "primary", weight: 2 }]);
-  assert.equal(harness.node("config-provider-secret-index").disabled, true);
+  assert.equal(harness.node("config-provider-secret-index").disabled, false);
   assert.equal(harness.node("config-provider-secret-index").value, "0");
   assert.equal(harness.node("config-override-count").textContent, "1 ENV OVERRIDE");
   assert.equal(harness.node("config-revision").textContent, "1234567890");
@@ -1072,6 +1090,56 @@ test("app.js renders provider configuration without reflecting stored API keys",
     () => harness.api.appendSecretOperation([], "judge.api_key", "new", true),
     /either a new value or clear/i,
   );
+});
+
+test("provider secret selector follows owner controls and rejects empty or invalid lists", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("provider selection must not fetch or persist");
+  });
+  const providers = new FakeNode("config-providers");
+  providers.dataset.configPath = "providers";
+  providers.dataset.valueType = "json";
+  harness.nodes.set("config-providers", providers);
+  harness.select("[data-config-path]", [providers]);
+  harness.api.renderConfig({
+    effective: {
+      providers: [
+        { name: "first", api_key: "first-stored-key" },
+        { name: "second", api_key: "second-stored-key" },
+      ],
+    },
+    environment_overrides: [],
+    path: "C:/safe/config.yaml",
+    revision: "provider-choice-revision",
+  });
+  const selector = harness.node("config-provider-secret-index");
+  assert.equal(selector.disabled, false);
+  assert.deepEqual(selector.options.map((option) => option.textContent), ["first", "second"]);
+  assert.doesNotMatch(providers.value, /stored-key/);
+
+  selector.value = "1";
+  harness.api.syncProviderSecretOptions();
+  assert.equal(selector.disabled, false);
+  assert.equal(selector.value, "1");
+  harness.node("config-provider-secret").value = "replacement-key";
+  const operations = harness.api.collectConfigChanges();
+  assert.equal(operations.length, 1);
+  assert.equal(operations[0].path, "providers.1.api_key");
+  assert.equal(operations[0].op, "secret");
+  assert.equal(operations[0].action, "replace");
+
+  for (const invalid of ["{", "null", "{}", "[]"]) {
+    providers.value = invalid;
+    harness.api.syncProviderSecretOptions();
+    assert.equal(selector.disabled, true, invalid);
+    assert.equal(selector.options[0].textContent, "No configured providers");
+  }
+  providers.value = JSON.stringify([{ name: "recovered" }]);
+  selector.value = "99";
+  harness.api.syncProviderSecretOptions();
+  assert.equal(selector.disabled, false);
+  assert.equal(selector.value, "0");
+  assert.equal(selector.options[0].textContent, "recovered");
 });
 
 test("provider builder exposes and stages a LiteLLM router alias", () => {

@@ -1,0 +1,121 @@
+{
+  "scope": "Source-served private/offline owner dashboard; config responses contain synthetic provider drafts. No installed-wheel, native-host or full accessibility claim.",
+  "checks": [
+    {
+      "viewport": 1280,
+      "name": "owner_can_choose_second_provider",
+      "passed": true
+    },
+    {
+      "viewport": 1280,
+      "name": "choice_survives_secret_input_rerender",
+      "passed": true
+    },
+    {
+      "viewport": 1280,
+      "name": "runtime_capture_disclosure",
+      "passed": true
+    },
+    {
+      "viewport": 1280,
+      "name": "disabled_list_[]",
+      "passed": true
+    },
+    {
+      "viewport": 1280,
+      "name": "disabled_list_null",
+      "passed": true
+    },
+    {
+      "viewport": 1280,
+      "name": "disabled_list_{}",
+      "passed": true
+    },
+    {
+      "viewport": 1280,
+      "name": "disabled_list_{",
+      "passed": true
+    },
+    {
+      "viewport": 1280,
+      "name": "valid_list_recovers",
+      "passed": true
+    },
+    {
+      "viewport": 1280,
+      "name": "served_module_matches_candidate",
+      "passed": true
+    },
+    {
+      "viewport": 1280,
+      "name": "null_401_remains_terminal_with_safe_request_id",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "owner_can_choose_second_provider",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "choice_survives_secret_input_rerender",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "runtime_capture_disclosure",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "disabled_list_[]",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "disabled_list_null",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "disabled_list_{}",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "disabled_list_{",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "valid_list_recovers",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "served_module_matches_candidate",
+      "passed": true
+    },
+    {
+      "viewport": 375,
+      "name": "null_401_remains_terminal_with_safe_request_id",
+      "passed": true
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "settings-1280.png",
+      "sha256": "76208f6b14843a3ba3b0193b351d4dcb1f1538c00048932994922b10623bbcfa"
+    },
+    {
+      "file": "settings-375.png",
+      "sha256": "e4f13e1653b816eeedf99f918259685260371d8fd55249027ba93a305b6bcaa1"
+    }
+  ],
+  "post_requests": 0,
+  "browser": "152.0.7977.64",
+  "stage": "provider_options_ready",
+  "config_sha256": "c75dc679ac2508d9c97fa10811620bb474bfc0aaaa64563ea24957eb74ff0dbf",
+  "core_sha256": "233c5e9c070f6544af26f26c5c976e5f9b04b826196b150e0cccc83c934d02b5",
+  "passed": true
+}

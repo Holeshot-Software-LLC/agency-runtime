@@ -392,7 +392,7 @@ export function createCore(runtime = globalThis) {
 				`Agency dashboard request ${responseId} failed with HTTP ${response.status}.`,
 			);
 			throw new APIError(
-				payload.error || `HTTP ${response.status}`,
+				payload?.error || `HTTP ${response.status}`,
 				response.status,
 				response.headers.get("Retry-After"),
 				responseId,

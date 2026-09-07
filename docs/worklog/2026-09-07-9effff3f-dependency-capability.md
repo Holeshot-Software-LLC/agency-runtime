@@ -84,3 +84,9 @@ source unchanged. No code, test, trust control or threshold was altered.
 This is curated decision sensitivity, not an exhaustive or superiority claim.
 The frozen acceptance receipt remains a faithful earlier checkpoint; this later
 result is supplemental. PR #716 contains the complete bounded delivery.
+
+## Publication
+
+PR #716 merged as 520a10e36893977101494193852f370968f05cd2 at
+2026-09-07T10:58:51Z, read back. Main was clean and fast-forwarded before the
+separate AR-166 tree. Empty check rollup is not a hosted CI pass.
