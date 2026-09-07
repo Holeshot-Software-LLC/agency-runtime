@@ -75,3 +75,10 @@ timeout remains recorded; no production change was needed for its endpoint fix.
 All six builder rowsets are present and pending. Strict docs pass 1190 files.
 This is browser evidence for a private/offline source fixture, not an installed
 wheel, native-host activation, whole-dashboard accessibility or staffing trial.
+
+## Frozen review
+
+f141583d freezes all six rowsets at 4a244776 and binds capsule/decision to the
+same source and browser proof. All originals remain; only criterion 1 was
+explicitly reconciled before review. Strict docs pass 1190 files. The first
+isolated review follows this clean ledger, with no builder-assigned verdicts.
