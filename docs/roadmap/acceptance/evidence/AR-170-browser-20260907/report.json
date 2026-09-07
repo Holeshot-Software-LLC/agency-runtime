@@ -1,0 +1,188 @@
+{
+  "scope": "Source-served private five-agent Store; seven views, six evidence tabs, keyboard and correlation. No installed-wheel/native-host/full-WCAG claim.",
+  "checks": [
+    {
+      "width": 1280,
+      "name": "view_overview",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_routing",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_evidence",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "tab_specialists",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_delegations",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_routing",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_receipts",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_runs",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_finalizations",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "view_roster",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_workforce",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_hosts",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_settings",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "sweep_without_application_errors",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "keyboard_skip_link",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "owner_controls_survive_async_refresh_without_a_write",
+      "passed": true
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "settings-1280.png",
+      "sha256": "aeea17236aba6abd289b1213eedf8606d26a9435b98c52791aa7a1c5e5d15fa7"
+    }
+  ],
+  "post_requests": 0,
+  "assets": {},
+  "browser": "152.0.7977.64",
+  "stage": "settings-1280",
+  "passed": false,
+  "error": "TimeoutError: page.waitForFunction: Timeout 15000ms exceeded."
+}

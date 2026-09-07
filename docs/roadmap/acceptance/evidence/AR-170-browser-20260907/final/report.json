@@ -1,0 +1,382 @@
+{
+  "scope": "Source-served private five-agent Store; seven views, six evidence tabs, keyboard and correlation. No installed-wheel/native-host/full-WCAG claim.",
+  "checks": [
+    {
+      "width": 1280,
+      "name": "view_overview",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_routing",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_evidence",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "tab_specialists",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_delegations",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_routing",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_receipts",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_runs",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "tab_finalizations",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "view_roster",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_workforce",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_hosts",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "view_settings",
+      "passed": true,
+      "layout": {
+        "width": 1280,
+        "document": 1280,
+        "heading": {
+          "left": 266,
+          "right": 557.671875,
+          "client": 292,
+          "scroll": 292
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 1280,
+      "name": "sweep_without_application_errors",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "keyboard_skip_link",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "owner_controls_survive_async_refresh_without_a_write",
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "name": "present_null_id_rejected_with_matching_header_and_safe_notice",
+      "passed": true,
+      "expected_console_errors": 1
+    },
+    {
+      "width": 375,
+      "name": "view_overview",
+      "passed": true,
+      "layout": {
+        "width": 375,
+        "document": 375,
+        "heading": {
+          "left": 14,
+          "right": 361,
+          "client": 347,
+          "scroll": 347
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 375,
+      "name": "view_routing",
+      "passed": true,
+      "layout": {
+        "width": 375,
+        "document": 375,
+        "heading": {
+          "left": 14,
+          "right": 361,
+          "client": 347,
+          "scroll": 347
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 375,
+      "name": "view_evidence",
+      "passed": true,
+      "layout": {
+        "width": 375,
+        "document": 375,
+        "heading": {
+          "left": 14,
+          "right": 361,
+          "client": 347,
+          "scroll": 347
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 375,
+      "name": "tab_specialists",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "name": "tab_delegations",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "name": "tab_routing",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "name": "tab_receipts",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "name": "tab_runs",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "name": "tab_finalizations",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "name": "view_roster",
+      "passed": true,
+      "layout": {
+        "width": 375,
+        "document": 375,
+        "heading": {
+          "left": 14,
+          "right": 361,
+          "client": 347,
+          "scroll": 347
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 375,
+      "name": "view_workforce",
+      "passed": true,
+      "layout": {
+        "width": 375,
+        "document": 375,
+        "heading": {
+          "left": 14,
+          "right": 361,
+          "client": 347,
+          "scroll": 347
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 375,
+      "name": "view_hosts",
+      "passed": true,
+      "layout": {
+        "width": 375,
+        "document": 375,
+        "heading": {
+          "left": 14,
+          "right": 361,
+          "client": 347,
+          "scroll": 347
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 375,
+      "name": "view_settings",
+      "passed": true,
+      "layout": {
+        "width": 375,
+        "document": 375,
+        "heading": {
+          "left": 14,
+          "right": 361,
+          "client": 347,
+          "scroll": 347
+        },
+        "hiddenVisible": [],
+        "duplicateIds": [],
+        "brokenControls": []
+      }
+    },
+    {
+      "width": 375,
+      "name": "sweep_without_application_errors",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "name": "keyboard_skip_link",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "name": "owner_controls_survive_async_refresh_without_a_write",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "name": "present_null_id_rejected_with_matching_header_and_safe_notice",
+      "passed": true,
+      "expected_console_errors": 1
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "settings-1280.png",
+      "sha256": "d26fb5486b91060ddf9621a1365ffbdcddd47e63c41ca7c12dc7fa18cc3d8f20"
+    },
+    {
+      "file": "settings-375.png",
+      "sha256": "09f7175ff4333bab1f244df33a28c36fc4c22ef687a4d10cca558de84a33fd20"
+    }
+  ],
+  "post_requests": 0,
+  "assets": {
+    "dashboard-core.js": "62a2f817e8ff63e929969839cd29bb5b3695de654919b18ef1f53c8cab3799e1",
+    "dashboard-actions.js": "51e003a5a2cd95a601558846d23a167101316e5ef231860f7aa22bcd363c354b",
+    "dashboard-live.js": "03e169c2e5d94ce687ba9b244a3de70b6fbfb91ccd3a065c0f04ebd60d1e4117",
+    "dashboard-config.js": "14f6d57319d38febda5ee8fc05c6858eb334b72b761d7be118c3773346b7a902",
+    "app.js": "dec1f70ad9c4f8b71812847920411dbb422583f876d22a3b8e1c95249f86868a",
+    "app.css": "ea1859c1544437ed34e903f81c9c3fac72e69ea83dc211b5b39046bb2ae09347",
+    "index.html": "b496b053f41d4ea027dbc2b607f5c976c9f37fce63bbfb26f6038114c651f7b6"
+  },
+  "browser": "152.0.7977.64",
+  "stage": "settings-375",
+  "passed": true
+}

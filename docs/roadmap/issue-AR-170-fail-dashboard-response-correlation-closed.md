@@ -3,9 +3,14 @@ title: "AR-170: Fail dashboard response correlation closed"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [dashboard, ui, traceability, accessibility, security]
 related:
+  - docs/decisions/0230-reconcile-response-correlation-with-owner-controls.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
+  - docs/roadmap/acceptance/evidence/AR-170-response-correlation-20260907.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/decisions/0117-unify-owner-control-authority.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
   - docs/decisions/0095-complete-paginated-dashboard-collections.md
@@ -59,6 +64,26 @@ presented dashboard retention controls that could never dispatch.
 
 ## Current state
 
+September 7 review reproduces three gaps: explicit null body identity is omitted,
+exact lookup follows a fabricated wrong-worker second page, and structural
+worker-validation failures lose the sent ID. Bounded repairs now reject those
+responses and retain correlated last-good state. UI 193 and fresh named spine
+1085/three existing skips pass. No server/broker authority change.
+
+The initial 16-check desktop report and fixture-expectation timeout are preserved.
+The corrected source browser passes 34 checks across 1280/375-pixel viewports,
+all seven views/six tabs, keyboard navigation, owner refresh and rejected null-ID
+responses. Zero POSTs. Exact source hashes and limits are in the
+[receipt](acceptance/evidence/AR-170-response-correlation-20260907.md).
+ADR-0230 explicitly reconciles only criteria 6/7/9 under ADR-0117/ADR-0105,
+preserving originals. Two isolated passes are complete. First verdicts remain
+at 662eb947; at final candidate 91273e41, criteria 1/2/4/5/6/7/8 satisfy while
+3/9 lack complete call-site and raw gate-receipt evidence. Keep in_progress;
+this is an acceptance-evidence hold, not a new reproduced code failure.
+No historical checkbox or earlier-candidate verdict supplies the missing proof.
+
+### Previously implemented boundary and historical UI policy
+
 Worker detail is committed only after exact canonical slug, non-empty worker
 identity, nonnegative safe-integer revision, and all four required evidence
 collections validate.
@@ -83,39 +108,68 @@ attended-maintenance copy with the unreachable retention form removed.
 
 Validate response identity at the browser boundary before rendering or state
 commit, while retaining abort/generation checks for request ordering. Keep the
-dashboard read-only contract in state as well as disabled controls. Treat
+current owner/draft contract in state as well as controls. Treat
 token fragments as authentication material but preserve ordinary in-page
-fragments. Remove inert persistent-control markup instead of presenting a
-control that the server will never accept.
+fragments. Present only working owner controls; broker credentials remain
+read-only under ADR-0117. Preserve exact confirmation and revision safeguards.
 
 ## Dependencies
 
-ADR-0027 requires authoritative correlated evidence. ADR-0029 and ADR-0096
-bound the dashboard to authenticated local monitoring without persistent
-control authority. ADR-0095 requires complete, versioned collection truth.
+ADR-0027 requires authoritative correlated evidence. ADR-0029's local boundary
+and ADR-0117's owner/broker distinction govern current controls; ADR-0096 is
+historical. ADR-0095 requires complete, versioned collection truth.
 
-Tracker creation remains pending explicit outward-write authorization.
+The existing pre-tracker exemption remains; no duplicate tracker is created.
 
 ## Acceptance
 
 - [x] Worker-detail responses must match the exact requested governed worker.
 - [x] Worker detail requires a safe revision and all four evidence arrays;
   missing evidence cannot be rendered as truthful emptiness.
-- [x] Exact-roster responses must match the exact requested slug on every
+- [ ] Exact-roster responses must match the exact requested slug on every
   current control and paginated collection path.
 - [x] Caller headers cannot override bearer or request identity, and every
   present response UUID is canonical and equals the sent request UUID.
 - [x] Invalid or stale responses retain last-good state and expose a correlated
   failure instead of rendering mismatched evidence.
-- [x] Hidden controls stay hidden and read-only status survives asynchronous
-  configuration rendering.
-- [x] Skip-link navigation, heading layout, and attended-maintenance copy are
+- [x] Hidden elements stay hidden, and owner controls and draft state remain
+  truthful through asynchronous configuration rendering without granting broker
+  write authority.
+- [x] Skip-link navigation, heading layout, and owner-maintenance copy are
   truthful at the audited desktop and keyboard surfaces.
 - [x] The focused browser suite and live seven-view/six-tab interaction sweep
   pass without application console errors.
-- [ ] The final repository release gate passes at the implementation commit.
+- [ ] Focused UI tests/current coverage floors, the named production spine,
+  scoped browser evidence, metadata, policy, worklog, strict docs/tracker, Ruff
+  and diff checks pass; exhaustive integration gates remain optional.
+
+## Preserved original criteria
+
+ADR-0230 explicitly replaces only the following wording before isolated review:
+
+6. Hidden controls stay hidden and read-only status survives asynchronous
+   configuration rendering.
+7. Skip-link navigation, heading layout, and attended-maintenance copy are
+   truthful at the audited desktop and keyboard surfaces.
+9. The final repository release gate passes at the implementation commit.
+
+## Remaining bounded evidence package
+
+1. Enumerate every exact lookup/collection call site and provide the complete
+   source path from captured slug through validation, no-page enforcement and
+   last-good commit. Include completeRosterPage and collection callers directly,
+   not only their invocation or a summary.
+2. Capture raw gate receipts for the relevant UI/current coverage, named spine,
+   browser and documentation checks, bound to an immutable source/test tree.
+   Include those primary artifacts directly in bounded criterion packets.
+3. Preserve both existing passes and retain the same requirements. The current
+   delivery has reached ADR-0105's two-pass limit; no third review is silently
+   retried. A future bounded evidence package can complete acceptance.
 
 ## Implementation evidence
+
+The following July implementation report is historical, not the September
+candidate's proof. Current repair, live scope and gate results are in the receipt.
 
 The dashboard specialist audited 131 source-defined interactive and form
 elements, seven navigation views, six evidence tabs, all event listeners, and

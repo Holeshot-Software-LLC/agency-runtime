@@ -6,6 +6,8 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [governance, delivery, testing, demo, cost]
 related:
+  - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
+  - docs/decisions/0230-reconcile-response-correlation-with-owner-controls.md
   - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
   - docs/roadmap/issue-AR-157-quiet-public-http-disconnects.md
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md

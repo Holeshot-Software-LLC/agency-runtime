@@ -248,7 +248,17 @@ passes independent verification and strict Twine; its source manifest has
 2,256 unique rows with exact membership/newline policy. Retain the unchanged
 five criteria/states: same-candidate native Windows/Linux source equality
 remains owner evidence under AR-160/ADR-0219. No code, acceptance or count change.
-Publish this retention, then AR-170; AR-169 is already retired.
+PR #718 merged 790a01d7 at 11:49:53Z September 7; AR-169 is already retired.
+AR-170 repairs three reproduced correlation gaps: present null identity,
+fabricated exact-lookup pagination and uncorrelated worker validation. UI 193,
+fresh spine 1085/three existing skips and four asset/packaging checks pass.
+Initial source browser has 16 desktop passes then an incorrect-notice-expectation
+timeout, preserved at 90654955. Corrected exact-source browser passes 34 checks
+across 1280/375 pixels and zero POSTs. ADR-0230 explicitly reconciles only 6/7/9;
+originals remain. First review is preserved at 662eb947. Final candidate
+91273e41 satisfies 1/2/4/5/6/7/8; 3/9 retain full-call-site and raw-gate-receipt
+evidence gaps. Publish the tested repair with AR-170 in_progress and no count
+change. Two-pass limit is reached; next is AR-171 after this normal PR merge.
 
 Current counts: 40 actual open trackers plus 84 unfinished legacy records,
 124 total after AR-166 completion; no duplicate tracker or false acceptance.

@@ -988,6 +988,30 @@ test("app.js API requests keep credentials in-memory and fail closed on malforme
   )));
 });
 
+test("present invalid response IDs cannot fall back to an absent legacy identity", async () => {
+  for (const requestId of [null, false, 0, "", [], {}]) {
+    for (const matchingHeader of [false, true]) {
+      const logs = [];
+      const harness = createAppHarness(async (_path, options) => ({
+        ok: true,
+        status: 200,
+        headers: { get: (name) => matchingHeader && name === "X-Agency-Request-ID"
+          ? options.headers.get(name) : null },
+        json: async () => ({ ok: true, request_id: requestId }),
+      }));
+      harness.context.console = { error: (message) => logs.push(String(message)) };
+      await assert.rejects(harness.api.api("/invalid-response-id"), (error) => (
+        error.name === "APIError" && error.status === 200
+        && error.requestId === "00000000-0000-4000-8000-000000000001"
+        && /response correlation did not match/i.test(error.message)
+      ));
+      assert.deepEqual(logs, [
+        "Agency dashboard request 00000000-0000-4000-8000-000000000001 rejected a mismatched response correlation.",
+      ]);
+    }
+  }
+});
+
 test("HTTP null error bodies retain status and safe browser request identity", async () => {
   for (const status of [401, 403, 503]) {
     const harness = createAppHarness(async () => ({
@@ -5171,6 +5195,47 @@ test("Route Lab and worker-detail failures remain visible and lifecycle bounded"
   );
   await workerHarness.api.selectWorker("worker-two");
   assert.match(workerHarness.node("notice").textContent, /worker detail unavailable/i);
+});
+
+test("worker identity validation retains last-good detail and the sent request ID", async () => {
+  const previous = { worker: { agent_slug: "previous-worker" } };
+  for (const invalid of [
+    { worker: { agent_slug: "other-worker", worker_id: "other-id", revision: 1 } },
+    { worker: { agent_slug: "requested-worker", worker_id: "requested-id", revision: -1 } },
+    { worker: { agent_slug: "requested-worker", worker_id: "requested-id", revision: 1 } },
+  ]) {
+    const harness = createAppHarness(async () => jsonResponse(200, { detail: invalid }));
+    harness.api.state.selectedWorkerDetail = previous;
+    await harness.api.selectWorker("requested-worker");
+    assert.equal(harness.api.state.selectedWorkerDetail, previous);
+    assert.match(harness.node("notice").textContent, /Request ID 00000000-0000-4000-8000-000000000001/);
+    assert.doesNotMatch(harness.node("notice").textContent, /other-worker|other-id/);
+  }
+});
+
+test("exact roster lookup rejects pagination before a wrong-worker second page", async () => {
+  const calls = [];
+  const previous = [{ agent_slug: "previous-worker" }];
+  const harness = createAppHarness(async (path) => {
+    calls.push(path);
+    if (path === "/api/control") return jsonResponse(200, controlSnapshot());
+    const isSecond = path.includes("&after=");
+    return jsonResponse(200, {
+      ...emptyRosterPage("lookup-revision"),
+      agents: [{ agent_slug: isSecond ? "wrong-worker" : "requested-worker" }],
+      filter_slug: "requested-worker",
+      truncated: !isSecond,
+      next_cursor: isSecond ? null : "requested-worker",
+    });
+  });
+  harness.api.state.rosterFilter = "requested-worker";
+  harness.api.state.roster = previous;
+  await assert.rejects(harness.api.fetchControlSnapshot(), (error) => (
+    error.name === "APIError" && /requested agent/.test(error.message)
+    && error.requestId === "00000000-0000-4000-8000-000000000001"
+  ));
+  assert.equal(harness.api.state.roster, previous);
+  assert.equal(calls.some((path) => path.includes("&after=")), false);
 });
 
 test("app.js keeps inactive views out of the live render path and hides panels semantically", () => {

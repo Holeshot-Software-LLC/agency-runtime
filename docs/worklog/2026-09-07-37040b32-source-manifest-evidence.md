@@ -61,3 +61,10 @@ for a known native-platform hold.
 PR #718 carries this retention. Final strict documentation validation covers
 1192 Markdown files. End telemetry is 70.4 percent at 11:49:17Z; 37040b32 and
 c94fcdc4 form the clean substantive/ledger checkpoint before publication.
+
+## Publication
+
+PR #718 merged normally as 790a01d7 at 2026-09-07T11:49:53Z, reviewed head
+9f2064d28294d96b11038a7db09c9c0802c04bfc. Clean main was fast-forwarded before the
+separate AR-170 tree. No hosted green is inferred from an empty check rollup;
+AR-168 retains its explicit native Windows hold.
