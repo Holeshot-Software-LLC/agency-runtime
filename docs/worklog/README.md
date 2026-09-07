@@ -2007,6 +2007,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2a7c20c5` | 2026-09-07 | docs(acceptance): prove AR-164 retired backend absence from Git | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
 | `8c80dc16` | 2026-09-07 | docs(acceptance): freeze AR-164 exact tree evidence | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
 | `db0a7ad7` | 2026-09-07 | docs(backlog): complete verified executable boundary record [AR-164] | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
+| `ba6e55cb` | 2026-09-07 | Merge pull request #715 from Holeshot-Software-LLC/codex/ar164-oldest-first-reconciliation | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

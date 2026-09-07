@@ -84,3 +84,9 @@ is preserved; no other requirement, runtime or test changed. AR-164 is done,
 with native Windows qualification and AR-187 attended activation still separate.
 Queue: 40 mapped plus 86 legacy, 126 unfinished. Publish one PR and normal merge,
 then AR-165.
+
+## Publication
+
+PR #715 merged as ba6e55cb7013acec6589a30e77b674a86ecf0cf3 at
+2026-09-07T10:23:29Z, read back. Main was clean and fast-forwarded before the
+separate AR-165 tree. Empty PR check rollup is not a hosted CI pass.
