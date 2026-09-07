@@ -96,3 +96,7 @@ acceptance and normal PR/merge. Continue oldest-first until the owner's cutoff.
 ## Second and final isolated review
 
 4a7b155d (4a7b155d15a245b88fe9f44a06f3ec0060671b15) records six satisfied criteria. Criterion 2 remains absent because the packet does not enumerate every relevant original double and production argument; criterion 5 remains absent because it does not include the historical changed-module inventory. These are explicit traceability limits, not failed runtime tests. No third independent review is authorized by the default bounded workflow. Publish the seven repairs and stronger argument checks while retaining AR-176 in_progress, with these exact remaining criteria.
+
+## Publishable retained disposition
+
+b4edca75 (b4edca75f6e0a6c29fc9f3734997d68031688c59) retains AR-176 in_progress with six accepted/two absent criteria and publishes the actual native findings: Codex current-profile v4 activation passes at 22:04:41Z; OpenClaw ordinary staffing and five-field output pass, with limited prompt augmentation evidence; Hermes/Claude failures are traced to timed/invalid inference rather than assumed missing credentials. Existing client credential reuse is child-only, with no persistent credential or trust changes. Queue remains 119. Next after normal merge is AR-177.
