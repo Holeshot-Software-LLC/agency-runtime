@@ -27,8 +27,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar164-oldest-first-reconciliation
-evidence_commit: 6d1ca01fb572e58bc5b1186bc9114ae0b7a789ba
-minimum_ledger_commit: 7e0dc5d9b064d51123f98127fa5dc716f9d65972
+evidence_commit: 083ae8b58378d97c139cfb79debf0a49175b3f92
+minimum_ledger_commit: 635d7dc3c6733fd3706b387f1888f36e88a8ec19
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -92,8 +92,8 @@ continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit AR-164's current evidence and immediate ledger, then freeze its seven
-   builder rowsets to that candidate and run isolated checks once.
+1. Seven rowsets are frozen at 083ae8b5 with ledger 635d7dc3. Commit this freeze
+   and its immediate ledger, then run isolated checks once.
 2. If all satisfy, reconcile local completion/counts, publish one normal PR and
    read back the merge before starting the next record.
 3. Next is AR-165's dependency-review capability boundary, in its own worktree.
