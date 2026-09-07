@@ -16,7 +16,7 @@ type: worklog
 commit: b2da6eb954ef0875745c2ddc17d6079567221de2
 short: b2da6eb9
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/722
 related_issues:
   - docs/roadmap/issue-AR-173-correlate-route-lab-observations.md
 ---
@@ -115,3 +115,10 @@ lifted; publish the accepted 1f16f948 state before AR-174, without repeating
 acceptance. Fresh metadata, policy, worklog, strict docs/tracker, Ruff and diff
 checks pass (1207 Markdown; 397 mapped/two historical PR exceptions). No
 product/test change or new live-host claim. Stop at a clean cutoff checkpoint.
+
+## Pull request publication
+
+PR #722 publishes the accepted branch after the explicit resume. The remote
+head fe1913e7 matches the clean local branch and main base 47d40fec. No hosted
+checks are listed; this is not a claim of hosted CI success. Local evidence
+and all five final-candidate verdicts remain unchanged.
