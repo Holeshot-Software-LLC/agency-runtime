@@ -2056,6 +2056,14 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5a003a05` | 2026-09-07 | docs(roadmap): bind AR-174 timing to allocated hosted runs | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
 | `8b658693` | 2026-09-07 | docs(roadmap): freeze final AR-174 acceptance candidate | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
 | `fe625e48` | 2026-09-07 | docs(roadmap): complete AR-174 docs-only CI reconciliation | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
+| `57a70139` | 2026-09-07 | Merge pull request #723 from Holeshot-Software-LLC/codex/ar174-oldest-first-reconciliation | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
+| `96f6b49b` | 2026-09-07 | fix(dashboard): retain control-schema request correlation [AR-175] | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `bab4b475` | 2026-09-07 | docs(roadmap): pin AR-175 source checkpoint before browser QA | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `328c5634` | 2026-09-07 | test(dashboard): prove installed control failure recovery [AR-175] | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `adbf197e` | 2026-09-07 | docs(acceptance): freeze installed AR-175 evidence | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `8ed3c516` | 2026-09-07 | docs(acceptance): preserve first AR-175 verdicts | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `d86a9303` | 2026-09-07 | docs(acceptance): bound AR-175 final evidence packet | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `1379eb0d` | 2026-09-07 | docs(roadmap): complete verified AR-175 control boundary | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

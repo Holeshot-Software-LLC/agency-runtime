@@ -21,7 +21,7 @@ const report = {
   scope: "Installed wheel; private five-agent Store; host inspection stubbed; server outbound connections denied. Not a native-host canary or full WCAG certification.",
   assets: Object.fromEntries(readdirSync(assetRoot).filter(name => /\.(html|css|js|svg)$/.test(name))
     .sort().map(name => [name, createHash("sha256").update(readFileSync(path.join(assetRoot, name))).digest("hex")])),
-  views: [], interactions: [], unexpectedErrors: [], failures: [],
+  views: [], interactions: [], controlFailures: [], postRequests: 0, unexpectedErrors: [], failures: [],
 };
 const uuid = /\b[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i;
 try {
@@ -30,8 +30,11 @@ try {
     const page = await context.newPage();
     page.setDefaultTimeout(10000);
     const errors = [];
+    const requestPaths = [];
     let controlRequests = 0;
     page.on("request", request => {
+      requestPaths.push(new URL(request.url()).pathname);
+      if (request.method() !== "GET") report.postRequests += 1;
       if (new URL(request.url()).pathname === "/api/control") controlRequests += 1;
     });
     page.on("pageerror", error => errors.push({kind: "pageerror", message: error.message}));
@@ -127,15 +130,72 @@ try {
     assert.equal(await page.evaluate(async () => (await import("/app.js")).bootstrappedDashboard.refreshAll()), true);
     assert.equal(await page.evaluate(async () => (await import("/app.js")).bootstrappedDashboard.state.control.stale), false);
     report.interactions.at(-1).failure = {retainsRevision: true, visibleStaleMarker: true, requestId, consoleCorrelated: true, recovered: true};
+    for (const method of ["refreshControlPlane", "refreshAll"]) {
+      for (const fault of ["missing-endpoint", "network", "missing-schema", "wrong-schema", "null-payload", "malformed-json"]) {
+        const controlState = () => page.evaluate(async () => {
+          const {state} = (await import("/app.js")).bootstrappedDashboard;
+          return JSON.stringify({config: state.config, pendingConfig: state.pendingConfig,
+            hosts: state.hosts, roster: state.roster, snapshots: state.snapshots,
+            overview: state.overview, controlRevision: state.control.revision, liveRevision: state.live.revision});
+        });
+        const lastGood = await controlState();
+        const firstRequest = requestPaths.length;
+        let sentId;
+        let responseId = null;
+        await page.route("**/api/control", async route => {
+          sentId = route.request().headers()["x-agency-request-id"];
+          if (fault === "network") return route.abort("failed");
+          const response = await route.fetch();
+          const headers = {...response.headers()};
+          responseId = headers["x-agency-request-id"];
+          assert.equal(responseId, sentId, "The real server must echo the actual request ID");
+          delete headers["content-length"];
+          delete headers["content-encoding"];
+          let payload = await response.json();
+          assert.equal(payload.schema_version, "agency.dashboard.control.v1");
+          if (fault === "missing-endpoint") payload = {error: "control endpoint unavailable"};
+          if (fault === "missing-schema") delete payload.schema_version;
+          if (fault === "wrong-schema") payload.schema_version = "agency.dashboard.control.v2";
+          if (fault === "null-payload") payload = null;
+          await route.fulfill({status: fault === "missing-endpoint" ? 404 : response.status(), headers,
+            ...(fault === "malformed-json" ? {body: "{"} : {body: JSON.stringify(payload)})});
+        });
+        await page.evaluate(async name => (await import("/app.js")).bootstrappedDashboard[name](), method);
+        assert.ok(sentId && uuid.test(sentId), "The fault must reach an actual correlated request");
+        assert.equal(await controlState(), lastGood);
+        const failure = await page.evaluate(async () => {
+          const {state} = (await import("/app.js")).bootstrappedDashboard;
+          return {stale: state.control.stale, requestId: state.control.errorRequestId,
+            notice: document.querySelector("#notice").textContent};
+        });
+        assert.equal(failure.stale, true);
+        assert.equal(failure.requestId, sentId);
+        assert.ok(failure.notice.includes(sentId));
+        const legacyRequests = requestPaths.slice(firstRequest).filter(name =>
+          ["/api/config", "/api/hosts", "/api/roster", "/api/snapshots"].includes(name));
+        assert.deepEqual(legacyRequests, []);
+        if (method === "refreshAll" && fault === "wrong-schema") {
+          await page.screenshot({path: path.join(output, `${viewport.width}-control-schema.png`), fullPage: true});
+        }
+        await page.unroute("**/api/control");
+        assert.equal(await page.evaluate(async () => (await import("/app.js")).bootstrappedDashboard.refreshAll()), true);
+        assert.equal(await page.evaluate(async () => (await import("/app.js")).bootstrappedDashboard.state.control.stale), false);
+        report.controlFailures.push({width: viewport.width, method, fault, requestId: sentId,
+          responseRequestId: responseId, retainedState: true, legacyRequests: 0, recovered: true});
+      }
+    }
+    assert.equal(errors.filter(error => error.kind === "pageerror").length, 0);
     await context.close();
   }
 } catch (error) {
   report.failures.push(String(error.stack || error).replaceAll(process.env.QA_TOKEN, "[fixture-token]"));
 } finally {
   await browser.close();
-  report.passed = report.views.length === 21 && report.failures.length === 0 && report.unexpectedErrors.length === 0;
+  report.passed = report.views.length === 21 && report.controlFailures.length === 36
+    && report.postRequests === 0 && report.failures.length === 0 && report.unexpectedErrors.length === 0;
   writeFileSync(path.join(output, "report.json"), JSON.stringify(report, null, 2) + "\n", {flag: "wx"});
 }
 console.log(JSON.stringify({passed: report.passed, views: report.views.length, interactions: report.interactions,
+  controlFailures: report.controlFailures.length, postRequests: report.postRequests,
   failures: report.failures, unexpectedErrors: report.unexpectedErrors}));
 process.exitCode = report.passed ? 0 : 1;

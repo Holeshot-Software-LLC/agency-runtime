@@ -4673,6 +4673,86 @@ test("control refresh fails closed on missing or wrong-version contracts", async
   }
 });
 
+
+for (const method of ["refreshControlPlane", "refreshAll"]) {
+  for (const failure of [
+    "missing-endpoint", "missing-schema", "wrong-schema", "null-payload", "malformed-json", "network",
+    "abort", "aborted-invalid", "suspended-invalid", "obsolete-invalid",
+  ]) {
+    test(`control boundary ${method} preserves state without legacy fanout (${failure})`, async () => {
+      let failing = false;
+      let controlRequestId;
+      const calls = [];
+      const harness = createAppHarness(async (path, options) => {
+        calls.push(path);
+        if (path === "/api/live?limit=100") {
+          return jsonResponse(200, { schema_version: 1, revision: failing ? "rejected-live" : "baseline-live" });
+        }
+        assert.equal(path, "/api/control", "control rejection must not request legacy endpoints");
+        controlRequestId = options.headers.get("X-Agency-Request-ID");
+        if (!failing) {
+          return jsonResponse(200, controlSnapshot({
+            config: { effective: {}, revision: "baseline-config" },
+            hosts: [{ host: "baseline-host" }],
+            roster: { agents: [{ agent_slug: "baseline-agent" }] },
+            governance: { snapshots: [{ snapshot_id: "baseline-snapshot" }] },
+          }));
+        }
+        if (failure === "missing-endpoint") return jsonResponse(404, { error: "missing control" });
+        if (failure === "network") throw new Error("offline");
+        if (failure === "abort") throw new DOMException("Aborted", "AbortError");
+        if (failure === "aborted-invalid") {
+          harness.api.state[method === "refreshAll" ? "full" : "control"].controller.abort();
+        }
+        if (failure === "suspended-invalid") harness.api.state.lifecycle.suspended = true;
+        if (failure === "obsolete-invalid") harness.api.state.commit.generation += 1;
+        if (failure === "null-payload") return jsonResponse(200, null);
+        if (failure === "malformed-json") {
+          const response = jsonResponse(200, {});
+          response.json = async () => { throw new SyntaxError("malformed JSON"); };
+          return response;
+        }
+        return jsonResponse(200, failure === "wrong-schema"
+          ? { schema_version: "agency.dashboard.control.v2" } : {});
+      });
+      harness.api.state.activeView = "hosts";
+      await harness.api[method]();
+      assert.equal(harness.api.state.control.stale, false);
+      const retained = () => JSON.stringify({
+        config: harness.api.state.config,
+        pendingConfig: harness.api.state.pendingConfig,
+        hosts: harness.api.state.hosts,
+        roster: harness.api.state.roster,
+        snapshots: harness.api.state.snapshots,
+        overview: harness.api.state.overview,
+        controlRevision: harness.api.state.control.revision,
+        liveRevision: harness.api.state.live.revision,
+      });
+      const baseline = retained();
+      const notice = harness.node("notice").textContent;
+      calls.length = 0;
+      failing = true;
+      await harness.api[method]();
+      assert.deepEqual(calls, method === "refreshAll"
+        ? ["/api/live?limit=100", "/api/control"] : ["/api/control"]);
+      assert.equal(retained(), baseline);
+      const cancellation = ["abort", "aborted-invalid", "suspended-invalid", "obsolete-invalid"].includes(failure);
+      if (cancellation) {
+        assert.equal(harness.api.state.control.stale, false);
+        assert.equal(harness.node("notice").textContent, notice);
+        assert.equal(harness.api.state.control.errorRequestId, "");
+      } else {
+        assert.equal(harness.api.state.control.stale, true);
+        assert.equal(harness.api.state.control.errorRequestId, controlRequestId);
+        assert.match(harness.node("notice").textContent, /retained the last good state/i);
+        assert.ok(harness.node("notice").textContent.includes(controlRequestId));
+      }
+      assert.equal(harness.api.state.control.inFlight, false);
+      assert.equal(harness.api.state.full.inFlight, false);
+    });
+  }
+}
+
 test("store identity drift stays visible and disables routing, roster, and host controls", async () => {
   const calls = [];
   const harness = createAppHarness(async (path) => {

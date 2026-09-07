@@ -6,6 +6,7 @@ created: 2026-07-27
 updated: 2026-09-07
 tags: [governance, delivery, testing, demo, cost]
 related:
+  - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/decisions/0233-separate-hosted-run-timing-from-billing-administration.md
   - docs/roadmap/issue-AR-174-short-circuit-docs-only-ci.md
   - docs/decisions/0232-represent-route-lab-observations-by-trace-digest.md
