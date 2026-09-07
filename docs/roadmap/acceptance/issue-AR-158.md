@@ -53,7 +53,17 @@ tracker_url: null
 
 ## Verification
 
-Pending seven isolated single-criterion verifier results.
+Initial isolated review satisfies criteria 1–6. Criterion 7 is absent because
+the cited reused-spine receipt omits its command and warning arguments. Preserve
+this result before repairing that citation; no code defect or new test failure
+is alleged and no acceptance criterion changes.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-158.1-20260907-da69f1cb` | `288fe2455aac6488664e9800f93735d27ec11788f017e458a1328aabd3d715dc` | 2026-09-07 | tests/test_mcp_server.py:140-183 injects a Store observation first, then selects mcp/agency.search_agents with the result's exact request ID; the cited fresh verification records passing focused runs. |
+| 2 | satisfied | `AR-158.2-20260907-891030da` | `f1944051e3331b52b4c217139363c7b077435669f2d198a5b4ff447879b516fe` | 2026-09-07 | tests/test_http_server.py:1181-1226 polls until observations match surface http, operation unknown, and the response X-Agency-Request-ID, so the injected Store observation cannot end polling. |
+| 3 | satisfied | `AR-158.3-20260907-c62430f0` | `5327d3b061288cee95e54fa2b12b39f649c5a24ce7e15eb1ba1b0dee2402ff68` | 2026-09-07 | tests/test_host_hooks.py:2362-2450 selects surface hook and operation {host}.userpromptsubmit for all three hosts, asserts exactly one match, and excludes an unrelated observation; hooks.py:3716-3765 establishes that boundary. |
+| 4 | satisfied | `AR-158.4-20260907-2e26d692` | `e8a598e88e68f89928fd8eda2484bf52f9c5c98b5469aedceafee588486b9831` | 2026-09-07 | The MCP, HTTP, hook, and store test excerpts assert forbidden content is absent across all captured observations, and the cited fresh focused verification reports all 13 tests passed. |
+| 5 | satisfied | `AR-158.5-20260907-91bb1551` | `cf46c25b30644ac6a0e8b8e57c597ab72cbab98389c146bb78dcabdee3b78b77` | 2026-09-07 | All three test excerpts synchronously enter a Store sqlite.commit RuntimeBoundary before the target request; the hook test also verifies the injected event precedes and has a different request ID from the hook event. |
+| 6 | satisfied | `AR-158.6-20260907-8d65f9ae` | `01ee4515fcb273bb634e43c98e4d2aef135fef1a1da2b4d3953703116103d1dc` | 2026-09-07 | Store tests select exact boundary request IDs; runtime tests filter by request ID and assert Store-before-MCP ordering, with late-correlation and exception checks selecting exact boundaries rather than ambient positions. |
+| 7 | absent | `AR-158.7-20260907-e67923df` | `6cdbccfd7ced6707900c5529557cf00858399b2499bb7705f3feae00d17e9d38` | 2026-09-07 | AR-158's receipt records repeated focused passes and exact-byte reuse, but AR-156's named spine receipt omits its command and warning settings, so warning-strict execution is not demonstrated under ADR-0105. |

@@ -64,7 +64,10 @@ consecutive runs, 50 total, each run 0.63–0.65s. Complete hook-logging/host-ho
 MCP/runtime-observation/Store-observation package passes 135 with five existing
 skips (36.16s). Same-byte production-spine/UI/wheel receipts remain explicit.
 Only the obsolete seventh corpus requirement is reconciled under ADR-0105;
-first six criteria are unchanged. Seven isolated verdicts remain before closure.
+first six criteria are unchanged. Initial isolated review satisfies criteria
+1–6; criterion 7 is absent because the cited reused-spine receipt does not
+include its command/warning arguments. Preserve that result and repair the
+evidence citation before closure; no product failure is reported.
 
 ## Historical trigger
 

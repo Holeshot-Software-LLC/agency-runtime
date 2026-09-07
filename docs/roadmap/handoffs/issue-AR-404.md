@@ -64,11 +64,15 @@ are frozen against that exact candidate in acceptance/issue-AR-158.md.
 - Ruff check/format pass, 766 files. Latest telemetry 27.6 percent at 08:22:27Z;
   finish this small evidence/ledger checkpoint before isolated verification.
 - Counts remain 40 actual open trackers plus 90 unfinished legacy records
-  (130 local unfinished). Seven AR-158 verdicts remain before completion.
+  (130 local unfinished). Initial AR-158 criteria 1–6 satisfy; criterion 7 is
+  absent because its reused-spine citation omits the command/warning settings.
 
 ## Exact blocker
 
-No known product blocker for scoped AR-158; isolated acceptance is pending.
+No known product blocker for scoped AR-158. Preserve the initial absent
+criterion-7 verdict, then cite the frozen named-spine command with its warning
+settings explicitly. The first six satisfied checks need no repetition if
+the candidate and their rowsets stay unchanged.
 Existing skips are recorded, not new suppression.
 
 Independent holds: AR-156 needs owner Windows/profile and separately authorized
@@ -90,8 +94,9 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Run the seven frozen isolated acceptance checks at 95085a30.
-2. Preserve any failed verdict before revision; never handwrite a result.
+1. Preserve the initial review and ledger, then repair only criterion 7's
+   missing command citation against unchanged 95085a30; rerun that check only.
+2. Never handwrite a result or reset the six accepted checks.
 3. If all seven satisfy, mark done, reconcile counts, merge one normal PR,
    read back the actual merge SHA and fast-forward clean main.
 4. Start AR-159 separately; branch/account settings require explicit authority.
