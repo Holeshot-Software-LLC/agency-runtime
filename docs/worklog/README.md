@@ -2042,6 +2042,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f9cdbd7f` | 2026-09-07 | docs(roadmap): complete verified roster snapshot record | [AR-172](../roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md) | [Detail](2026-09-07-dec1bc51-roster-snapshot-continuity.md) |
 | `47d40fec` | 2026-09-07 | Merge pull request #721 from Holeshot-Software-LLC/codex/ar172-oldest-first-reconciliation | [AR-172](../roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md) | [Detail](2026-09-07-dec1bc51-roster-snapshot-continuity.md) |
 | `b2da6eb9` | 2026-09-07 | test(dashboard): bind diagnostic routes to request observations | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `f4f5124e` | 2026-09-07 | docs(roadmap): record Route Lab verification evidence | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

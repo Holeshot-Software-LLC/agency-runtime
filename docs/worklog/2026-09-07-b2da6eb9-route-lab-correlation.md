@@ -55,3 +55,13 @@ PR/merge before AR-174. Native Windows and owner activation/trust stay separate.
 
 b2da6eb9 (b2da6eb954ef0875745c2ddc17d6079567221de2) records the focused test/requirement slice.
 This immediate ledger is the clean checkpoint before broader verification.
+
+## Complete evidence candidate
+
+f4f5124e (f4f5124ef6433db9cae18784c15cc76ba880b391) contains actual full-focused 195-pass/52.75s,
+UI 204-pass/257.107362ms/96.93-86.78-95.73 coverage, and named-spine
+1085-pass/three-existing-skips/69.18s receipts. All strict record gates pass
+for 1206 Markdown files, 397 mapped/two historical PR exceptions, Ruff and diff.
+Draft missing-heading and copied display-padding failures are retained in the
+receipt; neither was ignored or claimed as passed. No code changes after
+b2da6eb9; the complete packet is ready for five isolated checks.
