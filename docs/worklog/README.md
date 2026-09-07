@@ -1996,6 +1996,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d30b8ae0` | 2026-09-07 | docs(acceptance): reconcile AR-162 historical and tracker proof | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
 | `3916c2cd` | 2026-09-07 | docs(acceptance): freeze AR-162 reconciled review | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
 | `53ed14ca` | 2026-09-07 | docs(backlog): complete accepted CodeQL capability boundary [AR-162] | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
+| `a01abe81` | 2026-09-07 | Merge pull request #713 from Holeshot-Software-LLC/codex/ar162-oldest-first-reconciliation | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
