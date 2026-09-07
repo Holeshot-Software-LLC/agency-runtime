@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-07-30
 tags: [security, dashboard, cli, controls, installation, automation]
 related:
+  - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md
   - docs/roadmap/issue-AR-196-authorize-prepared-dashboard-service-repair.md
@@ -99,4 +100,3 @@ browser content and local processes are not implicitly owner dashboard clients.
 - **Treat every same-account agent as untrusted while allowing the same CLI to
   mutate.** Rejected because there is no enforceable distinction at that
   boundary.
-

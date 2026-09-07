@@ -4,11 +4,23 @@ from __future__ import annotations
 
 import io
 import json
+import re
 from pathlib import Path
 
 import pytest
 
 import agency_runtime.server.mcp as mcp
+import agency_runtime.server.mcp_tools as mcp_tools
+from agency_runtime.core.correlation import MAX_CORRELATION_ID_BYTES
+from agency_runtime.core.delegation_status import (
+    MAX_DELEGATION_AGENT_CHARS,
+    MAX_DELEGATION_BACKEND_CHARS,
+    MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+    MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+    MAX_DELEGATION_WORKER_ID_CHARS,
+    MAX_DELEGATION_WORKER_KIND_CHARS,
+)
+from agency_runtime.core.installer_payloads import agency_control_skill
 from agency_runtime.core.store.sqlite import Store
 
 
@@ -316,14 +328,84 @@ def test_tools_call_rejects_invalid_dispatch_params(
 def test_every_published_string_is_bounded_and_hosts_share_one_vocabulary() -> None:
     host_enums: list[tuple[str, ...]] = []
     for tool in mcp.MCP_TOOLS:
-        for spec in tool["inputSchema"]["properties"].values():
+        for name, spec in tool["inputSchema"]["properties"].items():
             if spec.get("type") == "string":
                 assert isinstance(spec.get("maxLength"), int) and spec["maxLength"] > 0
-            if "enum" in spec and set(spec["enum"]) == set(mcp.SUPPORTED_HOSTS):
+            if name == "host":
+                assert spec.get("enum") == list(mcp.SUPPORTED_HOSTS)
                 host_enums.append(tuple(spec["enum"]))
 
     assert host_enums
     assert all(values == tuple(mcp.SUPPORTED_HOSTS) for values in host_enums)
+
+
+def test_published_tool_registry_matches_dispatch_without_duplicate_names() -> None:
+    names = [tool["name"] for tool in mcp.MCP_TOOLS]
+
+    assert len(names) == len(set(names))
+    assert set(names) == set(mcp._TOOLS_BY_NAME) == set(mcp_tools._TOOL_HANDLERS)
+
+
+@pytest.mark.parametrize("host", mcp.SUPPORTED_HOSTS)
+def test_generated_control_skill_uses_only_a_valid_read_only_host_tool(host: str) -> None:
+    skill = agency_control_skill(host)
+    names = re.findall(r"`(agency\.[a-z_]+)`", skill)
+
+    assert names == ["agency.host_status"]
+    tool = mcp._TOOLS_BY_NAME[names[0]]
+    assert tool["annotations"]["readOnlyHint"] is True
+    assert mcp._validate_tool_arguments(tool, {"host": host}) is None
+    assert f"`host` set to `{host}`" in skill
+    assert "do not call a mutation tool" in skill
+
+
+@pytest.mark.parametrize(
+    "name", ("agency.prepare_delegation", "agency.delegate", "agency.decline_delegation")
+)
+def test_retired_delegation_tools_are_rejected_before_any_store_access(name: str) -> None:
+    assert name not in mcp._TOOLS_BY_NAME
+    assert name not in mcp_tools._TOOL_HANDLERS
+    store_without_methods = object()
+    server = mcp.MCPServer(store=store_without_methods)
+    _initialize(server)
+
+    response = server.dispatch(
+        {
+            "jsonrpc": "2.0",
+            "id": "retired-delegation",
+            "method": "tools/call",
+            "params": {"name": name, "arguments": {"work_unit_id": "x" * 1024}},
+        }
+    )
+
+    assert response is not None and response["error"]["code"] == -32602
+    assert "Unknown tool" in response["error"]["message"]
+    assert mcp_tools.dispatch_tool_call(name, {}, store_without_methods) == {
+        "error": f"unknown tool: {name}"
+    }
+
+
+def test_canonical_delegation_identifiers_round_trip_at_store_bounds(tmp_path: Path) -> None:
+    store = Store(tmp_path / "delegation-bounds.db")
+    values = {
+        "trace_id": "t" * MAX_CORRELATION_ID_BYTES,
+        "session_id": "s" * MAX_CORRELATION_ID_BYTES,
+        "work_unit_id": "w" * MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+        "recommended_agent": "a" * MAX_DELEGATION_AGENT_CHARS,
+        "backend": "b" * MAX_DELEGATION_BACKEND_CHARS,
+        "executed_worker_kind": "k" * MAX_DELEGATION_WORKER_KIND_CHARS,
+        "executed_worker_id": "i" * MAX_DELEGATION_WORKER_ID_CHARS,
+        "native_run_id": "n" * MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+    }
+    event_id = store.record_delegation(**values, host="codex", status="suggested")
+
+    rows = store.get_delegations(values["trace_id"])
+    assert len(rows) == 1 and rows[0]["id"] == event_id
+    assert {field: rows[0][field] for field in values} == values
+    for field in ("trace_id", "session_id"):
+        with pytest.raises(ValueError, match="UTF-8 limit"):
+            store.record_delegation(**{**values, field: "x" * (MAX_CORRELATION_ID_BYTES + 1)})
+    assert len(store.get_delegations(values["trace_id"])) == 1
 
 
 @pytest.mark.parametrize(

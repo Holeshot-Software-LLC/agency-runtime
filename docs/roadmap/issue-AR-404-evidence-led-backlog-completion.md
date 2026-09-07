@@ -3,7 +3,7 @@ title: "AR-404: Complete the backlog through evidence-led delivery packages"
 status: in_progress
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-06
 tags: [backlog, review, acceptance, delivery]
 related:
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
@@ -50,10 +50,15 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
-**Paused by the owner to conserve credits.** Publish the saved AR-130 review
-and resume marker via PR #696, record the merge, then stop. AR-131 is next
-only when the owner explicitly resumes. No background work or polling.
-The oldest-first ledger and active capsule retain the exact evidence and holds.
+**Resumed by the owner on September 6 at AR-131.** The previous pause checkpoint
+is on main through PR #696/f38720c7 and the exact PR #697 ledger/c1c5d9d9.
+AR-131's original MCP fixes exist; ten added contract regressions and the
+installed Codex skill byte comparison provide current bounded evidence.
+Focused MCP/CLI: 126 passed/five existing skips. Freeze the original six
+criteria for isolated verification before any done flip, then PR/merge before
+AR-135. Windows work stays excluded. The oldest-first ledger and active capsule
+retain exact evidence and all earlier holds; ordinary-session header failure
+is not fixed or waived by this protocol-contract review.
 
 Before this pause, the owner required oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
