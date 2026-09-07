@@ -61,3 +61,8 @@ precede completion, one normal PR and merge before AR-173.
 
 dec1bc51 (dec1bc512462285cf4d43742c3e666e6d776186e) is the immutable source/test/raw-evidence candidate.
 This immediate ledger records it before isolated acceptance.
+
+## Acceptance freeze
+
+00e7af72 freezes dec1bc512462285cf4d43742c3e666e6d776186e for seven isolated checks.
+No production or test changes follow the observed passing runs.
