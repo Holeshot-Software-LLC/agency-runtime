@@ -1,11 +1,15 @@
 ---
 title: "AR-174: Short-circuit documentation-only CI"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [ci, github-actions, performance, cost, documentation, security]
 related:
+  - docs/decisions/0233-separate-hosted-run-timing-from-billing-administration.md
+  - docs/roadmap/acceptance/evidence/AR-174-docs-only-ci-20260907.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
   - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
@@ -62,6 +66,27 @@ portability, and source security fanout is skipped coherently. Code checks stay
 on the default pull-request merge revision; only history-derived ledgers switch
 to the exact durable head.
 
+September 7 reconciliation confirms the implementation remains relevant and
+unchanged. Fresh workflow/scope/sharding/session checks pass 235 cases with
+five Windows-named deselections; all 18 explicit Bash workflow steps parse,
+release hygiene passes and pinned offline zizmor has no findings beyond one
+unchanged suppression. Fresh named spine passes 1085/three existing skips;
+UI passes 204 with unchanged production coverage floors.
+
+Historical hosted evidence was overlooked: August 31 PR #380 changed only
+four regular docs Markdown files. Its successful run 33426445699 allocated
+exactly five jobs totaling 366 raw seconds (6.10 runner-minutes), with runtime
+fanout skipped. Trusted classifier/whitespace blobs match the current source.
+This is one historical timing measurement, not current billing health, a
+matched savings claim or new native-Windows execution. The complete read-only
+API/Git receipts are linked below. First isolated verdicts are preserved at
+5d20ec28: 2/3/4/6/8 satisfy; 1/5 need self-contained workflow/matrix citations,
+and 7 lacks account-repair proof despite valid raw timing. ADR-0233 explicitly
+separates timing from billing administration, retaining the original requirement
+and avoiding any claim that the account was repaired. All eight criteria satisfy
+at 5a003a059b52e4bc9e335e42a436768b95171446 in the second/final review.
+AR-174 is done with no source change, copied verdicts or third review.
+
 ## Approach
 
 Treat scope as a security decision. Read the classifier and whitespace helper
@@ -79,7 +104,10 @@ fanout to remain same-revision and fail closed. AR-156 owns the larger measured
 CI feedback program, while AR-159 owns separately authorized hosted branch
 enforcement.
 
-Tracker creation remains pending explicit outward-write authorization.
+The existing pre-tracker exemption applies; no duplicate tracker is created.
+ADR-0105 reconciles only the obsolete eighth universal gate before review.
+ADR-0233 separately reconciles criterion 7 after preserving the first review.
+All original wording is retained; criteria 1–6 are unchanged.
 
 ## Acceptance
 
@@ -94,9 +122,20 @@ Tracker creation remains pending explicit outward-write authorization.
   rejects missing, failed, cancelled, or incoherent results.
 - [x] Focused scope, workflow, sharding, shell, Ruff, release-hygiene, and
   offline workflow-security checks pass.
-- [ ] One eligible hosted pull request measures raw runner minutes after the
-  GitHub Actions billing/spending block is repaired.
-- [ ] The final repository release gate passes at the implementation commit.
+- [x] One exact eligible hosted pull-request run records raw runner minutes
+  from allocated jobs' start/completion timestamps, with base/head, complete
+  regular docs-only delta and successful five-runner topology; historical timing
+  is dated and does not assert billing repair, current availability or savings.
+- [x] Focused scope/workflow/sharding/session, Bash syntax, release hygiene,
+  offline workflow security, named production spine, UI/current coverage,
+  metadata, policy, worklog, strict docs/tracker, Ruff and diff checks pass;
+  exhaustive integration remains optional under ADR-0105.
+
+## Preserved original criteria
+
+7. One eligible hosted pull request measures raw runner minutes after the
+   GitHub Actions billing/spending block is repaired.
+8. The final repository release gate passes at the implementation commit.
 
 ## Implementation evidence
 
@@ -110,4 +149,7 @@ documentation lane is unchanged.
 Eighteen scope/whitespace tests, fifty workflow/aggregate tests, and forty-three
 combined scope/sharding/session tests pass. Current hosted jobs fail before
 runner allocation because of the external Actions billing state, so hosted
-duration remains deliberately unclaimed.
+duration remains deliberately unclaimed in that historical report. The
+[September 7 receipt](acceptance/evidence/AR-174-docs-only-ci-20260907.md)
+now records the overlooked August 31 five-runner measurement and current
+bounded verification, without rewriting the old run's source or outcomes.

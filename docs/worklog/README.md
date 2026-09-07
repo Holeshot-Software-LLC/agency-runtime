@@ -2049,6 +2049,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7650cdf0` | 2026-09-07 | docs(roadmap): freeze final AR-173 acceptance candidate | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 | `eb655007` | 2026-09-07 | docs(roadmap): checkpoint accepted AR-173 before owner pause | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 | `3864deda` | 2026-09-07 | docs(roadmap): resume accepted AR-173 publication | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `7ad0d33e` | 2026-09-07 | Merge pull request #722 from Holeshot-Software-LLC/codex/ar173-oldest-first-reconciliation | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `452639dd` | 2026-09-07 | docs(roadmap): verify AR-174 against actual docs-only runners | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
+| `a4c22d00` | 2026-09-07 | docs(roadmap): freeze AR-174 isolated acceptance evidence | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
+| `5d20ec28` | 2026-09-07 | docs(roadmap): preserve first AR-174 acceptance verdicts | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
+| `5a003a05` | 2026-09-07 | docs(roadmap): bind AR-174 timing to allocated hosted runs | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
+| `8b658693` | 2026-09-07 | docs(roadmap): freeze final AR-174 acceptance candidate | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
+| `fe625e48` | 2026-09-07 | docs(roadmap): complete AR-174 docs-only CI reconciliation | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
