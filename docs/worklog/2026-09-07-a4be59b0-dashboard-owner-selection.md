@@ -65,3 +65,13 @@ The first zero-check timeout report is preserved: the browser fixture initially
 injected the retired standalone config endpoint instead of combined control.
 Final browser verification now adds null-401 terminal/correlation behavior;
 all six builder rowsets remain pending, with no isolated review started.
+
+## Final browser candidate
+
+4a244776 retains the final source-served report and desktop/mobile screenshots.
+All 20 checks pass, zero POSTs, including terminal null-401 notices with safe
+request IDs. Served config/core hashes match f9c55ada exactly. The first fixture
+timeout remains recorded; no production change was needed for its endpoint fix.
+All six builder rowsets are present and pending. Strict docs pass 1190 files.
+This is browser evidence for a private/offline source fixture, not an installed
+wheel, native-host activation, whole-dashboard accessibility or staffing trial.
