@@ -274,15 +274,30 @@ state-preservation regressions. Store/HTTP/activation 278, UI 204/current floors
 and fresh spine 1085/three existing skips pass. Only obsolete criterion 7 is
 reconciled under ADR-0105. All seven criteria satisfy at dec1bc51; first verdicts
 remain at 4c5acdcf before the single criterion-6 call-site citation recheck.
-No production change or candidate retry. AR-172 is done; normal publication next.
+No production change or candidate retry. AR-172 is done; PR #721 merged
+47d40fec at 13:11:01Z September 7 before the separate AR-173 tree.
 
-Current counts: 40 actual open trackers plus 82 unfinished legacy records,
-122 total after AR-172 completion; no duplicate tracker or false acceptance.
+AR-173's existing trace attachment is confirmed and its missing direct HTTP
+regression added. Two actual social explanations plus invalid/disabled guards
+prove exact response/log digest binding, bounded metadata and no durable
+diagnostic turns. Full focused 195, UI 204/current floors and fresh spine
+1085/three existing skips pass. ADR-0231 initially reconciled 1/4/5; first review
+at 941b9025 exposed criterion 2's remaining raw-trace/digest wording error.
+ADR-0232 explicitly supersedes it, preserving originals. All five criteria
+satisfy at 594bc4d3 in the second/final review. No production changes or third
+review; AR-173 is accepted locally. The owner paused at 13:38 UTC September 7
+before publication; clean local checkpoint 1f16f948 preserves it. At 20:14 UTC
+the owner explicitly resumed until 9 p.m. Eastern (September 8 at 01:00 UTC).
+Publish AR-173, then AR-174; finish at a clean checkpoint by that cutoff.
+
+Local accepted-branch counts: 40 actual open trackers plus 81 unfinished legacy
+records, 121 total. Main remains 40 plus 82 = 122 until AR-173 publication.
+No duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
 
-Before this pause, the owner required oldest-first sequential delivery: one record, one PR,
+The owner requires oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
 The [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md) is the
 current ordering/disposition record. AR-115 was retired under ADR-0222 in
@@ -509,8 +524,9 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Finish AR-150's isolated acceptance and publish one PR/merge. Then review AR-151.
-AR-146/148/149 are done and Windows-only AR-147 stays with the owner.
+Publish accepted AR-173 through one normal PR/merge, then review AR-174.
+The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
+leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override
 the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
 visible, exclude Windows execution, and do not close the full backlog until

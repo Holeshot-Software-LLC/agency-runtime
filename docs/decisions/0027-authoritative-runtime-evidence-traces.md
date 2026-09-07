@@ -6,6 +6,8 @@ created: 2026-07-10
 updated: 2026-09-07
 tags: [evidence, tracing, delegation]
 related:
+  - docs/decisions/0232-represent-route-lab-observations-by-trace-digest.md
+  - docs/decisions/0231-separate-route-lab-correlation-from-turn-persistence.md
   - docs/roadmap/issue-AR-157-quiet-public-http-disconnects.md
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md

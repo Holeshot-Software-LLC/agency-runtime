@@ -2040,6 +2040,15 @@ This registry connects repository history to the roadmap and to optional detail 
 | `00e7af72` | 2026-09-07 | docs(roadmap): freeze AR-172 acceptance evidence | [AR-172](../roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md) | [Detail](2026-09-07-dec1bc51-roster-snapshot-continuity.md) |
 | `4c5acdcf` | 2026-09-07 | docs(roadmap): preserve first AR-172 acceptance verdicts | [AR-172](../roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md) | [Detail](2026-09-07-dec1bc51-roster-snapshot-continuity.md) |
 | `f9cdbd7f` | 2026-09-07 | docs(roadmap): complete verified roster snapshot record | [AR-172](../roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md) | [Detail](2026-09-07-dec1bc51-roster-snapshot-continuity.md) |
+| `47d40fec` | 2026-09-07 | Merge pull request #721 from Holeshot-Software-LLC/codex/ar172-oldest-first-reconciliation | [AR-172](../roadmap/issue-AR-172-make-roster-pages-snapshot-consistent.md) | [Detail](2026-09-07-dec1bc51-roster-snapshot-continuity.md) |
+| `b2da6eb9` | 2026-09-07 | test(dashboard): bind diagnostic routes to request observations | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `f4f5124e` | 2026-09-07 | docs(roadmap): record Route Lab verification evidence | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `017dea36` | 2026-09-07 | docs(roadmap): freeze AR-173 acceptance evidence | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `941b9025` | 2026-09-07 | docs(roadmap): preserve first AR-173 acceptance verdicts | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `594bc4d3` | 2026-09-07 | docs(roadmap): clarify diagnostic trace representation | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `7650cdf0` | 2026-09-07 | docs(roadmap): freeze final AR-173 acceptance candidate | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `eb655007` | 2026-09-07 | docs(roadmap): checkpoint accepted AR-173 before owner pause | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
+| `3864deda` | 2026-09-07 | docs(roadmap): resume accepted AR-173 publication | [AR-173](../roadmap/issue-AR-173-correlate-route-lab-observations.md) | [Detail](2026-09-07-b2da6eb9-route-lab-correlation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
