@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar138-oldest-first-reconciliation
-evidence_commit: d7231df3d7c01a8ea2518c7e3d8ee07a287dfabc
-minimum_ledger_commit: 7892096d267bdbefce8fd8769717a83ba2806ea5
+evidence_commit: fa4d042bf0260db4fd6c4ec16606740f5c3a7847
+minimum_ledger_commit: 6bc9ccb0b0974b57abc79c518ccab7a982da0fff
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -104,8 +104,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Commit the final AR-138 browser evidence and its ledger, then pin that
-   candidate before the isolated verifier. No source repair is pending.
+1. Final AR-138 evidence is committed at fa4d042b, ledger 6bc9ccb0. The isolated
+   candidate is pinned to fa4d042b. No source repair is pending.
 2. Freeze the six unchanged criteria's evidence and run isolated acceptance
    with the available Codex transport. Never author verdicts or waive gaps.
 3. If satisfied, update the legacy count, open one PR and merge normally.
