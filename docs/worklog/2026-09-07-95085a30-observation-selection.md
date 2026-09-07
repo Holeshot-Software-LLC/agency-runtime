@@ -74,3 +74,10 @@ Current counts: 40 actual open trackers plus 89 unfinished legacy records,
 before starting AR-159; no new installation, corpus or native Windows claim.
 PR #710 carries accepted completion. Fresh enumeration confirms 129 unfinished
 records (89 legacy, 40 mapped); end telemetry is 8.7 percent with a clean pair.
+
+## Publication
+
+PR #710 merged normally at 2026-09-07T08:41:00Z as b2ea5946, with reviewed head
+699db08da4a1e56d5c324103860223af25142bee. Main was fast-forwarded cleanly to
+that merge before the separate AR-159 worktree was created. No hosted check
+success is inferred from the empty PR check rollup.

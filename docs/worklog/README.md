@@ -1985,6 +1985,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `809354be` | 2026-09-07 | docs(acceptance): preserve AR-158 command-citation gap | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
 | `b0d9efe8` | 2026-09-07 | docs(acceptance): cite frozen warning-strict spine command [AR-158] | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
 | `3da9cfd0` | 2026-09-07 | docs(backlog): close verified observation selection [AR-158] | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
+| `b2ea5946` | 2026-09-07 | Merge pull request #710 from Holeshot-Software-LLC/codex/ar158-oldest-first-reconciliation | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
