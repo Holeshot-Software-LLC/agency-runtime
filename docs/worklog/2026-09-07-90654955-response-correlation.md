@@ -15,7 +15,7 @@ type: worklog
 commit: 90654955ff3107d5d76173fc04c9f233d5e5e3bc
 short: 90654955
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/719
 related_issues:
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
 ---
@@ -124,3 +124,6 @@ Publish all three tested code repairs and retain the explicit future evidence
 package. Counts stay 40 mapped plus 84 legacy = 124. Current strict gates pass:
 1196 Markdown, 397 mapped/two historical PR exceptions, metadata/policy/worklog
 and diff. AR-171 follows normal merge, with Windows still owner work.
+
+PR #719 carries the tested repair and retained evidence gaps. End telemetry
+is 30.0 percent at 12:17:03Z; 92f1e1d7/ed4b7447 form the clean checkpoint.
