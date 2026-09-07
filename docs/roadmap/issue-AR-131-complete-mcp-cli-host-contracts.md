@@ -6,6 +6,10 @@ created: 2026-07-26
 updated: 2026-09-06
 tags: [mcp, cli, host-integrations, schema, compatibility]
 related:
+  - agency_runtime/__init__.py
+  - agency_runtime/core/delegation_status.py
+  - tests/test_public_api.py
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - agency_runtime/server/mcp.py
   - agency_runtime/server/mcp_tools.py
   - agency_runtime/core/host_control.py
@@ -61,10 +65,15 @@ byte-for-byte; this is file evidence, not hook trust or live activation.
 Original six acceptance criteria remain unchanged. The first isolated review
 of fb2e4e23 satisfied criteria 2/3/6, found missing citations for 1/5, and
 contradicted 4: the boundary-only test does not establish lossless admission.
-The public Python delegation facade still forwards oversized identifiers to
-the deliberately normalizing internal Store. Preserve these verdicts, then
-reproduce and repair that public admission gap before a new candidate review.
-This record is not done. This pre-tracker record does not need a new tracker.
+The public Python facade forwarded oversized identifiers to the deliberately
+normalizing internal Store. Commit 6a139e23 preserves these first verdicts.
+The new alias regression failed before repair: a different overlong work-unit
+ID could update an existing prefix-matched event. Public admission now rejects
+lossy identifiers before Store recording; all 13 new regression cases pass,
+including exact ASCII/Unicode boundary round trips and rejected-input no-write
+checks. Internal native-observation normalization remains unchanged.
+This repaired candidate still requires isolated verification and is not done.
+This pre-tracker record does not need a new tracker.
 
 The default Claude verifier was unavailable because its executable parent
 namespace failed the existing trust check; it wrote no verdicts. The supported
@@ -95,8 +104,19 @@ skills invoke the registered read-only status tool and direct operators to
 owner CLI controls, not to an invented model-facing mutation tool. Freeze the
 current source/test evidence, run one isolated verifier per original criterion,
 and only then determine completion. No runtime code change is needed for the
-original MCP schema defect. The remaining public Python admission gap requires
-its own regression-first repair, preserving defensive internal normalization.
+original MCP schema defect. The public Python admission repair enforces the
+existing exact-identifier contract, preserving defensive internal normalization
+and the public master-off/active-turn guards. It does not add a delegation tool,
+change staffing or alter the owner-control decision.
+
+Post-repair verification: 13 new public-admission tests pass (20.35s), the named
+spine passes 1085 with three existing skips (68.60s), UI passes 138, routing and
+Ruff pass. A broader nine-module run has 380 passed, eight existing skips and
+one unrelated legacy fallback-roster failure reproduced on untouched main;
+AR-176 owns that fixture repair. This broader run is not labeled green.
+Post-repair decision-conformance passes its baseline and kills all 184 protected
+mutations, with zero survived/invalid and source unchanged. No exhaustive
+corpus, hosted workflow, release artifact or installed/live pass is claimed.
 
 ## Dependencies
 

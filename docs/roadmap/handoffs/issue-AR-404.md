@@ -28,8 +28,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar131-oldest-first-reconciliation
-evidence_commit: fb2e4e2379939c7525018a14b2c54f8f15b168fb
-minimum_ledger_commit: 66e5719457ed1e86eb6899d43e612b2ec186b126
+evidence_commit: 6a139e2362f9e4599bf86360e9cce343dff0cc30
+minimum_ledger_commit: b7a445a67eb11a428a05eb45309c4ea70c2b992d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -46,8 +46,9 @@ PR #697 ledger/c1c5d9d9. No background work ran during the pause.
 Current package: AR-131's existing MCP/CLI repair, strengthened current-contract
 regressions, and original six-criterion isolated acceptance. Not yet done.
 First candidate fb2e4e23 has verdicts: 2/3/6 satisfied, 1/5 absent citations,
-4 contradicted by lossy identifier admission. Preserve that failed candidate
-before repairing the public Python facade. No production change yet.
+4 contradicted by lossy identifier admission. Those verdicts are preserved at
+6a139e23/b7a445a6. The public facade repair now passes 13 new regressions; freeze
+and verify the repaired candidate next. Native normalization remains unchanged.
 
 ## Completed evidence
 
@@ -70,19 +71,27 @@ before repairing the public Python facade. No production change yet.
 - The old public prepare/delegate/decline tools were removed at eab8c085.
   They must stay absent. Canonical max-sized Store IDs round-trip; arbitrary
   noncanonical internal inputs still have normalization, not an unchanged-byte
-  promise. The public facade still fails to reject values that normalize.
+  promise. The public facade now rejects lossy inputs before Store recording.
+- Repaired alias regression was red before repair; all 13 new cases now pass
+  (20.35s), including exact ASCII/Unicode max-sized IDs and no-write rejection.
+  Post-repair spine: 1085/three skips (68.60s); UI: 138; routing/Ruff pass.
+  Decision-conformance: passing baseline, 184/184 killed, zero survived/invalid,
+  source unchanged. No release/installed/live certification.
+  Broader nine-module run: 380 pass/one unchanged failure/eight existing skips
+  (59.71s). Fallback-roster failure also reproduces on untouched main c1c5d9d9;
+  AR-176 owns the sixth stale case. Do not call that run green.
 - Earlier AR-348/271 installs and live/deterministic receipts retain their
   original scope. No fresh five-host live pass is claimed by this package.
 
 ## Exact blocker
 
 AR-131 cannot close on its first verdicts. Add missing citations for 1/5 and
-repair public exact identifier admission for 4 without casually changing the
-intentional low-level normalization contract. Claude verification is unavailable
+verify the repaired public exact identifier admission for 4 without changing
+the intentional low-level normalization contract. Claude verification is unavailable
 under executable trust checks; the already usable Codex provider wrote the
 six verdicts. No trust or credentials were changed. Native Windows and
 earlier installed/live evidence holds remain with their existing owners.
-AR-176 owns five stale fixtures found in AR-127/130; no failures are erased.
+AR-176 owns six stale fixture cases found in AR-127/130/131; none are erased.
 The session's unverified staffing/header remains a separate unfinished concern.
 
 ## Same-task continuity
@@ -95,9 +104,8 @@ continue the same task. Retained umbrellas cannot be closed by closing one child
 
 ## Next bounded work package
 
-1. Commit first-candidate verdicts and their evidence with a narrow ledger pair.
-   Reproduce/fix exact public delegation identifier admission; retain internal
-   defensive normalization. Original acceptance text is unchanged.
+1. Commit/freeze the repaired candidate and its evidence/ledger checkpoint.
+   Conformance passes; first verdicts are preserved and criteria unchanged.
 2. Freeze the repaired candidate and complete cited evidence; run one isolated
    verifier per criterion with the usable Codex provider. Only if all six
    satisfy, mark done and publish one PR, then merge.

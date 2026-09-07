@@ -21,12 +21,63 @@ superseded_by: null
 
 ## Scope
 
-Review base c1c5d9d9, September 6 local date. Production source is unchanged.
-This package adds ten regression cases and strengthens the old host-enum
-assertion. It tests the current protocol, not a live inference nomination,
-native child execution, Windows-attested root or five-host activation.
+Review base c1c5d9d9, September 6 local date. The first test-only candidate
+fb2e4e23 added ten cases and strengthened the old host-enum assertion. The
+repaired candidate additionally enforces exact public Python delegation
+identifier admission with 13 regression cases. Native observations retain
+their defensive internal normalization. This tests public contracts, not live
+inference nomination, native child execution, Windows-attested roots or
+five-host activation. First candidate verdicts are preserved at 6a139e23.
 
 ## Current verification
+
+Repaired public-entry regression command:
+
+```bash
+python -m pytest tests/test_public_api.py -k public_delegation -q -W error --tb=short
+```
+
+Result: **13 passed, 22 deselected in 20.35s**. Each case uses a real temporary
+Store and an actual trivial preflight to establish its active turn. The alias
+test failed before repair (`DID NOT RAISE ValueError`, 1.93s): an overlong
+work-unit ID could merge into an existing prefix-matched event. Rejection now
+leaves that existing row unchanged. All seven bounded identifier fields reject
+oversize/type/whitespace/control-character inputs without recording a row;
+trace/session IDs retain exact whitespace and UTF-8 byte bounds. ASCII and
+Unicode maximum-sized IDs round-trip through the completed-event path. Empty
+optional fields and canonical single interior spaces remain supported.
+
+Post-repair named spine: **1085 passed, 3 skipped in 68.60s**. UI: **138 passed**,
+zero failed/skipped (190.76ms). Ruff check/format pass for all 764 files. The
+current-source routing evaluator again passes all gates. The expanded
+nine-module command below has **380 passed, 1 failed, 8 skipped in 59.71s**:
+
+```bash
+python -m pytest tests/test_public_api.py tests/test_evidence_integrity.py \
+  tests/test_mcp_protocol_hardening.py tests/test_mcp_server.py \
+  tests/test_mcp_cli_dispatch_tables.py tests/test_cli_parser_contract.py \
+  tests/test_preflight_bounds.py tests/test_runtime_control.py \
+  tests/test_security_turn_boundaries.py -q -W error --tb=short -rs
+```
+
+The sole failure is the unchanged
+`test_public_route_repairs_legacy_fallback_roster_without_opening_turns`:
+it also fails alone on untouched main c1c5d9d9 (2.04s). The offline fixture
+expects fallback companions even though `selector/pipeline.py` suppresses them
+after inference failure. AR-176 records its repair; the test was not changed,
+skipped or called green. Existing skips are five full-inference cases, one
+Windows-attested root, one Linux workforce-stub case and one Windows lock case.
+The initial ungrouped invalid-input matrix also exposed this same failure
+(170 passed/one failed/one skip, 118.89s). Grouping invalid values per field
+retains every assertion while avoiding repeated expensive preflight setup.
+
+Post-repair `agency eval decision-conformance --repository . --json` also
+passes: baseline exit 0 in 97,977 ms; **184/184 protected mutations killed**,
+zero survived/invalid and `source_unchanged: true`. It ran through the
+current-source CLI with a process-local private umask. This is curated
+decision sensitivity, not an exhaustive mutation or release certificate.
+
+MCP-only command, rerun after the repair:
 
 ```bash
 python -m pytest tests/test_mcp_protocol_hardening.py \
@@ -35,7 +86,7 @@ python -m pytest tests/test_mcp_protocol_hardening.py \
 ```
 
 Using an isolated development interpreter with this worktree first on
-PYTHONPATH: **126 passed, 5 skipped in 6.06s**. The five existing skips are four
+PYTHONPATH: **126 passed, 5 skipped in 5.00s** (first candidate: 6.06s). The five existing skips are four
 ADR-0087 full-inference nomination/delivery cases and one Codex-attested Windows
 task-root case. They were not added or changed by this package. Before the ten
 new cases, the same package passed 116 with the same five skips in 5.54s.
@@ -67,11 +118,11 @@ Criteria 2/3/6 are satisfied. Criteria 1/5 lack the constants/registry definitio
 and per-criterion passing-command citations in their supplied excerpts.
 Criterion 4 is contradicted: internal Store normalization slices oversized
 identifiers, and a test at the maximum alone does not prove exact admission.
-The public Python facade still admits those values. The first verdicts remain
-in their committed acceptance record before any candidate/evidence replacement.
-Next: reproduce that facade defect, reject lossy public identifiers before
-Store writes, preserve the existing internal normalization contract, and then
-freeze new evidence for all six criteria. Do not hand-edit verifier verdicts.
+The public Python facade admitted those values. The first verdicts remain
+preserved at 6a139e23 before any candidate/evidence replacement. The repair and
+red/green evidence are above. Freeze this new candidate for all six criteria;
+verifier verdicts are not hand-edited. The current contract concerns accepted
+public requests, not arbitrary low-level administrative/native observations.
 
 ## Observed boundaries
 

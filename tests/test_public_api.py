@@ -12,8 +12,159 @@ from typing import Any
 import pytest
 
 from agency_runtime import AgencyRuntime
+from agency_runtime.core.correlation import MAX_CORRELATION_ID_BYTES
+from agency_runtime.core.delegation_status import (
+    MAX_DELEGATION_AGENT_CHARS,
+    MAX_DELEGATION_BACKEND_CHARS,
+    MAX_DELEGATION_HOST_CHARS,
+    MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+    MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+    MAX_DELEGATION_WORKER_ID_CHARS,
+    MAX_DELEGATION_WORKER_KIND_CHARS,
+)
 from agency_runtime.core.roster.bundled import SOURCE_REPOSITORY
 from tests.runtime_support import stub_inference_invoker, write_provider_config
+
+_DELEGATION_LIMITS = {
+    "host": MAX_DELEGATION_HOST_CHARS,
+    "work_unit_id": MAX_DELEGATION_WORK_UNIT_ID_CHARS,
+    "recommended_agent": MAX_DELEGATION_AGENT_CHARS,
+    "backend": MAX_DELEGATION_BACKEND_CHARS,
+    "executed_worker_kind": MAX_DELEGATION_WORKER_KIND_CHARS,
+    "executed_worker_id": MAX_DELEGATION_WORKER_ID_CHARS,
+    "native_run_id": MAX_DELEGATION_NATIVE_RUN_ID_CHARS,
+}
+
+
+@pytest.fixture
+def delegation_runtime(tmp_path: Path) -> AgencyRuntime:
+    runtime = AgencyRuntime(str(tmp_path / "agency.db"))
+    runtime.preflight("session", "thanks", trace_id="turn")
+    assert runtime.store.get_run("turn")["preflight_state"] == "ready"
+    return runtime
+
+
+def test_public_delegation_rejects_identifier_alias_before_overwriting_evidence(
+    delegation_runtime: AgencyRuntime,
+) -> None:
+    runtime = delegation_runtime
+    work_unit_id = "u" * MAX_DELEGATION_WORK_UNIT_ID_CHARS
+    runtime.record_delegation(
+        trace_id="turn",
+        session_id="session",
+        work_unit_id=work_unit_id,
+        recommended_agent="code-reviewer",
+        status="suggested",
+    )
+    before = runtime.store.get_delegations("turn")
+
+    with pytest.raises(ValueError, match="work_unit_id"):
+        runtime.record_delegation(
+            trace_id="turn",
+            session_id="session",
+            work_unit_id=work_unit_id + "-different-unit",
+            recommended_agent="code-reviewer",
+            status="completed",
+            backend="test",
+            executed_worker_kind="native",
+            executed_worker_id="different-worker",
+            native_run_id="different-run",
+        )
+
+    assert runtime.store.get_delegations("turn") == before
+
+
+@pytest.mark.parametrize("field,maximum", _DELEGATION_LIMITS.items())
+def test_public_delegation_rejects_noncanonical_identifiers_without_writes(
+    delegation_runtime: AgencyRuntime,
+    field: str,
+    maximum: int,
+) -> None:
+    runtime = delegation_runtime
+    arguments = {
+        "trace_id": "turn",
+        "session_id": "session",
+        "work_unit_id": "unit",
+        "recommended_agent": "code-reviewer",
+        "status": "suggested",
+    }
+    for value in (
+        None,
+        17,
+        True,
+        " padded",
+        "padded ",
+        "two  spaces",
+        "line\nbreak",
+        "nul\0byte",
+        "\ud800",
+        "u" * (maximum + 1),
+    ):
+        with pytest.raises(ValueError, match=field):
+            runtime.record_delegation(**(arguments | {field: value}))
+        assert runtime.store.get_delegations("turn") == []
+
+
+@pytest.mark.parametrize("field", ["trace_id", "session_id"])
+def test_public_delegation_rejects_noncanonical_correlation_without_writes(
+    delegation_runtime: AgencyRuntime,
+    field: str,
+) -> None:
+    runtime = delegation_runtime
+    arguments = {
+        "trace_id": "turn",
+        "session_id": "session",
+        "work_unit_id": "unit",
+        "recommended_agent": "code-reviewer",
+        "status": "suggested",
+    }
+    for invalid in (
+        None,
+        17,
+        True,
+        f" {arguments[field]} ",
+        "line\nbreak",
+        "é" * (MAX_CORRELATION_ID_BYTES // 2 + 1),
+    ):
+        with pytest.raises(ValueError, match=field):
+            runtime.record_delegation(**(arguments | {field: invalid}))
+        assert runtime.store.get_delegations("turn") == []
+
+
+@pytest.mark.parametrize("glyph", ["x", "é"])
+def test_public_delegation_preserves_all_maximum_sized_identifiers(
+    tmp_path: Path,
+    glyph: str,
+) -> None:
+    runtime = AgencyRuntime(str(tmp_path / "agency.db"))
+    correlation = glyph * (MAX_CORRELATION_ID_BYTES // len(glyph.encode("utf-8")))
+    runtime.preflight(correlation, "thanks", trace_id=correlation)
+    arguments = {field: glyph * maximum for field, maximum in _DELEGATION_LIMITS.items()}
+    arguments.update(trace_id=correlation, session_id=correlation)
+
+    event_id = runtime.record_delegation(**arguments, status="completed")
+
+    rows = runtime.store.get_delegations(correlation)
+    assert len(rows) == 1
+    assert rows[0]["id"] == event_id
+    assert {field: rows[0][field] for field in arguments} == arguments
+
+
+def test_public_delegation_preserves_canonical_spaces_and_empty_optional_identifiers(
+    delegation_runtime: AgencyRuntime,
+) -> None:
+    runtime = delegation_runtime
+    runtime.record_delegation(
+        trace_id="turn",
+        session_id="session",
+        work_unit_id="unit one",
+        recommended_agent="code-reviewer",
+        status="suggested",
+    )
+    row = runtime.store.get_delegations("turn")[0]
+    assert row["work_unit_id"] == "unit one"
+    for field in ("backend", "executed_worker_kind", "executed_worker_id", "native_run_id"):
+        assert row[field] == ""
 
 
 def test_package_import_does_not_eagerly_load_runtime_heavy_modules() -> None:

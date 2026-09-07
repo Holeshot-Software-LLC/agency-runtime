@@ -3,9 +3,10 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-09-05
+updated: 2026-09-06
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - docs/roadmap/issue-AR-348-enforce-strict-independence-in-production.md
   - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
   - docs/RELEASE_CHECKLIST.md
@@ -354,6 +355,12 @@ changes rather than duplicating every commit.
   cycle, and will not be removed before 0.3.0.
 
 ### Fixed
+
+- The public Python delegation API rejects oversized, non-string and
+  noncanonical identifiers before Store normalization can alias another work
+  unit or worker. Accepted identifiers round-trip unchanged; native-observation
+  normalization and read-only MCP controls retain their existing contracts
+  (AR-131).
 
 - Honor opt-in strict hiring independence across actual creator/reviewer
   provider chains, including harness overrides, legacy providers, content
