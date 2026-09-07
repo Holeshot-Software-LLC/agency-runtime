@@ -14,7 +14,7 @@ type: worklog
 commit: 1adacdde58fdbf186e370e2d87677efc21da2516
 short: 1adacdde
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/737
 related_issues:
   - docs/roadmap/issue-AR-408-preserve-staffing-failure-receipts.md
 ---
@@ -55,7 +55,7 @@ UI224/current floors. Exact commands and scope in portable receipt.
 ## Follow-ups
 
 Freeze isolated acceptance, run package/installed smoke, then PR/merge and
-close732. Separately integrate the reviewed quality-preserving AR409 budget
+close732. Separately integrate the reviewed AR409 budget
 reservations; no live-quality equivalence is claimed here.
 
 Substantive `1adacdde` is the reviewed actual-cause/allowance repair; source tests and existing live traces establish this bounded diagnostic outcome without changing staffing budgets.
