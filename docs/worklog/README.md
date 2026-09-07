@@ -2001,6 +2001,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b9d91243` | 2026-09-07 | docs(acceptance): freeze AR-163 existing authority evidence | [AR-163](../roadmap/issue-AR-163-reopen-stale-remediation-authority.md) | [detail](2026-09-07-fd551fd4-remediation-authority.md) |
 | `49b26b5b` | 2026-09-07 | docs(backlog): complete verified remediation authority record [AR-163] | [AR-163](../roadmap/issue-AR-163-reopen-stale-remediation-authority.md) | [detail](2026-09-07-fd551fd4-remediation-authority.md) |
 | `6d1ca01f` | 2026-09-07 | Merge pull request #714 from Holeshot-Software-LLC/codex/ar163-oldest-first-reconciliation | [AR-163](../roadmap/issue-AR-163-reopen-stale-remediation-authority.md) | [detail](2026-09-07-fd551fd4-remediation-authority.md) |
+| `083ae8b5` | 2026-09-07 | docs(backlog): verify current executable isolation surfaces [AR-164] | [AR-164](../roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md) | [detail](2026-09-07-083ae8b5-executable-boundary.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

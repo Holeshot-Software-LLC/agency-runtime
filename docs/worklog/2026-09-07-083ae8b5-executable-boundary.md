@@ -1,0 +1,51 @@
+---
+title: "Verify current executable-isolation surfaces"
+status: active
+category: worklog
+created: 2026-09-07
+updated: 2026-09-07
+tags: [security, executables, evidence, backlog]
+related:
+  - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
+  - docs/roadmap/acceptance/evidence/AR-164-executable-boundary-20260907.md
+  - docs/decisions/0227-bind-executable-isolation-to-current-launch-surfaces.md
+  - docs/worklog/README.md
+supersedes: []
+superseded_by: null
+type: worklog
+commit: 083ae8b58378d97c139cfb79debf0a49175b3f92
+short: 083ae8b5
+date: 2026-09-07
+pr: null
+related_issues:
+  - docs/roadmap/issue-AR-164-reject-repository-ancestor-path-poisoning.md
+---
+
+# Worklog detail: Current executable isolation
+
+## Approach and decision
+
+The original ancestor PATH boundary remains implemented. No code/test change
+was needed. Job B deliberately deleted the direct host/command worker backends
+named in old criterion 5. ADR-0227 explicitly maps that one requirement to
+current CLI-provider, installer, dashboard and smoke launch paths; the old
+wording and other six criteria remain. This neither restores deleted worker
+execution nor relaxes executable trust. Native Windows qualification stays
+distinct from portable spelling/PATHEXT simulations; AR-187 retains attended
+lifecycle proof. Existing legacy tracker exemption applies.
+
+## Verification
+
+Fresh warning-strict discovery: 38 pass/one native-Windows deselection (0.14s);
+six-module current launch package: 129 pass/23 Windows-named deselections (3.39s);
+surviving Git/process: 24 pass/three Windows-named deselections (0.63s).
+No skips/failures/new suppressions. Source/test/script/gate bytes equal fcdcd6eb;
+reuse named spine 1085/three existing skips and same-byte AR-163 DOM 188 results.
+Strict docs pass 1180 Markdown files, tracker parity 397 mapped/two historical
+PR exceptions, Ruff check/format 766 files, metadata/policy/worklog/diff clean.
+No exhaustive dispatch, native Windows, trust bypass or attended host run.
+
+## Follow-ups
+
+Freeze all seven rowsets at 083ae8b5 and require isolated candidate-bound
+verdicts before completion. Publish one PR and normal merge, then AR-165.
