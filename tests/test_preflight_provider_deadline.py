@@ -60,6 +60,7 @@ def test_actual_preflight_closes_with_deadline_receipt_and_scopes_vector_cache(
     receipt = store.get_preflight_failure_receipt("deadline-session", "deadline-trace")
     assert receipt is not None
     assert receipt["provider_attempts"][-1]["reason_code"] == "provider_deadline_exhausted"
+    assert receipt["provider_attempts"][-1]["timeout_ms"] == 65000
 
 
 @pytest.mark.parametrize("transport", ["structured", "embedding", "reranker"])
