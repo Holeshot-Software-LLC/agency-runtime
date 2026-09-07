@@ -1953,6 +1953,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2c01b083` | 2026-09-07 | docs(backlog): accept verified refresh epoch contract [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 | `460f319b` | 2026-09-07 | Merge pull request #703 from Holeshot-Software-LLC/codex/ar150-oldest-first-reconciliation | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 | `58285009` | 2026-09-07 | test(dashboard): bind UI host choices to POST authority [AR-151] | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
+| `99e05d1f` | 2026-09-07 | test(dashboard): reconcile current authority and freshness fixtures [AR-151] | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
