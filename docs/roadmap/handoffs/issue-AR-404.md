@@ -18,8 +18,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar174-oldest-first-reconciliation
-evidence_commit: d43dc92328bd10788c50e0bb1cd40622c475e23c
-minimum_ledger_commit: d43dc92328bd10788c50e0bb1cd40622c475e23c
+evidence_commit: 452639dda089ea3304e04824beaf9b79e8c1febe
+minimum_ledger_commit: 2b09bded426f001ad9cdcf43c2276a43ed12433c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -57,8 +57,11 @@ are prepared; no builder-authored verdict or done flip.
 
 ## Exact blocker
 
-AR-174 needs completed strict record receipts, a frozen candidate and eight
-isolated checks. No technical failure reproduced. Do not claim done prematurely.
+AR-174's complete receipts pass strict records (1209 Markdown files;
+397 mapped/two historical PR exceptions; Ruff 766). Candidate 452639dd and
+ledger 2b09bded form the clean checkpoint; eight isolated checks are next.
+One draft citation past EOF was corrected before review. No technical failure
+reproduced. Do not claim done prematurely.
 
 Retained AR-170 has two exhausted review passes: final 1/2/4/5/6/7/8 satisfy,
 3/9 need complete collection call sites and raw gate receipts. First/final
@@ -77,7 +80,7 @@ Preserve first verdicts before corrections; two review passes by default.
 
 ## Next bounded work package
 
-1. Finish AR-174 strict receipts and commit candidate/ledger, then freeze.
+1. Candidate 452639dd is frozen with clean ledger 2b09bded.
 2. Run eight isolated criteria; handle only findings that invalidate its outcome.
 3. Publish one normal PR and merge/readback before inspecting AR-175.
 4. Stop with clean durable state by September 8 01:00 UTC.
