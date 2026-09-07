@@ -17,7 +17,7 @@ type: worklog
 commit: 57c225c189e39eae347129eb07e2a156e110b56b
 short: 57c225c1
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/703
 related_issues:
   - docs/roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md
 ---

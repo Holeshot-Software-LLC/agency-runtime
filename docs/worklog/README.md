@@ -1947,6 +1947,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cd061668` | 2026-09-07 | Merge pull request #702 from Holeshot-Software-LLC/codex/ar145-oldest-first-reconciliation | [AR-145](../roadmap/issue-AR-145-restore-python-release-coverage.md) | [detail](2026-09-07-c09eb1b8-retire-duplicate-coverage-gate.md) |
 | `57c225c1` | 2026-09-07 | docs(backlog): verify existing dashboard refresh epochs [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 | `770b1d7a` | 2026-09-07 | docs(acceptance): freeze AR-150 refresh epoch candidate | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `4e820ff4` | 2026-09-07 | docs(acceptance): preserve AR-150 inverse-order evidence gap | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
