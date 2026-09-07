@@ -49,4 +49,7 @@ They do not judge acceptance or claim a new successful model-host turn.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-408.1-20260907-312cd98e` | `c536a9f2bfdc454664b0eb3fc7259861f057efdeaa41e50e67bbfdd1247ec9bb` | 2026-09-07 | inference.py:4937-4955 uses veto staffing only when critic_reasons[0] is staffing_critic_rejected (set solely by a valid negative verdict at line 4490), else keeps the real code; tests 93-212 show budget exhaustion and non-verdict failures retain their cause while veto and approval are unchanged. |
+| 2 | satisfied | `AR-408.2-20260907-d06ec4da` | `63373bfc5813f693092980217e9303a8a23127a2be6a7a8c4f0e95703585ce38` | 2026-09-07 | Snapshot shows inference.py:1757-1763 binds allowance before the expired receipt, routing_projection.py:264 forwards timeout_ms, receipt_projection.py:512-515 persists only positive durations; tests assert 120000 ms survival, 65000 ms clipping, no timeout_ms when expired, no private fields. |
+| 3 | satisfied | `AR-408.3-20260907-70105536` | `d7aae927a686cb946904e9c1c29a1d232b13a5e5d62f1fa0eaa7ccd14b0b8610` | 2026-09-07 | tests/test_staffing_failure_receipts.py:93-123 reproduces the five-call sequence and writes plus reads back a real sqlite Store (lines 64-90); budget 5 matches the default in config.py:284, critic veto/approval tests remain, and the evidence doc records 23, 325 and raw 32 passes with deadline tests. |
 
