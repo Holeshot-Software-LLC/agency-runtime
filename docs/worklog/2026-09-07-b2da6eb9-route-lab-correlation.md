@@ -65,3 +65,9 @@ for 1206 Markdown files, 397 mapped/two historical PR exceptions, Ruff and diff.
 Draft missing-heading and copied display-padding failures are retained in the
 receipt; neither was ignored or claimed as passed. No code changes after
 b2da6eb9; the complete packet is ready for five isolated checks.
+
+## Acceptance freeze
+
+017dea36 freezes f4f5124ef6433db9cae18784c15cc76ba880b391 for all five isolated checks.
+No source/test changes follow the passing receipts. ADR-0231 reconciliation
+precedes any verdict and retains original wording.
