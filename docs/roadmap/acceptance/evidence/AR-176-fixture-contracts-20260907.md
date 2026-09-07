@@ -530,3 +530,32 @@ All checks passed!
 A subsequent complete Ruff lint/format and diff check also passes after the
 receipt append: All checks passed; 766 files already formatted. No automatic
 CI success is inferred from these local checks.
+
+## First independent review and bounded corrections
+
+The first isolated run at 49b307ff satisfies 1/4/5/6/8. Its original verdicts
+remain at 969f7190. Three findings are preserved rather than overwritten:
+
+- Criterion 2: accepting **_kwargs did not prove their values survived.
+  Both service-manager doubles now have required current_directory and
+  forbidden_roots parameters, compare them with the actual repository
+  namespace, and require the identical roots object to reach freezing.
+  Immediate revalidation and no-spawn-on-rejection checks remain.
+- Criterion 3: a queue-cache unit fixture deliberately isolates upstream
+  authority checks; it cannot prove complete activation authority. The final
+  packet cites the actual Store-backed quarantine/approve/activate/rollback
+  tests instead. The unit fixture remains because its bounded cache contract
+  is useful; it is not mislabeled as full-boundary proof.
+- Criterion 7: the original six-case red transcript was outside the selected
+  excerpts. Its exact six-failure summary is included in the final packet.
+
+Focused service-manager and full activation-authority module:
+```bash
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_executable_namespace_security.py::test_default_service_runner_revalidates_immediately_before_subprocess tests/test_executable_namespace_security.py::test_default_service_runner_revalidation_failure_never_starts_child tests/test_roster_activation_authority.py -q -W error
+```
+
+```text
+60 passed in 3.80s
+```
+
+No production runtime or acceptance wording changes in this correction.

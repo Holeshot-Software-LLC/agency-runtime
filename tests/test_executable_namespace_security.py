@@ -580,16 +580,26 @@ def test_default_service_runner_revalidates_immediately_before_subprocess(
 ) -> None:
     events: list[str] = []
     prepared = ["resolved-manager"]
-    monkeypatch.setattr(
-        dashboard_service_core,
-        "prepare_process_argv",
-        lambda _argv, **_kwargs: events.append("prepare") or prepared,
-    )
-    monkeypatch.setattr(
-        dashboard_service_core,
-        "freeze_process_argv",
-        lambda argv, **_kwargs: events.append("freeze") or argv,
-    )
+    expected_directory = Path.cwd()
+    expected_roots = dashboard_service_core.repository_forbidden_roots(expected_directory)
+    observed: dict[str, Any] = {}
+
+    def prepare(argv, *, current_directory, forbidden_roots):
+        assert argv == ("manager", "probe")
+        assert current_directory == expected_directory
+        assert forbidden_roots == expected_roots
+        observed["forbidden_roots"] = forbidden_roots
+        events.append("prepare")
+        return prepared
+
+    def freeze(argv, *, forbidden_roots):
+        assert argv is prepared
+        assert forbidden_roots is observed["forbidden_roots"]
+        events.append("freeze")
+        return argv
+
+    monkeypatch.setattr(dashboard_service_core, "prepare_process_argv", prepare)
+    monkeypatch.setattr(dashboard_service_core, "freeze_process_argv", freeze)
     monkeypatch.setattr(
         dashboard_service_core,
         "revalidate_process_argv",
@@ -615,16 +625,24 @@ def test_default_service_runner_revalidation_failure_never_starts_child(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     prepared = ["resolved-manager"]
-    monkeypatch.setattr(
-        dashboard_service_core,
-        "prepare_process_argv",
-        lambda _argv, **_kwargs: prepared,
-    )
-    monkeypatch.setattr(
-        dashboard_service_core,
-        "freeze_process_argv",
-        lambda argv, **_kwargs: argv,
-    )
+    expected_directory = Path.cwd()
+    expected_roots = dashboard_service_core.repository_forbidden_roots(expected_directory)
+    observed: dict[str, Any] = {}
+
+    def prepare(argv, *, current_directory, forbidden_roots):
+        assert argv == ("manager", "probe")
+        assert current_directory == expected_directory
+        assert forbidden_roots == expected_roots
+        observed["forbidden_roots"] = forbidden_roots
+        return prepared
+
+    def freeze(argv, *, forbidden_roots):
+        assert argv is prepared
+        assert forbidden_roots is observed["forbidden_roots"]
+        return argv
+
+    monkeypatch.setattr(dashboard_service_core, "prepare_process_argv", prepare)
+    monkeypatch.setattr(dashboard_service_core, "freeze_process_argv", freeze)
     monkeypatch.setattr(
         dashboard_service_core,
         "revalidate_process_argv",
