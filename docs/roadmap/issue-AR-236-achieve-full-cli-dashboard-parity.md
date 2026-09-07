@@ -6,6 +6,7 @@ created: 2026-08-04
 updated: 2026-08-21
 tags: [cli, dashboard, parity, ops, observability, analysis]
 related:
+  - docs/decisions/0227-bind-executable-isolation-to-current-launch-surfaces.md
   - docs/analysis/2026-08-04-cli-dashboard-parity.md
   - docs/analysis/2026-08-11-cli-vision-keep-list.md
   - docs/roadmap/handoffs/issue-AR-236.md

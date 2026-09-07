@@ -65,3 +65,9 @@ All eight original criteria satisfy in the first isolated review at fd551fd4.
 The record is done without a runtime/test change, requirement revision, new
 tracker or closure of an unrelated issue. Current queue: 40 mapped plus 87
 legacy, 127 unfinished. Publish one PR, normal merge, then AR-164.
+
+## Publication
+
+PR #714 merged as 6d1ca01fb572e58bc5b1186bc9114ae0b7a789ba at
+2026-09-07T10:04:47Z, read back. Main was clean and fast-forwarded before the
+separate AR-164 worktree. The empty PR check rollup is not a hosted CI pass.
