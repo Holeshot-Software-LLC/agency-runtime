@@ -68,3 +68,7 @@ acceptance and normal PR/merge. Continue oldest-first until the owner's cutoff.
 ## Source checkpoint
 
 6523b8df (6523b8dfc8071c12b843f29555d551b3be0b0c74) retains both focused red stages and the passing six-case repair. The combined installer fixture failure is preserved as unfinished work.
+
+## Current complete package
+
+49b307ff (49b307ff3ae7d248bee0b7135d5b0843daa9b1de) repairs the main-reproduced retained-stage fixture using real guarded cleanup. Seven focused cases pass; combined package 467 passes/one skip/64 Windows-named deselections, named spine 1085/three skips, UI 224/current floors and Node smoke contracts 36 pass. Existing ADR-0105/0224 reconcile only obsolete exhaustive gates; faithful July criteria and red diagnostics remain. Runtime bytes equal the AR-175 installed artifact source a96483ad.
