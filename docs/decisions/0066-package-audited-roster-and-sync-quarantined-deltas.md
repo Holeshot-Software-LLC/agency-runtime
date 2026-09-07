@@ -3,7 +3,7 @@ title: "Package the audited upstream roster and synchronize quarantined deltas"
 status: accepted
 category: decisions
 created: 2026-07-18
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [roster, upstream, audit, quarantine, supply-chain]
 related:
   - docs/roadmap/issue-AR-120-normalized-workforce-recruitment-index.md
@@ -75,6 +75,14 @@ dashboard, and bounded CI job expose source status, import dry runs, findings,
 candidate comparison, approval, rejection, and activation history.
 
 ## Consequences
+
+AR-163's current-eligibility refinement was implemented in f64ba1e. The
+September 7 fd551fd4 reconciliation verifies that implementation with fresh
+167 remediation/projection and 188 dashboard passes; the eight unchanged
+requirements satisfy in the first isolated review at that candidate. This is
+an evidence update, not a
+change to the decision or signature/activation authority. See the linked
+roadmap record and worklog registry.
 
 - A fresh installation can consider the complete approved roster.
 - Upstream changes cannot replace active instructions before review.

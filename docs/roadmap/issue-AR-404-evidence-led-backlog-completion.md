@@ -196,9 +196,16 @@ equality and explicitly reconciles 9 to AR-347's existing legacy exemption.
 Criteria 1–7 and all workflow/test/runtime bytes remain unchanged. All nine
 current criteria satisfy at d30b8ae0 in the second and final isolated review.
 AR-162 is complete; hosted enforcement remains with AR-159.
+PR #713 merged a01abe81 at 09:53:40Z September 7, read back before AR-163.
 
-Current counts: 40 actual open trackers plus 88 unfinished legacy records,
-128 total after AR-162 completion; no duplicate tracker or false acceptance.
+AR-163's historical signed-authority repair is still implemented and relevant.
+Fresh local Store/API-projection tests pass 167 and DOM tests pass 188 with no
+failures/skips. All eight original criteria are unchanged; no runtime or test
+change is needed. Exact-byte named-spine reuse is explicit. All eight original
+criteria satisfy in the first isolated review at fd551fd4; AR-163 is complete.
+
+Current counts: 40 actual open trackers plus 87 unfinished legacy records,
+127 total after AR-163 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.

@@ -100,3 +100,10 @@ Publish one PR and normal merge, then proceed to AR-163. Hosted enforcement,
 future savings evidence, native Windows and ordinary-session hook trust remain
 separate obligations. The requested Codex refresh again reports activation
 required, unverified trust and a package mismatch; no bypass or retry loop.
+
+## Publication
+
+PR #713 merged as a01abe81d75de988526e58acac6adfaddce1a18a at
+2026-09-07T09:53:40Z, read back from the tracker. Main was clean and fast-forwarded
+before creating the separate AR-163 worktree. No hosted check pass is inferred
+from the empty PR check rollup. All nine scoped acceptance verdicts are retained.

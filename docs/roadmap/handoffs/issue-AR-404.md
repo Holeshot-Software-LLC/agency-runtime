@@ -9,11 +9,11 @@ related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
-  - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
-  - docs/roadmap/acceptance/evidence/AR-162-codeql-capability-20260907.md
-  - docs/roadmap/acceptance/evidence/AR-162-record-reconciliation-20260907.md
-  - docs/decisions/0226-gate-codeql-savings-claims-on-matched-measurements.md
+  - docs/roadmap/issue-AR-163-reopen-stale-remediation-authority.md
+  - docs/roadmap/acceptance/issue-AR-163.md
+  - docs/roadmap/acceptance/evidence/AR-163-remediation-authority-20260907.md
   - docs/roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md
+  - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
@@ -22,9 +22,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar162-oldest-first-reconciliation
-evidence_commit: d30b8ae0f4f339d17c28b35f24d95e4474aa3bed
-minimum_ledger_commit: 6420e4a4a8914fb074869c9fed770d966cd1d570
+branch: codex/ar163-oldest-first-reconciliation
+evidence_commit: fd551fd49bf535c939e66ba5c387fd872621ac67
+minimum_ledger_commit: d102b3cb9dfe33e7329653783573a28ca5d7aeaf
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -34,84 +34,76 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owner continues one oldest record, one PR, normal merge, then next; no routine
-approval pauses. Native Windows remains with the owner. AR-160 remains retained;
-PR #712 merged f18b5acf at 09:07:33Z September 7. Clean main was fast-forwarded
-before this AR-162 tree; f0fc06de records publication.
+approval pauses. Native Windows remains with the owner. AR-162 is complete:
+all nine isolated criteria satisfy at d30b8ae0. Original criteria 8/9 and first
+absent verdicts remain preserved before explicit ADR-0226 reconciliation.
+PR #713 merged a01abe81 at 09:53:40Z September 7. Clean main was fast-forwarded
+before this separate AR-163 tree; 4103d1b8 records publication.
 
-AR-162's one-preflight topology exists. The actual baseline shell accepted HTTP
-200 with no body, publishing available=true. The repaired classifier enforces
-a 1 MiB transfer/read budget, strict JSON and alert-array shape, known visibility,
-and only recognized private/internal unavailable messages. It publishes nothing
-on invalid input. Request count, events, analyzers, permissions and aggregate
-remain unchanged. Source changes only in codeql.yml and test_release_packaging.py.
+AR-163's signed-authority repair already exists at current main. The security
+goal remains relevant, but no new runtime/test defect was found. Current
+eligibility gates signed history, reopening projects original events, and UI
+paging binds exact projection revision plus prefix. All eight original
+requirements remain unchanged; plain bullets are normalized to checkboxes.
 
 ## Completed evidence
 
-- Whole-shell missing-body reproduction: baseline exit zero/available=true;
-  repair exit one, empty stdout, bounded invalid-JSON diagnostic.
-- CodeQL focus: 65 pass/100 deselected, 1.48s. Final full non-Windows workflow:
-  210 pass/five deselected, 5.87s. No failures, new skips or suppression.
-- Fresh warning-strict named spine: 1085 pass/three existing skips, 68.09s.
-  Unchanged UI 188/browser 21 receipts reused, not rerun.
-- Read-only identity: public/non-fork; owner-authenticated code-scanning endpoint
-  returns HTTP 200/one-element array. Not workflow-token or hosted analyzer proof.
-- ADR-0226 retains claim-conditional matched cost proof for 8 and explicitly
-  reconciles 9 to AR-347's existing pre-tracker exemption after the first review.
-  Criteria 1–7 remain unchanged; both original wordings and first verdicts remain.
-- Exact pre-fan-out/repaired event and concurrency projections compare identical.
-  Second evidence is documentation-only; workflow, tests and runtime equal fcdcd6eb.
-  Strict docs pass 1174 Markdown files and tracker parity passes 397 mapped items.
-- All nine isolated criteria satisfy at d30b8ae0 in the second and final review.
-  AR-162 is complete. First verdicts remain preserved at c456b6bd.
-- Counts are 40 actual open trackers plus 88 unfinished legacy records,
-  128 local unfinished. No duplicate tracker or unrelated tracker closure.
+- Fresh complete remediation/API-projection modules: 167 pass, no skips/failures,
+  14.39s. Rejection, signed replay, HMAC tamper, basis drift, event idempotency,
+  duplicate/malformed raw records, approval/activation and privacy checks execute.
+- Fresh whole DOM suite: 188 pass, no skips/failures, 197.292186 ms. Stable-prefix
+  preservation, reopening invalidation, overlap suppression and separate labels.
+- Product/test/script/config bytes match fcdcd6eb. Reuse AR-162's named spine,
+  1085 pass/three existing skips, 68.09s; no redundant spine rerun.
+- Dashboard bytes match dccb4e85. Existing 21 loaded-browser checks are broader
+  context, not a new browser or native-host claim.
+- All eight original criteria satisfy in the first isolated review at fd551fd4.
+  AR-163 is complete; no new code or acceptance requirement change.
+- Counts are 40 actual open trackers plus 87 unfinished legacy records,
+  127 local unfinished. AR-163 keeps its governed pre-tracker exemption.
 
 ## Exact blocker
 
-First review c456b6bd is preserved: 1–6 and 8 satisfy, 7/9 are absent. The new
-receipt supplies historical comparison and ADR-0226 explicitly adopts AR-347's
-tracker rule. The second record is frozen at d30b8ae0 with ledger 6420e4a4;
-all nine current criteria now satisfy. AR-162 has no remaining scoped blocker;
-its completion awaits one normal PR publication and merge.
+AR-163 has no remaining scoped blocker: all eight isolated verdicts satisfy at
+fd551fd4. Its accepted completion awaits one normal PR publication and merge.
 
-AR-159 retains hosted enforcement/check-app/bypass proof; main is unprotected
-with no current checks. Old billing cause is not freshly established; the extra
-dynamic CodeQL identity remains a check-binding question, not authority to alter it.
-AR-160 retains owner Windows and current paired artifact/live release proof.
+AR-159 retains hosted enforcement/check-app/bypass proof; main has no current
+enforcement evidence. Old billing cause is not freshly established; the extra
+dynamic CodeQL identity is a check-binding question, not authority to alter it.
+AR-160 retains owner Windows/current paired artifact/live release proof; its
+fresh Linux wheel/source and all generated five-host smokes passed, not native
+activation. AR-156 retains Windows/profile and hosted topology evidence; its
+four Windows-profile assumptions fail unchanged Linux main.
 
-AR-156 retains owner Windows/profile and hosted topology proof; all thirteen
-criteria remain. Its four Windows-profile assumptions fail unchanged Linux
-main. AR-135 needs attended ZCode Agent/record-zero/full Stop proof. AR-140
-retains supported-runner performance including Windows. AR-129/130/147 stay
-with the owner; AR-119/125 retain five-host and matched-value proof. AR-176 keeps
-six separately recorded stale fixtures; AR-151's nine dashboard and AR-157's
-two HTTP repairs are not pending. Ordinary-session unverified Agency/header
-remains unfinished.
+AR-135 needs attended ZCode Agent/record-zero/full Stop proof. AR-140 retains
+supported-runner performance including Windows. AR-129/130/147 stay with the
+owner; AR-119/125 retain five-host and matched-value proof. AR-176 keeps six
+separately recorded stale fixtures; AR-151's nine dashboard and AR-157's two HTTP
+repairs are not pending. Ordinary-session unverified Agency/header remains open.
 
 ## Same-task continuity
 
 Own one worktree/branch per record. Never commit to main or stage others' work.
-Each substantive commit gets its immediately following narrow docs(worklog)
-ledger; record the prior merge in the next tree. At 50 percent ensure a clean
-checkpoint, then continue the same task. No empty commits, restart or staffing.
+Each substantive commit gets an immediate narrow docs(worklog) ledger; record
+the prior merge in the next tree. At 50 percent ensure a clean checkpoint, then
+continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit AR-162's accepted completion and immediate ledger.
-2. Publish its single normal PR and read back the merge; do not rerun acceptance.
-3. Start AR-163 in its own worktree after that merge. Review current remediation
-   authority before deciding whether the legacy record is complete or relevant.
+1. Commit AR-163's accepted completion and immediate ledger; no acceptance rerun.
+2. Publish one normal PR and read back its merge before starting the next record.
+3. Next is AR-164's repository-ancestor PATH boundary, in its own worktree.
 
 ## Verification
 
 Run metadata/policy, exact worklog, strict docs/tracker, Ruff and diff checks.
 No exhaustive corpus/coverage/matrix, dispatch, Windows or native host canary.
-At <=50 percent finish this smallest clean substantive/ledger checkpoint and
+At <=50 percent finish the smallest clean substantive/ledger checkpoint and
 continue in the same task. Graphify absent; no graph build or staffing.
 
 ## Constraints
 
-No credential creation, trust bypass, unmanaged restart or provider-policy
-change. The newly requested Codex refresh again returned exit 1: activation
+No credentials, trust bypass, unmanaged restart or provider-policy changes.
+The latest explicitly requested Codex refresh again returned exit 1: activation
 required, hook trust unverified, mixed installed projections. Do not retry
 unattended or replace OpenClaw. Registration is not normal-session proof.

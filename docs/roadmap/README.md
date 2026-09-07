@@ -30,9 +30,9 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After AR-162's accepted completion on September 7, fresh tracker enumeration
-remains 40 open issues; the separate unfinished queue is 128
-records (40 mapped plus 88 legacy). Its nine isolated criteria satisfy;
+After AR-163's accepted completion on September 7, fresh tracker enumeration
+remains 40 open issues; the separate unfinished queue is 127
+records (40 mapped plus 87 legacy). Its eight original isolated criteria satisfy;
 no new tracker or unrelated tracker closure is needed. Prior snapshots remain
 in the oldest-first ledger.
 AR-119 remains a relevant unfinished
@@ -206,7 +206,7 @@ bounded package are in AR-404's
 | `AR-160` | [Publish platform-honest native release artifacts](issue-AR-160-publish-platform-honest-native-release-artifacts.md) | in_progress | p0 | release | pre-tracker history; current Linux pair verified, Windows/paired proof retained |
 | `AR-161` | [Sign and license Windows operator-presence delivery](issue-AR-161-sign-and-license-windows-operator-presence-delivery.md) | done | p0 | release | retired by AR-197 |
 | `AR-162` | [Collapse unavailable CodeQL fanout](issue-AR-162-collapse-unavailable-codeql-fanout.md) | done | p1 | testing | pre-tracker history; all nine isolated criteria satisfied |
-| `AR-163` | [Reopen stale remediation resolution authority](issue-AR-163-reopen-stale-remediation-authority.md) | in_progress | p1 | security | pending authorization |
+| `AR-163` | [Reopen stale remediation resolution authority](issue-AR-163-reopen-stale-remediation-authority.md) | done | p1 | security | pre-tracker history; all eight original criteria independently satisfied |
 | `AR-164` | [Reject repository-ancestor PATH poisoning](issue-AR-164-reject-repository-ancestor-path-poisoning.md) | in_progress | p0 | security | pending authorization |
 | `AR-165` | [Fail ambiguous dependency-review capability probes closed](issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | in_progress | p0 | security | pending authorization |
 | `AR-166` | [Keep dashboard disclosure and correlation truthful](issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | in_progress | p2 | dashboard | pending authorization |
@@ -611,8 +611,8 @@ not stable internal identifiers.
 | [AR-159](issue-AR-159-enforce-production-branch-protection.md) | `dca7af5`, `f64ba1e`, `e708c212`, `b499e7fb`; hosted enforcement pending authorization and current check evidence | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-160](issue-AR-160-publish-platform-honest-native-release-artifacts.md) | `f64ba1e`, `e0bbe70`, `c625bc7`; historical cross-OS set at `29da6eca`; `f0f5c386`, `6ddfc681`, `f18b5acf` (current no-helper disposition and Linux evidence at `f1c7d0b0`); current paired/platform proof pending | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md), [ADR-0098](../decisions/0098-pair-portable-and-win-amd64-wheels.md); [ADR-0219](../decisions/0219-retire-removed-helper-release-obligations.md) |
 | [AR-161](issue-AR-161-sign-and-license-windows-operator-presence-delivery.md) | `f64ba1e`; unsigned delivery path retired by AR-197 before public release | [ADR-0099](../decisions/0099-separate-reproducible-unsigned-builds-from-signed-delivery.md), [ADR-0110](../decisions/0110-remove-agency-owned-windows-hello.md) |
-| [AR-162](issue-AR-162-collapse-unavailable-codeql-fanout.md) | `f64ba1e`, `fcdcd6eb`, `b3293188`, `c456b6bd`, `d30b8ae0`, `3916c2cd`; current capability repair and claim-conditional measurement reconciliation await isolated review  `53ed14ca` (all nine accepted; done); | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md), [ADR-0226](../decisions/0226-gate-codeql-savings-claims-on-matched-measurements.md) |
-| [AR-163](issue-AR-163-reopen-stale-remediation-authority.md) | `f64ba1e`; tracker creation pending | [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
+| [AR-162](issue-AR-162-collapse-unavailable-codeql-fanout.md) | `f64ba1e`, `fcdcd6eb`, `b3293188`, `c456b6bd`, `d30b8ae0`, `3916c2cd`; current capability repair and claim-conditional measurement reconciliation await isolated review  `53ed14ca` (all nine accepted; done);  `a01abe81` (PR #713 merge); | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md), [ADR-0226](../decisions/0226-gate-codeql-savings-claims-on-matched-measurements.md) |
+| [AR-163](issue-AR-163-reopen-stale-remediation-authority.md) | `f64ba1e`; September 7 current behavior verified, all eight original criteria awaiting isolated checks  `fd551fd4` (current evidence candidate);  `b9d91243` (eight-criterion freeze);  `49b26b5b` (all eight accepted; done); | [ADR-0066](../decisions/0066-package-audited-roster-and-sync-quarantined-deltas.md) |
 | [AR-164](issue-AR-164-reject-repository-ancestor-path-poisoning.md) | `f64ba1e`; tracker creation pending | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-165](issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | `f64ba1e`; hosted validation and tracker creation pending | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-166](issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | `f64ba1e`; tracker creation pending | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md), [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md) |
