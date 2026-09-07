@@ -1961,6 +1961,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cd12e929` | 2026-09-07 | docs(backlog): accept reconciled Route Lab host contract [AR-151] | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
 | `5a12f357` | 2026-09-07 | Merge pull request #704 from Holeshot-Software-LLC/codex/ar151-oldest-first-reconciliation | [AR-151](../roadmap/issue-AR-151-align-route-lab-host-eligibility.md) | [detail](2026-09-07-58285009-route-lab-contract.md) |
 | `ea577285` | 2026-09-07 | docs(backlog): verify bounded worker-detail evidence [AR-153] | [AR-153](../roadmap/issue-AR-153-complete-worker-detail-evidence.md) | [detail](2026-09-07-ea577285-worker-detail-evidence.md) |
+| `342f9db0` | 2026-09-07 | docs(acceptance): freeze AR-153 worker-detail candidate | [AR-153](../roadmap/issue-AR-153-complete-worker-detail-evidence.md) | [detail](2026-09-07-ea577285-worker-detail-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
