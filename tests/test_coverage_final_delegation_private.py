@@ -185,7 +185,13 @@ def test_installer_residual_fail_closed_branches(
         lambda *_args: (_ for _ in ()).throw(OSError("replace failed")),
     )
     removed: list[PrivateDirectoryIdentity] = []
-    monkeypatch.setattr(installer_filesystem, "remove_private_directory", removed.append)
+    remove_directory = installer_filesystem.remove_private_directory
+
+    def remove_stage(stage_identity: PrivateDirectoryIdentity) -> None:
+        remove_directory(stage_identity)
+        removed.append(stage_identity)
+
+    monkeypatch.setattr(installer_filesystem, "remove_private_directory", remove_stage)
     with pytest.raises(OSError, match="replace failed"):
         installer_filesystem.atomic_install_tree(
             target,
@@ -195,6 +201,8 @@ def test_installer_residual_fail_closed_branches(
             home_dir=tmp_path,
         )
     assert removed == [identity]
+    assert not stage.exists()
+    assert not target.exists()
 
     assert (
         installer_inventory._sanitize_host_version(

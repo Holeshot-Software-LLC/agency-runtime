@@ -64,15 +64,31 @@ quality gates.
 
 ## Current state
 
-September 7 current implementation reproduces all six carried failures on
-unchanged main 891f0c32, then repairs their fixtures in three test files.
-All six now pass (2.30s). The same public-route test exposed one additional
-obsolete coordinator-seeding assertion after its first assertion was repaired;
-both failures and the source-grounded correction are preserved in
-[the current receipt](acceptance/evidence/AR-176-fixture-contracts-20260907.md).
-No production runtime, inference authority, retry behavior or security
-validation changes. A combined order-sensitive neighboring package is running;
-current acceptance verification and normal PR/merge remain open.
+September 7 reconciliation repairs seven stale cases across four test files:
+the six carried by AR-127/130/131 and one existing installer cleanup double
+exposed by their combined package. Every failure reproduces on unchanged main.
+The first repair also reaches an obsolete coordinator-seeding assertion within
+the public-route case; current inference-first policy requires no forced
+fallback installation. Both intermediate failures remain recorded.
+
+Current results: seven focused cases pass (7.26s), the 14-module package passes
+467 with one existing skip and 64 Windows-named deselections (135.49s), the named
+spine passes 1085 with three existing skips (111.62s), and all 224 UI cases pass
+above unchanged floors. The cleanup double now actually invokes guarded
+removal and asserts stage/target absence. No Python product, inference policy,
+security validation, coverage floor, exclusion or skip changes.
+
+[Current evidence](acceptance/evidence/AR-176-fixture-contracts-20260907.md)
+preserves the red runs and distinguishes current checks from July's reports.
+Isolated acceptance verification and normal PR/merge remain open.
+This legacy issue is exempt from new tracker creation; no redundant tracker is
+created solely to reconcile existing history.
+
+## Historical carry-forward before this repair
+
+The dated state below records why this work remained open. Statements about
+six remaining cases and a mandatory final release gate describe those earlier
+checkpoints, not new requirements or the current seven-case result.
 
 AR-157's September 7 HTTP package exposes and repairs two additional stale
 fixtures: a fixed roster cardinality and a finalization-admission setup relying
@@ -197,9 +213,38 @@ configuration identity. ADR-0055 requires frozen executable identity and
 currentness. ADR-0066 owns append-only roster authority. ADR-0097 keeps the
 expensive gate behind faster same-contract checks.
 
-Tracker creation remains pending explicit outward-write authorization.
+This is an exempt pre-tracker legacy record; current local/tracker parity checks
+apply without creating a duplicate tracker.
 
 ## Acceptance
+
+Criteria 1–4 retain their original contracts. Criteria 5–6 distinguish the
+preserved July results from today's complete affected-module package. Existing
+ADR-0105 and ADR-0224 replace the obsolete fresh exhaustive/final-release
+requirements with current fixture repair and bounded delivery evidence.
+No historical failed or incomplete diagnostic is relabeled as passed.
+
+- [ ] Configuration-identity tests cannot inherit the suite's synthetic Store
+  override accidentally.
+- [ ] Test doubles retain every executable namespace and forbidden-root
+  argument used by production.
+- [ ] Strict resolved-path and authority fixtures provide current materialized
+  identities instead of bypassing validation.
+- [ ] Missing and non-runnable Node diagnostics remain distinct without
+  weakening launch identity checks.
+- [ ] The historical eleven-failure repair and exact reported result remain
+  preserved; every affected test module passes together in the current package.
+- [ ] Current touched and neighboring modules pass in one order-sensitive,
+  warning-strict process, with platform exclusions explicitly reported.
+- [ ] The six carried stale cases and additionally reproduced installer-cleanup
+  fixture pass without restoring removed tools, corrective retries, inference
+  fallbacks or weakening filesystem checks; their failures remain recorded.
+- [ ] Focused checks, the named fast spine, current UI coverage floors and strict
+  documentation/tracker/lint checks pass. Live host header/injection observations
+  are reported separately and truthfully; historical exhaustive evidence is not
+  presented as a fresh run and optional diagnostic controls remain unchanged.
+
+## Historical acceptance (retained verbatim)
 
 - [x] Configuration-identity tests cannot inherit the suite's synthetic Store
   override accidentally.
