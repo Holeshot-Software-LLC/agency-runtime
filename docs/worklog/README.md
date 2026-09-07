@@ -2068,6 +2068,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6523b8df` | 2026-09-07 | test(runtime): align stale evidence and trust fixtures | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
 | `49b307ff` | 2026-09-07 | test(installer): preserve real cleanup in residual fixture | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
 | `9a42c162` | 2026-09-07 | docs(acceptance): freeze AR-176 current contract evidence | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
+| `969f7190` | 2026-09-07 | docs(acceptance): retain AR-176 first isolated verdicts | [AR-176](../roadmap/issue-AR-176-align-full-gate-contract-fixtures.md) | [Detail](2026-09-07-6523b8df-current-fixture-contracts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

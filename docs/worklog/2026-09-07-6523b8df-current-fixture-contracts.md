@@ -76,3 +76,7 @@ acceptance and normal PR/merge. Continue oldest-first until the owner's cutoff.
 ## Frozen current candidate
 
 9a42c162 (9a42c1627e4cd6bd6002833c83b093ba6c72c6a7) freezes eight builder-only criteria at 49b307ff. Dry-run checks confirm every cited excerpt is included (1,512–16,303 characters per packet). The original verdicts have not run yet. AR-388's documented owner-private client environment exists and contains the configured variable; this changed precondition permits a new bounded native check without provisioning or persisting a key.
+
+## First isolated review preserved
+
+969f7190 (969f7190266cdfcfaaed5968a74ddb7983d68273) records five satisfied criteria and three unresolved evidence findings (2 absent, 3 contradicted, 7 absent). Do not erase those verdicts or mark done. Review each exact reason and fix only a justified current-contract/evidence gap before the second/final pass.
