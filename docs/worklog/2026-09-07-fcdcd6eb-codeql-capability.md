@@ -88,3 +88,15 @@ new candidate freeze; every criterion receives a new verdict.
 3916c2cd freezes that second record to d30b8ae0. Strict docs pass before
 the freeze; no first-candidate verdict is copied forward. All nine checks run
 again after the immediate clean ledger checkpoint.
+
+## Accepted completion
+
+All nine isolated checks satisfy at d30b8ae0 in the second and final review.
+The first candidate's absent comparison/parity verdicts remain in c456b6bd.
+Criteria 1–7 are unchanged; ADR-0226 explicitly reconciles 8 and 9 without
+claiming the original evidence existed. No workflow/test/runtime bytes changed
+after fcdcd6eb. AR-162 is done; the queue is 40 mapped plus 88 legacy, 128 total.
+Publish one PR and normal merge, then proceed to AR-163. Hosted enforcement,
+future savings evidence, native Windows and ordinary-session hook trust remain
+separate obligations. The requested Codex refresh again reports activation
+required, unverified trust and a package mismatch; no bypass or retry loop.

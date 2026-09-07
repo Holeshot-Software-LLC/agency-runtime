@@ -61,15 +61,18 @@ remain unchanged. Source changes only in codeql.yml and test_release_packaging.p
 - Exact pre-fan-out/repaired event and concurrency projections compare identical.
   Second evidence is documentation-only; workflow, tests and runtime equal fcdcd6eb.
   Strict docs pass 1174 Markdown files and tracker parity passes 397 mapped items.
-- Counts remain 40 actual open trackers plus 89 unfinished legacy records,
-  129 local unfinished. No duplicate tracker or completion claim.
+- All nine isolated criteria satisfy at d30b8ae0 in the second and final review.
+  AR-162 is complete. First verdicts remain preserved at c456b6bd.
+- Counts are 40 actual open trackers plus 88 unfinished legacy records,
+  128 local unfinished. No duplicate tracker or unrelated tracker closure.
 
 ## Exact blocker
 
 First review c456b6bd is preserved: 1–6 and 8 satisfy, 7/9 are absent. The new
 receipt supplies historical comparison and ADR-0226 explicitly adopts AR-347's
 tracker rule. The second record is frozen at d30b8ae0 with ledger 6420e4a4;
-all nine need new verdicts. No implementation failure or closure is inferred.
+all nine current criteria now satisfy. AR-162 has no remaining scoped blocker;
+its completion awaits one normal PR publication and merge.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main is unprotected
 with no current checks. Old billing cause is not freshly established; the extra
@@ -94,10 +97,10 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit AR-162's second candidate freeze and immediate ledger.
-2. Run all nine isolated checks once at d30b8ae0.
-3. On accepted completion, reconcile counts and publish one normal PR, then
-   proceed to the next oldest unfinished non-Windows record.
+1. Commit AR-162's accepted completion and immediate ledger.
+2. Publish its single normal PR and read back the merge; do not rerun acceptance.
+3. Start AR-163 in its own worktree after that merge. Review current remediation
+   authority before deciding whether the legacy record is complete or relevant.
 
 ## Verification
 

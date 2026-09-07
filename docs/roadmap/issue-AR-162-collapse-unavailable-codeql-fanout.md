@@ -1,6 +1,6 @@
 ---
 title: "AR-162: Collapse unavailable CodeQL fanout"
-status: open
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -60,19 +60,19 @@ or hosted analyzer pass. ADR-0226 explicitly makes only the old eighth measureme
 requirement claim-conditional; no speed or billing savings are claimed. Following
 the preserved first review, it also explicitly reconciles criterion 9 to AR-347's
 existing pre-tracker exemption. Criteria 1–7 remain unchanged; all nine current
-criteria require a new candidate-bound isolated review.
+criteria have new candidate-bound isolated verdicts.
 
 First isolated review at fcdcd6eb satisfies criteria 1–6 and 8. Criterion 7 is
 absent because the rowset lacks a prior trigger/concurrency comparison; criterion
 9 is absent because the old wording requires remote parity rather than the
-existing legacy exemption. Preserve this result before a revised evidence or
-requirements checkpoint. No implementation defect or completion is inferred.
+existing legacy exemption. These first verdicts remain preserved at c456b6bd;
+they are not rewritten as passes.
 
 The correction records identical event/concurrency projections before the
 original fan-out change and at fcdcd6eb. It adopts AR-347's existing exemption
 explicitly for criterion 9, with strict docs/tracker checks passing. Workflow,
-tests, scripts and runtime remain byte-identical to fcdcd6eb; all nine criteria
-await the new-candidate review. See the
+tests, scripts and runtime remain byte-identical to fcdcd6eb. All nine current
+criteria independently satisfy at d30b8ae0 in the second and final review. See the
 [record correction](acceptance/evidence/AR-162-record-reconciliation-20260907.md).
 
 ## Approach
@@ -97,25 +97,25 @@ explicitly authorized and verified.
 
 ## Acceptance
 
-- [ ] Every workflow event performs exactly one native CodeQL capability request.
-- [ ] Public, ambiguous, malformed, unauthorized, and unexpected probe responses
+- [x] Every workflow event performs exactly one native CodeQL capability request.
+- [x] Public, ambiguous, malformed, unauthorized, and unexpected probe responses
   fail closed; only the recognized private/internal missing-entitlement response
   selects the unavailable path.
-- [ ] Available repositories run the exact Python and JavaScript/TypeScript CodeQL
+- [x] Available repositories run the exact Python and JavaScript/TypeScript CodeQL
   analyses with the existing pinned actions, `security-extended` queries,
   categories, and SARIF upload behavior.
-- [ ] Unavailable repositories initialize no CodeQL action and retain both
+- [x] Unavailable repositories initialize no CodeQL action and retain both
   language-specific evidence records with `analysis_performed: false`.
-- [ ] Only the analysis job receives `security-events: write`; the preflight has
+- [x] Only the analysis job receives `security-events: write`; the preflight has
   read-only code-scanning access and the aggregate has contents read access.
-- [ ] One stable aggregate rejects missing, failed, cancelled, malformed,
+- [x] One stable aggregate rejects missing, failed, cancelled, malformed,
   unexpectedly skipped, or otherwise inconsistent prerequisite results.
-- [ ] Push, pull-request, weekly schedule, manual-dispatch, and concurrency behavior
+- [x] Push, pull-request, weekly schedule, manual-dispatch, and concurrency behavior
   remain unchanged.
-- [ ] Current hosted capability and check-evidence limits are reported accurately;
+- [x] Current hosted capability and check-evidence limits are reported accurately;
   any speed or billing-savings claim requires a matched hosted unavailable-path
   topology and raw-duration measurement, and no such claim is made without it.
-- [ ] AR-162 follows the governed pre-tracker exemption while unmapped; both strict
+- [x] AR-162 follows the governed pre-tracker exemption while unmapped; both strict
   documentation/tracker checks pass, and any later authorized tracker mapping has
   exact URL/state parity with the local record.
 
@@ -132,7 +132,7 @@ the existing AR-347 exemption. Its original wording is preserved here: "The
 tracker issue and local roadmap record have exact URL/state parity after tracker
 creation is authorized." This is not a claim that old remote-parity evidence
 exists. Criteria 1–7 remain unchanged; a before/after comparison supplies the
-missing evidence for 7. All nine require a new candidate and new verdicts.
+missing evidence for 7. All nine now satisfy at the new candidate d30b8ae0.
 
 Two original unavailable runs consumed 0.34 raw runner-minutes on a PR and 0.24
 on a push, using two language jobs with no analysis. These remain historical
@@ -152,5 +152,6 @@ The original prediction of lower raw runtime was unmeasured; no September
 speed or billable-minute savings follows from it. Current hosted checks remain
 unproven under AR-159, and the old billing explanation is not a fresh diagnosis.
 This legacy record retains its pre-tracker exemption; no duplicate tracker is
-created. The local implementation is ready for candidate-bound isolated review,
-not yet marked done.
+created. The local implementation and reconciled record are complete: all nine
+isolated verdicts at d30b8ae0 are satisfied. Hosted enforcement and any future
+savings claim retain their separate evidence requirements.

@@ -30,9 +30,9 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After AR-155's accepted completion on September 7, fresh tracker enumeration
-remains 40 open issues; the separate unfinished queue is 131
-records (40 mapped plus 91 legacy). PR #707 carries that legacy completion;
+After AR-162's accepted completion on September 7, fresh tracker enumeration
+remains 40 open issues; the separate unfinished queue is 128
+records (40 mapped plus 88 legacy). Its nine isolated criteria satisfy;
 no new tracker or unrelated tracker closure is needed. Prior snapshots remain
 in the oldest-first ledger.
 AR-119 remains a relevant unfinished
@@ -205,7 +205,7 @@ bounded package are in AR-404's
 | `AR-159` | [Enforce production branch protection](issue-AR-159-enforce-production-branch-protection.md) | open | p0 | release | pre-tracker history; hosted enforcement awaiting owner |
 | `AR-160` | [Publish platform-honest native release artifacts](issue-AR-160-publish-platform-honest-native-release-artifacts.md) | in_progress | p0 | release | pre-tracker history; current Linux pair verified, Windows/paired proof retained |
 | `AR-161` | [Sign and license Windows operator-presence delivery](issue-AR-161-sign-and-license-windows-operator-presence-delivery.md) | done | p0 | release | retired by AR-197 |
-| `AR-162` | [Collapse unavailable CodeQL fanout](issue-AR-162-collapse-unavailable-codeql-fanout.md) | open | p1 | testing | pre-tracker history; repaired capability boundary awaiting isolated review |
+| `AR-162` | [Collapse unavailable CodeQL fanout](issue-AR-162-collapse-unavailable-codeql-fanout.md) | done | p1 | testing | pre-tracker history; all nine isolated criteria satisfied |
 | `AR-163` | [Reopen stale remediation resolution authority](issue-AR-163-reopen-stale-remediation-authority.md) | in_progress | p1 | security | pending authorization |
 | `AR-164` | [Reject repository-ancestor PATH poisoning](issue-AR-164-reject-repository-ancestor-path-poisoning.md) | in_progress | p0 | security | pending authorization |
 | `AR-165` | [Fail ambiguous dependency-review capability probes closed](issue-AR-165-fail-ambiguous-dependency-review-capability-closed.md) | in_progress | p0 | security | pending authorization |
