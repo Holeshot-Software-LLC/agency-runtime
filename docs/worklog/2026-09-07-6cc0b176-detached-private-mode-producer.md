@@ -14,7 +14,7 @@ type: worklog
 commit: 6cc0b17614917389e714375170826e426b50eafd
 short: 6cc0b176
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/733
 related_issues:
   - docs/roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md
 ---
