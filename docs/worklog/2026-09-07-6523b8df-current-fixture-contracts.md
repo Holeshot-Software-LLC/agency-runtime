@@ -80,3 +80,7 @@ acceptance and normal PR/merge. Continue oldest-first until the owner's cutoff.
 ## First isolated review preserved
 
 969f7190 (969f7190266cdfcfaaed5968a74ddb7983d68273) records five satisfied criteria and three unresolved evidence findings (2 absent, 3 contradicted, 7 absent). Do not erase those verdicts or mark done. Review each exact reason and fix only a justified current-contract/evidence gap before the second/final pass.
+
+## Bounded review correction
+
+5df50bc1 (5df50bc1099ca843758fa840e30c545ffd8a5197) makes the two argv doubles require and compare executable-namespace inputs and preserve roots identity through freezing. Sixty focused service/real-Store activation checks pass. Queue-cache isolation is not claimed as full authority proof; the final packet must include the original six-failure summary. Acceptance wording and production runtime remain unchanged.
