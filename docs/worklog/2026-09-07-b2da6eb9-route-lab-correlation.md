@@ -94,3 +94,15 @@ before commit; it was removed. All five criteria need new final verdicts.
 
 7650cdf0 freezes 594bc4d3939d144440ae52f5acdf5f840c79f25e for the second/final review.
 The clean checkpoint precedes isolated evaluation; no third review by default.
+
+## Accepted checkpoint and owner pause
+
+eb655007 (eb655007d37c1913d31559bc3f865098b4bd2b52) records all five satisfied final-candidate verdicts at
+594bc4d3. First verdicts remain at 941b9025, with explicit ADR-0231/0232
+reconciliation. No copied verdicts, production change or third review.
+The owner paused at 13:38 UTC September 7 before publication. No PR exists;
+this branch is unpushed. Main stays clean at 47d40fec, with 122 unfinished
+(40 mapped/82 legacy); the accepted branch has 121 (40/81).
+All record gates pass for 1207 Markdown files, 397 mapped/two historical PR
+exceptions and 766 formatted files. No background work. Resume only on explicit
+continue: publish accepted AR-173, normal merge/readback, then inspect AR-174.
