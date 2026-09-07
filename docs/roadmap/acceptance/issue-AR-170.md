@@ -78,7 +78,19 @@ tracker_url: null
 
 ## Verification
 
-Pending second and final isolated pass; all first verdicts remain at 662eb947.
+Second and final pass at 91273e4128b2a8bc666edd8fcf6023c534a5d55e: 1/2/4/5/6/7/8 satisfy;
+3/9 remain absent for complete call-site and raw gate-receipt evidence.
+All first verdicts remain at 662eb947. Keep AR-170 in_progress; do not copy
+earlier verdicts across candidates or run an unapproved third review.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-170.1-20260907-d36b59d7` | `0b92d681224f48259e79435f66c4d27d1818c87798d3e7ca6f7ebc50022f37be` | 2026-09-07 | dashboard-actions.js:38-65 and 358-378 enforce exact requested slug matching before committing worker detail; dashboard_ui.test.mjs:5138-5176 verifies rejection of wrong, case-altered, whitespace-padded, and nonstring response slugs. |
+| 2 | satisfied | `AR-170.2-20260907-0fc4cadc` | `f07060e0f0662f2f6a0fe51ba44d17af2ffbdae8612766c33862666d49e064e5` | 2026-09-07 | dashboard-actions.js:38-65 requires a safe nonnegative revision and all four evidence arrays; dashboard_ui.test.mjs:5160-5214 verifies rejection of invalid evidence and retention of last-good detail. |
+| 3 | absent | `AR-170.3-20260907-d1600fe7` | `03fb4e0de31494aa37dfffe4be46ce46a8e4a17a619ee4fc6fe7fbe501476ea2` | 2026-09-07 | dashboard-live.js:1905-1921 and 1972-2010 demonstrate control lookup validation, but completeRosterPage and other collection call sites are not shown, so coverage of every current paginated path cannot be established. |
+| 4 | satisfied | `AR-170.4-20260907-ee544f27` | `3a47d929e03ebb12f62cca14f4a927777465121c3ccc3c88ec9028e2acd4cc1a` | 2026-09-07 | dashboard-core.js:339-403 overwrites protected caller headers, validates the sent UUID, and rejects every present response ID unequal to it; dashboard_ui.test.mjs:909-1013 covers overrides, mismatches, malformed IDs, and invalid body values. |
+| 5 | satisfied | `AR-170.5-20260907-f1f31a10` | `9df406dae47cb9c94f64f078027a53a74ffcf5d847aecb60c9262e6a879c5158` | 2026-09-07 | dashboard-core.js wraps invalid responses with request IDs, dashboard-live.js exposes retained-state failures, and dashboard-actions.js plus the cited UI tests demonstrate preservation of last-good state and rejection of stale updates. |
+| 6 | satisfied | `AR-170.6-20260907-27794010` | `22bbe65915d554259f251b4736df821af47fec1ea3b38ec474881be54d2e5ed4` | 2026-09-07 | dashboard-config.js preserves dirty drafts and pending revisions; dashboard_ui.test.mjs verifies semantic hiding and owner controls after rendering; test_dashboard.py verifies broker mutations return 403 without state changes. |
+| 7 | satisfied | `AR-170.7-20260907-aa302d86` | `23ed41276bf4a0671d878eb69eebce29ea9cd56d7aa4520c56b23a8fab717e1d` | 2026-09-07 | The final browser report records passing desktop heading and keyboard skip-link checks; dashboard-core.js preserves ordinary fragments, and dashboard_ui.test.mjs shows maintenance copy consistent with enabled owner controls under ADR-0230. |
+| 8 | satisfied | `AR-170.8-20260907-b7ac3472` | `8fc7547c8f361cda49025741d56531783e846a8554c07928f95e890c5e22454e` | 2026-09-07 | Fresh-verification records 193 UI tests passing; final/report.json records passing seven-view/six-tab sweeps at both widths without application errors, with injected diagnostics separated; source-identity records unchanged source/test trees. |
+| 9 | absent | `AR-170.9-20260907-5ede9bf1` | `e39dbcd8aa56410668fcbe049a76d8bc92ab8e387f9931819141ae32b807e735` | 2026-09-07 | The evidence document includes UI test output, but coverage, production spine, browser, metadata, policy, worklog, docs/tracker, Ruff and diff passes are summaries without supporting receipts bound to the candidate commit. |

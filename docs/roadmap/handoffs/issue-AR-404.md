@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar170-oldest-first-reconciliation
-evidence_commit: 90654955ff3107d5d76173fc04c9f233d5e5e3bc
-minimum_ledger_commit: f1ff818c7a6752de8f11a1157b49473577b3ab65
+evidence_commit: 91273e4128b2a8bc666edd8fcf6023c534a5d55e
+minimum_ledger_commit: d74585bdb0b142547fe0c9c758323f834cf89a89
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -53,7 +53,9 @@ injection, then wrong notice expectation times out. That report is preserved at
 zero POSTs. ADR-0230 reconciles only 6/7/9, preserving original wording.
 Backend broker/lookup 18 pass. First isolated review is preserved at 662eb947:
 1–6/9 satisfied, 7/8 absent for missing primary-report/source-identity excerpts.
-Raw JSON, exact tree equivalence and fresh UI stdout now complete the packet.
+Raw JSON, exact tree equivalence and fresh UI stdout supply those missing
+artifacts. Second/final pass at 91273e41 satisfies 1/2/4/5/6/7/8; 3/9 remain
+absent for complete collection-call-site and raw gate-receipt evidence.
 
 AR-168 needs no generic manifest implementation change. Canonicalization
 rebuilds from unique validated members; verification independently derives
@@ -71,8 +73,9 @@ but generic normalization and actual cross-OS proof remain relevant.
 
 ## Exact blocker
 
-AR-170 needs its second and final isolated pass at the expanded evidence candidate.
-Source browser and explicit existing-authority criterion reconciliation are done.
+AR-170 retains 3/9 evidence gaps at 91273e41. Two passes are complete; no third
+review in this delivery. The issue records the next bounded evidence package.
+Source/browser repairs and explicit existing-authority reconciliation are done.
 
 AR-168 remains in_progress with its five original criteria/states unchanged.
 Criterion 4 needs actual native Windows/Linux complete source equality at one
@@ -96,9 +99,8 @@ No empty commits, staffing or restart. Preserve first verdicts before correction
 
 ## Next bounded work package
 
-1. Commit AR-170 final browser/builder evidence and immediate ledger.
-2. Freeze the expanded candidate and recheck all nine criteria, without copying
-   earlier satisfied verdicts. Product/tests/criteria remain unchanged.
+1. Commit AR-170's final verdicts/retention and immediate ledger.
+2. Publish the tested repair with exact remaining evidence gaps; no done flip.
 3. Publish one normal PR/merge/readback, then AR-171. No native Windows work.
 
 ## Verification

@@ -148,6 +148,11 @@ All first verdicts are preserved at 662eb947: seven satisfied, browser evidence
 7/8 absent. Supply raw report excerpts, actual UI output and tree identity to
 the second and final isolated pass without any code/test/criterion change.
 The candidate changes to include this evidence, so every criterion is rechecked;
-old satisfied verdicts are not copied to it.
+old satisfied verdicts are not copied to it. Final candidate 91273e41 has
+1/2/4/5/6/7/8 satisfied, with 3/9 absent. The second pass requests the full
+collection call-site path and raw gate receipts rather than summaries.
+Do not present either absent verdict as satisfaction or a new runtime defect.
+AR-170 remains in_progress with a concrete evidence follow-up; two-pass review
+budget is exhausted for this delivery. Publish the tested repair, then AR-171.
 Windows stays with the owner.
 Counts remain 40 mapped plus 84 legacy = 124 unfinished.

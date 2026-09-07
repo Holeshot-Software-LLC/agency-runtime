@@ -255,7 +255,10 @@ fresh spine 1085/three existing skips and four asset/packaging checks pass.
 Initial source browser has 16 desktop passes then an incorrect-notice-expectation
 timeout, preserved at 90654955. Corrected exact-source browser passes 34 checks
 across 1280/375 pixels and zero POSTs. ADR-0230 explicitly reconciles only 6/7/9;
-isolated acceptance is next, with original criteria preserved.
+originals remain. First review is preserved at 662eb947. Final candidate
+91273e41 satisfies 1/2/4/5/6/7/8; 3/9 retain full-call-site and raw-gate-receipt
+evidence gaps. Publish the tested repair with AR-170 in_progress and no count
+change. Two-pass limit is reached; next is AR-171 after this normal PR merge.
 
 Current counts: 40 actual open trackers plus 84 unfinished legacy records,
 124 total after AR-166 completion; no duplicate tracker or false acceptance.

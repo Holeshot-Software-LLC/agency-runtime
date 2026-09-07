@@ -76,8 +76,11 @@ all seven views/six tabs, keyboard navigation, owner refresh and rejected null-I
 responses. Zero POSTs. Exact source hashes and limits are in the
 [receipt](acceptance/evidence/AR-170-response-correlation-20260907.md).
 ADR-0230 explicitly reconciles only criteria 6/7/9 under ADR-0117/ADR-0105,
-preserving originals. Isolated acceptance is pending; no historical checkbox
-is used as current-candidate proof.
+preserving originals. Two isolated passes are complete. First verdicts remain
+at 662eb947; at final candidate 91273e41, criteria 1/2/4/5/6/7/8 satisfy while
+3/9 lack complete call-site and raw gate-receipt evidence. Keep in_progress;
+this is an acceptance-evidence hold, not a new reproduced code failure.
+No historical checkbox or earlier-candidate verdict supplies the missing proof.
 
 ### Previously implemented boundary and historical UI policy
 
@@ -123,16 +126,16 @@ The existing pre-tracker exemption remains; no duplicate tracker is created.
 - [x] Worker-detail responses must match the exact requested governed worker.
 - [x] Worker detail requires a safe revision and all four evidence arrays;
   missing evidence cannot be rendered as truthful emptiness.
-- [x] Exact-roster responses must match the exact requested slug on every
+- [ ] Exact-roster responses must match the exact requested slug on every
   current control and paginated collection path.
 - [x] Caller headers cannot override bearer or request identity, and every
   present response UUID is canonical and equals the sent request UUID.
 - [x] Invalid or stale responses retain last-good state and expose a correlated
   failure instead of rendering mismatched evidence.
-- [ ] Hidden elements stay hidden, and owner controls and draft state remain
+- [x] Hidden elements stay hidden, and owner controls and draft state remain
   truthful through asynchronous configuration rendering without granting broker
   write authority.
-- [ ] Skip-link navigation, heading layout, and owner-maintenance copy are
+- [x] Skip-link navigation, heading layout, and owner-maintenance copy are
   truthful at the audited desktop and keyboard surfaces.
 - [x] The focused browser suite and live seven-view/six-tab interaction sweep
   pass without application console errors.
@@ -149,6 +152,19 @@ ADR-0230 explicitly replaces only the following wording before isolated review:
 7. Skip-link navigation, heading layout, and attended-maintenance copy are
    truthful at the audited desktop and keyboard surfaces.
 9. The final repository release gate passes at the implementation commit.
+
+## Remaining bounded evidence package
+
+1. Enumerate every exact lookup/collection call site and provide the complete
+   source path from captured slug through validation, no-page enforcement and
+   last-good commit. Include completeRosterPage and collection callers directly,
+   not only their invocation or a summary.
+2. Capture raw gate receipts for the relevant UI/current coverage, named spine,
+   browser and documentation checks, bound to an immutable source/test tree.
+   Include those primary artifacts directly in bounded criterion packets.
+3. Preserve both existing passes and retain the same requirements. The current
+   delivery has reached ADR-0105's two-pass limit; no third review is silently
+   retried. A future bounded evidence package can complete acceptance.
 
 ## Implementation evidence
 
