@@ -2061,6 +2061,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bab4b475` | 2026-09-07 | docs(roadmap): pin AR-175 source checkpoint before browser QA | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
 | `328c5634` | 2026-09-07 | test(dashboard): prove installed control failure recovery [AR-175] | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
 | `adbf197e` | 2026-09-07 | docs(acceptance): freeze installed AR-175 evidence | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
+| `8ed3c516` | 2026-09-07 | docs(acceptance): preserve first AR-175 verdicts | [AR-175](../roadmap/issue-AR-175-retire-dashboard-control-fallback.md) | [Detail](2026-09-07-96f6b49b-control-schema-correlation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

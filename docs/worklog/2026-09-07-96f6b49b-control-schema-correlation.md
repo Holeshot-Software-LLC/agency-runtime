@@ -74,3 +74,7 @@ bab4b475 (bab4b475545ae5a044d198fd2b645f51313e2d25) pins the source repair and r
 ## Isolated verification freeze
 
 adbf197e (adbf197e04890d74c445257d6a0a856eb522093f) freezes all six builder packets to 328c5634567e6b12a295bb5f8957c5541cc35dba. The next action is one isolated judgement per criterion, with no builder-written verdicts or copied prior results.
+
+## First isolated review
+
+8ed3c516 (8ed3c516b0941c098078a31f34661155993691a1) preserves five satisfied criteria and criterion 6 absent. Read-only prompt inspection shows overlapping 120-line heading excerpts exhausted the 32-KiB packet budget, silently omitting the cited browser and spine excerpts. The underlying browser run passed. Narrow criterion 6 to exact line ranges at the same candidate, verify every excerpt fits, and recheck only that failed criterion as the second review; no runtime changes or invented verdicts.
