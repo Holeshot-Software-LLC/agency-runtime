@@ -72,3 +72,10 @@ Metadata, policy, strict docs/tracker and Ruff pass. AR-156 remains open;
 
 PR #708 carries the bounded repair and retained disposition. Its normal merge
 and exact publication SHA will be recorded in the next owned worktree.
+
+## Publication
+
+PR #708 merged normally at 6b4650b34f3a609e8a6f6517d65a9e03ce4a89dc on
+2026-09-07T08:00:11Z. Clean main was fast-forwarded before the owned AR-157
+worktree was created. No hosted checks were reported; the scoped local and
+packaged results above are not a hosted pass. End telemetry: 71.3 percent.

@@ -3,9 +3,10 @@ title: "Keep the operations dashboard local and observability bounded"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-18
+updated: 2026-09-07
 tags: [dashboard, security, privacy, retention]
 related:
+  - docs/roadmap/issue-AR-157-quiet-public-http-disconnects.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/roadmap/issue-AR-171-redact-dashboard-lifecycle-reasons.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md

@@ -3,9 +3,11 @@ title: Sanitize errors at the server boundary
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-07-13
+updated: 2026-09-07
 tags: [security, http, errors]
 related:
+  - docs/roadmap/issue-AR-157-quiet-public-http-disconnects.md
+  - docs/worklog/README.md
   - docs/roadmap/issue-AR-12-installed-operations-dashboard.md
   - docs/roadmap/issue-AR-15-reliable-json-rejection-responses.md
   - docs/roadmap/issue-AR-19-bounded-overload-responses.md
@@ -44,3 +46,6 @@ Treat malformed JSON and invalid UTF-8 as client errors with a 400 response rath
 ## Provenance
 
 Commit 9e57cf1 introduced fixed 500 responses, value-free error logging, and invalid UTF-8 handling with tests that assert secret-like exception content is absent.
+
+AR-157's 12640d0 separates expected disconnects from genuine faults without
+weakening the sanitized application-error boundary.

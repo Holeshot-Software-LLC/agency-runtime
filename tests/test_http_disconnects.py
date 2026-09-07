@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import errno
+import json
+import logging
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from types import SimpleNamespace
@@ -42,19 +44,22 @@ def _enable_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.parametrize(
     ("method", "path", "handler_name", "exc"),
     [
-        ("GET", "/status", "_handle_status", ConnectionAbortedError("gone")),
-        ("POST", "/search", "_handle_search", BrokenPipeError("gone")),
+        ("GET", "/status", "_handle_status", ConnectionAbortedError("private-disconnect-message")),
+        ("POST", "/search", "_handle_search", BrokenPipeError("private-disconnect-message")),
     ],
     ids=["get", "post"],
 )
 def test_primary_response_disconnect_is_quiet_and_does_not_attempt_500(
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
     method: str,
     path: str,
     handler_name: str,
     exc: OSError,
 ) -> None:
-    handler = _handler(path)
+    caplog.set_level(logging.INFO, logger="agency_runtime.observation")
+    handler = _handler(f"{path}?private-query-value")
+    handler._read_json_body = lambda: {"query": "private-body-value"}
     primary_response = Mock(side_effect=exc)
     log_failure = Mock()
     handler._json_ok = primary_response
@@ -65,12 +70,37 @@ def test_primary_response_disconnect_is_quiet_and_does_not_attempt_500(
     monkeypatch.setattr(http_module, "_log_unhandled_request_error", log_failure)
     _enable_runtime(monkeypatch)
 
-    getattr(handler, f"_dispatch_{method}")(path, path.removeprefix("/"))
+    getattr(handler, f"do_{method}")()
 
     assert handler.close_connection is True
     primary_response.assert_called_once_with({"status": "ok"})
     log_failure.assert_not_called()
     handler._json_error.assert_not_called()
+
+    observations = [
+        json.loads(record.getMessage().split(" ", 1)[1])
+        for record in caplog.records
+        if record.getMessage().startswith("agency_observation ")
+    ]
+    matches = [
+        item
+        for item in observations
+        if item["surface"] == "http"
+        and item["operation"] == http_module._observation_operation(method, path)
+    ]
+    assert len(matches) == 1
+    observation = matches[0]
+    assert observation["surface"] == "http"
+    assert observation["operation"] == http_module._observation_operation(method, path)
+    assert observation["outcome"] == "degraded"
+    assert observation["reason_code"] == "client_disconnected"
+    assert observation["request_id"].startswith("arq-")
+    for private_value in (
+        "private-disconnect-message",
+        "private-query-value",
+        "private-body-value",
+    ):
+        assert private_value not in caplog.text
 
 
 @pytest.mark.parametrize(

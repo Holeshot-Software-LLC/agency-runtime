@@ -471,7 +471,9 @@ def test_preflight_returns_routing_and_context(
     assert body["model"] == "task-agency-router"
     assert "trace_id" in body
     assert "routing" in body
-    assert body["roster_size"] == 14
+    catalog = http_server["store"].get_active_roster_as_catalog()
+    assert "code-reviewer" in {agent["slug"] for agent in catalog}
+    assert body["roster_size"] == len(catalog)
     assert body["trivial"] is False
     # context may be None if the LLM judge is unreachable, but the routing
     # dict must always have selected_ids.
@@ -622,16 +624,17 @@ def test_finalize_records_skills_and_delegations(http_server):
 
 def test_finalize_rejects_resident_steward_as_delegated_worker(
     http_server,
-    monkeypatch: pytest.MonkeyPatch,
 ):
-    _route_to_code_reviewer(monkeypatch)
-    run_preflight(
-        http_server["store"],
+    # This admission test owns existing evidence, not an inference/hiring flow.
+    store = http_server["store"]
+    inserted = store.record_suggested_delegations_batch(
         trace_id="trace-resident-worker",
         session_id="session-resident-worker",
-        user_message="Review this pull request for quality and security",
-        host="codex",
+        host="test",
+        suggestions=[{"recommended_agent": "code-reviewer", "work_unit_id": "unit-review"}],
     )
+    assert inserted == 1
+    prior_delegations = store.get_delegations("trace-resident-worker")
 
     status, body = _post(
         http_server["base"],
@@ -657,7 +660,8 @@ def test_finalize_rejects_resident_steward_as_delegated_worker(
 
     assert status == 400
     assert "parent-only" in body["error"]
-    delegations = http_server["store"].get_delegations("trace-resident-worker")
+    delegations = store.get_delegations("trace-resident-worker")
+    assert delegations == prior_delegations
     assert [(row["recommended_agent"], row["status"]) for row in delegations] == [
         ("code-reviewer", "suggested")
     ]

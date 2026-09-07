@@ -3,9 +3,10 @@ title: "Derive runtime claims from authoritative correlated evidence"
 status: accepted
 category: decisions
 created: 2026-07-10
-updated: 2026-08-22
+updated: 2026-09-07
 tags: [evidence, tracing, delegation]
 related:
+  - docs/roadmap/issue-AR-157-quiet-public-http-disconnects.md
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
   - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
   - docs/roadmap/issue-AR-276-preserve-planner-repair-diagnostics.md

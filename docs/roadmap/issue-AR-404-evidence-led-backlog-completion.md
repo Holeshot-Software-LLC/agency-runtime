@@ -141,9 +141,18 @@ Workflow 165 pass/five Windows-named deselections, spine 1085/three skips and UI
 no guard is weakened. Exact clean dccb4e85 wheel QA passes 21 loaded browser
 checks, with polling preservation and failure recovery at all three widths.
 Scoped receipts and screenshots are committed; normal publication precedes AR-157.
+PR #708 merged 6b4650b3 at 08:00:11Z on September 7 before the AR-157 tree.
 
-Current counts: 40 actual open trackers plus 91 unfinished legacy records,
-131 total after AR-155 completion; no duplicate tracker or false acceptance.
+AR-157 confirms existing quiet HTTP disconnect handling. Two direct primary
+observation tests are strengthened, and two stale HTTP fixtures are repaired
+without runtime changes. Full HTTP/disconnect/runtime-observation package passes
+104 with three existing skips; targeted transport coverage is 100 percent.
+Exact-byte spine/UI/wheel reuse is explicit. Only criterion 6 is reconciled under
+ADR-0105; all six isolated criteria satisfy at a35657e1. AR-157 is done, with
+normal PR publication next and no duplicate legacy tracker.
+
+Current counts: 40 actual open trackers plus 90 unfinished legacy records,
+130 total after AR-157 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
