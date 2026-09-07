@@ -1796,12 +1796,12 @@ def cmd_install(
                 "error": f"{type(exc).__name__}: {safe_display_token(str(exc), limit=500)}",
             }
 
-    # Checked after the hosts are staged: a completed install should have
-    # published this CLI's projection, so surviving drift means the install
-    # reported success without actually publishing anything. A foreign-package
-    # report cannot survive an install from this package, so it would mean the
-    # pointer was not rewritten -- still worth reporting, not filtered out.
-    residual_drift = _cli_install_drift_projection()
+    # Only targets this install resolved should have published this CLI's
+    # projection. Another host may legitimately remain on an older or foreign
+    # package; global status reports that drift, not this install's residual.
+    # Foreign-package drift on a selected target still means its pointer did
+    # not get rewritten and must remain visible.
+    residual_drift = _cli_install_drift_projection(targets)
     if not json_mode:
         _render_install_summary(
             profile_name=profile_name,
@@ -1865,15 +1865,15 @@ def cmd_install(
     )
 
 
-def _cli_install_drift_projection() -> dict[str, Any] | None:
-    """Project CLI-side install drift without letting a report break a command.
+def _cli_install_drift_projection(targets: list[str]) -> dict[str, Any] | None:
+    """Project the first residual drift among this install's resolved targets.
 
     Reporting drift is advisory: a status or install run that cannot compute
     the comparison must still deliver everything else it was asked for.
     """
 
     reports = _cli_install_drift_projections()
-    return reports[0] if reports else None
+    return next((report for report in reports if report["host"] in targets), None)
 
 
 def _cli_install_drift_projections() -> list[dict[str, Any]]:

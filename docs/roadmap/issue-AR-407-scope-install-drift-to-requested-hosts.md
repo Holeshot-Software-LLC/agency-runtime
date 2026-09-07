@@ -42,6 +42,14 @@ The current parent separately retains older cached hooks and lacks the
 configured client variable in its launch environment. Correcting a warning
 does not fix either condition or establish current-turn staffing.
 
+The bounded implementation now passes resolved targets into the residual
+projection helper. Global status is unchanged. Thirty-five regressions cover
+text/JSON, same/foreign packages, explicit/default/all/empty resolved scopes,
+selected drift and advisory failures. Two existing doubles assert the exact
+targets. Focused combined validation passes 158 cases with one Windows-named
+deselection; independent focused review reports no finding and 35 passes.
+Live mixed-pointer and installed-artifact validation remain to be recorded.
+
 ## Approach
 
 Filter install residual drift to resolved installation targets. Keep global

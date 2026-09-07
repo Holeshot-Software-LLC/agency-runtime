@@ -1006,8 +1006,12 @@ def test_production_container_command_threads_exact_config_through_transaction(
         stored_configs.append(cfg)
         return RuntimeStore()
 
+    def residual_drift(targets):
+        assert targets == ["codex"]
+        return None
+
     monkeypatch.setattr(subject, "_materialize_install_controls", lambda *_args: None)
-    monkeypatch.setattr(subject, "_cli_install_drift_projection", lambda: None)
+    monkeypatch.setattr(subject, "_cli_install_drift_projection", residual_drift)
     monkeypatch.setattr(installer, "seed_starter_roster", lambda _store: 0)
 
     def install_adapter(_host, cfg):
