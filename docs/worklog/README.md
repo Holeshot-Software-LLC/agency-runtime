@@ -1999,6 +1999,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a01abe81` | 2026-09-07 | Merge pull request #713 from Holeshot-Software-LLC/codex/ar162-oldest-first-reconciliation | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
 | `fd551fd4` | 2026-09-07 | docs(backlog): verify existing remediation authority behavior [AR-163] | [AR-163](../roadmap/issue-AR-163-reopen-stale-remediation-authority.md) | [detail](2026-09-07-fd551fd4-remediation-authority.md) |
 | `b9d91243` | 2026-09-07 | docs(acceptance): freeze AR-163 existing authority evidence | [AR-163](../roadmap/issue-AR-163-reopen-stale-remediation-authority.md) | [detail](2026-09-07-fd551fd4-remediation-authority.md) |
+| `49b26b5b` | 2026-09-07 | docs(backlog): complete verified remediation authority record [AR-163] | [AR-163](../roadmap/issue-AR-163-reopen-stale-remediation-authority.md) | [detail](2026-09-07-fd551fd4-remediation-authority.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
