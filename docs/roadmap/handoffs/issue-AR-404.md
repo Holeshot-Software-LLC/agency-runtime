@@ -26,8 +26,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar150-oldest-first-reconciliation
-evidence_commit: 57c225c189e39eae347129eb07e2a156e110b56b
-minimum_ledger_commit: 1de0e21e75c0233c3c11aaf161fa6329b9d365d6
+evidence_commit: ae71761f83eb83c7f258336acc76cc32044009a2
+minimum_ledger_commit: 72fddb20c584fad92378dabe41acbd7d9bc6f4d2
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -52,7 +52,7 @@ browser proof. First isolated review of 57c225c1 satisfies 1/3/4; criterion 2 is
 absent because the citations do not demonstrate inverse refresh-response order.
 First verdicts are preserved at 4e820ff4, ledger 140c68c6. Four direct inverse
 workforce/full cases now pass in both completion orders; full UI 176 pass and
-coverage 96.93/86.70/95.71. Freeze that test-only proof and obtain a second pass.
+coverage 96.93/86.70/95.71. Second candidate ae71761f is frozen for review.
 PR #703 stays draft. No runtime defect or product change is asserted.
 
 ## Completed evidence
@@ -130,8 +130,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Preserve AR-150's first verdicts and immediate ledger. Add direct inverse
-   refresh-order coverage, freeze new evidence and run the second isolated pass.
+1. Run AR-150's second isolated pass against candidate ae71761f; the first
+   verdicts are preserved and direct inverse refresh-order coverage is frozen.
    No done/count flip before satisfaction; PR #703 remains draft until then.
 2. Complete documentation/tracker checks and merge one PR normally.
    Read back the actual merged head; update clean main by fast-forward only.
