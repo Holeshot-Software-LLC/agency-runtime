@@ -59,8 +59,14 @@ tracker_url: null
 
 ## Verification
 
-First verdicts are preserved at 941b9025. Pending one second/final all-criteria
-review after ADR-0232's explicit representation correction. No copied verdicts.
+All five criteria satisfy at 594bc4d3939d144440ae52f5acdf5f840c79f25e in the
+second/final review. First verdicts remain at 941b9025 before ADR-0232's explicit
+representation correction. No copied verdicts or third review.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-173.1-20260907-f8cf0256` | `424913bd9ccf95cfb5d671b9347c002c21907e69747c690dbf171bb5d002d5a5` | 2026-09-07 | dashboard.py:2720-2797 validates and bypasses before allocating one UUIDv4 ahead of explain_route; test_dashboard.py:3850-3986 verifies fresh pre-call traces and no allocation for invalid or disabled requests, with two passing tests in the focused transcript. |
+| 2 | satisfied | `AR-173.2-20260907-d1de4de8` | `17f8c0edfa290386ea9b29471bd39cfe2551f281e0e64ea4da9a92b8ac210baf` | 2026-09-07 | dashboard.py and observability.py bind the allocated trace to the active HTTP digest; test_dashboard.py asserts the receipt trace, exact domain-separated digest equality, and separate request ID, with a passing focused HTTP transcript. |
+| 3 | satisfied | `AR-173.3-20260907-97893c7c` | `af18fd86dbee190aeaaa77fe2b782361d9c47ce86705cab589f8ec421c494d4c` | 2026-09-07 | observability.py enforces bounded metadata fields and digest-only correlation serialization; test_dashboard.py verifies records under 512 bytes exclude private values, and the cited focused transcript reports 195 passing tests. |
+| 4 | satisfied | `AR-173.4-20260907-f63a37e6` | `b03892c269f4c6a27a2a06ca35ec6145dceaef1313e1ab33cca2afc965850df2` | 2026-09-07 | tests/test_dashboard.py:3850-3922 uses authenticated POST requests, asserts emitted digest equality with the response trace digest, and checks no durable turn/routing rows; lines 292-313 match observations by request ID, and the focused transcript reports passing tests. |
+| 5 | satisfied | `AR-173.5-20260907-1411e758` | `4b7b62f20fd6860895e08606730dd848219e58a297526d492efe3f877f7fed5a` | 2026-09-07 | AR-173-route-lab-correlation-20260907.md transcripts show 195 focused tests and 204 UI tests passing, coverage above 95/86/93 floors, 1085 production-spine passes with three existing skips, and successful metadata, policy, worklog, docs/tracker, Ruff and diff checks. |

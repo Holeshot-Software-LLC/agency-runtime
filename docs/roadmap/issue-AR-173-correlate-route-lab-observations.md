@@ -1,6 +1,6 @@
 ---
 title: "AR-173: Correlate Route Lab observations"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -54,12 +54,14 @@ and exactly joins its request-specific emitted observation. Allowed fields are
 bounded and content-free; no diagnostic turn or routing rows appear. The first
 focused pair passes, as do all 195 dashboard/explanation/observability tests,
 204 UI tests/current coverage floors and the fresh named spine (1085 passes,
-three existing skips). Full raw receipts are recorded; isolated acceptance
-has first-pass satisfied verdicts for 1/3/4/5. Criterion 2's original wording
-incorrectly requires the raw trace in both places; the observation stores its
-domain-separated digest. First verdicts are preserved at 941b9025. ADR-0232
-explicitly supersedes ADR-0231 to clarify that representation before the
-second/final candidate review. No runtime change or new trace field.
+three existing skips). Full raw receipts are recorded. First verdicts are
+preserved at 941b9025: criterion 2's original wording conflated raw trace and
+digest. ADR-0232 explicitly supersedes ADR-0231 to clarify the representation.
+All five criteria satisfy at 594bc4d3939d144440ae52f5acdf5f840c79f25e in the
+second/final review, without copying earlier verdicts. AR-173 is done; no
+runtime change, new trace field or third review. The owner paused before
+publication: this accepted state is local to the unpushed AR-173 branch,
+not main. Publish its normal PR only after an explicit continue request.
 
 ## Approach
 
@@ -85,7 +87,7 @@ original wording and the first contradicted verdict are preserved.
 - [x] Each admitted enabled Route Lab routing operation allocates one fresh
   UUIDv4 trace before explanation; invalid or disabled requests do not invent
   routing traces.
-- [ ] The route receipt carries the allocated trace ID, and the current HTTP
+- [x] The route receipt carries the allocated trace ID, and the current HTTP
   observation's correlation_digest equals the domain-separated digest of that
   exact response trace; request ID remains a separate identity.
 - [x] Correlation records remain content-free and bounded.
@@ -113,4 +115,4 @@ corrected rather than implemented: Route Lab has long been diagnostic-only.
 The new server regression posts two authenticated Route Lab requests through
 the actual explanation code and checks fresh response-to-log equality. The
 [receipt](acceptance/evidence/AR-173-route-lab-correlation-20260907.md) records
-raw output and limits. Completion still requires isolated acceptance.
+raw output and limits. All five isolated criteria satisfy at 594bc4d3.

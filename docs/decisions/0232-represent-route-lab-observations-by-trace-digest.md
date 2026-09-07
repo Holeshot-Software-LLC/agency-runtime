@@ -67,3 +67,11 @@ It does not promise disk persistence of the emitted logs or native activation.
 - Assert the digest and UUID are equal: factually false.
 - Hide the contradicted verdict or silently amend ADR-0231: loses provenance.
 - Retire the whole issue: discards a useful exact-request correlation regression.
+
+## Verification provenance
+
+b2da6eb9 adds the direct HTTP regression without production changes. First
+review is preserved at 941b9025; all five final criteria satisfy at 594bc4d3
+after this explicit representation correction. The
+[worklog registry](../worklog/README.md) preserves their exact subjects and
+related issue, with no third review or copied verdict.

@@ -31,10 +31,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Owner continues one oldest record, one PR, normal merge, then next. Native
-Windows remains with the owner. PR #721 merged accepted AR-172 at 47d40fec,
-13:11:01Z September 7. Main was clean and fast-forwarded before the separate
-AR-173 tree; 6afcbcb5 records that merge and is the prior clean checkpoint.
+Owner paused work September 7 at 13:38 UTC until an explicit continue request.
+Do not resume the backlog loop, push, open a PR or merge while paused. Save this
+accepted AR-173 state locally only. Native Windows remains with the owner.
+Main is clean at 47d40fec, PR #721's AR-172 merge at 13:11:01Z. AR-173 has no
+PR and its branch is unpushed; 6afcbcb5 records the prior merge.
 
 ## Completed evidence
 
@@ -56,14 +57,17 @@ explanations are diagnostic-only since e5f4a8c2, before the issue was written.
 - Draft record failures (missing transcript headings, then Node display padding)
   are preserved. The final contract passes all record gates: 1207 Markdown
   files, 397 mapped/two historical PR exceptions, Ruff and diff clean.
-- AR-172 done leaves 40 actual trackers plus 82 legacy, 122 unfinished.
+- All five final-candidate verdicts satisfy at 594bc4d3. First review remains
+  at 941b9025; no copied verdicts or third review.
+- Accepted AR-173's branch has 40 mapped plus 81 legacy, 121 unfinished.
+  Main still has 40 mapped plus 82 legacy, 122, until publication resumes.
 
 ## Exact blocker
 
-No reproduced AR-173 production defect. First review at f4f5124e satisfies
-1/3/4/5 and contradicts 2; it is preserved at 941b9025. ADR-0232 explicitly
-corrects trace/digest representation. Commit/freeze final evidence and run one
-second/final all-criteria review. No third pass or copied earlier verdicts.
+No AR-173 technical acceptance blocker remains. All five criteria satisfy at
+594bc4d3; the owner pause is the current stop condition. Completion and its
+ledger are saved locally. Do not publish until the owner explicitly continues.
+First verdicts and requirement changes remain preserved.
 
 AR-170 remains in_progress: first review at 662eb947 and final candidate
 91273e41 are preserved. Final 1/2/4/5/6/7/8 satisfy, 3/9 need complete collection
@@ -86,10 +90,9 @@ No empty commits, staffing or restart. Preserve verdicts before corrections.
 
 ## Next bounded work package
 
-1. Focused checkpoint b2da6eb9/b1f15941 is clean; broader suites pass.
-2. Final candidate 594bc4d3 and its immediate ledger are committed; freeze packet.
-3. Five isolated checks, one normal PR/merge/readback, then AR-174.
-   No native Windows work and at most two review passes.
+1. Wait for the owner's explicit continue request; no background work.
+2. Then publish accepted AR-173 as one normal PR; no acceptance rerun needed.
+3. Merge/read back before inspecting AR-174. No native Windows work.
 
 ## Verification
 
