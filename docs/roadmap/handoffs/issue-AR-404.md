@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar183-private-producer-evidence
-evidence_commit: 2274823ca3d56ddeaa78cd69cf8a6d9dedf3407c
-minimum_ledger_commit: 99805b592457996a908cf88fc99b5e98e02169da
+branch: codex/ar184-linux-producer-reconciliation
+evidence_commit: 30214408a0073e69550ba695b99ef68d9238f857
+minimum_ledger_commit: 5ccca3c36e9ee63b833531787e8bddcfcdcaa649
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -49,6 +49,8 @@ New AR-408/#732 records truthful staffing-failure/timeout receipt defects;
 queue119 (41 mapped/78 legacy) until its reviewed repair is accepted.
 AR181 merged PR #731/2274823c. AR183 detached Linux producer evidence now
 passes at08fab1c4; same-SHA Windows equality/merged release set remain held.
+AR183 merged PR #733/30214408. AR184 reuses that exact producer receipt;
+both retain only their meaningful cross-platform proof obligations.
 
 ## Completed evidence
 
@@ -96,7 +98,7 @@ variable. No current-turn header snapshot; do not reinstall OpenClaw.
 
 ## Same-task continuity
 
-Owned tree: codex/ar183-private-producer-evidence. Do not commit main or touch
+Owned tree: codex/ar184-linux-producer-reconciliation. Do not commit main or touch
 another worker's dirty tree. Substantive commits get immediate narrow worklog
 ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
@@ -107,8 +109,8 @@ Parent owns publication, acceptance and shared-registry changes.
 
 ## Next bounded work package
 
-1. Publish AR-183 detached Linux proof; retain exact Windows comparison hold.
-2. Reuse for AR184, then185/189/190; Windows/operator holds stayopen.
+1. Publish AR184 shared Linux proof and retained Windows comparison hold.
+2. Verify AR185 exact activation packet, then189/190; Windows holds stayopen.
 3. Fanout prepares truthful staffing-failure receipts: five calls can exhaust
    the budget before the critic, and routing drops effective timeout evidence.
 4. Stop cleanly by September 8 01:00 UTC.
