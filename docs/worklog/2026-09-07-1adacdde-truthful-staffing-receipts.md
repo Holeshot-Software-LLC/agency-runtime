@@ -67,3 +67,5 @@ Packet `795ddf21` freezes three observation-only criteria against artifact-evide
 Completion `7674aca9` records allthree satisfied isolated judgments against d9dde3cd. Owner CLI replacement and AR409 allocation remain separate.
 
 Merge `8c1845e5` integrates accepted AR185/main00fc1aef and AR409 filing. Only documentary overlaps were resolved by retaining both histories and the accepted AR408 state.
+
+Checkpoint `f05e0bb8` updates queue and active recovery after AR185 publication and AR408 acceptance; AR409 implementation/live testing remains next.

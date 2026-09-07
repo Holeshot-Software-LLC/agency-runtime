@@ -2105,6 +2105,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c095616a` | 2026-09-07 | docs(AR-409): integrate parallel reservation filing for tracker parity | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-96a048d6-ar409-reservation-filing.md) |
 | `00fc1aef` | 2026-09-07 | Merge pull request #736 from Holeshot-Software-LLC/codex/ar185-activation-proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 | `8c1845e5` | 2026-09-07 | chore(AR-408): integrate accepted activation and reservation filing | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `f05e0bb8` | 2026-09-07 | docs(backlog): checkpoint accepted staffing diagnostics and next live work | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
