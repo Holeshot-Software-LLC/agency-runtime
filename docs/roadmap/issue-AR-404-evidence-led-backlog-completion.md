@@ -67,7 +67,12 @@ present: 33 selected contracts and generated ZCode smoke 4/4 pass. Its current
 installed state remains enabled-runtime-unverified, with no executable/canary;
 retain the attended native Agent/record-zero/full-Stop proof rather than
 rewriting the old installer or claiming August evidence as current. Its
-disposition changes no count; AR-138 follows because AR-136/137 are done.
+disposition merged in PR #699 at e2f7a5f2 and changes no count. AR-138 is now
+the active bounded package: its earlier concurrency/mobile fixes exist, but
+actual browser review reproduced contrast, keyboard-scroll and clipped-card
+defects. Those are repaired with four focused regressions. Current dashboard
+Python checks pass 180; the named spine passes 1085/three skips (69.50s).
+Finish the packaged browser receipt and isolated acceptance before closure.
 An unrelated public-roster fixture also fails on untouched main and is recorded
 under AR-176, not erased. Windows work stays excluded. The oldest-first ledger and active capsule
 retain exact evidence and all earlier holds; ordinary-session header failure
@@ -300,11 +305,9 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-AR-149 is accepted and AR-139's obsolete ceiling is retired. Reconcile
-historical record relevance one by one, next AR-152's listener behavior; keep AR-406's current
-shared coverage failure visible. Then verify AR-298 and deliver genuine
-AR-348/349 hiring-safety fixes. Do not do Windows-specific work. AR-271 and
-AR-405 have their own satisfied acceptance; AR-285 still needs its two named
-evidence gaps, not a repeated classifier test. The full backlog remains open
-until every baseline record has a reviewed disposition and remaining
-acceptance is met.
+Finish AR-138's packaged-browser verification, isolated acceptance and one
+PR/merge. Then review AR-140; AR-139's obsolete ceiling is already retired.
+The older AR-152/298/348-first ordering above is historical and does not override
+the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
+visible, exclude Windows execution, and do not close the full backlog until
+every baseline record has a reviewed disposition and remaining acceptance is met.

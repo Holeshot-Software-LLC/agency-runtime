@@ -3248,6 +3248,44 @@ test("app.js evidence tabs implement roving keyboard focus and labelled panels",
   assert.match(harness.node("evidence-caption").textContent, /routing runtime evidence/i);
 });
 
+test("dashboard scroll regions have keyboard access and names", () => {
+  const regions = [...INDEX_SOURCE.matchAll(/<div class="table-wrap"([^>]*)><table><caption[^>]*>([^<]+)<\/caption>/g)];
+  assert.equal(regions.length, (INDEX_SOURCE.match(/class="table-wrap"/g) || []).length);
+  assert.equal(regions.length, 5);
+  for (const [, attributes, caption] of regions) {
+    assert.match(attributes, /tabindex="0"/);
+    assert.match(attributes, /role="region"/);
+    assert.ok(attributes.includes(`aria-label="${caption}"`));
+  }
+  const output = INDEX_SOURCE.match(/<pre id="config-output"([^>]*)>/)?.[1];
+  assert.ok(output);
+  assert.match(output, /tabindex="0"/);
+  assert.match(output, /role="region"/);
+  assert.match(output, /aria-label="Effective configuration"/);
+});
+
+test("dashboard evidence metrics wrap within their panel instead of clipping cards", () => {
+  assert.match(
+    APP_CSS_SOURCE,
+    /\.metric-evidence-summary\s*{[^}]*grid-template-columns:\s*repeat\(auto-fit,minmax\(105px,1fr\)\)/,
+  );
+  assert.doesNotMatch(APP_CSS_SOURCE, /\.metric-evidence-summary\s*{[^}]*repeat\(5,/);
+});
+
+test("dashboard navigation numbers use the accessible muted color", () => {
+  assert.match(APP_CSS_SOURCE, /\.nav-item span\s*{[^}]*color:\s*var\(--muted\)/);
+  assert.doesNotMatch(APP_CSS_SOURCE, /\.nav-item span\s*{[^}]*color:\s*#58697a/);
+  assert.doesNotMatch(APP_CSS_SOURCE, /\.empty-state\s*{[^}]*color:\s*#69788b/);
+});
+
+test("dashboard named static groups expose a nameable role", () => {
+  for (const name of ["Agency Runtime", "Live dashboard controls", "Chart series", "Workforce state summary"]) {
+    const tag = INDEX_SOURCE.match(new RegExp(`<div[^>]*aria-label="${name}"[^>]*>`))?.[0];
+    assert.ok(tag, name);
+    assert.match(tag, /role="group"/, name);
+  }
+});
+
 test("app UI honors reduced motion, canonical CSS, and live toggle semantics", () => {
   assert.equal((APP_CSS_SOURCE.match(/^:root\s*{/gm) || []).length, 1);
   assert.equal((APP_CSS_SOURCE.match(/@media\s*\(max-width:\s*980px\)/g) || []).length, 1);

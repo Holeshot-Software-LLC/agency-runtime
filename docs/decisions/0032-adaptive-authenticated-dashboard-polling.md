@@ -3,9 +3,10 @@ title: "Use adaptive authenticated polling and source-owned signal visualization
 status: accepted
 category: decisions
 created: 2026-07-11
-updated: 2026-07-11
+updated: 2026-09-07
 tags: [dashboard, live-updates, visualization, security, accessibility]
 related:
+  - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
   - docs/roadmap/issue-AR-152-bound-dashboard-live-listeners.md
   - docs/roadmap/issue-AR-175-retire-dashboard-control-fallback.md
   - docs/roadmap/issue-AR-14-live-signal-observatory.md

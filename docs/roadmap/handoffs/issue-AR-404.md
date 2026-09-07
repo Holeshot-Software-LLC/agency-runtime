@@ -13,6 +13,7 @@ related:
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - docs/roadmap/acceptance/issue-AR-131.md
   - docs/roadmap/issue-AR-135-complete-zcode-integration.md
+  - docs/roadmap/issue-AR-138-coherent-observable-dashboard-ui.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
@@ -21,9 +22,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar135-oldest-first-reconciliation
-evidence_commit: ac1ce173d6987d4d4cc4e060df319fb07cf9f44b
-minimum_ledger_commit: e21e8da4d9e6f6859148b4a7a503c7966dbb7b96
+branch: codex/ar138-oldest-first-reconciliation
+evidence_commit: e2f7a5f25bc8905b0f5bbf00d5c6beee94c0c626
+minimum_ledger_commit: bcaddc1b327c08d1e5d1a3d11be0b82dabd9da2a
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -34,13 +35,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 Owner resumed September 6: oldest first, one record/PR/merge, then next; no
 routine approval stops. Windows stays with the owner. AR-131 is done and PR
-#698 merged at ac1ce173 (September 7, 04:12:09Z); local main is clean. The merge
-ledger is e21e8da4 in the next owned AR-135 branch.
+#698 merged at ac1ce173 (September 7, 04:12:09Z). AR-135 retention merged in
+PR #699 at e2f7a5f2; local main is clean there. Merge ledger bcaddc1b starts the
+owned AR-138 branch.
 
-Current package: retain AR-135 with its implemented contracts and exact
-remaining attended native-proof obligation. No production code change;
-only a misleading test docstring/comment is corrected. Publish this disposition
-before moving to AR-138; AR-136 and AR-137 are already done.
+Current package: AR-138, fast_verification. Existing coherence/mobile fixes
+remain; actual browser review found contrast, keyboard-scroll/semantic and
+desktop metric-clipping defects. Small HTML/CSS fixes and four regressions are
+ready. Final view-loaded browser receipt and isolated acceptance remain.
 
 ## Completed evidence
 
@@ -69,10 +71,19 @@ before moving to AR-138; AR-136 and AR-137 are already done.
   unknown, no canary/attestation, enabled-runtime-unverified. Executable null;
   command lookup also finds no zcode CLI. August 19 record-zero evidence stays
   historical, not current-package certification.
+- AR-138: four focused regressions pass after red checks; dashboard Python
+  modules 180 pass (28.80s), named spine 1085/three skips (69.50s). Initial
+  repaired-wheel structural QA passes 21 view/viewport cases with zero axe
+  violations and no unexpected console/HTTP errors. Real control failure keeps
+  the last revision, shows a safe correlated UUID and recovers after restoration.
+  All ten packaged dashboard assets match source. Final QA must await the
+  view-scoped metric/evidence reads after full refresh and assert that the
+  preservation check sends a control poll, not an early-returning call.
 
 ## Exact blocker
 
-AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
+No operator blocker for AR-138: finish packaged QA and isolated acceptance;
+it remains open until then. AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
 success/failure and full parent Stop capture. Do not invent a headless backend
 or promote a stubbed hook test into native proof. This does not block the next
 independent backlog disposition.
@@ -91,22 +102,24 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Finish AR-135's record/test-wording disposition, focused checks and exact
-   substantive/ledger pair. Its five original criteria and open status remain.
-2. Open one PR, verify its final head/check state and merge normally. Record the
-   attended proof plan; do not require the owner to answer before continuing.
-3. Review AR-138 next. Native Windows execution remains excluded.
-4. AR-135 later: pin the exact installed package and existing profile in an
-   attended session; capture Agent success/failure, one-use identities,
-   record-zero prompt delivery and complete Stop input/output. Then freeze
-   evidence per original criterion and obtain isolated acceptance.
+1. Finish AR-138's source/record recovery pair, then run the corrected optional
+   browser checker against the installed candidate wheel. Record exact JSON,
+   asset hashes, screenshots and limitations in repository-owned evidence.
+2. Freeze the six unchanged criteria's evidence and run isolated acceptance
+   with the available Codex transport. Never author verdicts or waive gaps.
+3. If satisfied, update the legacy count, open one PR and merge normally.
+   Review AR-140 next; AR-139 is already retired. Windows stays excluded.
+4. AR-135 later retains its attended installed Agent/record-zero/full-Stop plan;
+   it does not block an independent backlog disposition.
 
 ## Verification
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
-checks per package, with focused checks for touched behavior. AR-135 changes
-no executable production behavior; the current AR-131 named-spine/UI/routing/
-conformance receipts above retain their exact scope. No new exhaustive corpus,
+checks per package, with focused checks for touched behavior. AR-138 changes
+only dashboard HTML/CSS plus optional QA tooling/tests. Run the current UI
+coverage command with 95/86/93 floors and source inclusion; the mistakenly
+used historical 95/90/96 command failed, not a current CI regression.
+No new exhaustive corpus,
 coverage/interpreter matrix, hosted dispatch or release/installed-live proof.
 The graphify graph is absent; bounded source inspection was used, with no
 graph build, specialist selection or native subagent staffing.
@@ -114,7 +127,7 @@ graph build, specialist selection or native subagent staffing.
 ## Constraints
 
 No credential creation, human-trust bypass, unmanaged gateway restart or provider
-policy change. A single runtime-requested Codex refresh returned exit 1 with
+policy change. Runtime-requested Codex refreshes returned exit 1 with
 registered files but activation required, trust unverified and mixed installed
 projections. Do not retry or replace OpenClaw as part of backlog record cleanup.
 Generated smoke and staged files do not establish normal-session activation.

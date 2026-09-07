@@ -3,13 +3,17 @@ title: "AR-138: Make dashboard refresh coherent, accessible, and observable"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [dashboard, ui, accessibility, concurrency, observability]
 related:
   - agency_runtime/dashboard
   - agency_runtime/server/dashboard.py
   - docs/roadmap/issue-AR-144-restore-dashboard-ui-release-coverage.md
   - docs/decisions/0032-adaptive-authenticated-dashboard-polling.md
+  - scripts/verify_dashboard_browser.py
+  - scripts/verify_dashboard_browser.mjs
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -35,11 +39,24 @@ accessible name.
 ## Current state
 
 The original coherence, stale-state, focus, duplicate-render, accessible-name,
-and request-correlation defects are repaired. Fresh installed-artifact review
-then exposed one responsive regression: the desktop heading flex basis became a
-280 px vertical basis after the mobile layout changed to a column. The source
-fix now resets that basis at the mobile breakpoint; final packaged-candidate QA
-remains before this item can close.
+and request-correlation fixes exist. September 7 packaged-browser review also
+confirms that the earlier mobile heading-basis fix exists at 375 px. The July
+test counts below are historical, not a current closure receipt.
+
+Current browser review reproduced low-contrast navigation/empty-state text,
+unfocusable scroll regions, unnamed generic groups, and clipped metric cards
+inside desktop half-width panels. The bounded repair uses existing accessible
+colors, named keyboard-focusable scroll regions, group roles, and a wrapping
+metric grid. Four focused regressions pass after failing before repair.
+The three dashboard Python modules pass 180 tests; the named production spine
+passes 1085 with three existing skips (69.50s). No staffing or host policy changes.
+
+Package state: fast_verification. The optional browser checker uses a freshly
+installed wheel, private five-agent Store, stubbed host inventory and denied
+outbound server connections. Its initial structural/interaction checks pass
+21 view/viewport cases, but the final receipt must also await view-scoped
+metric/evidence reads after full refresh. Freeze that corrected receipt before
+isolated acceptance; this record stays open until all six criteria pass.
 
 ## Approach
 
@@ -47,6 +64,11 @@ Use generation tokens or AbortController for every mutable view, commit related
 panels from one coherent response, retain the last good state with an explicit
 stale/error marker, preserve focus and disclosure state during polling, and
 surface a bounded safe request ID for support.
+
+Finish the September 7 package with wheel-backed desktop, intermediate-width
+and 375 px browser checks, capture their exact asset hashes and screenshots,
+then obtain isolated acceptance. Browser QA tooling is optional development
+tooling outside the runtime; no frontend framework/build/CDN dependency is added.
 
 ## Dependencies
 
@@ -61,7 +83,7 @@ AR-142 defines server-side request instrumentation. AR-137 owns pagination.
 - Automated accessibility, desktop, and 375 px mobile tests pass.
 - Browser console and network failures surface a safe request ID.
 
-## Implementation evidence
+## Historical implementation evidence (July)
 
 One /api/control response now binds configuration, hosts, roster, governance,
 Store identity, and a control revision. The client validates the complete
