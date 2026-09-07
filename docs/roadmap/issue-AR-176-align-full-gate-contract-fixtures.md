@@ -63,6 +63,14 @@ quality gates.
 
 ## Current state
 
+AR-151's September 7 full-dashboard criterion exposes nine additional stale
+cases: seven owner-token/broker-denial assertions, one incomplete host-cache
+fixture and one configured legacy-inference projection. The 265-pass/nine-fail
+run and unchanged-main reproduction are preserved in
+[AR-151 evidence](acceptance/evidence/AR-151-host-eligibility-20260907.md).
+AR-151 owns their bounded fixture repair as its existing dashboard-suite gate;
+do not duplicate that work here. The six cases below remain separately open.
+
 September 7 reconciliation absorbs AR-145's remaining fixture/coverage
 responsibility under ADR-0224. Its original dashboard-observation wait,
 persisted preflight-owner synchronization and synthetic performance report

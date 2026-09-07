@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-07-30
 tags: [security, dashboard, cli, controls, installation, automation]
 related:
+  - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-143-require-operator-presence-for-controls.md

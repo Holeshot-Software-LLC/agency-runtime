@@ -3,11 +3,17 @@ title: "AR-151: Align Route Lab host eligibility with the server"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-09-07
 tags: [dashboard, routing, hosts, traceability]
 related:
   - docs/decisions/0095-complete-paginated-dashboard-collections.md
   - docs/roadmap/issue-AR-137-complete-dashboard-collections.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
+  - docs/roadmap/acceptance/evidence/AR-151-host-eligibility-20260907.md
+  - docs/decisions/0117-unify-owner-control-authority.md
+  - docs/decisions/0118-require-inference-owned-staffing.md
+  - docs/worklog/README.md
   - agency_runtime/dashboard/dashboard-render.js
   - agency_runtime/server/dashboard.py
 supersedes: []
@@ -31,8 +37,24 @@ the same request. The UI can therefore advertise an action it cannot perform.
 
 ## Current state
 
-Host cards and server validation each derive eligibility independently. Existing
-tests even preserve the browser's first-duplicate behavior.
+September 7 review confirms 6a3bdaa's bounded duplicate rejection remains in
+both the production renderer and authoritative POST handler. Duplicate identities
+are excluded individually; a different unambiguous verified host remains usable.
+More than ten inventory rows disable the entire Route Lab host selection.
+The original first-duplicate behavior is historical, not current code.
+
+Thirteen new direct GET → production renderer/action controller → POST contract
+cases pass (13.45s), including all five execution hosts, normalized duplicate
+identities, the exact size bound and forged submissions for excluded hosts.
+Current core dashboard/auth/transaction suite: 193 pass (40.75s); UI: 176 pass
+at 96.93/86.70/95.71, above unchanged 95/86/93 floors. No product change.
+
+The broader six-module dashboard run is not green: 265 pass, nine fail (53.81s).
+All nine reproduce on unchanged main 460f319b (4.81s). Seven denial cases use
+an owner token despite ADR-0117; one cache fixture omits its stale deadline;
+one inference fixture treats the configured legacy chain as unconfigured.
+Repair these bounded fixture mismatches before claiming the full-suite
+criterion. Preserve all original criteria; no isolated acceptance yet.
 
 ## Approach
 
@@ -46,10 +68,10 @@ AR-137 and ADR-0095 govern complete bounded host collections.
 
 ## Acceptance
 
-- Duplicate and oversized host inventories cannot enable Route Lab.
-- Browser eligibility and the authoritative POST handler agree on valid hosts.
-- The UI renders an explicit bounded reason for ambiguous inventory.
-- UI-to-POST contract and full dashboard suites pass.
+- [ ] Duplicate and oversized host inventories cannot enable Route Lab.
+- [ ] Browser eligibility and the authoritative POST handler agree on valid hosts.
+- [ ] The UI renders an explicit bounded reason for ambiguous inventory.
+- [ ] UI-to-POST contract and full dashboard suites pass.
 
 ## Implementation evidence
 

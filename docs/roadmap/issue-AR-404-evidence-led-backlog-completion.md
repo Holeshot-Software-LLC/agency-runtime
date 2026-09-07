@@ -89,7 +89,15 @@ evidence remains preserved at 4e820ff4; all four second-pass criteria satisfy.
 Full UI passes 176 at 96.93/86.70/95.71, server/auth/transaction passes 180 in
 28.82s. Unchanged product bytes bind the existing 21-case installed-wheel receipt;
 no runtime change or new installation claim. PR #703 carries the completion.
-After normal merge and read-back, the next bounded record is AR-151.
+PR #703 merged normally at 460f319b, September 7 at 06:18:49Z. Main was clean
+and fast-forwarded before the separate AR-151 worktree was created.
+
+AR-151 confirms the original host-eligibility repair already exists. Thirteen
+direct GET → production JavaScript → POST contract cases pass; core dashboard
+193 pass and UI 176/current floors pass. The broader six-module run is
+265 pass/nine failures; all nine reproduce on unchanged main 460f319b. Fix the
+bounded owner-token, cache and inference-projection fixtures under AR-151's
+original full-dashboard criterion, then obtain independent acceptance.
 
 Current counts: 40 actual open trackers plus 95 unfinished legacy records,
 135 total after AR-150 completion; no duplicate tracker or false acceptance.

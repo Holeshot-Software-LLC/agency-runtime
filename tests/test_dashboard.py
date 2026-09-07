@@ -222,6 +222,7 @@ def dashboard_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
             "broker_token": broker_token,
             "store": store,
             "home": tmp_path,
+            "server": server,
         }
     finally:
         server.shutdown()
@@ -4699,3 +4700,117 @@ def test_dashboard_runtime_control_error_does_not_leak_detail_to_client(
     assert "secret" not in body
     assert "DACL" not in body
     assert "trust" not in body
+
+
+@pytest.mark.parametrize(
+    ("scenario", "expected_hosts", "reason"),
+    [(host, [host], "") for host in dashboard_module.EXECUTION_HOSTS]
+    + [
+        ("multiple", list(dashboard_module.EXECUTION_HOSTS), ""),
+        ("duplicate", [], "Ambiguous duplicate"),
+        ("triple_duplicate", [], "Ambiguous duplicate"),
+        ("duplicate_with_valid", ["claude"], "Ambiguous duplicate"),
+        ("at_limit", ["codex"], ""),
+        ("oversized", [], "safe Route Lab bound"),
+        ("disabled", [], "No current native installation receipt"),
+        ("unproven", [], "No current native installation receipt"),
+    ],
+)
+def test_dashboard_route_lab_ui_to_post_host_contract(
+    dashboard_server,
+    monkeypatch: pytest.MonkeyPatch,
+    scenario: str,
+    expected_hosts: list[str],
+    reason: str,
+) -> None:
+    """Feed real GET evidence through production JS and POST its exact bodies.
+
+    Native inspection and inference are deterministic doubles; the host
+    projection, renderer, action controller and authenticated HTTP boundary
+    are real. This is not a native-host or installed-browser canary.
+    """
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is required for the UI-to-POST contract")
+    codex = _verified_codex_record()
+    if scenario in dashboard_module.EXECUTION_HOSTS:
+        records = [{**codex, "host": scenario}]
+    elif scenario == "multiple":
+        records = [{**codex, "host": host} for host in dashboard_module.EXECUTION_HOSTS]
+    elif scenario in {"duplicate", "triple_duplicate", "duplicate_with_valid"}:
+        records = [codex, {**codex, "host": " CODEX "}]
+        if scenario == "triple_duplicate":
+            records.append(codex.copy())
+        elif scenario == "duplicate_with_valid":
+            records.append({**codex, "host": "claude"})
+    elif scenario in {"at_limit", "oversized"}:
+        extra = dashboard_module._ROUTE_LAB_HOST_INVENTORY_LIMIT
+        records = [codex] + [
+            {"host": f"unknown-{index}"} for index in range(extra - (scenario == "at_limit"))
+        ]
+    elif scenario == "disabled":
+        records = [{**codex, "enabled": False}]
+    else:
+        records = [{**codex, "managed_plugin_version": ""}]
+    monkeypatch.setattr(dashboard_server["server"], "host_inspector", lambda: records)
+    routed: list[dict[str, object]] = []
+
+    def explain(*_args, **kwargs):
+        routed.append(kwargs)
+        return {"routing": {"eligibility_rejections": []}, "selected": []}
+
+    monkeypatch.setattr(dashboard_module, "explain_route", explain)
+    status, payload, _headers = _json_response(
+        dashboard_server, "/api/hosts", token=dashboard_server["token"]
+    )
+    assert status == 200
+    completed = subprocess.run(
+        [node, str(Path(__file__).with_name("dashboard_route_contract.mjs"))],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=10,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    rendered = json.loads(completed.stdout)
+    assert rendered["available"] == expected_hosts
+    assert rendered["disabled"] is (not expected_hosts)
+    assert len(rendered["reason"]) <= 160
+    if reason:
+        assert reason in rendered["reason"]
+    assert [request["body"]["host"] for request in rendered["requests"]] == expected_hosts
+    for request in rendered["requests"]:
+        assert request["path"] == "/api/route"
+        assert request["method"] == "POST"
+        assert request["body"] == {
+            "task": "Verify host eligibility",
+            "host": request["body"]["host"],
+            "session_id": "dashboard-contract",
+            "limit": 12,
+        }
+        status, receipt, _headers = _json_response(
+            dashboard_server,
+            request["path"],
+            method=request["method"],
+            body=request["body"],
+            token=dashboard_server["token"],
+        )
+        assert status == 200
+        assert receipt["host_capability_receipt"]["execution_host"] == request["body"]["host"]
+        assert routed[-1]["host"] == request["body"]["host"]
+        assert routed[-1]["available_tools"] == tuple(
+            receipt["host_capability_receipt"]["capabilities"]
+        )
+    assert len(routed) == len(expected_hosts)
+    # Bypassing the disabled UI must not bypass the authoritative POST check.
+    for host in set(dashboard_module.EXECUTION_HOSTS) - set(expected_hosts):
+        status, _receipt, _headers = _json_response(
+            dashboard_server,
+            "/api/route",
+            method="POST",
+            body={"task": "Verify host eligibility", "host": host},
+            token=dashboard_server["token"],
+        )
+        assert status == 400
+        assert len(routed) == len(expected_hosts)
