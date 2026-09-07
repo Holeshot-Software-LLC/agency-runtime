@@ -6,6 +6,7 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [workforce, inference, diagnostics, deadlines, reliability]
 related:
+  - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
   - docs/decisions/0209-name-the-transport-cause-instead-of-one-code.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-392-transport-failures-collapse-to-one-code.md
@@ -22,7 +23,7 @@ issue_id: AR-408
 priority: p1
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/732
 depends_on: []
-blocks: []
+blocks: [AR-409]
 ---
 
 # AR-408: Preserve truthful staffing failure and effective deadline receipts
