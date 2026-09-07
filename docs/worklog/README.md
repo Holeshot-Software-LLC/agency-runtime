@@ -2056,6 +2056,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5a003a05` | 2026-09-07 | docs(roadmap): bind AR-174 timing to allocated hosted runs | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
 | `8b658693` | 2026-09-07 | docs(roadmap): freeze final AR-174 acceptance candidate | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
 | `fe625e48` | 2026-09-07 | docs(roadmap): complete AR-174 docs-only CI reconciliation | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
+| `57a70139` | 2026-09-07 | Merge pull request #723 from Holeshot-Software-LLC/codex/ar174-oldest-first-reconciliation | [AR-174](../roadmap/issue-AR-174-short-circuit-docs-only-ci.md) | [Detail](2026-09-07-452639dd-docs-only-ci.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
