@@ -41,14 +41,37 @@ task-root case. They were not added or changed by this package. Before the ten
 new cases, the same package passed 116 with the same five skips in 5.54s.
 
 The named 29-file production spine passed 1075 tests with three existing skips
-in 67.21s before the test-only additions; the changed MCP module is rerun in the
-focused command above. Dashboard UI: 138 passed, zero failed/skipped. Ruff
+in 67.21s before the test-only additions. The fresh post-addition spine passed
+1085 tests with the same three skips in 69.18s. Dashboard UI: 138 passed, zero
+failed/skipped. Ruff
 checks and format checks pass for all 764 Python files. No exhaustive corpus,
 coverage/interpreter matrix, hosted dispatch or Windows execution was run.
 
 The current-source routing evaluator also passes all gates (45 recall, 30
 policy, 22 delegation cases). Its synthetic inference-receipt/cache timings
 are deterministic recall diagnostics, not end-to-end live staffing latency.
+The current-source decision-conformance evaluator also returned exit 0,
+`passed: true`, `status: passed`, and `source_unchanged: true`; its baseline
+passed in 99,281 ms. This receipt precedes the pending admission repair.
+
+## First isolated review
+
+Candidate fb2e4e2379939c7525018a14b2c54f8f15b168fb:
+`python scripts/verify_acceptance.py --issue AR-131 --all` returned exit 2
+without writing verdicts. Read-only transport inspection found Claude refused
+as untrusted because its executable's parent namespace permits substitution.
+Codex was installed, authenticated and usable; the supported `--provider codex`
+invocation returned exit 0 and wrote six independent criterion verdicts.
+
+Criteria 2/3/6 are satisfied. Criteria 1/5 lack the constants/registry definitions
+and per-criterion passing-command citations in their supplied excerpts.
+Criterion 4 is contradicted: internal Store normalization slices oversized
+identifiers, and a test at the maximum alone does not prove exact admission.
+The public Python facade still admits those values. The first verdicts remain
+in their committed acceptance record before any candidate/evidence replacement.
+Next: reproduce that facade defect, reject lossy public identifiers before
+Store writes, preserve the existing internal normalization contract, and then
+freeze new evidence for all six criteria. Do not hand-edit verifier verdicts.
 
 ## Observed boundaries
 
@@ -78,3 +101,10 @@ This resolves the record's historical stale-skill-file observation on this
 machine, not Codex hook trust, current-session header correlation or live
 staffing. Those remain separate evidence obligations. No human trust, gateway
 restart, credential creation or permission change was performed.
+
+After the comparison, a runtime-requested `agency install --agent codex` was
+attempted once from main. It returned exit 1 with files registered but
+activation required, hook trust unverified and a mixed installed-projection
+warning (the CLI uses the AR-348 package, while another installed projection
+still references the AR-271 package). No trust bypass, repeated install,
+OpenClaw replacement or live-success claim followed.

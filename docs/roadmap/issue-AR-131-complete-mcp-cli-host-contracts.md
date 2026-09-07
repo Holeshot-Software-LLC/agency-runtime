@@ -58,10 +58,21 @@ The focused MCP/CLI package passes 126 tests with five pre-existing skips
 (6.06s). The installed Codex control skill matches the current generator
 byte-for-byte; this is file evidence, not hook trust or live activation.
 
-Original six acceptance criteria remain unchanged. Candidate-bound isolated
-verification is pending; this record is not done until those verdicts exist.
-No fresh installation, Windows execution or live staffing run is part of the
-bounded contract review. This pre-tracker record does not need a new tracker.
+Original six acceptance criteria remain unchanged. The first isolated review
+of fb2e4e23 satisfied criteria 2/3/6, found missing citations for 1/5, and
+contradicted 4: the boundary-only test does not establish lossless admission.
+The public Python delegation facade still forwards oversized identifiers to
+the deliberately normalizing internal Store. Preserve these verdicts, then
+reproduce and repair that public admission gap before a new candidate review.
+This record is not done. This pre-tracker record does not need a new tracker.
+
+The default Claude verifier was unavailable because its executable parent
+namespace failed the existing trust check; it wrote no verdicts. The supported
+Codex provider produced the six recorded verdicts without a trust bypass or
+credential change. Separately, the requested Codex hook refresh returned exit 1:
+files registered, activation required, trust unverified and mixed installed
+projections. It is not successful live evidence. No Windows or live staffing
+run is claimed by this bounded contract review.
 
 Original July reproduction:
 
@@ -84,7 +95,8 @@ skills invoke the registered read-only status tool and direct operators to
 owner CLI controls, not to an invented model-facing mutation tool. Freeze the
 current source/test evidence, run one isolated verifier per original criterion,
 and only then determine completion. No runtime code change is needed for the
-schema defect that motivated this record.
+original MCP schema defect. The remaining public Python admission gap requires
+its own regression-first repair, preserving defensive internal normalization.
 
 ## Dependencies
 

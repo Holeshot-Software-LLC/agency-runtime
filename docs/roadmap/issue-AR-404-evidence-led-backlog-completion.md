@@ -54,9 +54,11 @@ repeat work and risk reintroducing superseded behavior.
 is on main through PR #696/f38720c7 and the exact PR #697 ledger/c1c5d9d9.
 AR-131's original MCP fixes exist; ten added contract regressions and the
 installed Codex skill byte comparison provide current bounded evidence.
-Focused MCP/CLI: 126 passed/five existing skips. Freeze the original six
-criteria for isolated verification before any done flip, then PR/merge before
-AR-135. Windows work stays excluded. The oldest-first ledger and active capsule
+Focused MCP/CLI: 126 passed/five existing skips; fresh named spine: 1085 passed/
+three skips. First isolated AR-131 review satisfies 2/3/6, lacks citations for
+1/5 and contradicts 4 because public delegation identifiers can be truncated.
+Preserve that review and repair exact public admission before a new candidate,
+done flip and PR/merge, then AR-135. Windows work stays excluded. The oldest-first ledger and active capsule
 retain exact evidence and all earlier holds; ordinary-session header failure
 is not fixed or waived by this protocol-contract review.
 
