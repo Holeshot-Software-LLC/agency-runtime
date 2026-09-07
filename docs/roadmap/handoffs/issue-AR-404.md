@@ -71,8 +71,10 @@ Both fixes pass 20 source-served browser checks at 1280/375 pixels, with zero
 POSTs and exact served config/core hashes. This includes null-401 terminal
 notices retaining safe IDs. The initial zero-check timeout is retained and
 explained by the fixture's obsolete config endpoint. Six isolated verdicts
-remain, frozen at 4a244776 with immediate ledger bd6e0f5c. No API authority or
-additional criterion change; the first isolated review follows this checkpoint.
+were reviewed at 4a244776. Criteria 1 and 3–6 satisfy; criterion 2 is absent
+because reconciliation implementation/direct ID assertions were not supplied.
+Preserve all first verdicts, inspect that exact path, then one bounded recheck.
+No requirement or authority change follows from this evidence gap.
 
 Retained holds: AR-159 hosted enforcement/check-app/bypass; AR-160 Windows/
 paired release/live publication; AR-156 Windows/profile and hosted topology;

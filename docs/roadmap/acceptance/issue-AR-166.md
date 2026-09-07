@@ -61,9 +61,16 @@ tracker_url: null
 
 ## Verification
 
-All six current criteria await isolated candidate-bound verdicts. The builder
-records evidence and observations only. Original criterion 1 is preserved;
-criteria 2–6 are unchanged.
+First review at 4a244776 satisfies criteria 1 and 3–6. Criterion 2 is absent:
+the packet did not provide reconciliation implementation or direct request-ID
+assertions for its notices. Preserve all six verdicts before correcting that
+evidence. Original criterion 1 and unchanged criteria 2–6 remain intact.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-166.1-20260907-cbb8615e` | `d4b0ca70289e27b2567a03ecf10802ba772bbfdf76e5f3e2b8653cfcfc460d88` | 2026-09-07 | dashboard-config.js:198-224 preserves valid selections and disables invalid lists; dashboard_ui.test.mjs:1053-1143 covers key redaction and recovery; test_dashboard.py:392-413 verifies broker denial without mutations, with passing suites recorded in the cited verification artifact. |
+| 2 | absent | `AR-166.2-20260907-2a0b1f4d` | `4dcb1dfb09df2d660a0372c14972b2c97f25500f7226953f81ebf50751903aef` | 2026-09-07 | dashboard-core.js demonstrates safe HTTP and transport IDs, and dashboard-live.js covers authentication, but tests/dashboard_ui.test.mjs:5535-5557 do not verify reconciliation request IDs and no reconciliation implementation is provided. |
+| 3 | satisfied | `AR-166.3-20260907-5a2b58a2` | `18bfe1e9b6e58ebd79c8d98debcf3f9aeec8723ad42174f2d58c8c3c9dca66d1` | 2026-09-07 | dashboard-core.js validates UUIDv4 IDs, dashboard-render.js conditionally renders validated IDs, and dashboard_ui.test.mjs asserts exact successful-route ID display and omission of a hostile malformed ID. |
+| 4 | satisfied | `AR-166.4-20260907-df7e4d7b` | `809ad9c1ddc6f8492defcc20a09da46412f82811e619068bfb5cc337c87dc2cd` | 2026-09-07 | dashboard-config.js:122-144 and dashboard-render.js:515-529 set the privacy chip to “Redacted runtime content” or “Runtime metadata only” based on observability capture state; tests/dashboard_ui.test.mjs:2106-2138 asserts both labels. |
+| 5 | satisfied | `AR-166.5-20260907-4288fb08` | `366523e150dc9e9dfeb8ac4b91e0dc7fe952a689d3f04f1cd639f6caae60756b` | 2026-09-07 | dashboard-render.js distinguishes stored definitions from runtime delivery, workforce.py and dashboard.py bound content to 262144 characters, broker allow-lists exclude workforce detail, and the verification report records unchanged authentication and broker policy. |
+| 6 | satisfied | `AR-166.6-20260907-808b5876` | `d1a7713ce4c535d48ba2d188743886373d01ea2d58d11f3a149e2739c90c3d1e` | 2026-09-07 | The cited evidence document’s Fresh verification and Publication validation sections record 190 passing UI tests, strict documentation checks, Ruff check/format passing for 766 files, and zero diff-check errors. |
