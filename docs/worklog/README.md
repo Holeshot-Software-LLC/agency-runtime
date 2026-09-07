@@ -1951,6 +1951,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ae71761f` | 2026-09-07 | test(dashboard): prove inverse refresh commit ordering [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 | `7ec16579` | 2026-09-07 | docs(acceptance): freeze direct AR-150 ordering candidate | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 | `2c01b083` | 2026-09-07 | docs(backlog): accept verified refresh epoch contract [AR-150] | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
+| `460f319b` | 2026-09-07 | Merge pull request #703 from Holeshot-Software-LLC/codex/ar150-oldest-first-reconciliation | [AR-150](../roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md) | [detail](2026-09-07-57c225c1-verify-dashboard-epochs.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
