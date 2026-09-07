@@ -2096,6 +2096,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `500de085` | 2026-09-07 | docs(backlog): bind AR-185 to exact installed activation proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 | `90c30a35` | 2026-09-07 | docs(acceptance): freeze AR-185 exact verification packet | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 | `51af465d` | 2026-09-07 | docs(AR-185): preserve eight judgments and unavailable verifier evidence | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `01ebcb7f` | 2026-09-07 | docs(AR-185): complete exact installed activation verification | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

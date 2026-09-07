@@ -62,3 +62,5 @@ Substantive `500de085` freezes exact source/live evidence and explicit existing-
 Packet `90c30a35` binds all9 isolated criteria to500de085; no requirement or evidence is changed by candidate freezing.
 
 Checkpoint `51af465d` preserves eight satisfied judgments and both unavailable-run observations. Criterion4 alone remains pending; its frozen evidence is unchanged.
+
+Completion `01ebcb7f` records all nine satisfied isolated judgments and the preserved unavailable attempts. AR185 closes only the exact verification boundary; AR180 broader delivery remains open.
