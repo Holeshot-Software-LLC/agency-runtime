@@ -169,3 +169,71 @@ for this outcome. Native host health, specialist quality, launch-credential
 inheritance and the ongoing parent's unverified header remain separate.
 Do not claim a repaired critic review happened on the old failed trace, or
 rewrite that immutable receipt to look successful.
+
+## Exact portable artifact and installed smoke
+
+Clean source `ef8c714f06aabd1fc0e0fcf4d22b50d31b402663` was built with
+producer umask077 using the canonical builder and expected-commit check.
+The independent explicit portable verifier and strict Twine both exited zero.
+
+| Artifact | SHA-256 |
+|---|---|
+| Wheel | `78e838cf11d380ca3d81f757c7b7dd26066b06b34077a814c74d346898bf6ec0` |
+| Sdist | `6bba101195b948fc314472fb39fcb82bf4f5aab979216e838322ad0c7bb6bb5d` |
+
+Executed commands used private disposable `AR408_ARTIFACT_DIR` and the
+trusted development interpreter; these names denote local temporary paths:
+
+~~~bash
+umask 077
+python -m scripts.build_distributions "$AR408_ARTIFACT_DIR/dist" --expected-commit ef8c714f06aabd1fc0e0fcf4d22b50d31b402663
+python scripts/verify_distribution.py "$AR408_ARTIFACT_DIR/dist" --expected-commit ef8c714f06aabd1fc0e0fcf4d22b50d31b402663 --artifact-set portable
+python -m twine check --strict "$AR408_ARTIFACT_DIR/dist/agency_runtime-0.1.0-py3-none-any.whl" "$AR408_ARTIFACT_DIR/dist/agency_runtime-0.1.0.tar.gz"
+python -m venv "$AR408_ARTIFACT_DIR/venv"
+"$AR408_ARTIFACT_DIR/venv/bin/python" -I -m pip install "$AR408_ARTIFACT_DIR/dist/agency_runtime-0.1.0-py3-none-any.whl"
+"$AR408_ARTIFACT_DIR/venv/bin/python" -I "$AR408_SOURCE_TREE/scripts/smoke_installed_distribution.py" --expected-version 0.1.0 --artifact-set portable
+"$AR408_ARTIFACT_DIR/venv/bin/python" -I -m pip check
+"$AR408_ARTIFACT_DIR/venv/bin/python" -I -m agency_runtime.cli smoke --all --json
+~~~
+
+Fresh environment installation selected only Agency0.1.0 and PyYAML6.0.3.
+Actual isolated installed-distribution output:
+
+~~~json
+{"artifact_set": "portable", "assets": 10, "config": "passed", "dashboard": {"bind": "127.0.0.1", "health": "passed"}, "mcp": {"status_call": "passed", "tool_count": 8}, "roster": {"approved": 265, "quarantined": 0, "retired": 0, "total": 265}, "selection": {"cases": {"agency-runtime-dashboard": [], "ambiguous-help": []}, "forbidden_specialists": ["clinical-evidence-agent", "geographer", "language-translator"], "status": "passed"}, "version": "0.1.0"}
+~~~
+
+`pip check` returned `No broken requirements found.`
+The subsequent aggregate smoke exited zero. Selected-field projection:
+
+~~~json
+{
+  "passed": true,
+  "passed_count": 8,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "checks": {
+    "sqlite_store": "pass",
+    "routing_roster_available": "pass",
+    "host_parity_eval": "pass",
+    "plugin_claude": "pass",
+    "plugin_codex": "pass",
+    "plugin_hermes": "pass",
+    "plugin_openclaw": "pass",
+    "plugin_zcode": "pass"
+  }
+}
+~~~
+
+Raw aggregate timing:
+
+~~~text
+real 5.03
+user 3.86
+sys 0.23
+~~~
+
+Generated host contracts ran for all five hosts, including actual generated
+ZCode process-hook invocation and OpenClaw syntax check. This is fresh installed
+CLI/MCP/dashboard/generated-host proof, not a new native model-host turn or an
+owner CLI/host replacement. The publication keeps those claims separate.
