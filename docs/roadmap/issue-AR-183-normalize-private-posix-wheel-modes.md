@@ -3,9 +3,11 @@ title: "AR-183: Normalize owner-private POSIX wheel modes"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [release, packaging, linux, reproducibility, security]
 related:
+  - docs/roadmap/acceptance/evidence/AR-183-AR-184-private-linux-producer-20260907.md
+  - docs/roadmap/handoffs/issue-AR-183.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-168-rebuild-canonical-sdist-source-manifest.md
@@ -51,6 +53,15 @@ After this wheel repair advanced the exact `cec7d0b` producer, the same
 restrictive build exposed owner-private source-distribution modes. AR-184 owns
 that distinct tar-container boundary.
 
+Fresh September 7 evidence advances the Linux-only part of this record. A clean,
+detached source at `08fab1c4fb9b7f8ed167f0aa4366182960f6eada` produced the real
+portable wheel and sdist under `umask 077`; strict Twine and the independent
+explicit `portable` verifier both exited zero. The shared
+[Linux producer receipt](acceptance/evidence/AR-183-AR-184-private-linux-producer-20260907.md)
+records the commands, complete artifact identities, canonical mode census and
+limitations for both AR-183 and AR-184. This is not a Windows producer or a
+merged three-file release verification. The item remains `in_progress`.
+
 ## Approach
 
 Keep the finite, platform-specific source-wheel allowlist. Add only POSIX
@@ -86,4 +97,16 @@ RECORD modes, executable/setuid modes, special file types, and nonzero low
 attribute bits. The four-file canonicalizer/build/verifier/release package
 passed 383 tests; after independent review expanded the boundary matrix, the
 canonicalizer file passed 83 tests. Ruff, formatting, documentation, and diff
-checks pass. The real Linux producer and merged-set proof remain pending.
+checks passed at that historical checkpoint; the real Linux producer and
+merged-set proof were then pending.
+
+On September 7 the four-file canonicalizer/build/independent-verifier/release
+package passes **498 tests, with one native-Windows observation skipped**, in
+40.38 seconds on Linux/Python 3.12.3. Synthetic Windows-source rejection tests
+are included; they do not replace native Windows evidence. The detached
+restrictive-umask producer, strict Twine and independent portable verifier
+pass for exact source `08fab1c4fb9b7f8ed167f0aa4366182960f6eada`. This provides
+builder evidence for the Linux producer acceptance criterion without issuing
+an acceptance verdict or changing the historical checkbox states. Actual
+Windows/Linux sdist byte equality and merged-set verification remain unproven
+and are reserved for the owner's Windows machine.

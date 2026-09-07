@@ -61,3 +61,5 @@ continue AR183/184 Linux producer proof next.
 Substantive `b46e0151` corrects the contradictory isolation wording under existing ADR0026 and retains the Windows hold; no acceptance verdict is manufactured.
 
 Filing `f0486afa` records actual live five-call critic starvation misclassification and dropped effective timeouts as AR408/#732, keeping tracker parity while the independent repair is reviewed. No call-budget policy changes or runtime code are included in this filing.
+
+Publication `2274823c` merged PR #731 at2026-09-07T23:13:27Z, retaining AR181's Windows hold and recording new AR408/#732 separately from its runtime repair.

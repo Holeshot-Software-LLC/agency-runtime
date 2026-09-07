@@ -2088,6 +2088,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `24eede12` | 2026-09-07 | Merge pull request #730 from Holeshot-Software-LLC/codex/ar180-live-proof-reconciliation | [AR-180](../roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md) | [Detail](2026-09-07-bb83cd60-current-codex-child-proof.md) |
 | `b46e0151` | 2026-09-07 | docs(backlog): reconcile AR-181 smoke isolation and Linux proof | [AR-181](../roadmap/issue-AR-181-bound-all-host-smoke-launcher-preparation.md) | [Detail](2026-09-07-b46e0151-smoke-isolation-reconciliation.md) |
 | `f0486afa` | 2026-09-07 | docs(roadmap): record live staffing receipt defects as AR-408 | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-b46e0151-smoke-isolation-reconciliation.md) |
+| `2274823c` | 2026-09-07 | Merge pull request #731 from Holeshot-Software-LLC/codex/ar181-smoke-reconciliation | [AR-181](../roadmap/issue-AR-181-bound-all-host-smoke-launcher-preparation.md) | [Detail](2026-09-07-b46e0151-smoke-isolation-reconciliation.md) |
+| `6cc0b176` | 2026-09-07 | docs(backlog): record AR-183 detached private-mode Linux proof | [AR-183](../roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md) | [Detail](2026-09-07-6cc0b176-detached-private-mode-producer.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
