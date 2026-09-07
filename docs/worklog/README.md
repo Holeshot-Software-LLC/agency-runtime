@@ -2019,6 +2019,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bc28bf66` | 2026-09-07 | docs(acceptance): preserve AR-166 first review evidence gap | [AR-166](../roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | [Detail](2026-09-07-a4be59b0-dashboard-owner-selection.md) |
 | `ad0a3b6e` | 2026-09-07 | docs(acceptance): cite existing reconciliation ID forwarding [AR-166] | [AR-166](../roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | [Detail](2026-09-07-a4be59b0-dashboard-owner-selection.md) |
 | `68936836` | 2026-09-07 | docs(backlog): complete verified dashboard disclosure repair [AR-166] | [AR-166](../roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | [Detail](2026-09-07-a4be59b0-dashboard-owner-selection.md) |
+| `c6252499` | 2026-09-07 | Merge pull request #717 from Holeshot-Software-LLC/codex/ar166-oldest-first-reconciliation | [AR-166](../roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md) | [Detail](2026-09-07-a4be59b0-dashboard-owner-selection.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
