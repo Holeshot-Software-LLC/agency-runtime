@@ -54,3 +54,11 @@ Freeze seven builder rowsets at 95085a30 and require isolated acceptance before
 closure. Current count stays 40 actual open trackers plus 90 unfinished legacy
 records. Publish one normal PR, then continue at AR-159 without changing branch
 or account settings absent explicit authority.
+
+## First isolated review
+
+809354be preserves six satisfied criteria and an absent seventh: the reused
+spine receipt named the result but omitted command/warning arguments from its
+citations. Repair only that rowset by citing the frozen command definition
+explicitly. Candidate 95085a30 and the six accepted rowsets remain unchanged;
+do not re-run accepted checks or treat a citation gap as a production defect.
