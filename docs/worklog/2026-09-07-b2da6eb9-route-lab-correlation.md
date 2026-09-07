@@ -79,3 +79,13 @@ precedes any verdict and retains original wording.
 raw response trace. This is a remaining wording defect, not a production
 failure. Preserve the original and explicitly supersede ADR-0231 for the
 representation clarification; then use one second/final all-criteria review.
+
+## Final candidate
+
+594bc4d3 (594bc4d3939d144440ae52f5acdf5f840c79f25e) explicitly supersedes ADR-0231 with ADR-0232;
+criterion 2 now requires the observation digest to equal the domain-separated
+digest of the response trace. Original wording and first verdicts at 941b9025
+remain. No product/test/script change versus f4f5124e (Git diff exits zero).
+Fresh strict records pass for 1207 Markdown files and 397 mapped/two historical
+PR exceptions. Staged whitespace checks caught an extra new-ADR EOF blank
+before commit; it was removed. All five criteria need new final verdicts.
