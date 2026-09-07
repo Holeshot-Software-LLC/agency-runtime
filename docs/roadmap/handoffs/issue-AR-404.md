@@ -9,9 +9,9 @@ related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/AR-404-count-reconciliation-20260905.md
-  - docs/roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md
-  - docs/roadmap/acceptance/evidence/AR-158-observation-selection-20260907.md
   - docs/roadmap/issue-AR-159-enforce-production-branch-protection.md
+  - docs/roadmap/acceptance/evidence/AR-159-branch-protection-20260907.md
+  - docs/roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md
   - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/worklog/README.md
@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar158-oldest-first-reconciliation
-evidence_commit: 95085a3008389fadf8c4c99123cf3eacfc8e1925
-minimum_ledger_commit: 00a27c852bf426f15aeb8d165b47c6eae710fb40
+branch: codex/ar159-oldest-first-reconciliation
+evidence_commit: b2ea5946515123a95ef4ce13a6ea7c333aec76d4
+minimum_ledger_commit: 7dccf1e182a2c5e3ca13b0227a9ad15e468fdc8e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -31,63 +31,47 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owner resumed: one oldest record, one PR, normal merge, then next; no routine
-approval pauses. Windows remains with the owner. The oldest-first ledger owns
-the full exact history.
+approval pauses. Native Windows remains with the owner. The oldest-first ledger
+owns full history. AR-158 is accepted with seven satisfied criteria at 95085a30;
+PR #710 merged b2ea5946 at 08:41:00Z September 7. Clean main was fast-forwarded
+before this AR-159 tree; 7dccf1e1 records publication.
 
-AR-156 retained open; PR #708 merged 6b4650b3 at 08:00:11Z September 7.
-AR-157's six criteria satisfy at a35657e1; PR #709 merged ea6864b1 at
-08:17:39Z. Clean main was fast-forwarded before this AR-158 tree. Prior merge
-is recorded in ledger 38f2a733.
-
-AR-158: existing MCP/HTTP exact selectors remain. Removed old hook proof
-belonged to retired child denial (20f006b6); current three-host prompt failure
-tests now verify real content-free degraded/boundary_failure observations,
-after unrelated Store injection, while preserving North Star R8 publication.
-Store busy selection now requires its explicit request ID; slow/busy tests
-inject matching unrelated events and check privacy over every envelope.
-Nested Store-before-MCP order remains exact-ID scoped. No runtime/script change.
-Only criterion 7 is reconciled under ADR-0105; first six stay unchanged.
-Candidate 95085a30 and ledger ce37c21a are committed; seven builder rowsets
-are frozen against that exact candidate in acceptance/issue-AR-158.md.
-809354be preserves the first review. Only criterion 7's rowset now adds frozen
-AGENTS/runner command definitions with -W error; the six accepted checks and
-candidate are unchanged. The stale absent digest remains in that prior commit.
-The sole citation-only criterion-7 recheck now satisfies. All seven criteria
-satisfy at unchanged 95085a30; AR-158 is done, with normal publication pending.
+AR-159 remains open after a current read-only audit. Main is unprotected,
+protection returns 404, rulesets including parents are empty, and current main
+has zero check runs/status contexts. Latest listed CI/repository CodeQL runs
+are August 31/cancelled; dependency review succeeded at that old candidate.
+No current billing diagnosis is established. A separately active dynamic CodeQL
+workflow needs reconciliation before choosing required check identities.
+All seven original acceptance criteria remain unchanged.
 
 ## Completed evidence
 
-- Exact MCP/HTTP/three-host plus full Store/runtime observation focus: 13 pass,
-  zero skips/failures (1.22s).
-- Five interface cases in ten fresh pytest processes: 50 pass total, no skips
-  or failures, each run 0.63–0.65s.
-- Complete hook-logging, host-hooks, MCP, runtime/Store observation package:
-  135 pass, five existing skips, no failures/deselections (36.16s).
-- All runtime/scripts equal clean dccb4e85. Tests equal a35657e1 except the three
-  changed modules, none in the named spine. Reuse AR-156's 1085-spine/three-skip,
-  UI 188/current floors, and ten-asset/21-loaded-view wheel receipts.
-- Ruff check/format pass, 766 files. Latest telemetry 27.6 percent at 08:22:27Z;
-  finish this small evidence/ledger checkpoint before isolated verification.
-- Counts are 40 actual open trackers plus 89 unfinished legacy records
-  (129 local unfinished). All seven AR-158 criteria satisfy; first review and
-  missing command citation remain preserved at 809354be.
+- Source snapshot b2ea5946; no runtime, test, script or workflow changes.
+- Focused quality/CodeQL/dependency-review/docs-only contracts: 104 pass,
+  16 deselected, zero skips/failures, 3.02 seconds, warning-strict.
+- API observations and source aggregate names are recorded in
+  acceptance/evidence/AR-159-branch-protection-20260907.md. Names are not approved
+  check/app bindings. Empty rollups and ordinary merges are not CI proof.
+- Reuse AR-156's unchanged named spine (1085/three existing skips), UI
+  (188/current floors), and installed-wheel browser receipt (21 loaded checks).
+- Counts: 40 actual open trackers plus 89 unfinished legacy records, 129 local
+  unfinished. No duplicate legacy tracker or false acceptance.
 
 ## Exact blocker
 
-No product or acceptance blocker remains for scoped AR-158. Its first six
-satisfied checks were not repeated; the seventh has its explicit frozen command
-citations and one satisfied recheck. Normal PR publication remains.
-Existing skips are recorded, not new suppression.
+AR-159 enforcement is waiting_for_operator: explicit hosted-settings, bypass/
+emergency and recoverable demonstration authority plus current successful PR
+check/app evidence. No unsafe main probe, setting change, workflow dispatch or
+subscription action. This hold does not stop independent backlog packages.
 
-Independent holds: AR-156 needs owner Windows/profile and separately authorized
-hosted topology proof; all thirteen criteria remain. Its four Windows-profile
-assumptions fail unchanged Linux main. Latest listed CI is August 31/cancelled,
-not current proof or a verified billing diagnosis. AR-135 needs attended ZCode
-Agent/record-zero/full Stop proof. AR-140 retains supported-runner performance
-including Windows. AR-129/130/147 stay with the owner; AR-119/125 retain five-host
-and matched-value proof. AR-176 keeps six separately recorded stale fixtures;
-AR-151's nine dashboard and AR-157's two HTTP repairs are not pending.
-Ordinary-session unverified Agency/header remains unfinished.
+AR-156 retains owner Windows/profile and hosted topology proof; all thirteen
+criteria remain. Its four Windows-profile assumptions fail unchanged Linux
+main. AR-135 needs attended ZCode Agent/record-zero/full Stop proof. AR-140
+retains supported-runner performance including Windows. AR-129/130/147 stay
+with the owner; AR-119/125 retain five-host and matched-value proof. AR-176 keeps
+six separately recorded stale fixtures; AR-151's nine dashboard and AR-157's
+two HTTP repairs are not pending. Ordinary-session unverified Agency/header
+remains unfinished.
 
 ## Same-task continuity
 
@@ -98,21 +82,22 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit accepted AR-158 completion and ledger; finish docs/tracker checks.
-2. Merge one normal PR, read back the merge SHA and fast-forward clean main.
-3. Start AR-159 separately; branch/account settings require explicit authority.
+1. Publish AR-159 retention and read-only evidence through one normal PR.
+2. Read back the merge and fast-forward clean main.
+3. Start AR-160 separately. ADR-0219 retired removed Windows-helper obligations;
+   retain genuine artifact proof without restoring the helper or performing
+   the owner's native Windows work.
 
 ## Verification
 
-Evidence: acceptance/evidence/AR-158-observation-selection-20260907.md.
 Run metadata, policy, exact worklog, strict docs/tracker, Ruff and diff checks.
-No new corpus, aggregate coverage, native Windows, exhaustive matrix or host
-installation is claimed. Reused results name their exact unchanged bytes.
-The graphify graph is absent; use bounded source inspection, no graph build.
+No fresh corpus, aggregate coverage, native Windows, exhaustive matrix or host
+canary is claimed. Reused results name unchanged inputs. Bootstrap telemetry:
+84.1 percent at 08:46:36Z. Graphify graph absent; bounded inspection only.
 
 ## Constraints
 
 No credential creation, trust bypass, unmanaged restart or provider-policy
-change. Runtime-requested Codex refreshes return exit 1: activation required,
-hook trust unverified, mixed installed projections. Do not retry unattended
-or replace OpenClaw. Registration/generated smoke is not normal-session proof.
+change. The newly requested Codex refresh again returned exit 1: activation
+required, hook trust unverified, mixed installed projections. Do not retry
+unattended or replace OpenClaw. Registration is not normal-session proof.

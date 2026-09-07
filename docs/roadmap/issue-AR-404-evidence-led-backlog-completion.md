@@ -160,7 +160,18 @@ five-case repeats pass; complete five-module package passes 135/five existing
 skips. Runtime/scripts unchanged, spine/UI/wheel reuse explicit. Only criterion
 7 is reconciled under ADR-0105. All seven criteria satisfy at 95085a30 after
 one citation-only criterion-7 recheck; first review remains at 809354be and the
-six accepted checks were not repeated. AR-158 is done, pending normal publication.
+six accepted checks were not repeated. AR-158 is done; PR #710 merged b2ea5946
+at 08:41:00Z on September 7 before the separate AR-159 tree.
+
+AR-159 remains relevant and open: fresh API readback shows main unprotected,
+no rulesets, and no current check runs/status contexts. The latest listed CI
+and repository CodeQL runs are August 31/cancelled; the historical billing
+explanation is not a current diagnosis. All 104 focused aggregate/security
+contract tests pass. The original seven criteria are unchanged; an explicit
+owner-approved enforcement/check-identity/bypass/readback plan is recorded.
+No hosted setting, unsafe main probe, workflow dispatch or subscription change.
+Publish its separate retention PR, then AR-160's platform-artifact record;
+native Windows remains owner work.
 
 Current counts: 40 actual open trackers plus 89 unfinished legacy records,
 129 total after AR-158 completion; no duplicate tracker or false acceptance.
