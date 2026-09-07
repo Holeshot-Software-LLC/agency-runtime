@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar138-oldest-first-reconciliation
-evidence_commit: cd35aa2c09a5498404f13a41e0df6561e103655d
-minimum_ledger_commit: 4fd2df4f7e4c2ff61bfbd92c07a5e854d99dde80
+evidence_commit: 2ecde1a5be3ac38aa7b7b970945fa8bd42e7fa73
+minimum_ledger_commit: 18367caf80ffe1d4465451f35077381c4286b460
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
