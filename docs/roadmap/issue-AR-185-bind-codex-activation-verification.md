@@ -1,6 +1,6 @@
 ---
 title: "AR-185: Bind Codex activation verification to a fresh exact proof"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -87,8 +87,9 @@ scoped to the exact no-bypass verification-only slice; the supported autonomous
 and managed-policy modes remain distinct under ADR-0173. Its original wording
 is also preserved. No new native trust approval occurred in this package: the
 successful no-bypass canary used already-trusted
-definitions. Historical checked boxes are preserved, the final box remains
-unchecked pending isolated verification, and this issue remains in progress.
+definitions. All nine isolated criteria are now satisfied against frozen
+candidate500de085. The unavailable attempts and their exact narrow retry are
+preserved; no missing verifier result was counted as acceptance.
 
 ## Approach
 
@@ -149,7 +150,7 @@ Windows claim. This pre-tracker record still has no tracker URL.
   output, followed by final inspection whenever a canary may have started.
 - [x] Focused authority, canary, Store, parser, and installer regressions pass
   warning-strict on the implementation checkpoint.
-- [ ] The exact installed artifact passes the live current-profile canary after
+- [x] The exact installed artifact passes the live current-profile canary after
   the operator-approved Codex hook trust step.
 
 ## Implementation evidence

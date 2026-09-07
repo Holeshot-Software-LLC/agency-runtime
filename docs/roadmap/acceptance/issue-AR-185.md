@@ -79,8 +79,9 @@ receipt. No acceptance verdict is supplied here.
 
 ## Verification
 
-Eight isolated checks returned satisfied. Criterion 4 returned no valid verdict;
-it is not a pass and remains pending. No builder supplied these verdicts.
+All nine isolated checks returned satisfied. Criterion 4 required one bounded
+retry after an unavailable result; the earlier absence is retained in the
+receipt and Git history. No builder supplied these verdicts.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
@@ -92,3 +93,4 @@ it is not a pass and remains pending. No builder supplied these verdicts.
 | 7 | satisfied | `AR-185.7-20260907-2cbbfc06` | `1acf1651fb57267675246e4a5fd3e0c7d7a4ad6dc42966d8a45d8fec36fdc42a` | 2026-09-07 | install_commands.py:1472-1508 catches canary exceptions then always re-inspects before deciding, returning 1 at line 1554; the projection (1289-1342) and _bounded_unmet_prerequisites (1152-1181) keep only bounded named fields, per tests test_codex_activation_verification.py:398-418, 471-577. |
 | 8 | satisfied | `AR-185.8-20260907-d5b6cbbf` | `f440d2df8ac7d63f692b740132f8287368cef36c78f16aedf229da1103fda053` | 2026-09-07 | Evidence doc lines 165-206 in the snapshot record three pytest runs with -W error, exit zero, 175/71/28 passed; all eight cited modules covering authority, canary, Store, parser and installer exist at the candidate commit, and parametrize plus windows markers explain counts and deselections. |
 | 9 | satisfied | `AR-185.9-20260907-24d54ce6` | `884e63715c6e4afdb2db5ad3d920704e51e284205dbc3ccfd235cf9c07e0a124` | 2026-09-07 | AR-404 records the installed CLI live report: canary_passed and complete true, attestation persisted, installation_attempted and trust_bypass_used false, current-profile v4 digest; snapshot canary_backends.py:3571-3641 and install_commands.py:1265-1286 require trusted hook inventory first. |
+| 4 | satisfied | `AR-185.4-20260907-61c45536` | `4f528999e36dd5dc1596d4fc43701adee095e98e761eca97f288a47566eb27e4` | 2026-09-07 | Snapshot shows install_commands.py:1660 returning before _load_install_config, the verify branch using only inspector/canary_runner; preflight.py:467 skips roster/contractor/catalog work, pipeline.py:2225 skips gap hiring, and the cited tests forbid config, Store, controls, dashboard, adapter calls. |

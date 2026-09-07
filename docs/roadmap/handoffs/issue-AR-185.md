@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-185
 branch: codex/ar185-activation-proof
-evidence_commit: c64ce3ce54c6e51280292298b5e3600611cb72fc
-minimum_ledger_commit: d28ccc232dcc00af0162a2409930dd272bf97b5f
+evidence_commit: 51af465da9b03c6e0225c5aea39d1b9b93933c19
+minimum_ledger_commit: 5c46594cd4785a66d466842ed1a962b9751a1637
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -30,8 +30,9 @@ tracker_url: null
 This records-only package follows AR184 PR #734/mainc64ce3ce and its merge
 ledger. Source verification was observed at24eede12; subsequent main deltas
 are documentation only. The exact installed live proof remains separately bound.
-AR-185 remains in_progress; the acceptance builder has candidate_commit pending
-and no verdicts. No runtime or owner-profile changes were made.
+AR-185 is done: all nine isolated criteria satisfy against500de085. The first
+unavailable run and missing criterion4 result are preserved; one bounded retry
+returned satisfied. No runtime or owner-profile changes were made.
 
 ## completed-evidence
 
@@ -56,8 +57,8 @@ and no verdicts. No runtime or owner-profile changes were made.
 
 ## exact-blocker
 
-The nine pending builder criteria need parent publication, candidate freezing
-and isolated verification. This builder makes no satisfaction judgment.
+No AR185 acceptance blocker remains. Publication is the next action; the
+isolated verifier, not the builder, supplied all nine satisfaction judgments.
 Existing hook trust, not a new TUI approval, preceded the live proof. Windows,
 TUI/Desktop, multi-card and AR180 child-only placement are not claimed.
 
@@ -70,11 +71,9 @@ canary, credential change or new trust ceremony is needed for this package.
 
 ## next-bounded-work-package
 
-Parent publishes these four owned files after AR183/184, creates the required
-ledger, freezes the pending acceptance record at the substantive commit, and
-runs the nine isolated checks. Preserve all known scope limits; only recorded
-satisfied verdicts may authorize completion. No global records were edited by
-the child worker.
+Publish the final substantive/ledger checkpoint through a normal PR/merge.
+Then continue the AR408 diagnostics repair and AR189/190 oldest-first records.
+Preserve all known scope limits; no extra canary is required for paperwork.
 
 ## verification
 
