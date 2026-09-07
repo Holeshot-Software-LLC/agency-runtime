@@ -48,7 +48,11 @@ text/JSON, same/foreign packages, explicit/default/all/empty resolved scopes,
 selected drift and advisory failures. Two existing doubles assert the exact
 targets. Focused combined validation passes 158 cases with one Windows-named
 deselection; independent focused review reports no finding and 35 passes.
-Live mixed-pointer and installed-artifact validation remain to be recorded.
+Actual mixed-pointer validation now passes with all five pointer bytes and
+metadata unchanged. Clean ef6523b3 produces the portable pair under umask 077;
+independent verifier and strict Twine pass. Fresh installed CLI/MCP/dashboard
+smoke passes and all-host generated smoke passes eight/zero/zero in 5.09s.
+These are scoped real installed checks, not a new native model-turn canary.
 
 ## Approach
 

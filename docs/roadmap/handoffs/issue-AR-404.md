@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar178-oldest-first-reconciliation
-evidence_commit: cbe82aaf1ac735b03f045bc180dc2d8520dc406c
-minimum_ledger_commit: 4fcad063de1b6c55f80af476f055c470c7884358
+branch: codex/ar407-scope-install-drift
+evidence_commit: 15a18861b3d32fe55e3092d918bb63c494913e45
+minimum_ledger_commit: ef6523b3779e7673051c1b758174d42ef64961d4
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -39,8 +39,16 @@ AR-175 PR #724/891f0c32. AR-176 repairs merged PR #725/d2125438 but remain open.
 AR-177 retired through PR #726/cbe82aaf, reducing the old queue to 118.
 AR-178 stays open/deferred. New actual defect AR-407/#727 adds one mapped
 record: current branch 119 (41 mapped/78 legacy); no legacy rollback.
+AR-178 merged PR #728/08fab1c4. AR-407 code is committed, acceptance pending.
 
 ## Completed evidence
+
+AR-407: actual scoped-warning repair, 158 focused/one Windows deselection,
+independent review no findings/35 pass, fresh spine1085/three skips and UI224.
+Exact helper/live mixed-pointer probe passes; allfive pointer bytes and
+metadata unchanged. Clean ef6523b3 portable build under umask077 passes
+independent verification/Twine; fresh installed MCP/dashboard smoke passes,
+all-host generated smoke8/0/0 in5.09s. No current-owner host replacement.
 
 AR-175: six accepted criteria and installed-wheel browser proof across
 21 views/36 faults, exact request-ID echoes and zero legacy calls.
@@ -79,18 +87,20 @@ variable. No current-turn header snapshot; do not reinstall OpenClaw.
 
 ## Same-task continuity
 
-Owned tree: codex/ar178-oldest-first-reconciliation. Do not commit main or touch
+Owned tree: codex/ar407-scope-install-drift. Do not commit main or touch
 another worker's dirty tree. Substantive commits get immediate narrow worklog
 ledgers. At/below 50 percent finish a clean checkpoint, then continue.
-Fanout now covers AR-180 evidence and AR-181 smoke. A worker owns only runtime/
-tests for AR-407 in codex/ar407-scope-install-drift; parent owns its records.
-Parent owns all publication, acceptance and shared-registry changes.
+Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
+AR-180 remains one-card exec only; parent also contains the same card, so its
+child-only wording is not literally met. AR-181 Windows remains unverified.
+Fanout now prepares AR-185, AR-189 and isolated uv-plan proof for AR-190.
+Parent owns publication, acceptance and shared-registry changes.
 
 ## Next bounded work package
 
-1. Publish AR-178 retained disposition and AR-407 filing, then AR-180.
-2. Review/verify the bounded AR-407 repair and publish separately.
-3. Keep live card injection distinct from the passing encrypted-payload canary.
+1. Freeze AR-407 evidence, verify its three criteria, PR/merge/readback.
+2. Publish AR-180 exact one-card exec proof and remaining broader holds.
+3. Continue AR-181,183,184,185, then189/190; Windows/operator holds stayopen.
 4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification

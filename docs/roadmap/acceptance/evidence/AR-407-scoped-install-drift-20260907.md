@@ -14,6 +14,140 @@ superseded_by: null
 
 # AR-407 scoped install-drift verification
 
+## Exact portable build and fresh installed smoke
+
+Clean candidate ef6523b3779e7673051c1b758174d42ef64961d4 was built with
+producer umask 077. This proves that producer setting, not merely a smoke
+child's umask. The canonical builder materializes authenticated Git blobs;
+independent portable verification and strict Twine both pass. No native
+Windows or cross-producer identical-sdist claim.
+
+```bash
+umask 077
+set -e
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m scripts.build_distributions /tmp/agency-ar407-artifact.d6KkBS/dist --expected-commit ef6523b3779e7673051c1b758174d42ef64961d4
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_distribution.py /tmp/agency-ar407-artifact.d6KkBS/dist --expected-commit ef6523b3779e7673051c1b758174d42ef64961d4 --artifact-set portable
+/tmp/agency-ar404-venv.AUBJlC/bin/python -m twine check --strict /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0-py3-none-any.whl /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0.tar.gz
+/tmp/agency-ar404-venv.AUBJlC/bin/python -m pip install --no-deps --target /tmp/agency-ar407-artifact.d6KkBS/wheel /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0-py3-none-any.whl
+sha256sum /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0-py3-none-any.whl /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0.tar.gz
+```
+
+```text
+Canonical distribution build passed: agency_runtime-0.1.0-py3-none-any.whl, agency_runtime-0.1.0.tar.gz
+Distribution verification passed (artifact contents match release policy).
+Checking
+/tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0-py3-none-any.whl: PASSED
+Checking /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0.tar.gz: PASSED
+Processing /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0-py3-none-any.whl
+Installing collected packages: agency-runtime
+Successfully installed agency-runtime-0.1.0
+f3e9cbfaf7db064725e39bb851a33f502a228400bf5842c697b919e32a8c949d  /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0-py3-none-any.whl
+d1396b523570500146d15b71af3a51ab7c7e5634d36eb1373f329fb8c7f7f6c9  /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0.tar.gz
+```
+
+A separate new virtual environment installs that exact wheel with PyYAML
+6.0.3. Imports and subprocesses use isolated mode outside the checkout.
+Installed and source cli/install_commands.py both hash
+659b42b2f0fe8a1321722b39c5424a46439a4f778f916def26dadf63148fbe3f,
+binding this artifact to the live-pointer helper check above.
+
+```bash
+umask 077
+set -e
+/tmp/agency-ar404-venv.AUBJlC/bin/python -m venv /tmp/agency-ar407-artifact.d6KkBS/venv
+/tmp/agency-ar407-artifact.d6KkBS/venv/bin/python -I -m pip install /tmp/agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0-py3-none-any.whl
+/tmp/agency-ar407-artifact.d6KkBS/venv/bin/python -I /tmp/agency-runtime-ar407-install-drift/scripts/smoke_installed_distribution.py --expected-version 0.1.0 --artifact-set portable
+/tmp/agency-ar407-artifact.d6KkBS/venv/bin/python -I -m pip check
+```
+
+```text
+Processing ./agency-ar407-artifact.d6KkBS/dist/agency_runtime-0.1.0-py3-none-any.whl
+Collecting pyyaml<7,>=6.0 (from agency-runtime==0.1.0)
+  Using cached pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+Using cached pyyaml-6.0.3-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (807 kB)
+Installing collected packages: pyyaml, agency-runtime
+Successfully installed agency-runtime-0.1.0 pyyaml-6.0.3
+{"artifact_set": "portable", "assets": 10, "config": "passed", "dashboard": {"bind": "127.0.0.1", "health": "passed"}, "mcp": {"status_call": "passed", "tool_count": 8}, "roster": {"approved": 265, "quarantined": 0, "retired": 0, "total": 265}, "selection": {"cases": {"agency-runtime-dashboard": [], "ambiguous-help": []}, "forbidden_specialists": ["clinical-evidence-agent", "geographer", "language-translator"], "status": "passed"}, "version": "0.1.0"}
+No broken requirements found.
+```
+
+Exact fresh environment aggregate command and safe result projection:
+
+```bash
+umask 077
+/usr/bin/time -p /tmp/agency-ar407-artifact.d6KkBS/venv/bin/python -I -m agency_runtime.cli smoke --all --json
+```
+
+```json
+{
+  "passed": true,
+  "passed_count": 8,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "checks": [
+    {
+      "name": "sqlite_store",
+      "status": "pass"
+    },
+    {
+      "name": "routing_roster_available",
+      "status": "pass"
+    },
+    {
+      "name": "host_parity_eval",
+      "status": "pass"
+    },
+    {
+      "name": "plugin_claude",
+      "status": "pass",
+      "host": "claude",
+      "hook_count": 10
+    },
+    {
+      "name": "plugin_codex",
+      "status": "pass",
+      "host": "codex",
+      "hook_count": 8
+    },
+    {
+      "name": "plugin_hermes",
+      "status": "pass",
+      "host": "hermes",
+      "tools": [
+        "agency_finalize"
+      ]
+    },
+    {
+      "name": "plugin_openclaw",
+      "status": "pass",
+      "host": "openclaw",
+      "syntax_check": "passed"
+    },
+    {
+      "name": "plugin_zcode",
+      "status": "pass",
+      "host": "zcode",
+      "hook_count": 7,
+      "process_hook_invoked": true,
+      "preserved_existing_config": true,
+      "idempotent": true,
+      "toggle_verified": true
+    }
+  ]
+}
+```
+
+```text
+real 5.09
+user 3.87
+sys 0.24
+```
+
+All five generated host bundles plus SQLite, roster and deterministic parity
+pass. This is an actual installed CLI/MCP/dashboard check in disposable state,
+not a native model-turn/injection test. No owner integration is installed or
+removed, no credential/trust policy changes, no provider inference.
+
 ## Outcome and scope
 
 Generic install residual drift now uses resolved installation targets. The
