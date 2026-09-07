@@ -1,18 +1,24 @@
 ---
 title: "AR-145: Restore the Python release coverage gate"
-status: open
+status: wont_do
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-09-07
 tags: [testing, coverage, release, concurrency, observability]
 related:
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
+  - docs/decisions/0224-retire-duplicate-mandatory-coverage-checklist.md
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/roadmap/acceptance/evidence/AR-145-instrumented-contracts-20260907.md
+  - docs/worklog/README.md
   - tests/test_dashboard.py
   - tests/test_preflight_bounds.py
   - tests/test_selector_coverage_complete_basics.py
   - tests/test_release_coverage_authority_boundaries.py
   - docs/RELEASE_CHECKLIST.md
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
 type: issue
 epic: testing
 issue_id: AR-145
@@ -23,6 +29,15 @@ blocks: []
 ---
 
 # AR-145: Restore the Python release coverage gate
+
+> Retired on September 7 under ADR-0224, not accepted against the historical
+> checklist. The synchronization and synthetic-benchmark repairs exist and
+> 41 focused tests pass under branch instrumentation (12.08s) at 7afa4b4d.
+> ADR-0105 makes exhaustive coverage optional, not an issue/release blocker.
+> AR-176 retains fixture correctness and any still-unmeasured aggregate coverage
+> work when that diagnostic is explicitly requested. The configured 97-percent
+> floor, source set and workflow remain untouched. No current aggregate pass is
+> claimed; the original criteria and failed/incomplete history below remain.
 
 ## Problem
 

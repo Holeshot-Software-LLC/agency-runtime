@@ -55,3 +55,10 @@ not presented as new runs. Metadata, policy, docs and strict tracker checks pass
 Retain AR-140 for pinned isolated supported-runner evidence, including the
 owner's Windows arm, then isolated acceptance. No code, test, budget, acceptance
 or count change. Publish one PR; AR-145 follows. AR-404 stays open.
+
+### Delivery receipt
+
+PR #701 merged at 7afa4b4d7c6aabef572b3671784894fe54181311 on September 7,
+05:44:10Z, read back as MERGED. Main fast-forwarded cleanly. Hosted status checks
+were absent, not claimed green, and no bypass was used. Counts remain 40 actual
+open trackers plus 97 unfinished legacy records (137). AR-145 follows.

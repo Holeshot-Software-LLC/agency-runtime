@@ -3,12 +3,15 @@ title: "Bound delivery to live demo checkpoints"
 status: accepted
 category: decisions
 created: 2026-07-27
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [governance, delivery, testing, demo, cost]
 related:
   - docs/roadmap/issue-AR-129-isolate-subprocess-environments.md
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
+  - docs/decisions/0224-retire-duplicate-mandatory-coverage-checklist.md
+  - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
+  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-149-fresh-dashboard-request-ids.md
   - docs/roadmap/issue-AR-406-restore-dashboard-function-coverage.md
   - docs/roadmap/issue-AR-186-bound-delivery-to-live-demo-checkpoints.md
