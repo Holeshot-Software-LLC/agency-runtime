@@ -51,3 +51,10 @@ completion without a new tracker. Fresh enumeration is 40 actual open trackers
 plus 93 unfinished legacy records (133 local unfinished). PR #705 carries this
 bounded completion; merge normally, then continue at AR-154. No Windows execution
 or unrelated AR-176 fixture repair.
+
+## Publication
+
+PR #705 merged normally at 8b36ea28366c7e344c5dc239950aaff81a85ad29 on
+2026-09-07T07:06:14Z. Main was clean and fast-forwarded to that merge. No hosted
+checks were reported; the scoped local verification is recorded above. The next
+owned oldest-first package is AR-154.

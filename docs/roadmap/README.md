@@ -30,9 +30,9 @@ was a record-reconciliation count, not 147 established defects. See the
 work is reserved for the owner's Windows machine; close or retire historical
 records only after checking relevance, current evidence and successor decisions.
 
-After AR-153's accepted completion under ADR-0105 on September 7, fresh tracker
-enumeration remains 40 open issues; the separate unfinished queue is 133
-records (40 mapped plus 93 legacy). PR #705 carries that legacy completion;
+After AR-154's accepted completion on September 7, fresh tracker enumeration
+remains 40 open issues; the separate unfinished queue is 132
+records (40 mapped plus 92 legacy). PR #706 carries that legacy completion;
 no new tracker or unrelated tracker closure is needed. Prior snapshots remain
 in the oldest-first ledger.
 AR-119 remains a relevant unfinished
@@ -197,7 +197,7 @@ bounded package are in AR-404's
 | `AR-151` | [Align Route Lab host eligibility with the server](issue-AR-151-align-route-lab-host-eligibility.md) | done | p1 | dashboard | pending authorization |
 | `AR-152` | [Bound dashboard live-listener retention](issue-AR-152-bound-dashboard-live-listeners.md) | done | p1 | performance | pre-tracker history; verified acceptance |
 | `AR-153` | [Complete and bound worker-detail evidence](issue-AR-153-complete-worker-detail-evidence.md) | done | p1 | dashboard | pending authorization |
-| `AR-154` | [Fail malformed initial dashboard pages closed](issue-AR-154-fail-malformed-initial-pages-closed.md) | open | p1 | dashboard | pending authorization |
+| `AR-154` | [Fail malformed initial dashboard pages closed](issue-AR-154-fail-malformed-initial-pages-closed.md) | done | p1 | dashboard | pending authorization |
 | `AR-155` | [Bound dashboard hiring evidence delivery](issue-AR-155-bound-dashboard-hiring-evidence.md) | open | p1 | dashboard | pending authorization |
 | `AR-156` | [Restore cost-bounded verification feedback](issue-AR-156-restore-cost-bounded-verification.md) | open | p1 | testing | pending authorization |
 | `AR-157` | [Treat public HTTP client disconnects as transport completion](issue-AR-157-quiet-public-http-disconnects.md) | open | p1 | observability | pending authorization |
@@ -602,8 +602,8 @@ not stable internal identifiers.
 | [AR-150](issue-AR-150-coordinate-dashboard-refresh-epochs.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `57c225c1`, `770b1d7a`, `4e820ff4`, `ae71761f`, `7ec16579`, `2c01b083`, `460f319b` | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md), [ADR-0220](../decisions/0220-measure-dashboard-coverage-over-production-modules.md) |
 | [AR-151](issue-AR-151-align-route-lab-host-eligibility.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `58285009`, `99e05d1f`, `ea2ff6e5`, `f954d1e9`, `791820bb`, `61da9bb4`, `cd12e929`, `5a12f357` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md), [ADR-0117](../decisions/0117-unify-owner-control-authority.md), [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0225](../decisions/0225-scope-route-lab-ambiguity-to-host-identity.md) |
 | [AR-152](issue-AR-152-bound-dashboard-live-listeners.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `12a62393` (current listener/coverage evidence; acceptance pending); `e3c09d42` (accepted; done); `853de310` (PR #684 merged) | [ADR-0032](../decisions/0032-adaptive-authenticated-dashboard-polling.md), [ADR-0220](../decisions/0220-measure-dashboard-coverage-over-production-modules.md) |
-| [AR-153](issue-AR-153-complete-worker-detail-evidence.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `ea577285`, `342f9db0`, `b060e96a` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md), [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md) |
-| [AR-154](issue-AR-154-fail-malformed-initial-pages-closed.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
+| [AR-153](issue-AR-153-complete-worker-detail-evidence.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `ea577285`, `342f9db0`, `b060e96a`, `8b36ea28` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md), [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md) |
+| [AR-154](issue-AR-154-fail-malformed-initial-pages-closed.md) | `2437068`, `4620204`, `6a3bdaa`, `90ce272`, `e1c3069c`, `6490c4b7`, `f7557eff` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md), [ADR-0220](../decisions/0220-measure-dashboard-coverage-over-production-modules.md) |
 | [AR-155](issue-AR-155-bound-dashboard-hiring-evidence.md) | `e62230c`, `6a3bdaa`, `90ce272` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-156](issue-AR-156-restore-cost-bounded-verification.md) | `babc45a`, `fbbc512`, `c5d5631`, `d2ab19b`, `7d11313`, `74468aa`, `49aafe1`, `900f8d3`, `58aee8b`, `62d90ca`, `11241e6`, `aad2901`, `85549a4`, `10eb595`, `dca7af5`, `e3284bf`, `f64ba1e`, `3e14f74`, `1676f6a` | [ADR-0030](../decisions/0030-versioned-quantitative-evaluation-gates.md), [ADR-0097](../decisions/0097-gate-expensive-ci-fanout-behind-quality-contracts.md) |
 | [AR-157](issue-AR-157-quiet-public-http-disconnects.md) | `74468aa`, `12640d0`, `900f8d3` | [ADR-0017](../decisions/0017-sanitized-server-error-boundary.md), [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md), [ADR-0029](../decisions/0029-secure-local-dashboard-and-bounded-observability.md) |

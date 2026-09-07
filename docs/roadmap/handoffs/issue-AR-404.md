@@ -19,6 +19,7 @@ related:
   - docs/roadmap/issue-AR-150-coordinate-dashboard-refresh-epochs.md
   - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md
   - docs/roadmap/issue-AR-153-complete-worker-detail-evidence.md
+  - docs/roadmap/issue-AR-154-fail-malformed-initial-pages-closed.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/decisions/0028-host-support-maturity-and-reversible-install.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
@@ -27,9 +28,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar153-oldest-first-reconciliation
-evidence_commit: ea57728532d99b5da0da60c7c6cec4dfa340fdba
-minimum_ledger_commit: e6c3dba1c3897045cf7f17e374120ca82555e710
+branch: codex/ar154-oldest-first-reconciliation
+evidence_commit: e1c3069ca60146072f5c8a237c9bcf39cf6a6374
+minimum_ledger_commit: 4a7dfdee5e450207b4f69c6091c71148f0f9cd66
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -46,18 +47,20 @@ PR #699 at e2f7a5f2. AR-138 merged through PR #700 at 1ada216c on September 7,
 AR-145 retirement merged in PR #702 at cd061668, 05:53:46Z. AR-150's four
 criteria satisfy at ae71761f; PR #703 merged at 460f319b, 06:18:49Z. AR-151's
 four revised criteria satisfy at 791820bb; PR #704 merged at 5a12f357, 06:46:57Z.
-Main is clean there; merge ledger 26f3556b starts AR-153. AR-147 stays with owner.
+AR-153's four criteria satisfy at ea577285; PR #705 merged at 8b36ea28, 07:06:14Z.
+Main is clean there; merge ledger c266715c starts AR-154. AR-147 stays with owner.
 
-Current AR-153: worker-filter-before-limit and bounded lineage already exist.
-Exact totals/truncation share a Store read snapshot; HTTP caps detail at 200
-rows/collection and 2 MiB, omitting history documents. The UI renders loaded
-records and truthful totals. Fresh worker-detail Store/HTTP six pass (2.71s),
-full workforce lifecycle 25 pass (8.08s), UI 176 pass (223.89ms), production
-coverage 96.93/86.70/95.71. Product/tests/scripts equal 99e05d1f: explicitly reuse
-its 274 dashboard/1085-spine results. No product or test change needed.
-ADR-0105 replaces only the stale mandatory-full-corpus criterion with the named
-bounded gate; original wording is retained. All four isolated criteria satisfy
-at ea577285. AR-153 is done; normal PR #705 publication remains, then AR-154.
+Current AR-154: existing initial-page schema/cursor/revision validation rejects
+corruption before row copying or continuation. Twelve new direct full/control
+refresh cases prove unchanged last-good data/revisions and visible stale state
+for missing first cursor/revision in roster, snapshots and reviews (81.56ms).
+Focused cursor/activity/observation 13 pass (2.34s); full UI 188 pass (256.64ms),
+coverage 96.93/86.71/95.71 at unchanged 95/86/93 floors. Only the JavaScript test
+matrix changed; Python/product/scripts equal 99e05d1f, explicitly reusing its
+274-dashboard and 1085-spine receipts. No runtime or criterion change.
+Evidence: acceptance/evidence/AR-154-initial-page-validation-20260907.md.
+All four original criteria satisfy at e1c3069c; AR-154 is done. PR #706 publication
+remains before AR-155; no acceptance wording was changed.
 
 ## Completed evidence
 
@@ -76,8 +79,8 @@ at ea577285. AR-153 is done; normal PR #705 publication remains, then AR-154.
   184/184 protected mutations killed, zero survived/invalid, source unchanged.
   Broader 380-pass/one-failure/eight-skip run is not green: the unchanged
   fallback-roster fixture also fails on prior main and belongs to AR-176.
-- Current count: 40 actual open trackers plus 93 unfinished legacy records,
-  133 local unfinished after AR-153 completion. No duplicate tracker.
+- Current count: 40 actual open trackers plus 92 unfinished legacy records,
+  132 local unfinished after AR-154 completion. No duplicate tracker.
 - AR-135 source: independent ZCode renderer/config registration, exact seven
   hooks, idempotency, preservation, toggle/rollback/drift and host identity exist.
   Current tests: 16 installer/header (4.74s), 13 selected hook/Stop (5.80s),
@@ -116,7 +119,7 @@ at ea577285. AR-153 is done; normal PR #705 publication remains, then AR-154.
 
 ## Exact blocker
 
-AR-153: all four isolated criteria satisfy; normal PR #705 publication remains.
+AR-154: all four original criteria satisfy; normal PR #706 publication remains.
 AR-140 retains isolated supported-runner proof, including the owner's Windows
 arm. Local passing developer-host numbers do not waive that explicit criterion.
 AR-135 native proof is waiting_for_operator: one attended installed ZCode Agent
@@ -138,10 +141,10 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. AR-153 is accepted at ea577285; preserve ADR-0105's explicit gate reconciliation.
-2. Complete documentation/tracker checks and merge PR #705 normally.
+1. AR-154 is accepted at e1c3069c with all four original criteria unchanged.
+2. Complete documentation/tracker checks and merge PR #706 normally.
    Read back the actual merged head; update clean main by fast-forward only.
-3. Start an owned AR-154 worktree and record the prior merge. AR-152 is done;
+3. Start an owned AR-155 worktree and record the prior merge. AR-152 is done;
    Windows-only AR-147 stays with the owner and is not closed.
 4. AR-135 retains its attended installed Agent/record-zero/full-Stop plan;
    it does not block an independent backlog disposition.
@@ -149,9 +152,10 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 ## Verification
 
 Run metadata, policy availability, exact worklog, strict docs/tracker and diff
-checks per package, with focused checks for touched behavior. AR-153 is docs-only.
-Product/tests/scripts equal 99e05d1f; reuse its named spine and dashboard receipt
-explicitly. New worker-detail/lifecycle/UI checks pass. Product/scripts equal
+checks per package, with focused checks for touched behavior. AR-154 adds only
+12 JavaScript tests; all other tests/product/scripts equal 99e05d1f. Reuse its
+Python spine/dashboard receipt explicitly. New direct/UI/focused checks pass.
+Product/scripts equal
 accepted AR-138 2ecde1a5; wheel/conformance reuse is same-byte, not a new run.
 No exhaustive corpus, matrix,
 hosted dispatch or release/installed-live proof.
