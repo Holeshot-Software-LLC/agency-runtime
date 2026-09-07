@@ -65,3 +65,12 @@ b3293188 freezes nine builder rowsets at fcdcd6eb, adds the exact implementation
 citation to ADR-0226 and advances the active capsule. Metadata and strict docs
 validation pass for 1173 Markdown files. The next step is isolated acceptance;
 no builder-assigned verdict or completion is recorded.
+
+## First isolated review
+
+c456b6bd preserves all nine first verdicts: 1–6 and 8 satisfy, while 7 lacks a
+prior trigger/concurrency comparison and 9 still requires remote parity rather
+than the current legacy exemption. No product failure is reported. Add exact
+historical comparison evidence and explicitly reconcile the tracker criterion
+under the established AR-347 rule before freezing a new candidate and reviewing
+all nine again. The first verdicts remain immutable in Git; no closure yet.

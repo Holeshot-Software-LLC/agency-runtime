@@ -1992,6 +1992,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f18b5acf` | 2026-09-07 | Merge pull request #712 from Holeshot-Software-LLC/codex/ar160-oldest-first-reconciliation | [AR-160](../roadmap/issue-AR-160-publish-platform-honest-native-release-artifacts.md) | [detail](2026-09-07-6ddfc681-linux-release-evidence.md) |
 | `fcdcd6eb` | 2026-09-07 | fix(ci): validate bounded CodeQL capability responses [AR-162] | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
 | `b3293188` | 2026-09-07 | docs(acceptance): freeze AR-162 capability evidence | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
+| `c456b6bd` | 2026-09-07 | docs(acceptance): preserve AR-162 comparison and tracker gaps | [AR-162](../roadmap/issue-AR-162-collapse-unavailable-codeql-fanout.md) | [detail](2026-09-07-fcdcd6eb-codeql-capability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
