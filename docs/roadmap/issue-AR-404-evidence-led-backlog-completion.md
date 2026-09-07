@@ -141,6 +141,14 @@ Workflow 165 pass/five Windows-named deselections, spine 1085/three skips and UI
 no guard is weakened. Exact clean dccb4e85 wheel QA passes 21 loaded browser
 checks, with polling preservation and failure recovery at all three widths.
 Scoped receipts and screenshots are committed; normal publication precedes AR-157.
+PR #708 merged 6b4650b3 at 08:00:11Z on September 7 before the AR-157 tree.
+
+AR-157 confirms existing quiet HTTP disconnect handling. Two direct primary
+observation tests are strengthened, and two stale HTTP fixtures are repaired
+without runtime changes. Full HTTP/disconnect/runtime-observation package passes
+104 with three existing skips; targeted transport coverage is 100 percent.
+Exact-byte spine/UI/wheel reuse is explicit. Only criterion 6 is reconciled under
+ADR-0105; six isolated verdicts remain before completion.
 
 Current counts: 40 actual open trackers plus 91 unfinished legacy records,
 131 total after AR-155 completion; no duplicate tracker or false acceptance.

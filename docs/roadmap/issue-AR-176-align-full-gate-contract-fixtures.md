@@ -63,6 +63,13 @@ quality gates.
 
 ## Current state
 
+AR-157's September 7 HTTP package exposes and repairs two additional stale
+fixtures: a fixed roster cardinality and a finalization-admission setup relying
+on obsolete inference projection. Both reproduce on unchanged main 6b4650b3.
+The repaired package passes 104 cases with three existing skips; runtime bytes
+are unchanged. See [AR-157 evidence](acceptance/evidence/AR-157-http-disconnects-20260907.md).
+These repairs are not additional remaining work here; the six cases below stay open.
+
 AR-151's September 7 full-dashboard criterion exposes nine additional stale
 cases: seven owner-token/broker-denial assertions, one incomplete host-cache
 fixture and one configured legacy-inference projection. The 265-pass/nine-fail
