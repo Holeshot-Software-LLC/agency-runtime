@@ -71,3 +71,10 @@ tracker parity, metadata and policy checks pass; no duplicate tracker is created
 Normal PR publication precedes the separate AR-158 package.
 PR #709 carries accepted completion. Fresh enumeration confirms 130 unfinished
 records (90 legacy, 40 mapped); end telemetry is 40.4 percent with a clean pair.
+
+## Publication
+
+PR #709 merged normally at ea6864b15bf01434600f58bbea2d210986a4a211 on
+2026-09-07T08:17:39Z. Clean main was fast-forwarded before the separate AR-158
+worktree. No hosted checks were reported; acceptance and scoped local evidence
+above remain the completion basis.

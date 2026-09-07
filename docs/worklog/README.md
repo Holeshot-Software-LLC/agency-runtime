@@ -1979,6 +1979,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a35657e1` | 2026-09-07 | test(http): prove quiet disconnect evidence and current fixtures [AR-157] | [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-09-07-a35657e1-http-disconnect-evidence.md) |
 | `97eadda6` | 2026-09-07 | docs(acceptance): freeze AR-157 disconnect evidence | [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-09-07-a35657e1-http-disconnect-evidence.md) |
 | `e4a3731b` | 2026-09-07 | docs(backlog): close verified public HTTP disconnect handling [AR-157] | [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-09-07-a35657e1-http-disconnect-evidence.md) |
+| `ea6864b1` | 2026-09-07 | Merge pull request #709 from Holeshot-Software-LLC/codex/ar157-oldest-first-reconciliation | [AR-157](../roadmap/issue-AR-157-quiet-public-http-disconnects.md) | [detail](2026-09-07-a35657e1-http-disconnect-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
