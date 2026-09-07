@@ -6,6 +6,8 @@ created: 2026-07-30
 updated: 2026-07-30
 tags: [security, dashboard, cli, controls, installation, automation]
 related:
+  - docs/roadmap/issue-AR-166-truthful-dashboard-disclosure-and-correlation.md
+  - docs/decisions/0229-reconcile-dashboard-disclosure-with-owner-authority.md
   - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md

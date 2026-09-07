@@ -210,7 +210,7 @@ export function createConfigController(core) {
 			syncWorkforceProviderOptions([]);
 			return;
 		}
-		select.disabled = true;
+		select.disabled = false;
 		providers.forEach((provider, index) => {
 			const option = el("option", "", provider?.name || `Provider ${index + 1}`);
 			option.value = String(index);

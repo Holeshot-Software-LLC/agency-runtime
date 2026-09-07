@@ -223,7 +223,16 @@ changing permitted paths, action pins or the aggregate. Focus 62, full workflow
 235 and fresh named spine 1085/three existing skips pass. ADR-0228 explicitly
 reconciles only 8/9 to claim-conditional hosted measurement and the legacy
 exemption; no savings or hosted-success claim. All nine current isolated checks
-satisfy at 9effff3f in the first review. AR-165 is done; one PR/merge follows.
+satisfy at 9effff3f in the first review. PR #716 merged 520a10e3 at 10:58:51Z
+September 7 before the separate AR-166 tree.
+
+AR-166's correlation/privacy implementation remains relevant. Its read-only
+owner-control criterion contradicts ADR-0117, and the provider-secret selector
+still incorrectly disables valid choices. The one-line repair passes 189 UI
+cases/current coverage floors, 235 backend/owner cases and the fresh named spine
+1085/three existing skips. ADR-0229 explicitly reconciles only criterion 1;
+the bounded complete prompt already belongs to AR-298. Browser proof and all
+six isolated verdicts remain before completion.
 
 Current counts: 40 actual open trackers plus 85 unfinished legacy records,
 125 total after AR-165 completion; no duplicate tracker or false acceptance.

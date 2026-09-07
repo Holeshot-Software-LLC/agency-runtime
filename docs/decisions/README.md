@@ -250,6 +250,7 @@ Status meanings:
 | [ADR-0226](0226-gate-codeql-savings-claims-on-matched-measurements.md) | Reconcile CodeQL measurement and legacy tracker gates | Accepted |
 | [ADR-0227](0227-bind-executable-isolation-to-current-launch-surfaces.md) | Bind legacy executable-isolation acceptance to current launch surfaces | Accepted |
 | [ADR-0228](0228-reconcile-dependency-review-evidence-gates.md) | Reconcile dependency-review measurement and legacy tracker gates | Accepted |
+| [ADR-0229](0229-reconcile-dashboard-disclosure-with-owner-authority.md) | Reconcile dashboard disclosure with current owner authority | Accepted |
 | [ADR-0098](0098-pair-portable-and-win-amd64-wheels.md) | Pair portable and win_amd64 wheels for native delivery | Superseded |
 | [ADR-0099](0099-separate-reproducible-unsigned-builds-from-signed-delivery.md) | Separate reproducible unsigned builds from signed delivery | Superseded |
 | [ADR-0219](0219-retire-removed-helper-release-obligations.md) | Retire removed-helper release obligations without waiving artifact proof | Accepted |
