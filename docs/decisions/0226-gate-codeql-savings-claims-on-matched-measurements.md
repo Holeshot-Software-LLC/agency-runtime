@@ -27,6 +27,8 @@ deciders: [maintainers]
 
 Implementation and initial evidence are committed at fcdcd6eb; the roadmap and
 worklog registry preserve its exact subject and bounded verification.
+Record correction d30b8ae0 supplies the historical comparison and explicit
+legacy-tracker adoption after preserving the first review at c456b6bd.
 
 AR-162's eighth criterion asks for a matched hosted unavailable-path topology
 and duration record before accepting speed or billing savings. Its original

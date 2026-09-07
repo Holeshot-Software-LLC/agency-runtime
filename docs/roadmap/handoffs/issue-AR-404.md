@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar162-oldest-first-reconciliation
-evidence_commit: fcdcd6ebee6b522281d23a49d2bdc5f95c6649f9
-minimum_ledger_commit: f6444df4a374c947b30a0e893bdbfbcf1a004358
+evidence_commit: d30b8ae0f4f339d17c28b35f24d95e4474aa3bed
+minimum_ledger_commit: 6420e4a4a8914fb074869c9fed770d966cd1d570
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -68,7 +68,7 @@ remain unchanged. Source changes only in codeql.yml and test_release_packaging.p
 
 First review c456b6bd is preserved: 1–6 and 8 satisfy, 7/9 are absent. The new
 receipt supplies historical comparison and ADR-0226 explicitly adopts AR-347's
-tracker rule. The second acceptance record is pending its new candidate freeze;
+tracker rule. The second record is frozen at d30b8ae0 with ledger 6420e4a4;
 all nine need new verdicts. No implementation failure or closure is inferred.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main is unprotected
@@ -94,8 +94,8 @@ checkpoint, then continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Commit AR-162's record correction and immediate ledger.
-2. Freeze the new candidate and rerun all nine isolated checks once.
+1. Commit AR-162's second candidate freeze and immediate ledger.
+2. Run all nine isolated checks once at d30b8ae0.
 3. On accepted completion, reconcile counts and publish one normal PR, then
    proceed to the next oldest unfinished non-Windows record.
 

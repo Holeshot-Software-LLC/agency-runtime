@@ -14,7 +14,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-162
-candidate_commit: pending
+candidate_commit: d30b8ae0f4f339d17c28b35f24d95e4474aa3bed
 evidence_cutoff: 2026-09-07
 tracker_url: null
 ---
@@ -58,9 +58,10 @@ tracker_url: null
 
 ## Verification
 
-All first verdicts remain at c456b6bd. This pending second record adds the
-historical comparison and explicitly reconciled ninth criterion; no verdicts
-are carried across candidates. Freeze the new candidate, then verify all nine.
+All first verdicts remain at c456b6bd. This second record is frozen at
+d30b8ae0f4f339d17c28b35f24d95e4474aa3bed with the historical comparison and
+explicitly reconciled ninth criterion. No verdicts are carried across candidates;
+all nine require new isolated checks.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
