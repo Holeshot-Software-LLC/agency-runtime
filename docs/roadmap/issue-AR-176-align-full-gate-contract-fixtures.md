@@ -3,9 +3,13 @@ title: "AR-176: Align full-gate fixtures with hardened runtime contracts"
 status: in_progress
 category: roadmap
 created: 2026-07-27
-updated: 2026-09-06
+updated: 2026-09-07
 tags: [testing, security, isolation, traceability, performance]
 related:
+  - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
+  - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
+  - docs/decisions/0224-retire-duplicate-mandatory-coverage-checklist.md
+  - docs/roadmap/acceptance/evidence/AR-145-instrumented-contracts-20260907.md
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
   - tests/test_public_api.py
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
@@ -29,7 +33,8 @@ related:
   - tests/test_owned_process_core_hardening.py
   - tests/test_roster_authority_gap_coverage_ar91.py
   - tests/test_roster_sync_gap_coverage_child.py
-supersedes: []
+supersedes:
+  - docs/roadmap/issue-AR-145-restore-python-release-coverage.md
 superseded_by: null
 type: issue
 epic: testing
@@ -57,6 +62,21 @@ time and would waste hosted budget if the same contract drift escaped fast
 quality gates.
 
 ## Current state
+
+September 7 reconciliation absorbs AR-145's remaining fixture/coverage
+responsibility under ADR-0224. Its original dashboard-observation wait,
+persisted preflight-owner synchronization and synthetic performance report
+repairs exist; 41 focused cases pass under branch instrumentation (12.08s).
+This does not prove aggregate coverage, serial full-corpus order behavior, or
+the six separately recorded stale cases below. Keep those real failures open.
+
+The old mandatory-release-coverage checklist is retired, not passed. When an
+owner requests exhaustive coverage diagnostics, this issue owns the pinned
+report, any reproduced branch gaps and their bounded tests. Preserve the
+configured 97-percent aggregate floor and source/exclusions; do not run that
+workflow solely to finish ordinary backlog cleanup. ADR-0105 already removed
+the universal final-release-gate requirement; the original final checkbox below
+is historical pending this item's own reconciliation, not a new requirement.
 
 September 6 AR-131 review confirms a sixth unrelated legacy failure:
 `tests/test_public_api.py::test_public_route_repairs_legacy_fallback_roster_without_opening_turns`

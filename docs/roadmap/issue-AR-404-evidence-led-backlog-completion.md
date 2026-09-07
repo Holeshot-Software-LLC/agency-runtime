@@ -66,16 +66,25 @@ six original criteria: 172 UI tests, 21 rebuilt-wheel loaded browser checks,
 180 dashboard Python tests and repeated named spine 1085/three skips (99.40s).
 No native-host or full accessibility certification is implied.
 
-Current package AR-140 is a retained implemented optimization, not a rewrite:
+AR-140 is a retained implemented optimization, not a rewrite:
 all 39 current local Linux routing/performance gates and 202 focused tests
 pass. Cache/narrowing p95 are 0.201/1.081 ms; fresh CLI version median 16.989 ms.
 All retrieval-size budgets pass. The original isolated supported-runner gate
 still needs evidence, including the owner's Windows arm. ADR-0121 governs
 candidate recall/synthetic cache evidence; AR-253 retains real staffing latency.
-Publish this disposition, then review AR-145 (141/142/144 done, 143 retired).
+Its disposition merged in PR #701 at 7afa4b4d.
 
-Current counts: 40 actual open trackers plus 97 unfinished legacy records,
-137 total. AR-140 retention changes no count and creates no duplicate tracker.
+Current package AR-145 retires a duplicate mandatory-coverage checklist under
+ADR-0224, not an accepted 97-percent pass. Its original repairs pass 41 focused
+tests under branch instrumentation; AR-176 explicitly retains actual fixture
+and requested aggregate-diagnostic work. ADR-0105 already made exhaustive
+checks optional. Keep the configured 97-percent floor and all historical
+failures. AR-156 records the release checklist's stale UI coverage command for
+its upcoming reconciliation. Publish this disposition, then AR-150: 146/148/149
+are done and Windows-only AR-147 stays with the owner.
+
+Current counts: 40 actual open trackers plus 96 unfinished legacy records,
+136 total after AR-145 retirement; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
@@ -307,8 +316,8 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish and merge AR-140's retained implemented-performance disposition. Then
-review AR-145; AR-141/142/144 are done and AR-143 retired.
+Publish and merge AR-145's retired duplicate-coverage disposition. Then review
+AR-150; AR-146/148/149 are done and Windows-only AR-147 stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override
 the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
 visible, exclude Windows execution, and do not close the full backlog until

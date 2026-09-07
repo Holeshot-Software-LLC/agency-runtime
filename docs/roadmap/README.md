@@ -187,7 +187,7 @@ bounded package are in AR-404's
 | `AR-142` | [Instrument runtime boundaries and hiring outcomes](issue-AR-142-instrument-runtime-boundaries.md) | done | p1 | observability | pending authorization |
 | `AR-143` | [Require genuine operator presence for persistent controls](issue-AR-143-require-operator-presence-for-controls.md) | wont_do | p0 | security | superseded by AR-204 |
 | `AR-144` | [Restore dashboard UI release coverage gate](issue-AR-144-restore-dashboard-ui-release-coverage.md) | done | p0 | dashboard | pending authorization |
-| `AR-145` | [Restore the Python release coverage gate](issue-AR-145-restore-python-release-coverage.md) | open | p0 | testing | pending authorization |
+| `AR-145` | [Restore the Python release coverage gate](issue-AR-145-restore-python-release-coverage.md) | wont_do | p0 | testing | pending authorization |
 | `AR-146` | [Repair dashboard collection cursor validation](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | done | p0 | dashboard | pending authorization |
 | `AR-147` | [Parse complete Windows ACL descriptors](issue-AR-147-parse-complete-windows-acl-descriptors.md) | open | p0 | security | pending authorization |
 | `AR-148` | [Fail malformed remediation signatures closed](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | done | p1 | security | pre-tracker history; verified acceptance |
@@ -593,7 +593,7 @@ not stable internal identifiers.
 | [AR-142](issue-AR-142-instrument-runtime-boundaries.md) | `a32e4e6`, `c741b24`, `0b9849c`, `b95d78a` | [ADR-0027](../decisions/0027-authoritative-runtime-evidence-traces.md) |
 | [AR-143](issue-AR-143-require-operator-presence-for-controls.md) | `24948a0`, `c741b24`, `0b9849c`, `4620204`, `900f8d3`, `f64ba1e`, `dfe6f46`, `30d5fc0`, `85428e6`, `cb06c73`; superseded by AR-204 | [ADR-0096](../decisions/0096-require-operator-presence-for-persistent-controls.md), [ADR-0104](../decisions/0104-refresh-existing-codex-through-an-exact-attended-transaction.md), [ADR-0117](../decisions/0117-unify-owner-control-authority.md) |
 | [AR-144](issue-AR-144-restore-dashboard-ui-release-coverage.md) | `567bd23`, `b95d78a` | None; behavioral release-test coverage only |
-| [AR-145](issue-AR-145-restore-python-release-coverage.md) | `c3ffe6a`, `4620204` | None; release-test determinism and behavioral coverage |
+| [AR-145](issue-AR-145-restore-python-release-coverage.md) | `c3ffe6a`, `4620204` | [ADR-0105](../decisions/0105-bound-delivery-to-live-demo-checkpoints.md), [ADR-0224](../decisions/0224-retire-duplicate-mandatory-coverage-checklist.md); original repairs retained, diagnostic work owned by AR-176 |
 | [AR-146](issue-AR-146-repair-dashboard-collection-cursor-validation.md) | `c3ffe6a`, `b95d78a` | [ADR-0095](../decisions/0095-complete-paginated-dashboard-collections.md) |
 | [AR-147](issue-AR-147-parse-complete-windows-acl-descriptors.md) | `63cf796` | [ADR-0039](../decisions/0039-fail-before-dacl-mutation-under-restricted-windows-tokens.md), [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-148](issue-AR-148-fail-malformed-remediation-signatures-closed.md) | `0932410`, `11371cb6` (current 401-test evidence), `8d423e78` (candidate freeze), `5377a45e` (four satisfied criteria; done) | [ADR-0012](../decisions/0012-canonical-sqlite-audit-store.md) |

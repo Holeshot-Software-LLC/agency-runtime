@@ -3,11 +3,12 @@ title: "Measure dashboard coverage over production modules"
 status: accepted
 category: decisions
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-07
 tags: [testing, dashboard, coverage, measurement]
 related:
   - docs/roadmap/issue-AR-406-restore-dashboard-function-coverage.md
   - docs/roadmap/issue-AR-152-bound-dashboard-live-listeners.md
+  - docs/roadmap/issue-AR-156-restore-cost-bounded-verification.md
   - scripts/run_local_gates.py
   - .github/workflows/ci.yml
   - tests/test_release_packaging.py

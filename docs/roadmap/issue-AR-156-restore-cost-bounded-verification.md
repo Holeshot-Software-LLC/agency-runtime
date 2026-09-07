@@ -3,9 +3,11 @@ title: "AR-156: Restore cost-bounded verification feedback"
 status: open
 category: roadmap
 created: 2026-07-26
-updated: 2026-07-27
+updated: 2026-09-07
 tags: [testing, ci, performance, cost, developer-experience]
 related:
+  - docs/RELEASE_CHECKLIST.md
+  - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
   - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
   - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md
   - docs/roadmap/issue-AR-117-parallelize-pr-verification.md
@@ -55,6 +57,15 @@ wait 34-43 minutes for one serial warning-strict corpus and about 69 minutes for
 coverage.
 
 ## Current state
+
+September 7 documentation follow-up from AR-145 review: the current release
+checklist's dashboard command and coverage bullet still use the historical
+95/90/96 mixed test/source denominator, while ADR-0220 and the actual local/CI
+gates use all production JavaScript with unchanged 95/86/93 floors. Reconcile
+that published command when this verification-workflow record is reviewed.
+This is documentation drift, not a current production coverage failure or
+permission to lower a gate. The July workflow/timing observations below remain
+historical and require reconciliation against ADR-0105 before implementation.
 
 Successful hosted evidence shows a PR with the deferred matrix used 23.33 raw
 runner-minutes and completed in 4m50s, while a comparable current PR used

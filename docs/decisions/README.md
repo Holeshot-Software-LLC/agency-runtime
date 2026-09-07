@@ -256,6 +256,7 @@ Status meanings:
 | [ADR-0103](0103-bind-named-regulated-assurance-to-typed-staffing.md) | Bind named regulated assurance to typed staffing requirements | Accepted |
 | [ADR-0104](0104-refresh-existing-codex-through-an-exact-attended-transaction.md) | Refresh existing Codex through an exact attended transaction | Accepted |
 | [ADR-0105](0105-bound-delivery-to-live-demo-checkpoints.md) | Bound delivery to live demo checkpoints | Accepted |
+| [ADR-0224](0224-retire-duplicate-mandatory-coverage-checklist.md) | Retire the duplicate mandatory coverage checklist without waiving diagnostic failures | Accepted |
 | [ADR-0106](0106-isolate-native-host-lifecycle-working-directories.md) | Isolate native host lifecycle working directories | Accepted |
 | [ADR-0107](0107-resolve-updates-immutably-and-keep-application-attended.md) | Resolve updates immutably and keep application attended | Accepted |
 | [ADR-0109](0109-prepare-dashboard-service-repair-before-operator-presence.md) | Prepare dashboard-service repair before operator presence | Superseded |
