@@ -14,6 +14,8 @@ related:
   - scripts/verify_dashboard_browser.mjs
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/worklog/README.md
+  - docs/roadmap/acceptance/issue-AR-138.md
+  - docs/roadmap/acceptance/evidence/AR-138-current-dashboard-20260907.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -51,12 +53,15 @@ metric grid. Four focused regressions pass after failing before repair.
 The three dashboard Python modules pass 180 tests; the named production spine
 passes 1085 with three existing skips (69.50s). No staffing or host policy changes.
 
-Package state: fast_verification. The optional browser checker uses a freshly
+Package state: live_demo complete, acceptance pending. The optional browser checker uses a freshly
 installed wheel, private five-agent Store, stubbed host inventory and denied
-outbound server connections. Its initial structural/interaction checks pass
-21 view/viewport cases, but the final receipt must also await view-scoped
-metric/evidence reads after full refresh. Freeze that corrected receipt before
-isolated acceptance; this record stays open until all six criteria pass.
+outbound server connections. The final view-loaded browser receipt passes all
+21 view/viewport cases with zero axe violations, page overflow, clipped metric
+cards or unexpected console/HTTP errors. Actual control polls preserve focus,
+selection and open details; injected failures retain the last revision, show
+safe correlated IDs and recover. All 142 UI tests pass. Exact hashes, versions,
+screenshots, commands and limits are in the linked current evidence. The record
+stays open until all six isolated criteria pass; no full WCAG/native-host claim.
 
 ## Approach
 
@@ -76,12 +81,12 @@ AR-142 defines server-side request instrumentation. AR-137 owns pagination.
 
 ## Acceptance
 
-- Out-of-order responses cannot overwrite newer state.
-- Partial refresh failure is visible and never presented as fresh.
-- Related control panels share one declared revision.
-- Polling preserves keyboard focus, open details, and selection.
-- Automated accessibility, desktop, and 375 px mobile tests pass.
-- Browser console and network failures surface a safe request ID.
+- [ ] Out-of-order responses cannot overwrite newer state.
+- [ ] Partial refresh failure is visible and never presented as fresh.
+- [ ] Related control panels share one declared revision.
+- [ ] Polling preserves keyboard focus, open details, and selection.
+- [ ] Automated accessibility, desktop, and 375 px mobile tests pass.
+- [ ] Browser console and network failures surface a safe request ID.
 
 ## Historical implementation evidence (July)
 

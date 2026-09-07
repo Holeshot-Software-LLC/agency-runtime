@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar138-oldest-first-reconciliation
-evidence_commit: e2f7a5f25bc8905b0f5bbf00d5c6beee94c0c626
-minimum_ledger_commit: bcaddc1b327c08d1e5d1a3d11be0b82dabd9da2a
+evidence_commit: d7231df3d7c01a8ea2518c7e3d8ee07a287dfabc
+minimum_ledger_commit: 7892096d267bdbefce8fd8769717a83ba2806ea5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -39,10 +39,11 @@ routine approval stops. Windows stays with the owner. AR-131 is done and PR
 PR #699 at e2f7a5f2; local main is clean there. Merge ledger bcaddc1b starts the
 owned AR-138 branch.
 
-Current package: AR-138, fast_verification. Existing coherence/mobile fixes
+Current package: AR-138, live_demo complete and isolated acceptance pending. Existing coherence/mobile fixes
 remain; actual browser review found contrast, keyboard-scroll/semantic and
 desktop metric-clipping defects. Small HTML/CSS fixes and four regressions are
-ready. Final view-loaded browser receipt and isolated acceptance remain.
+are checkpointed at d7231df3/7892096d. Final view-loaded browser receipt passes
+21 checks at three widths, including 375 px. The six isolated verdicts remain.
 
 ## Completed evidence
 
@@ -76,9 +77,10 @@ ready. Final view-loaded browser receipt and isolated acceptance remain.
   repaired-wheel structural QA passes 21 view/viewport cases with zero axe
   violations and no unexpected console/HTTP errors. Real control failure keeps
   the last revision, shows a safe correlated UUID and recovers after restoration.
-  All ten packaged dashboard assets match source. Final QA must await the
-  view-scoped metric/evidence reads after full refresh and assert that the
-  preservation check sends a control poll, not an early-returning call.
+  All ten packaged dashboard assets match source. Final receipt at
+  acceptance/evidence/AR-138-browser-20260907/report.json awaits view-scoped
+  reads and requires a real control poll. Twenty-one checks pass; UI 142 pass,
+  coverage 96.92/86.62/95.71 meets the actual 95/86/93 floors. Routing passes.
 
 ## Exact blocker
 
@@ -102,9 +104,8 @@ the same task; do not spawn a replacement task or close an unfinished umbrella.
 
 ## Next bounded work package
 
-1. Finish AR-138's source/record recovery pair, then run the corrected optional
-   browser checker against the installed candidate wheel. Record exact JSON,
-   asset hashes, screenshots and limitations in repository-owned evidence.
+1. Commit the final AR-138 browser evidence and its ledger, then pin that
+   candidate before the isolated verifier. No source repair is pending.
 2. Freeze the six unchanged criteria's evidence and run isolated acceptance
    with the available Codex transport. Never author verdicts or waive gaps.
 3. If satisfied, update the legacy count, open one PR and merge normally.

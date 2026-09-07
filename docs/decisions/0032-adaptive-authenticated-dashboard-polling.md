@@ -96,3 +96,8 @@ telemetry is prohibited.
 
 AR-14 records implementation and verification. Its implementation commit will
 be linked through the roadmap and worklog after it exists.
+
+AR-138's September 7 repair d7231df3 keeps this decision unchanged: source-owned
+semantic scroll regions and wrapping metric cards, with an optional offline
+wheel-backed browser checker rather than a frontend runtime/build dependency.
+Its exact reasoning and checks are indexed in the worklog.
