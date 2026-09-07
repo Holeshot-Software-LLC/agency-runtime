@@ -30,8 +30,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar155-oldest-first-reconciliation
-evidence_commit: f9efd6c9627590e8cf012cfbb6138fb374fb012d
-minimum_ledger_commit: f9efd6c9627590e8cf012cfbb6138fb374fb012d
+evidence_commit: 6ed2494345e2810741eec430700ebce540e9b4b4
+minimum_ledger_commit: 3c6fd15acaa902a69b2ae1823a8166d70c7296de
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -63,7 +63,7 @@ supports explicit 274-dashboard/1085-spine receipt reuse from 99e05d1f.
 ADR-0105 reconciles only the stale mandatory-exhaustive fifth gate; original
 wording is preserved, and the first four criteria remain unchanged.
 Evidence: acceptance/evidence/AR-155-hiring-evidence-20260907.md.
-Five isolated criteria remain before completion or count change.
+Candidate 6ed24943 is frozen; five isolated criteria remain before any count change.
 
 ## Completed evidence
 

@@ -6,6 +6,7 @@ created: 2026-07-26
 updated: 2026-09-07
 tags: [dashboard, workforce, availability, pagination, performance]
 related:
+  - docs/roadmap/acceptance/issue-AR-155.md
   - docs/roadmap/acceptance/evidence/AR-155-hiring-evidence-20260907.md
   - docs/decisions/0105-bound-delivery-to-live-demo-checkpoints.md
   - docs/decisions/0220-measure-dashboard-coverage-over-production-modules.md
