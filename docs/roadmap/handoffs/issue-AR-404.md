@@ -21,7 +21,7 @@ type: handoff
 issue_id: AR-404
 branch: codex/ar157-oldest-first-reconciliation
 evidence_commit: a35657e14e0d0bd669a542f02abda2b64a5374ca
-minimum_ledger_commit: 84dd7d5909366cb5d7aea97f726d0c8b0fcbfc20
+minimum_ledger_commit: 0a8923c701f5fef6c343d0f70a1af447deb862c4
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -43,7 +43,8 @@ Two primary-disconnect tests now enter the actual observation boundary and
 assert exact degraded/client_disconnected evidence with private query/body/error
 sentinels excluded from logs. Two stale HTTP fixtures are repaired at their
 actual seams; runtime/scripts bytes remain unchanged. First five acceptance
-criteria are unchanged, sixth explicitly reconciled to ADR-0105. Not done yet.
+criteria are unchanged, sixth explicitly reconciled to ADR-0105. AR-157 is done:
+all six isolated criteria satisfy at a35657e1. Normal PR publication remains.
 Candidate a35657e1 and ledger 84dd7d59 are clean; all six builder rowsets are
 frozen against that exact candidate in acceptance/issue-AR-157.md.
 
@@ -66,12 +67,13 @@ frozen against that exact candidate in acceptance/issue-AR-157.md.
 - Reuse exact clean dccb4e85 wheel's ten matching assets, 21 loaded browser
   checks and all three polling/fault-recovery interactions. No new install.
 - Ruff check/format pass, 766 files. Latest telemetry 52.9 percent at 08:05:53Z.
-- Current count: 40 actual open trackers plus 91 unfinished legacy records
-  (131 local unfinished). Six isolated AR-157 verdicts remain before closure.
+- Current count: 40 actual open trackers plus 90 unfinished legacy records
+  (130 local unfinished). All six AR-157 verdicts satisfy; exact run IDs and
+  digests are recorded in acceptance/issue-AR-157.md.
 
 ## Exact blocker
 
-No product blocker is known for scoped AR-157; acceptance review is pending.
+No product blocker remains for scoped AR-157; normal publication is pending.
 Existing inference-flow skips are explicit, not new test suppression.
 
 Independent retained holds: AR-156 needs native Windows/profile and separately
@@ -95,11 +97,10 @@ task. No restart, subagent staffing, empty checkpoint or optional exhaustive run
 
 ## Next bounded work package
 
-1. Run the six frozen isolated single-criterion verifications at a35657e1.
-2. Preserve any failed verdict before changes; never handwrite acceptance.
-3. If all six satisfy, mark done, update counts, publish one normal PR, read
-   back its actual merge SHA and fast-forward clean main.
-4. Begin the separate AR-158 worktree after merge.
+1. Commit accepted AR-157 completion and its exact ledger; finish docs/tracker
+   checks and publish one normal PR.
+2. Read back its actual merge SHA and fast-forward clean main.
+3. Begin the separate AR-158 worktree after merge.
 
 ## Verification
 

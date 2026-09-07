@@ -1,6 +1,6 @@
 ---
 title: "AR-157: Treat public HTTP client disconnects as transport completion"
-status: open
+status: done
 category: roadmap
 created: 2026-07-26
 updated: 2026-09-07
@@ -64,7 +64,9 @@ Both failures reproduce on unchanged main before repair.
 All runtime/scripts bytes equal the recent clean dccb4e85 wheel, supporting
 explicit reuse of its 21 loaded-browser checks and current named-spine receipt.
 Only the obsolete sixth verification criterion is reconciled under ADR-0105;
-the first five remain unchanged. Six isolated verdicts remain before completion.
+the first five remain unchanged. All six isolated criteria satisfy at a35657e1
+on September 7; exact run IDs and digests are in the acceptance record. AR-157
+is done, with normal PR publication next and no duplicate legacy tracker.
 
 ## Historical trigger
 
@@ -101,14 +103,14 @@ failure responses.
 
 ## Acceptance
 
-- [ ] Public GET and POST response disconnects close quietly without a second write.
-- [ ] A disconnect during the defensive 500 is also quiet and bounded.
-- [ ] Expected Windows and POSIX disconnect variants share one classifier across
+- [x] Public GET and POST response disconnects close quietly without a second write.
+- [x] A disconnect during the defensive 500 is also quiet and bounded.
+- [x] Expected Windows and POSIX disconnect variants share one classifier across
   public HTTP and dashboard surfaces.
-- [ ] The affected observation is marked `degraded/client_disconnected` without
+- [x] The affected observation is marked `degraded/client_disconnected` without
   logging private request content.
-- [ ] Genuine application failures still log and attempt exactly one sanitized 500.
-- [ ] Focused HTTP, dashboard-disconnect and runtime-observation tests, targeted
+- [x] Genuine application failures still log and attempt exactly one sanitized 500.
+- [x] Focused HTTP, dashboard-disconnect and runtime-observation tests, targeted
   transport coverage, and the named warning-strict production spine pass under
   ADR-0105.
 

@@ -200,7 +200,7 @@ bounded package are in AR-404's
 | `AR-154` | [Fail malformed initial dashboard pages closed](issue-AR-154-fail-malformed-initial-pages-closed.md) | done | p1 | dashboard | pending authorization |
 | `AR-155` | [Bound dashboard hiring evidence delivery](issue-AR-155-bound-dashboard-hiring-evidence.md) | done | p1 | dashboard | pending authorization |
 | `AR-156` | [Restore cost-bounded verification feedback](issue-AR-156-restore-cost-bounded-verification.md) | open | p1 | testing | pending authorization |
-| `AR-157` | [Treat public HTTP client disconnects as transport completion](issue-AR-157-quiet-public-http-disconnects.md) | open | p1 | observability | pending authorization |
+| `AR-157` | [Treat public HTTP client disconnects as transport completion](issue-AR-157-quiet-public-http-disconnects.md) | done | p1 | observability | pre-tracker history; verified acceptance |
 | `AR-158` | [Disambiguate multi-surface observation test evidence](issue-AR-158-disambiguate-multi-surface-observation-tests.md) | open | p1 | observability | pending authorization |
 | `AR-159` | [Enforce production branch protection](issue-AR-159-enforce-production-branch-protection.md) | open | p0 | release | pending authorization |
 | `AR-160` | [Publish platform-honest native release artifacts](issue-AR-160-publish-platform-honest-native-release-artifacts.md) | in_progress | p0 | release | pending authorization |

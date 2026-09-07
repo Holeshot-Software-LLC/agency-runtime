@@ -53,7 +53,15 @@ tracker_url: null
 
 ## Verification
 
-Pending six isolated single-criterion verifier results.
+All six isolated single-criterion results satisfy at a35657e1. The runner
+supplied every verdict below; criterion 6's explicit ADR-0105 reconciliation
+and original wording remain in the canonical issue.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-157.1-20260907-db903e32` | `be9c57cc511327ab552f01e5a64c0da7142c26836bee1d320e100112229c8c55` | 2026-09-07 | http.py returns on expected GET and POST disconnects before error logging or another response; test_http_disconnects.py asserts connection closure, one primary response, and no error response, with passing verification recorded. |
+| 2 | satisfied | `AR-157.2-20260907-a1f2c0dd` | `ad379e9edf2e1d60424e80125f20dacbb3902576e0e97a946d5c49a41f9db5b6` | 2026-09-07 | http.py:105-130 suppresses disconnects and closes the connection; HTTP and dashboard tests verify defensive-500 disconnects produce one application log and one response attempt, with the cited focused verification reporting 104 passes. |
+| 3 | satisfied | `AR-157.3-20260907-580e2fc9` | `2b2af90511341ed9312d77f9ac02b70b7e096d90e3d4fa281613a0444c0f1453` | 2026-09-07 | http_transport.py defines one classifier for built-in, POSIX and Winsock disconnects; http.py uses it through its close helper, dashboard.py inherits and invokes that helper, and test_dashboard_disconnects.py covers the variants. |
+| 4 | satisfied | `AR-157.4-20260907-b31bb1b2` | `56bb7c08bb8142075b6b687104eeea1ab2c33ac3093724cc18ea99942ab07646` | 2026-09-07 | tests/test_http_disconnects.py asserts degraded/client_disconnected and excludes private query, body, and error sentinels from logs; observability.py emits metadata only, and the cited verification receipt reports passing tests. |
+| 5 | satisfied | `AR-157.5-20260907-cc041028` | `9d29dee2e8a29052edafe28cd73722172367cdab896d473e5bcb9cae7e3f79e6` | 2026-09-07 | tests/test_http_disconnects.py:106-138 asserts one log and one sanitized 500 attempt for GET/POST failures; tests/test_http_server.py:1143-1168 verifies fixed 500 bodies and no exception-message leakage. |
+| 6 | satisfied | `AR-157.6-20260907-0fbd24bb` | `2a141a317e56b88ae25a507bf5ddf6b14933c63f5bf14e78aaf52cd4551473fd` | 2026-09-07 | AR-157 records 104 focused passes and 100% transport coverage, with exact-byte reuse of AR-156’s 1,085-pass named production spine; ADR-0105 permits scoped verification with exhaustive diagnostics optional. |

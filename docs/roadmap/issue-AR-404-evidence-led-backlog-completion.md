@@ -148,10 +148,11 @@ observation tests are strengthened, and two stale HTTP fixtures are repaired
 without runtime changes. Full HTTP/disconnect/runtime-observation package passes
 104 with three existing skips; targeted transport coverage is 100 percent.
 Exact-byte spine/UI/wheel reuse is explicit. Only criterion 6 is reconciled under
-ADR-0105; six isolated verdicts remain before completion.
+ADR-0105; all six isolated criteria satisfy at a35657e1. AR-157 is done, with
+normal PR publication next and no duplicate legacy tracker.
 
-Current counts: 40 actual open trackers plus 91 unfinished legacy records,
-131 total after AR-155 completion; no duplicate tracker or false acceptance.
+Current counts: 40 actual open trackers plus 90 unfinished legacy records,
+130 total after AR-157 completion; no duplicate tracker or false acceptance.
 The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
