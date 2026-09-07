@@ -60,3 +60,9 @@ this does not justify unattended retries or verified Agency loading claims.
 PR #711 carries this retention. Final documentation validation covers 1167
 Markdown files; strict tracker parity covers 397 mapped items with two historical
 PR exceptions. End telemetry is 67.3 percent at 08:56:38Z with a clean pair.
+
+## Publication
+
+PR #711 merged normally as b499e7fb at 2026-09-07T08:57:15Z, with reviewed head
+04d1dc550b585632b8e56919bd8519455659daf4. Clean main was fast-forwarded before
+the separate AR-160 tree. AR-159 stays open; empty checks are not hosted proof.

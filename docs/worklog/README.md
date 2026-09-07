@@ -1987,6 +1987,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3da9cfd0` | 2026-09-07 | docs(backlog): close verified observation selection [AR-158] | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
 | `b2ea5946` | 2026-09-07 | Merge pull request #710 from Holeshot-Software-LLC/codex/ar158-oldest-first-reconciliation | [AR-158](../roadmap/issue-AR-158-disambiguate-multi-surface-observation-tests.md) | [detail](2026-09-07-95085a30-observation-selection.md) |
 | `e708c212` | 2026-09-07 | docs(backlog): retain verified branch-protection gap [AR-159] | [AR-159](../roadmap/issue-AR-159-enforce-production-branch-protection.md) | [detail](2026-09-07-e708c212-branch-protection-audit.md) |
+| `b499e7fb` | 2026-09-07 | Merge pull request #711 from Holeshot-Software-LLC/codex/ar159-oldest-first-reconciliation | [AR-159](../roadmap/issue-AR-159-enforce-production-branch-protection.md) | [detail](2026-09-07-e708c212-branch-protection-audit.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
