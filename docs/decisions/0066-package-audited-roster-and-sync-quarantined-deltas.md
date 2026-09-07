@@ -79,7 +79,8 @@ candidate comparison, approval, rejection, and activation history.
 AR-163's current-eligibility refinement was implemented in f64ba1e. The
 September 7 fd551fd4 reconciliation verifies that implementation with fresh
 167 remediation/projection and 188 dashboard passes; the eight unchanged
-requirements await isolated acceptance. This is an evidence update, not a
+requirements satisfy in the first isolated review at that candidate. This is
+an evidence update, not a
 change to the decision or signature/activation authority. See the linked
 roadmap record and worklog registry.
 

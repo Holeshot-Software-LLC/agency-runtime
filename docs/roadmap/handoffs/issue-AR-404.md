@@ -57,13 +57,15 @@ requirements remain unchanged; plain bullets are normalized to checkboxes.
   1085 pass/three existing skips, 68.09s; no redundant spine rerun.
 - Dashboard bytes match dccb4e85. Existing 21 loaded-browser checks are broader
   context, not a new browser or native-host claim.
-- Counts remain 40 actual open trackers plus 88 unfinished legacy records,
-  128 local unfinished. AR-163 has its governed pre-tracker exemption.
+- All eight original criteria satisfy in the first isolated review at fd551fd4.
+  AR-163 is complete; no new code or acceptance requirement change.
+- Counts are 40 actual open trackers plus 87 unfinished legacy records,
+  127 local unfinished. AR-163 keeps its governed pre-tracker exemption.
 
 ## Exact blocker
 
-AR-163 requires eight isolated verdicts on the frozen evidence candidate before
-completion. No new product defect, requirement change or closure is inferred.
+AR-163 has no remaining scoped blocker: all eight isolated verdicts satisfy at
+fd551fd4. Its accepted completion awaits one normal PR publication and merge.
 
 AR-159 retains hosted enforcement/check-app/bypass proof; main has no current
 enforcement evidence. Old billing cause is not freshly established; the extra
@@ -88,10 +90,8 @@ continue the same task. No empty commits, restart or staffing.
 
 ## Next bounded work package
 
-1. Eight builder rowsets are frozen at fd551fd4 with ledger d102b3cb. Commit
-   this freeze and immediate ledger, then run isolated checks once.
-2. If all satisfy, reconcile local completion/counts and publish one normal PR;
-   read back its merge before starting the next record.
+1. Commit AR-163's accepted completion and immediate ledger; no acceptance rerun.
+2. Publish one normal PR and read back its merge before starting the next record.
 3. Next is AR-164's repository-ancestor PATH boundary, in its own worktree.
 
 ## Verification

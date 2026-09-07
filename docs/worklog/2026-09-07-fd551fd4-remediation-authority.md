@@ -58,3 +58,10 @@ this scoped record. No exhaustive diagnostics or trust bypass were performed.
 b9d91243 freezes all eight rowsets to fd551fd4, records its governing decision's
 implementation/evidence SHAs and updates the active capsule. Strict docs pass
 1177 Markdown files. No builder verdict is carried into the isolated review.
+
+## Accepted completion
+
+All eight original criteria satisfy in the first isolated review at fd551fd4.
+The record is done without a runtime/test change, requirement revision, new
+tracker or closure of an unrelated issue. Current queue: 40 mapped plus 87
+legacy, 127 unfinished. Publish one PR, normal merge, then AR-164.

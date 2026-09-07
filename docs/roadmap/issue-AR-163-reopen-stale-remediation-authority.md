@@ -1,6 +1,6 @@
 ---
 title: "AR-163: Reopen stale remediation resolution authority"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-07-27
 updated: 2026-09-07
@@ -45,8 +45,9 @@ refresh if the shortened first page remained a prefix of the loaded rows.
 September 7 current-code review confirms the original f64ba1e implementation
 remains present. Fresh complete remediation/API-projection tests pass 167 cases
 and all 188 dashboard tests pass. No runtime or test change is needed. All eight
-original acceptance requirements are unchanged and await isolated verification;
-this is a completion candidate, not a newly reopened product defect.
+original acceptance requirements are unchanged and all eight isolated checks
+satisfy at fd551fd4 on the first pass. AR-163 is complete; no new product defect
+or runtime change was needed.
 
 The durable HMAC still proves immutable historical evidence. Queue suppression
 now additionally requires current candidate eligibility: a pending or approved
@@ -81,22 +82,22 @@ strict documentation and tracker parity are checked before publication.
 
 ## Acceptance
 
-- [ ] Rejected candidates and stale latest audit bases cannot suppress a remediation
+- [x] Rejected candidates and stale latest audit bases cannot suppress a remediation
   queue entry or appear in current resolution history.
-- [ ] An exact replay of a previously valid signed marker cannot restore current
+- [x] An exact replay of a previously valid signed marker cannot restore current
   authority after its candidate becomes ineligible.
-- [ ] A modified HMAC remains rejected by the existing insertion boundary.
-- [ ] Approval and activation continue to fail closed for rejected or audit-stale
+- [x] A modified HMAC remains rejected by the existing insertion boundary.
+- [x] Approval and activation continue to fail closed for rejected or audit-stale
   candidates.
-- [ ] Reopening projects the original queue event and creates no duplicate queue or
+- [x] Reopening projects the original queue event and creates no duplicate queue or
   resolution event.
-- [ ] Current, stale, and unvalidated resolution counts are disjoint and sum to the
+- [x] Current, stale, and unvalidated resolution counts are disjoint and sum to the
   raw resolution count.
-- [ ] Expanded remediation pages survive a refresh only when the server proves the
+- [x] Expanded remediation pages survive a refresh only when the server proves the
   same current projection revision and the returned first page remains an exact
   prefix; reopening cannot leave one queue event visible as both pending and
   resolved history.
-- [ ] The dashboard labels stale signed authority separately from unvalidated raw
+- [x] The dashboard labels stale signed authority separately from unvalidated raw
   records without exposing prompt content or signing material.
 
 ## Historical implementation evidence
