@@ -1,11 +1,14 @@
 ---
 title: "Bind OpenClaw installed-copy provenance"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-08-21
-updated: 2026-08-23
+updated: 2026-09-07
 tags: [openclaw, uninstall, provenance, reliability]
 related:
+  - docs/decisions/0108-retire-only-owned-host-integrations.md
+  - docs/roadmap/handoffs/issue-AR-270.md
+  - docs/roadmap/acceptance/evidence/AR-270-openclaw-copy-provenance-20260907.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/handoffs/issue-AR-119.md
   - agency_runtime/core/installer_uninstall.py
@@ -16,7 +19,7 @@ type: issue
 epic: install
 issue_id: AR-270
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/749
 depends_on: []
 blocks: []
 ---
@@ -32,6 +35,36 @@ examines the installed copy alone and rejects the valid two-path receipt as
 unbound.
 
 ## Current state
+
+2026-09-07 code-first package: implementing. A scoped candidate now validates
+the complete installed-copy receipt and carries the current inspect envelope's
+sibling install record into the existing native-state digest. The existing
+owned-tree, install-ID, bundle-digest, gateway and operator-authority checks
+remain prerequisites. Forty-five regression cases are written but deliberately
+not executed under the owner's code-first/no-tests instruction. Static Ruff
+and diff checks pass; independent review, test execution, isolated acceptance
+and any mutating/live delivery are still pending. No uninstall, disable or
+owner configuration mutation was performed. This is not a completion claim.
+
+Read-only inspection of installed OpenClaw 2026.8.2 confirms a `{plugin, install}`
+envelope, `plugin.rootDir`, a copied entry source and the distinct managed
+`install.sourcePath`. The historical flat shape remains separately represented.
+Versions are optional in the native install schema; exposed versions must
+agree with the independently validated ownership manifest.
+
+The first independent source review found a High extraction issue: an earlier
+conflicting identity alias could hide the Agency id and be treated as native
+absence before binding validation. The candidate now retains records with any
+exact Agency identity and refuses conflicting ids at inventory and inspect
+admission. Plan-level regressions cover all four identity aliases in inventory,
+flat inspect and envelope inspect. Corrected-delta review remains pending.
+
+Separately authorized tracker [#749](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/749)
+was created on 2026-09-07 with `epic:install`. The historical Acceptance wording
+and existing proof boxes below are retained; the pending-authorization text is
+historical, not the present tracker state. No new acceptance verdict is claimed.
+
+### Preserved historical observations
 
 The write-free uninstall attempt is preserved as
 `Native plugin identity is not bound to the managed target`. Native inspection
@@ -61,10 +94,21 @@ as one closed provenance receipt: exact plugin identity, managed source path,
 installed-copy root, source file within that root, and no conflicting path.
 Keep ambiguous or partial records fail-closed.
 
+Accept the historical flat receipt or the exact single-plugin current inspect
+envelope. Require native install source `path`, exact managed source, coherent
+installed-copy/root aliases (`root` or `rootDir`), and an entry strictly inside
+that copy. Reject traversing, substituted, relative or conflicting paths.
+Presence of partial install metadata cannot fall through to legacy direct-path
+binding. Join only the envelope's own single plugin, never an arbitrary nested
+install record. Preserve the joined receipt in the existing plan digest so
+provenance changes invalidate application. Native copied files remain retained
+by the unchanged `--keep-files` command; they are not Agency-owned tree data.
+
 ## Dependencies
 
 - OpenClaw native plugin inspect schema for the audited 2026.7.x line.
 - Existing owned-target install-id and bundle-digest checks.
+- ADR-0108's closed native provenance and ownership-bound retirement contract.
 
 ## Acceptance
 
