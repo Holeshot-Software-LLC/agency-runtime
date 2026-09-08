@@ -66,6 +66,10 @@ or installed-delivery claim is made. AR-251 remains verification pending.
 
 ## Follow-ups
 
+Review correction: `54bdff1f` replaces the initial default-false choice with
+ADR-0154 automatic TTY cards and explicit `--no-card`. This detail preserves
+the earlier implementation reasoning; it is not the final default contract.
+
 The immediately following canonical/capsule update records the frozen source
 and this ledger. Parent coordinates review/publication and any later authorized
 verification. Do not close AR-251 or claim acceptance from source inspection.

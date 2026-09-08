@@ -54,5 +54,9 @@ not runtime verification.
 
 ## Follow-ups
 
+Review correction: `54bdff1f` removes the initial TTY-default exception. The
+current canonical/capsule will point to that corrected source, while this
+record preserves the original checkpoint's scope and verification limits.
+
 Parent coordinates source review, the PR, and publication. Later authorized
 verification must exercise the frozen candidate before acceptance or closure.
