@@ -67,3 +67,5 @@ combined installation and live evaluation. Tracker #521 stays open; broad-suite,
 isolated acceptance and installed-native evidence are not supplied by this
 package. No CI dispatch, provider/model call, native operation or owner Store
 read/write was performed by this task.
+
+Integration `bc778daf` includes published fallback receipt and static timeout repairs with exact merge ledgers. Frozen resident recovery and retirement-guard source remains unchanged; independent rows were preserved in the worklog.
