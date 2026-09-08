@@ -2145,6 +2145,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9d615325` | 2026-09-07 | docs(AR-410): record native bootstrap isolation and deferred live proof | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `7c0c1221` | 2026-09-07 | Merge pull request #745 from Holeshot-Software-LLC/codex/ar410-disable-claude-warmup-staffing | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `c514fb70` | 2026-09-07 | fix(observability): retain validated recall catalog digest (AR-411) | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
+| `e790c4d4` | 2026-09-07 | Merge pull request #747 from Holeshot-Software-LLC/codex/ar411-retain-catalog-failure-identity | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
