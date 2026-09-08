@@ -93,3 +93,5 @@ Do not promote the old activation into current ordinary reliability evidence.
 Source checkpoint `ed26177f281fba0e4aea807d2092574ea0e47e3d` preserves HTTP status through the full staffing failure path;80focused tests pass. Clean substantive/ledger pair precedes the authorized gateway experiment.
 
 Pre-live checkpoint `0c240444ce167c0ca34054b38b65a31d7950913c` records the reversible order-only planner experiment and successful fast verification. Native runtime remains the trusted prior payload; artifact build is blocked on a bounded Git output diagnostic.
+
+Installed checkpoint `6debb9f2ae7f0ae43ab1486b0cbd48f7c9e85897` proves all four HTTP statuses through the verified wheel and SQLite, and records the unsuccessful native planner experiment plus exact rollback. No gateway order change remains.
