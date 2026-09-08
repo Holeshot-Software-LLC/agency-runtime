@@ -53,3 +53,5 @@ by an actually changed running digest. No native/process restart performed.
 
 Publish normally, then parent evaluates the combined installed candidate.
 Original named-kernel and doctor/latest-binding requirements remain open.
+
+Source checkpoint `a10e31170825b363a291e4cb346095887c6c6409` contains the bounded diagnostic correction and seven new regressions. Focused warning-strict execution passed 39 cases; no installed/native success is inferred.
