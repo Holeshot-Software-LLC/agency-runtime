@@ -2271,6 +2271,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `36b491ec` | 2026-09-08 | docs(staffing): record AR420 installed repair checkpoint | null | null |
 | `0540a5ad` | 2026-09-08 | docs(staffing): preserve AR420 fresh native acceptance evidence | null | null |
 | `331d789b` | 2026-09-08 | docs(staffing): cite AR420 isolated acceptance evidence | null | null |
+| `08cba8a6` | 2026-09-08 | docs(staffing): initialize AR420 verifier result table | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
