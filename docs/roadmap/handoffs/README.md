@@ -72,6 +72,7 @@ behavior.
 
 ## Active capsules
 
+- [AR-287 complete static timeout route budgets](issue-AR-287.md)
 - [AR-251 read-only CLI cards](issue-AR-251.md)
 - [AR-411 bounded catalog-identity diagnostics](issue-AR-411.md)
 - [AR-409 required staffing call reservations](issue-AR-409.md)

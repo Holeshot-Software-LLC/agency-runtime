@@ -3,9 +3,14 @@ title: "AR-287: Bind host hook timeouts to inference budgets"
 status: in_progress
 category: roadmap
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-09-07
 tags: [host-integrations, reliability, inference, timeouts, evidence]
 related:
+  - docs/roadmap/handoffs/issue-AR-287.md
+  - docs/roadmap/acceptance/evidence/AR-287-static-timeout-routes-20260907.md
+  - docs/decisions/0153-adopt-per-stage-inference-profile-routes.md
+  - docs/decisions/0192-route-content-invalid-completions-to-a-content-fallback-profile.md
+  - docs/decisions/0216-enforce-one-preflight-inference-deadline.md
   - docs/roadmap/issue-AR-266-dense-hybrid-workforce-recall.md
   - docs/roadmap/handoffs/issue-AR-266.md
   - docs/roadmap/issue-AR-288-expose-hermes-native-finalizer-tool.md
@@ -19,7 +24,7 @@ type: issue
 epic: host-integrations
 issue_id: AR-287
 priority: p0
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/756
 depends_on: [AR-266]
 blocks: []
 ---
@@ -40,6 +45,32 @@ Store lease, another same-trace caller could recover an attempt that the first
 process still owned.
 
 ## Current state
+
+### September 7 source repair; verification pending
+
+- Source inspection found two remaining omissions: the independently routed
+  `workforce.hiring.safety_repair` stage and configured content-fallback
+  profiles. Both can have longer timeouts than the primaries previously counted.
+  The same underestimated value governs the bridge and preflight lease, so
+  deadline enforcement can prematurely refuse or truncate those legal calls.
+- `fb360485` adds config-only primary/distinct-fallback resolution and includes
+  safety repair when its repair budget is positive. No call budget, profile
+  selection, legacy floor, ten-second terminal reserve or 595-second ceiling
+  changes. No environment-sensitive runtime resolver is used by the installer.
+- Twenty installer parameter cases and two Store-lease parameter cases are
+  written **but unrun**, per the owner's explicit test/CI deferral. Scoped
+  Ruff and whitespace checks passed; root's first independent source review
+  found no scoped finding. This is not a test, installed or live success claim.
+- The [portable source receipt](acceptance/evidence/AR-287-static-timeout-routes-20260907.md)
+  records producer/consumer anchors and expected arithmetic. The original
+  criteria below remain verbatim: no new acceptance verdict or `done` claim.
+  Current installed/live proof remains pending. Owner-authorized tracker
+  [#756](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/756) now
+  maps this existing legacy record. That authorization supersedes the original
+  pending-mapping condition; the original checkbox remains unchanged here,
+  rather than claiming an isolated acceptance verdict.
+
+### Retained August 25 evidence
 
 - The original regression proves Hermes rendered 80 seconds instead of the
   required capped 595 seconds. A separate regression proves `run_preflight`
@@ -73,9 +104,11 @@ process still owned.
 
 ## Approach
 
-Resolve the exact planner, recruiter, strict critic, hiring, hiring critic, and
-hiring security-review routes using normal harness precedence. Multiply the
-longest reachable profile timeout by each bounded call budget. Resolve recall
+Resolve the exact planner, recruiter, strict critic, hiring, hiring critic,
+hiring security-review, and enabled safety-repair routes using normal harness
+precedence. Include each route's distinct configured content fallback only
+after its primary resolves, matching the runtime's append condition. Multiply
+the longest reachable profile timeout by each bounded call budget. Resolve recall
 only through its explicit capability routes and add the embedding and reranker
 timeouts when both are active. Keep the legacy provider-chain calculation as a
 floor and fund it when an unresolved hiring route can fall back, then apply the
@@ -97,7 +130,8 @@ host's profile must not expand another host or a host with no matching profile.
 - The 595-second host ceiling remains authoritative. Configurations whose
   theoretical worst case exceeds it receive the ceiling, not an unbounded
   launcher.
-- Tracker creation requires separate authorization.
+- Tracker creation was separately authorized and completed as #756 on September
+  7; the historical August mapping condition below is retained verbatim.
 
 ## Acceptance
 
