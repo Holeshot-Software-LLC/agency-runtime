@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-270
 branch: codex/ar270-openclaw-installed-copy-provenance
-evidence_commit: 7c0c1221226cdf388f886e4ce18e9554d3d56204
-minimum_ledger_commit: 7c0c1221226cdf388f886e4ce18e9554d3d56204
+evidence_commit: fc699ff392f75c345064077b039d8fc15615dcf2
+minimum_ledger_commit: 1e1f1c56f12856d27236f0939ff9765729393444
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/749
 ---
@@ -25,11 +25,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/749
 
 ## Checkpoint
 
-Branch-only candidate; metadata identifies its clean base, not an accepted or
-installed changed build. Worktree:
+Branch-only candidate; metadata identifies reviewed source and its integrated
+ledger, not an accepted or installed changed build. Worktree:
 `/tmp/agency-runtime-ar270-openclaw-installed-copy-provenance`.
-Phase: implementing. Source ownership is installer_uninstall.py and focused
-test_host_uninstall.py additions, plus this issue's records.
+Phase: focused_review complete, runtime verification deferred. Source ownership
+is installer_uninstall.py and focused test_host_uninstall.py additions, plus
+this issue's records.
 
 ## Completed evidence
 
@@ -43,11 +44,14 @@ First independent review identified one High false-absence extraction gap;
 candidate now detects every Agency identity and refuses conflicting aliases
 before treating inventory as absent or substituting an inspect record.
 Separately authorized tracker #749 is open under epic:install.
+Final narrow source-only recheck found the High resolved with no additional
+scoped findings. Both independent passes are preserved; neither ran tests.
+Normal merge a9073fe6 integrated published main cb9e9a50, preserving source bytes.
 
 ## Exact blocker
 
-Corrected-delta review, test execution, isolated acceptance and live delivery
-are not complete. No completion claim.
+Test execution, isolated acceptance and live delivery are not complete.
+No completion claim.
 
 ## Same-task continuity
 
@@ -58,8 +62,7 @@ telemetry, checkpoint this bounded candidate and continue the same task.
 
 ## Next bounded work package
 
-Finish bounded independent source review, fix any scoped finding, reconcile the
-existing AR-270 tracker and current main, then publish the candidate in_progress.
+Publish the reviewed candidate in_progress through a normal pull request.
 Keep unrun regression and acceptance gates explicit until owner reopens testing.
 
 ## Verification

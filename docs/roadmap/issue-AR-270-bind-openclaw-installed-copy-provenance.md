@@ -42,8 +42,8 @@ sibling install record into the existing native-state digest. The existing
 owned-tree, install-ID, bundle-digest, gateway and operator-authority checks
 remain prerequisites. Forty-five regression cases are written but deliberately
 not executed under the owner's code-first/no-tests instruction. Static Ruff
-and diff checks pass; independent review, test execution, isolated acceptance
-and any mutating/live delivery are still pending. No uninstall, disable or
+and diff checks pass; test execution, isolated acceptance and any mutating/live
+delivery are still pending. No uninstall, disable or
 owner configuration mutation was performed. This is not a completion claim.
 
 Read-only inspection of installed OpenClaw 2026.8.2 confirms a `{plugin, install}`
@@ -57,7 +57,10 @@ conflicting identity alias could hide the Agency id and be treated as native
 absence before binding validation. The candidate now retains records with any
 exact Agency identity and refuses conflicting ids at inventory and inspect
 admission. Plan-level regressions cover all four identity aliases in inventory,
-flat inspect and envelope inspect. Corrected-delta review remains pending.
+flat inspect and envelope inspect. The final narrow source-only recheck confirmed
+the High resolved and found no additional scoped issue. Neither independent
+review executed tests or granted acceptance. Source checkpoint `fc699ff3` is
+preserved through normal main integration `a9073fe6`.
 
 Separately authorized tracker [#749](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/749)
 was created on 2026-09-07 with `epic:install`. The historical Acceptance wording

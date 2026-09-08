@@ -109,13 +109,19 @@ inventory, flat inspect and envelope inspect. A thirteenth extraction case
 preserves unrelated plugins and the native human-readable name field. There
 are now **45 added, unrun cases**. Failed identity admission has no successful
 plan digest; accepted receipts retain the complete identity/provenance record
-inside the existing native-state digest. The original High review is retained;
-corrected-delta independent review is pending.
+inside the existing native-state digest. The original High review is retained.
+
+The final narrow independent source recheck at `fc699ff3` confirmed that the
+High was resolved, both refusal paths precede binding/absence decisions, and
+the twelve new cases exercise full planning. No additional scoped finding was
+reported. The reviewer ran no tests, CI or native commands; this is not runtime
+acceptance. Normal merge `a9073fe6` brought in published main `cb9e9a50` without
+changing either AR-270 runtime/test blob.
 
 ## Pending
 
-Corrected-delta independent review, the original expected-red/focused runtime
-gates and isolated acceptance are still pending. Separately authorized tracker
+The original expected-red/focused runtime gates and isolated acceptance are
+still pending. Separately authorized tracker
 [#749](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/749) is open
 with epic:install; strict parity is checked after current-main integration.
 No native unload, uninstall or end-to-end completion is claimed.
