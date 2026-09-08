@@ -2146,6 +2146,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7c0c1221` | 2026-09-07 | Merge pull request #745 from Holeshot-Software-LLC/codex/ar410-disable-claude-warmup-staffing | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `c514fb70` | 2026-09-07 | fix(observability): retain validated recall catalog digest (AR-411) | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
 | `e790c4d4` | 2026-09-07 | Merge pull request #747 from Holeshot-Software-LLC/codex/ar411-retain-catalog-failure-identity | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
+| `3fb97e7d` | 2026-09-07 | fix(receipts): separate provider fallbacks from inference-stage order (AR-284) | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -14,8 +14,8 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: 3fb97e7dc1ebcbf91e87036b033a1b9274f5c6e7
+short: 3fb97e7d
 date: 2026-09-08
 pr: null
 related_issues:
@@ -23,6 +23,12 @@ related_issues:
 ---
 
 # Worklog detail: Separate provider fallback counts from stage order
+
+Source/records commit `3fb97e7dc1ebcbf91e87036b033a1b9274f5c6e7`, exact
+subject `fix(receipts): separate provider fallbacks from inference-stage order (AR-284)`.
+The immediate following worklog-only commit records this checkpoint. Capsule
+metadata preserves the inherited clean floor; the source blob table identifies
+the exact reviewed runtime and written regressions without self-reference.
 
 ## Purpose
 
@@ -62,6 +68,9 @@ Targeted Ruff lint/format and diff checks only; written focused regressions
 remain unrun under owner direction. No pytest, CI, native/model call, owner
 database/profile change, install or acceptance verdict. Static record checks
 do not imply runtime verification.
+Final static documentation validation with required trackers passed for
+1,279 Markdown files; metadata check matched that count. Ruff lint passed and
+all 12 touched Python files were already formatted. Diff check was clean.
 
 ## Follow-ups
 
