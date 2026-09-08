@@ -15,7 +15,7 @@ type: worklog
 commit: 7e66ea8412a3223f4c5601f598b233ec7b3251ce
 short: 7e66ea84
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/755
 related_issues:
   - docs/roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md
 ---
