@@ -104,3 +104,5 @@ PR803 merged as `263a0ec3` with exact subject
 `fix(staffing): merge PR803 bounded reranker membership`. AR-420/#802 is closed
 after isolated acceptance; AR-404/#672, AR-418/#796 and AR-419/#797 remain open.
 The merge and recovery records retain all unresolved gates and failed receipts.
+
+PR804 merged as `e36fc883` with exact subject `docs(staffing): merge PR804 AR420 recovery checkpoint`.
