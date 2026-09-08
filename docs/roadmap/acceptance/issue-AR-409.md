@@ -1,5 +1,5 @@
 ---
-title: "AR-409 acceptance verification draft and command evidence"
+title: "AR-409 acceptance verification record and command evidence"
 status: active
 category: roadmap
 created: 2026-09-07
@@ -14,20 +14,20 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-409
-candidate_commit: pending
+candidate_commit: f670e6b564af75e4b6e5a1a576db4b719080efa6
 evidence_cutoff: 2026-09-07
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735
 ---
 
-# AR-409 acceptance verification draft and command evidence
+# AR-409 acceptance verification record and command evidence
 
 Builder evidence only; no acceptance verdict is supplied. The recorded tests
 ran on the implementation based on `2274823ca3d56ddeaa78cd69cf8a6d9dedf3407c`,
 branch `codex/ar409-reserve-required-staffing`; the branch has since normally
 integrated `d28ccc23`. Filing `96a048d6` and ledger `e010ed2a` publish tracker
 #735 and reciprocal records. AR-408's accepted checkpoint `ae916dd1` is now
-normally integrated with both runtime corrections preserved. Freeze this record
-only after the combined candidate exists in an ancestor commit.
+normally integrated with both runtime corrections preserved. The frozen
+combined source/evidence candidate is `f670e6b5`; ledger `2236d996` indexes it.
 
 ## Builder evidence
 

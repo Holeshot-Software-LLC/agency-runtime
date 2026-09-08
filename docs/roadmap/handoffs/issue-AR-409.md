@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-409
 branch: codex/ar409-reserve-required-staffing
-evidence_commit: 9946461a96007eda1ca06830121c4a29edeb2ea7
-minimum_ledger_commit: 967ff2e806752fc1d4191ed332b7b326f25e81e3
+evidence_commit: f670e6b564af75e4b6e5a1a576db4b719080efa6
+minimum_ledger_commit: 2236d99635bc9a54963c41a7f8dd17a19df260b6
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735
 ---
@@ -28,8 +28,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735
 ## Checkpoint
 
 This is a branch-only implementation checkpoint, not an installed build.
-The two metadata SHAs identify the reviewed implementation/ledger prerequisite;
-the containing normal merge integrates AR-408's accepted `ae916dd1` checkpoint.
+The metadata SHAs identify the combined implementation/evidence and ledger;
+the normal merge integrates AR-408's accepted `ae916dd1` checkpoint.
 Worktree: `/tmp/agency-runtime-ar409-reserve-required-staffing`.
 Tracker #735 and all filing reciprocals are present.
 
@@ -66,7 +66,7 @@ the parent owns final PR/merge and installed delivery. No provider requests ran.
 
 AR-408 is integrated. Its historical five-call current-flow test now exercises
 the isolated exhausted-critic boundary; the accepted original snapshot is
-unchanged. Freeze acceptance to the combined committed candidate next.
+unchanged. Acceptance is frozen to combined committed candidate `f670e6b5`.
 Final combined acceptance verdicts and live delivery evidence remain pending.
 
 ## Same-task continuity
@@ -80,9 +80,9 @@ substantive/ledger pair; checkpoint this implementation before live work.
 
 ## Next bounded work package
 
-1. Commit the combined source/evidence and immediate ledger.
-2. Audit bounded excerpts and freeze acceptance to that combined candidate.
-3. Run isolated single-criterion verification for all five criteria.
+1. Audit bounded excerpts and the frozen combined candidate.
+2. Run isolated single-criterion verification for all five criteria.
+3. Preserve the resulting judgments and checkpoint their evidence.
 4. Parent installs/live-checks that exact combined candidate under existing
    configured authority, then records PR/merge and native evidence honestly.
 
