@@ -112,3 +112,10 @@ record. No owner status or service operation was repeated.
 Before publication preserve concurrent AR-190/191/192/409 records and frozen
 acceptance evidence. AR-194 remains open for exact native Windows stale-task
 repair and post-repair reachability on the owner's Windows machine.
+
+PR743 merged normally without admin at2026-09-08T00:42:58Z, exact reviewed
+head `4f2258e570d314daeac7bb707a8b5e9c0ecdb92d`, merge
+`cbba0fd9ca0d538eb19945f5c819f352ee3861be`; API readback is MERGED.
+Shared main was clean and fast-forwarded only to that merge. This immediate
+narrow merge ledger is handed to the final runtime-fix branch for normal
+integration; no direct-main commit, tracker closure or acceptance claim.

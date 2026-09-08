@@ -2141,7 +2141,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bad847ab` | 2026-09-07 | Merge pull request #742 from Holeshot-Software-LLC/codex/ar192-hook-trust-reconciliation | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 | `0799b3df` | 2026-09-07 | chore(AR-194): integrate retained hook trust publication | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
 | `a005076c` | 2026-09-07 | docs(AR-409): record actual native failures and staffing latency | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
-| `cbba0fd9` | 2026-09-07 | Merge pull request #743 from Holeshot-Software-LLC/codex/ar194-service-runtime-reconciliation | null | null |
+| `cbba0fd9` | 2026-09-07 | Merge pull request #743 from Holeshot-Software-LLC/codex/ar194-service-runtime-reconciliation | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
 | `ba2d0579` | 2026-09-07 | chore(delivery): integrate published oldest-first dispositions | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 <!-- worklog:end -->
 
