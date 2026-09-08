@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-08
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/acceptance/evidence/AR-404-codex-roundtrip-20260908.md
   - docs/roadmap/acceptance/evidence/AR-404-final-installed-evaluation-20260907.md
   - docs/roadmap/AR-404-next20-triage-20260907.md
   - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
@@ -59,6 +60,17 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+### Resumed Codex roundtrip package, September 8
+
+The owner confirmed Codex trust and approved the next bounded package. Fresh
+inspection proves eight trusted hooks and a working newly launched MCP server;
+the current conversation connection remains closed. The owner Codex launcher
+now provisions the existing configured LiteLLM credential without changing
+subscription login, inherited keys or gateway routing. Product code is unchanged.
+Two metadata-only launch probes pass. Native roundtrip and latency remain pending;
+see the [current receipt](acceptance/evidence/AR-404-codex-roundtrip-20260908.md).
+The broader backlog and other-harness restart remain outside this package.
 
 ### Final delivery checkpoint, September 8
 
