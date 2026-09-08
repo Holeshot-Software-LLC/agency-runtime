@@ -47,13 +47,21 @@ neither decision specified how those attempts share the earlier envelope.
 
 ## Current state
 
-The reviewed implementation is checkpointed on
-`codex/ar409-reserve-required-staffing`, integrated through accepted AR-408
-checkpoint `ae916dd1` and main `f408b6f2`. It is not yet on main or activated in
-the owner's harnesses. Package phase: demo_ready; source review, bounded receipt
-recheck, combined-candidate integration and all five isolated source criteria
-are complete. Installed live delivery remains pending. Tracker #735 and the filing records are published separately
-from the reviewed implementation so tracker parity does not depend on its merge.
+The reviewed implementation merged through PR #739 as `4db6be16` and is now
+installed in the owner CLI. All 613 package payload files match the exact-main
+wheel. Codex, Claude, Hermes and ZCode were refreshed to runtime `1b6aafe178de`;
+OpenClaw's separate installation and the running dashboard were preserved.
+Package phase: live_demo. All five isolated source criteria are satisfied;
+fresh native output/injection checks have completed but do not pass: Codex
+requires renewed hook trust; Claude exhausts its native deadline after an
+expensive staffed warm-up; Hermes returns without completed staffing; ZCode
+lacks a native executable. See
+[installed delivery evidence](acceptance/evidence/AR-409-installed-live-delivery-20260907.md).
+Keep tracker #735 open until the scoped installed live checkpoint passes.
+The later canary-only AR-410 source `0e8e9307` is installed and the four pointers
+now identify `d542bee67724`; staffing source remains unchanged. The owner
+deferred further CI/tests before its planned native rerun and extended coding
+through midnight Eastern. Installation is not native verification.
 
 Fixed-response tests now run subject1 + planner1 + recruiter2 + critic1 within
 five calls. They also demonstrate that subject1 + planner2 + recruiter2 +
@@ -115,7 +123,7 @@ AR-401's shared deadline and AR-383's subject/context projection remain intact.
 Before completion, commit the implementation and ledger, freeze acceptance to that candidate,
 obtain isolated verdicts and run the bounded installed combined-candidate live
 checkpoint. Existing AR-404 live evidence is historical motivation, not proof
-that this uninstalled candidate is live.
+that the newly installed candidate completed a native turn.
 
 ## Acceptance
 

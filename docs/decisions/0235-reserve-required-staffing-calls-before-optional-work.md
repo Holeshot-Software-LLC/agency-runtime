@@ -98,8 +98,10 @@ checks. None of these paths gains calls, credentials or execution authority.
 ## Consequences
 
 Policy filing: `96a048d6`; implementation: `9946461a`, indexed in the worklog.
-The separately reviewed implementation has integrated AR-408's accepted
-checkpoint and remains branch-only pending acceptance and installed delivery.
+The separately reviewed implementation integrated AR-408, satisfied all five
+source criteria and merged as `4db6be16`. Exact-main owner installation and
+bounded native failure evidence are recorded in AR-409's delivery receipt;
+successful end-to-end installed staffing remains unproven.
 
 The demonstrated subject2/planner1/recruiter2 exhaustion becomes at most
 subject1/planner1/recruiter2/critic1 under the same five-call strict cap, if the
