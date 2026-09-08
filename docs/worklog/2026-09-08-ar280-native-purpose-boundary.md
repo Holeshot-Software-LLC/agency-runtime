@@ -14,8 +14,8 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: 8ce0461f359f361384c8677e17705a42be7a730c
+short: 8ce0461f
 date: 2026-09-08
 pr: null
 related_issues:
@@ -23,6 +23,11 @@ related_issues:
 ---
 
 # Worklog detail: Retain Hermes purpose authority boundary
+
+Substantive commit: `8ce0461f359f361384c8677e17705a42be7a730c`, exact
+subject `test(hermes): retain AR-280 native purpose authority boundary`.
+The immediately following worklog-only commit records that source/receipt
+checkpoint; capsule metadata retains the inherited clean source/ledger floor.
 
 ## Purpose
 

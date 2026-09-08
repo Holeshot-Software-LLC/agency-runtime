@@ -2144,6 +2144,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fe608bc1` | 2026-09-07 | chore(AR-410): integrate published oldest-record checkpoint | null | null |
 | `9d615325` | 2026-09-07 | docs(AR-410): record native bootstrap isolation and deferred live proof | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `7c0c1221` | 2026-09-07 | Merge pull request #745 from Holeshot-Software-LLC/codex/ar410-disable-claude-warmup-staffing | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
+| `8ce0461f` | 2026-09-07 | test(hermes): retain AR-280 native purpose authority boundary | AR-280 | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
