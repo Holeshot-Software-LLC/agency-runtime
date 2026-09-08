@@ -85,8 +85,27 @@ limitations. Do not infer ongoing-parent staffing or fresh hook trust approval.
 
 ## Follow-ups
 
-Wait for the parent's explicit publication signal after AR-189/order43 and
-AR-190/order44; AR-191 reserves order45. Merge current main normally, preserve
-intervening records and publish one PR. Keep `pr: null` until a PR exists.
+Parent explicitly authorized publication after AR-190/PR740. Normal merge
+`889926d5` integrates exact main ledger `f0e38863`, preserving published
+AR-185/189/190/408/409 source and records. Five shared documentation conflicts
+were resolved as unions of their current records and the AR-191 retirement;
+no product, test or script differs from incoming main, and the four frozen
+AR-185/190/408/409 acceptance files compare byte-identical.
+
+The identical focused 23-case command in the receipt was rerun on the merged
+tree with raw stdout:
+
+```text
+.......................                                                  [100%]
+23 passed in 3.09s
+```
+
+Exit0; repository Ruff passes,770 files formatted, branch diff clean. The
+immediate ledger records this integration, preserving every historical subject
+and annotation. Metadata/docs/strict tracker parity are checked again before
+the PR. No new live canary or installed-artifact claim arises from this merge.
+
+Publish one normal PR with exact-head merge, then release the serial token to
+AR-192. Keep `pr: null` until a PR exists.
 Current native-child work remains in AR-255 and broader live proof in AR-180;
 retiring AR-191 does not close either. Continue with AR-192 after publication.

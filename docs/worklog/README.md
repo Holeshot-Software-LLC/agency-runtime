@@ -2093,7 +2093,6 @@ This registry connects repository history to the roadmap and to optional detail 
 | `30214408` | 2026-09-07 | Merge pull request #733 from Holeshot-Software-LLC/codex/ar183-private-producer-evidence | [AR-183](../roadmap/issue-AR-183-normalize-private-posix-wheel-modes.md) | [Detail](2026-09-07-6cc0b176-detached-private-mode-producer.md) |
 | `81cf8000` | 2026-09-07 | docs(backlog): reconcile AR-184 with detached Linux producer proof | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
 | `c64ce3ce` | 2026-09-07 | Merge pull request #734 from Holeshot-Software-LLC/codex/ar184-linux-producer-reconciliation | [AR-184](../roadmap/issue-AR-184-normalize-private-posix-sdist-modes.md) | [Detail](2026-09-07-81cf8000-sdist-producer-reconciliation.md) |
-| `49bea737` | 2026-09-07 | docs(backlog): retire obsolete Codex V2 grant checklist | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 | `500de085` | 2026-09-07 | docs(backlog): bind AR-185 to exact installed activation proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 | `90c30a35` | 2026-09-07 | docs(acceptance): freeze AR-185 exact verification packet | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 | `1adacdde` | 2026-09-07 | fix(workforce): preserve actual failure and effective timeout receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
@@ -2110,6 +2109,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9946461a` | 2026-09-07 | fix(workforce): reserve mandatory stages within owner budgets (AR-409) | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `00fc1aef` | 2026-09-07 | Merge pull request #736 from Holeshot-Software-LLC/codex/ar185-activation-proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 | `8c1845e5` | 2026-09-07 | chore(AR-408): integrate accepted activation and reservation filing | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `49bea737` | 2026-09-07 | docs(backlog): retire obsolete Codex V2 grant checklist | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 | `a6efa01b` | 2026-09-07 | docs(acceptance): retain AR-190 candidate-provenance gap | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `f05e0bb8` | 2026-09-07 | docs(backlog): checkpoint accepted staffing diagnostics and next live work | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 | `bfe21d66` | 2026-09-07 | Merge pull request #737 from Holeshot-Software-LLC/codex/ar408-staffing-failure-receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
@@ -2130,6 +2130,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7e718c15` | 2026-09-07 | chore(AR-190): integrate accepted main and retain bounded evidence gap | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `27715362` | 2026-09-07 | docs(AR-190): link retained publication and exact review limits | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `d39ec14d` | 2026-09-07 | Merge pull request #740 from Holeshot-Software-LLC/codex/ar190-uv-plan-reconciliation | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
+| `889926d5` | 2026-09-07 | chore(AR-191): integrate published upgrade and staffing reservations | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
