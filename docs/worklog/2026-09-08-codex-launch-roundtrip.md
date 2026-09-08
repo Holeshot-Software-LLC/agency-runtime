@@ -71,3 +71,5 @@ Pre-live checkpoint `2c07c6539a0acfcd943ac85256d07f9d3d204731` records the owner
 Activation checkpoint `60ccac3128d2746281c01989cd7260b6a4dae4e5` records the first normal trusted Codex activation, accepted native execution/finalization and exact latency. Ordinary MCP proof remains pending.
 
 Ordinary-run checkpoint `c1e17448f7107ae94a6c35276e42e965a921b3cb` records working native MCP reads, two planner HTTP failures and the finalizer test's approval/binding limitations. AR-413/#765 preserves the downstream diagnostic follow-up. No ordinary reliability pass or latency improvement is claimed.
+
+PR [#766](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/766) merged as `fce1726ed869a3e83f4902c75f5fa9da77c9873f` on main at2026-09-08 11:43:59UTC. The launch repair and exact successful/failed native observations are now durable. AR-404 stays in progress and AR-413 stays open. Source payload and trusted hook projection remain unchanged.
