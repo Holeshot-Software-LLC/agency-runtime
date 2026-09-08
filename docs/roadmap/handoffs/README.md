@@ -74,6 +74,7 @@ behavior.
 
 ## Active capsules
 
+- [AR-251 read-only CLI cards](issue-AR-251.md)
 - [AR-411 bounded catalog-identity diagnostics](issue-AR-411.md)
 - [AR-409 required staffing call reservations](issue-AR-409.md)
 - [AR-410 Claude transport warm-up isolation](issue-AR-410.md)
