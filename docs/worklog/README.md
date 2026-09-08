@@ -2278,6 +2278,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e9a4b6d8` | 2026-09-08 | docs(staffing): checkpoint PR803 and reciprocal decision history | AR-404, AR-420 | [Detail](2026-09-08-reranker-membership-repair.md) |
 | `e36fc883` | 2026-09-08 | docs(staffing): merge PR804 AR420 recovery checkpoint | AR-404, AR-420 | [Detail](2026-09-08-reranker-membership-repair.md) |
 | `cbac00fd` | 2026-09-08 | docs(hosts): preserve recurring Claude executable rejection | AR-404 | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `ad8b05de` | 2026-09-08 | docs(hosts): merge PR806 Claude recurrence evidence | AR-404 | [Detail](2026-09-08-reranker-membership-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
