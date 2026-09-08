@@ -2248,6 +2248,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8629e2ed` | 2026-09-08 | test(packaging): make qualified veto regression self-contained | AR-414, AR-416, AR-417 | [Detail](2026-09-08-installed-qualified-veto-verification.md) |
 | `0bc2f895` | 2026-09-08 | docs(staffing): record installed qualified-veto proof and native trust gate | AR-414, AR-416, AR-417 | [Detail](2026-09-08-installed-qualified-veto-verification.md) |
 | `130631b8` | 2026-09-08 | docs(acceptance): cite installed veto and packaged regression evidence | AR-414, AR-416, AR-417 | [Detail](2026-09-08-installed-qualified-veto-verification.md) |
+| `f373d905` | 2026-09-08 | docs(acceptance): record trusted isolated verifier environment | AR-414, AR-416, AR-417 | [Detail](2026-09-08-installed-qualified-veto-verification.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -101,3 +101,5 @@ owner-private npm installation pinned to the same2.1.263 version passed native
 transport discovery, authentication and capability checks. Its command-scoped
 PATH is used only for the bounded isolated acceptance runner; the existing
 Claude installation and every runtime guard remain unchanged.
+
+Recorded checkpoint: `f373d905` — docs(acceptance): record trusted isolated verifier environment.
