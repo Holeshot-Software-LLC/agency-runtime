@@ -6,6 +6,7 @@ created: 2026-07-12
 updated: 2026-07-28
 tags: [security, supply-chain, ci, release]
 related:
+  - docs/roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
   - docs/decisions/0101-run-exhaustive-python-verification-on-demand.md

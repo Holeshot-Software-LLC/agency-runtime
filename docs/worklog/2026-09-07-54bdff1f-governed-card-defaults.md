@@ -64,3 +64,5 @@ remains deferred at owner direction; do not close AR-251.
 Integration `93866796` preserves the published installed-delivery and retained Hermes purpose-boundary records with their faithful merge ledgers. Independent source ownership and deferred execution remain unchanged.
 
 Integration `5f20cac1` incorporates the published AR-270 repair and its exact merge ledger. No overlapping source changes; all original verification limitations remain recorded.
+
+PR #753 merged as `e348d713` at 2026-09-08T01:29:03Z. Five read-only surfaces use the existing governed card renderer, automatic TTY defaults and explicit overrides, with plain/JSON/redaction boundaries preserved in source. Regression execution, installed demonstration and acceptance remain deferred; #260 stays open.
