@@ -1,0 +1,126 @@
+{
+  "host": "openclaw",
+  "session_key": "agent:openclaw:ar404-native-20260908-2006",
+  "native_session_id": "ccce9bc3-4818-4454-b5bd-6ade5ded98fb",
+  "trace_id": "bfbdfdc5-59b8-481d-b0d6-8e4f4abc872a",
+  "invocation": {
+    "session_key": "agent:openclaw:ar404-native-20260908-2006",
+    "started_at": "2026-09-08T20:06:06.231368+00:00",
+    "ended_at": "2026-09-08T20:08:02.755003+00:00",
+    "exit_code": 0,
+    "elapsed_seconds": 116.524
+  },
+  "request": "Review this Python function against these requirements: return the arithmetic mean, preserve fractional results, and raise ValueError for empty input. Explain what happens for [2, 7] and []. This is not a request to change the repository. Do not inspect repository files or modify anything.\n\ndef average(values):\n    return sum(values) // len(values)\n",
+  "routing": {
+    "status": "accepted",
+    "selected_ids": [
+      "code-reviewer"
+    ],
+    "latency_ms": 91052,
+    "cache_hit": false,
+    "session_reused": false,
+    "work_units": {
+      "confidence": "high",
+      "count": 1,
+      "delegate": false,
+      "source": "verified-workforce-plan"
+    },
+    "workforce_unit_descriptors": [
+      {
+        "artifact_kind": "review-report",
+        "authority": "review",
+        "lifecycle_phase": "review",
+        "mutation_scope": "read_only",
+        "ordinal": 1
+      }
+    ]
+  },
+  "provider_attempts": [
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-router",
+      "ordinal": 1,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "linux-task-agency-router",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-router",
+      "stage": "planner",
+      "status": "applied"
+    },
+    {
+      "model_group": "",
+      "ordinal": 2,
+      "provider_name": "local-workforce-embedding",
+      "provider_type": "ollama",
+      "reason_code": "dense_recall_applied",
+      "requested_model": "qwen3-embedding:latest",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "",
+      "ordinal": 3,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "local-workforce-reranker",
+      "provider_type": "ollama",
+      "reason_code": "structured_response_applied",
+      "requested_model": "qwen3-14b-abliterated:latest",
+      "stage": "recall_reranker",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-router",
+      "ordinal": 4,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "linux-task-agency-router",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-router",
+      "stage": "recruiter",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-router",
+      "ordinal": 5,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "linux-task-agency-router",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-router",
+      "stage": "critic",
+      "status": "applied"
+    }
+  ],
+  "native_status": "ok",
+  "native_summary": "completed",
+  "response": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)\nRecruited via: inference\n\nWhy: The supplied function requires a correctness review against explicit behavioral requirements.\nHow it shaped outcome: Findings are prioritized by impact and tied directly to the supplied expression.\n\n**Findings**\n- **High \u2014 Fractional results are discarded:** `sum(values) // len(values)` uses floor division. For `[2, 7]`, it evaluates `9 // 2` and returns `4`, but the required arithmetic mean is `4.5`.\n- **High \u2014 Wrong exception for empty input:** For `[]`, `sum(values)` is `0` and `len(values)` is `0`, so the function evaluates `0 // 0` and raises `ZeroDivisionError`, not the required `ValueError`.\n\nThe implementation therefore fails both the fractional-result and empty-input requirements. A conforming implementation would explicitly reject empty input with `ValueError` and use true division (`/`) for the mean.",
+  "response_sha256": "f504298853514c59178dfe43af577b6b814a201ad6a903b72ad65deba5103052",
+  "native_answering_provider": "litellm",
+  "native_answering_model": "task-general",
+  "agency_run_status": "active",
+  "terminal_finalization_id": null,
+  "finalization_event_count": 0,
+  "injection": {
+    "prompt_trace": "[Malformed diagnostic JSON redacted]",
+    "system_prompt_trace": "[Oversized diagnostic JSON redacted]",
+    "exact_card_delivery_proven": false
+  },
+  "native_configuration_unchanged": true,
+  "gateway_rpc_restored": true,
+  "header_matches_installed_store_fields": true,
+  "native_final_visible_and_raw_match_response": true,
+  "native_final_prompt_chars": 350,
+  "native_final_prompt_sha256": "9d8fa467a0cca683c5fa45140927caf0de3691c4fe77f8062547a0a7a6b8c089",
+  "native_plugin_files_match_staged": true
+}

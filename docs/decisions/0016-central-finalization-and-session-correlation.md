@@ -6,6 +6,8 @@ created: 2026-07-10
 updated: 2026-07-16
 tags: [finalization, sessions, evidence]
 related:
+  - docs/roadmap/issue-AR-419-finalize-openclaw-cli-responses.md
+  - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: docs/decisions/0045-turn-scoped-specialist-activation.md
