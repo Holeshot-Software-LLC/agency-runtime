@@ -2181,6 +2181,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3fb97e7d` | 2026-09-07 | fix(receipts): separate provider fallbacks from inference-stage order (AR-284) | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
 | `f4264b54` | 2026-09-07 | Merge pull request #755 from Holeshot-Software-LLC/codex/ar412-security-lock-refresh | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `8705a545` | 2026-09-07 | chore(AR-284): integrate published card and security lock deliveries | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
+| `3540b790` | 2026-09-07 | docs(receipts): record independent review and wrap-up verification (AR-284) | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

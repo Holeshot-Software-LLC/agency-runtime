@@ -80,3 +80,5 @@ acceptance requirements are retained, unchecked. Old unversioned SQL wrapper
 counts remain ambiguous and uninstrumented producers remain unknown.
 
 Integration `8705a545` incorporates the published OpenClaw, card, security-lock and delivery records. Reviewed AR-284 runtime/test blobs remain unchanged; preserved concurrent capsule links and all faithful ledger rows.
+
+Wrap-up record `3540b790` preserves the second independent source pass (no scoped finding) and the newly authorized focused run: 161 passed in 2.58 seconds. Original code-first UNRUN statements above describe the earlier checkpoint, not the current test result. Native/installed and isolated acceptance remain separate.
