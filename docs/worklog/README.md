@@ -2269,6 +2269,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `80280bfe` | 2026-09-08 | Merge pull request #800 from Holeshot-Software-LLC/codex/ar404-native-recovery-20260908 | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
 | `5ff8e85c` | 2026-09-08 | fix(staffing): bind reranker output to offered candidates | null | null |
 | `36b491ec` | 2026-09-08 | docs(staffing): record AR420 installed repair checkpoint | null | null |
+| `0540a5ad` | 2026-09-08 | docs(staffing): preserve AR420 fresh native acceptance evidence | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
