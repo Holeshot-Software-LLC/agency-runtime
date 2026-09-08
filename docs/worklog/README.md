@@ -2135,6 +2135,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6d8f6aae` | 2026-09-07 | docs(trust): retain AR-192 after installed fail-fast proof | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 | `8a5861e6` | 2026-09-07 | docs(AR-192): integrate published V2 checklist retirement | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 | `faae0baa` | 2026-09-07 | docs(AR-192): link retained publication and approval gate | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
+| `bad847ab` | 2026-09-07 | Merge pull request #742 from Holeshot-Software-LLC/codex/ar192-hook-trust-reconciliation | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
