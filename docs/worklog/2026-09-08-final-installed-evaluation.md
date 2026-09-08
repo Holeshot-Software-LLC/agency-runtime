@@ -75,3 +75,5 @@ fresh native staffing/injection/finalization proof, not another backlog wave.
 Installed checkpoint `c4f779e0624d8ddb8c301a1dd244bdfa6f45cad9` freezes exact-main artifacts, all five normal installer attempts, executed test boundaries and known operator prerequisites before native evaluation. This clean recovery pair satisfies the context checkpoint without pausing the task.
 
 Final native checkpoint `4a8200077d042f7d9e3d8b636fa40710e148b948` records the current-profile trust stop, real Claude response and missing child delivery, Hermes's bounded failure, and existing-gateway OpenClaw staffing without accepted finalization. All checks and workers are terminal; the package is paused after normal publication.
+
+PR763 merged normally at02:38:07Z as `d60230c0917454f39e6e4cea2a3e0cfd084853a2`. This is the final substantive delivery/evidence merge: installed source remains4cbebf73 with an identical614-file payload, all bounded checks and workers are terminal, and AR404 remains in progress. The following narrow ledger-only PR uses a docs(worklog): merge subject so the documented ledger exception terminates without leaving a branch-only required record.

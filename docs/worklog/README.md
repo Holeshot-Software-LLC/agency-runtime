@@ -2207,6 +2207,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4cbebf73` | 2026-09-07 | Merge pull request #762 from Holeshot-Software-LLC/codex/ar312-explicit-config-validation | [AR-312](../roadmap/issue-AR-312-validate-explicit-production-config.md) | [Detail](2026-09-08-ar312-explicit-config-validation.md) |
 | `c4f779e0` | 2026-09-07 | docs(delivery): checkpoint exact-main installation before native evaluation (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-final-installed-evaluation.md) |
 | `4a820007` | 2026-09-07 | docs(delivery): record native failures and paused stopping point (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-final-installed-evaluation.md) |
+| `d60230c0` | 2026-09-07 | Merge pull request #763 from Holeshot-Software-LLC/codex/final-wrapup-20260907 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-final-installed-evaluation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
