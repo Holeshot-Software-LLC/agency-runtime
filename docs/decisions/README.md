@@ -112,6 +112,7 @@ Status meanings:
 | [ADR-0130](0130-repair-critic-rejected-contractor-proposals-once.md) | Repair critic-rejected contractor proposals once | Accepted |
 | [ADR-0131](0131-bind-verifier-evidence-into-contractor-critiques.md) | Bind verifier evidence into contractor critiques | Accepted |
 | [ADR-0132](0132-fund-one-repair-per-workforce-inference-stage.md) | Fund one repair per workforce inference stage | Accepted |
+| [ADR-0235](0235-reserve-required-staffing-calls-before-optional-work.md) | Reserve required staffing calls before optional work | Accepted |
 | [ADR-0122](0122-use-one-agency-native-resident-steward.md) | Use one Agency-native resident steward | Accepted |
 | [ADR-0123](0123-use-general-preflight-ceiling-for-persistent-parents.md) | Use the general preflight ceiling for persistent native parents | Accepted |
 | [ADR-0161](0161-pin-accepted-outcome-parent-recruiter-separately.md) | Pin the accepted-outcome parent recruiter separately | Accepted |

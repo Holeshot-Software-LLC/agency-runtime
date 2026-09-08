@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-191
 branch: codex/ar191-v2-checklist-retirement
-evidence_commit: c64ce3ce54c6e51280292298b5e3600611cb72fc
-minimum_ledger_commit: d28ccc232dcc00af0162a2409930dd272bf97b5f
+evidence_commit: 49bea737318f05667ab72a9c267fda05a31250c6
+minimum_ledger_commit: f2114595445eda65b7018fe4c83eae59f0323423
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -28,10 +28,10 @@ tracker_url: null
 ## checkpoint
 
 This records-only retirement is branch-only until parent-coordinated
-publication. Source is unchanged from main `c64ce3ce`; the worktree then
-fast-forwarded to its faithful merge ledger `d28ccc23`. Metadata names that
-source checkpoint, not a claimed AR-191 publication. A substantive/ledger
-pair checkpoints this branch before its later PR.
+publication. Substantive `49bea737` and ledger `f2114595` freeze the retirement.
+The parent now authorizes publication after AR-190/PR740 merged `d39ec14d`.
+A normal merge integrates exact main ledger `f0e38863`, preserving both
+histories and the frozen AR-185/190/408/409 acceptance files unchanged.
 The proposed disposition is `wont_do`, superseded by AR-255 under ADR-0236,
 not `done` or acceptance against all nine historical criteria.
 
@@ -66,9 +66,9 @@ state, not a fresh task, empty commit or waiting for context to rise.
 
 ## next-bounded-work-package
 
-Wait for parent-coordinated publication after AR-189/order43 and AR-190/order44;
-AR-191 reserves order45. Merge current main normally, preserve all intervening
-records and publish one PR only after the parent signals. The branch includes
+Publish the parent-authorized AR-191 retirement at order45 after AR-189/190;
+then release the serial token to AR-192. Current main is merged normally with
+all intervening records preserved. The branch includes
 registry/queue updates and removes the obsolete AR-180 dependency while
 preserving its AR-255 dependency and all broader live gates. AR-255 itself has
 only reciprocal `related` links added.

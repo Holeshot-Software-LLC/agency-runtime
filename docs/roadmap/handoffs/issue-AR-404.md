@@ -8,6 +8,8 @@ tags: [handoff, backlog, acceptance, delivery]
 related:
   - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
   - docs/roadmap/acceptance/evidence/AR-191-v2-checklist-retirement-20260907.md
+  - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
+  - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
   - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
@@ -22,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar191-v2-checklist-retirement
-evidence_commit: c64ce3ce54c6e51280292298b5e3600611cb72fc
-minimum_ledger_commit: d28ccc232dcc00af0162a2409930dd272bf97b5f
+evidence_commit: 49bea737318f05667ab72a9c267fda05a31250c6
+minimum_ledger_commit: f2114595445eda65b7018fe4c83eae59f0323423
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -53,19 +55,28 @@ AR181 merged PR #731/2274823c. AR183 detached Linux producer evidence now
 passes at08fab1c4; same-SHA Windows equality/merged release set remain held.
 AR183 merged PR #733/30214408. AR184 reuses that exact producer receipt;
 both retain only their meaningful cross-platform proof obligations.
-AR-184 merged PR #734/c64ce3ce; its faithful merge ledger is d28ccc23.
-AR-191's records-only retirement is prepared on that source, not yet published:
-obsolete grant checklist becomes wont_do under ADR-0236, successor AR-255.
-All original checkbox states remain; no broader live requirement is waived.
+AR-184 merged PR #734/c64ce3ce; its exact merge ledger is d28ccc23.
+AR-185's nine isolated criteria satisfy at500de085; PR736 merged00fc1aef at
+23:55:01Z, including AR409/#735 filing for parity. AR408's three criteria satisfy
+atd9dde3cd; PR737 mergedbfe21d66 at23:59:35Z and #732 is CLOSED, read back.
+AR-189/PR738 merged f408b6f2 at00:06:15Z; native Windows clauses remain open.
+AR409 source merged PR739/4db6be16; installed/live delivery remains parent-owned.
+AR190/PR740 merged d39ec14d; four criteria pass, criterion3 retains its evidence
+gap and two-review limit. Main ledger f0e38863 is now merged normally into191.
+Parent authorizes AR191 retirement/order45; no original criterion is accepted.
 
 ## Completed evidence
 
-AR-191: exact aliases, argument preservation, truthful exit codes and existing
-Store safeguards remain; 23 fresh offline tests pass. Removed one-use grant
-APIs and deliberately rejected invalid-turn fallback are not restored. Reused
-AR-180 evidence proves only restricted one-card exec, not child-only placement,
-ordinary encrypted spawns, TUI/Desktop or multi-card delivery. Retirement is
-not acceptance of the original nine criteria or closure of AR-180/AR-255.
+AR191: obsolete grant checklist retires under ADR0236, successorAR255; all
+nine original states remain. Aliases/arguments/exit codes/Store guards stay.
+Fresh23 offline cases pass; no restored grants or invalid-turn fallback.
+
+AR-189: real private ZCode install, write-free plan, wrong-digest refusal, exact
+apply and repeat no-op; seven owned handlers removed, bundle retained unchanged,
+configuration/history/logical Store preserved. Authority, locks, replanning and
+retirement are unpatched. Updated-source focused 127/two Windows skips, fresh
+spine 1,085/three skips, UI 224 and repository Ruff/format pass. No owner-host
+mutation or native process unload claim; existing ADR-0117 authority applies.
 
 AR-407: actual scoped-warning repair, 158 focused/one Windows deselection,
 independent review no findings/35 pass, fresh spine1085/three skips and UI224.
@@ -117,17 +128,14 @@ ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
 AR-180 remains one-card exec only; parent also contains the same card, so its
 child-only wording is not literally met. AR-181 Windows remains unverified.
-Parent coordinates AR-185/AR-408 publication, followed by AR-189/order43 and
-AR-190/order44. This independent AR-191 checkpoint reserves order45 and waits
-for the parent's publication signal; merge current main normally, never rebase
-away another worker's checkpoint.
+AR185/408/409 source and AR189/190 are published. AR191 holds the publication
+token, then releases it to AR192; AR194 waits at its clean separate checkpoint.
 
 ## Next bounded work package
 
-1. Complete parent-coordinated AR-185/AR-408 and AR-189/190 publication first.
-2. Publish AR-191 retirement at order45, then continue AR-192; keep Windows holds.
-3. Keep staffing failure receipts and mandatory-call reservations separate from
-   unproven quality-equivalence or all-host live-staffing claims.
+1. Publish AR191 retirement, then release the serial token to AR192.
+2. Preserve accepted AR-185/AR-408 candidate hashes and verdicts unchanged.
+3. Parent owns AR409 installed upgrade/live checks; do not duplicate those calls.
 4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification

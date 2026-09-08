@@ -1,11 +1,15 @@
 ---
 title: "AR-408: Preserve truthful staffing failure and effective deadline receipts"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-07
 updated: 2026-09-07
 tags: [workforce, inference, diagnostics, deadlines, reliability]
 related:
+  - docs/roadmap/handoffs/issue-AR-408.md
+  - docs/roadmap/acceptance/issue-AR-408.md
+  - docs/roadmap/acceptance/evidence/AR-408-staffing-failure-receipts-20260907.md
+  - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
   - docs/decisions/0209-name-the-transport-cause-instead-of-one-code.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-392-transport-failures-collapse-to-one-code.md
@@ -22,7 +26,7 @@ issue_id: AR-408
 priority: p1
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/732
 depends_on: []
-blocks: []
+blocks: [AR-409]
 ---
 
 # AR-408: Preserve truthful staffing failure and effective deadline receipts
@@ -50,8 +54,15 @@ elapsed without its120000ms allowance. The actual Hermes preflight took
 has a585s shared inference budget. This is not evidence of a75s deadline
 violation or large local serialization overhead.
 
-The worker has reproduced both defects without new provider requests.
-Implementation and isolated acceptance are pending publication.
+The reviewed implementation reproduces both defects without new provider
+requests and corrects classification and allowance projection. Focused325
+pass/one skip/one deselection; independent32 pass/no findings; fresh named
+spine1085/three existing skips and UI224 pass. See the
+[bounded evidence receipt](acceptance/evidence/AR-408-staffing-failure-receipts-20260907.md).
+All three isolated criteria satisfy at frozen candidate d9dde3cd. The exact
+portable artifact also passes installed CLI/MCP/dashboard and all five
+generated-host smoke contracts (8 pass, zero failures/skips in5.03s). Normal
+PR/merge and tracker closure are next; no native model success is inferred.
 
 ## Approach
 
@@ -74,6 +85,6 @@ AR-201 and AR-383 supply the broader budget/subject-stage context.
 
 ## Acceptance
 
-- [ ] Budget exhaustion before the critic and other failures without a valid critic verdict retain their actual staffing failure instead of claiming a critic veto; genuine veto and approval behavior remain unchanged.
-- [ ] Effective positive provider timeout survives workforce routing and durable failure persistence, including shared-deadline clipping, while an already-expired pre-call deadline does not claim positive allowance and private response/credential fields remain excluded.
-- [ ] Focused regressions reproduce the exact five-call live failure sequence, verify the real Store persistence boundary and pass alongside relevant inference/deadline tests without increasing configured budgets or bypassing mandatory review.
+- [x] Budget exhaustion before the critic and other failures without a valid critic verdict retain their actual staffing failure instead of claiming a critic veto; genuine veto and approval behavior remain unchanged.
+- [x] Effective positive provider timeout survives workforce routing and durable failure persistence, including shared-deadline clipping, while an already-expired pre-call deadline does not claim positive allowance and private response/credential fields remain excluded.
+- [x] Focused regressions reproduce the exact five-call live failure sequence, verify the real Store persistence boundary and pass alongside relevant inference/deadline tests without increasing configured budgets or bypassing mandatory review.
