@@ -65,3 +65,5 @@ Integration `362a6c1e` preserves the published installed-delivery and retained H
 Record correction `59b541b7` replaces cross-repository GitHub links rejected by the documentation gate with official maintainer release-note references. Advisory identifiers, patch floors and exact source checkpoint remain intact; no runtime or lock change.
 
 Review record `8869cb40` preserves the independent parsed-lock comparison: only the two requested records changed, all other 64 records and direct requirements unchanged, tag inventories retained. It also qualifies the Linux dependency path by Twine's architecture markers. No tests or installation ran.
+
+Integration `a27d2c1a` incorporates the published AR-270 repair and its exact merge ledger. No overlapping source changes; all original verification limitations remain recorded.
