@@ -75,3 +75,9 @@ rewriting the accepted historical snapshot. Combined verification: 210 focused
 passes in 3.89s, named production spine 1085 passes/3 skips in 69.50s, five
 targeted mutation kills with unchanged source, routing passed, Ruff/format
 passed. Acceptance freeze and installed delivery remain pending.
+
+Freeze `51909ae8` binds acceptance to combined candidate `f670e6b5` and its
+ledger `2236d996`. Bounded excerpt audit included every cited row for all five
+criteria (5/5, 5/5, 5/5, 6/6 and 5/5 excerpts, each below the 32KiB budget).
+Documentation validation passed for 1251 Markdown files. Isolated judgments
+and installed delivery remain subsequent work.
