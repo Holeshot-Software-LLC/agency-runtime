@@ -62,3 +62,5 @@ its immediate ledger, then use parent-coordinated publication. Verification
 remains deferred at owner direction; do not close AR-251.
 
 Integration `93866796` preserves the published installed-delivery and retained Hermes purpose-boundary records with their faithful merge ledgers. Independent source ownership and deferred execution remain unchanged.
+
+Integration `5f20cac1` incorporates the published AR-270 repair and its exact merge ledger. No overlapping source changes; all original verification limitations remain recorded.
