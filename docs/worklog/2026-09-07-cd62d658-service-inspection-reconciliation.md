@@ -80,6 +80,25 @@ No acceptance judge or done-state flip is part of this record reconciliation.
 
 ## Follow-ups
 
+Normal merge `1acaf7b4` integrates AR191/PR741 `a8c2ca54`, preserving current
+main product/tests/scripts and all frozen AR185/190/408/409 acceptance files
+byte-identically. Four shared documentation conflicts are resolved as current
+main record unions plus this retained AR194 slice. This immediate ledger also
+records the incoming AR191 merge, with its exact subject and detail link.
+
+The identical focused command above was rerun on the integrated tree:
+
+```text
+........................................................................ [ 62%]
+............................................                             [100%]
+116 passed, 42 deselected in 2.46s
+```
+
+Exit0. This is a fresh test result, not a rerun of owner status. The original
+four-module installed/source comparison and healthy status remain explicitly
+bound to their earlier read, before any parent-owned upgrade. Main integration
+does not alter those four source modules or authorize another service action.
+
 Parent coordinates normal main integration, PR URL and serial publication.
 Before publication preserve concurrent AR-190/191/192/409 records and frozen
 acceptance evidence. AR-194 remains open for exact native Windows stale-task
