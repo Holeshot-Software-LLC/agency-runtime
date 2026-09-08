@@ -100,6 +100,13 @@ bound to their earlier read, before any parent-owned upgrade. Main integration
 does not alter those four source modules or authorize another service action.
 
 Parent coordinates normal main integration, PR URL and serial publication.
+AR192/PR742 merged `bad847ab` at00:40:01Z; normal integration `0799b3df`
+includes its exact immediate ledger `fde0d891`. Two documentation conflicts
+preserve both current rows and the retained AR194 slice. Product/tests/scripts
+and frozen acceptance files remain identical to incoming main; the fresh116
+result above is explicitly reused, not rerun. Parent now authorizes AR194's
+normal PR/merge, then the final runtime-fix package rather than another oldest
+record. No owner status or service operation was repeated.
 Before publication preserve concurrent AR-190/191/192/409 records and frozen
 acceptance evidence. AR-194 remains open for exact native Windows stale-task
 repair and post-repair reachability on the owner's Windows machine.
