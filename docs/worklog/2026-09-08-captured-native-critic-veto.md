@@ -15,7 +15,7 @@ type: worklog
 commit: 6a0eb8506bde7d4436ce5c4e63cf2aba5ae33c33
 short: 6a0eb850
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/788
 related_issues:
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
