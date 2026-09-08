@@ -6,6 +6,8 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [handoff, staffing, headers]
 related:
+  - docs/worklog/2026-09-08-trusted-native-acceptance.md
+  - docs/roadmap/acceptance/evidence/AR-414-trusted-native-20260908.md
   - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/worklog/2026-09-08-captured-native-critic-veto.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
@@ -20,9 +22,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-414
-branch: codex/ar416-installed-verification-20260908
-evidence_commit: 0bc2f89526d8949d26699b49233c0a4307616205
-minimum_ledger_commit: caab485176d63c3c0062c022e55866d8733f19e7
+branch: codex/ar414-trusted-native-20260908
+evidence_commit: 39f5142ab983402e4e3738f1303cf1e182d88b47
+minimum_ledger_commit: 5b5a36c87e729b271353bd81986d6ea59983a34c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ---
@@ -31,24 +33,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 
 ## Checkpoint
 
-Installed-verification package waiting_for_operator. Verified8629e2ed wheel is
-installed; all614package files match. Fresh wheel/sdist smoke and installed
-captured-verdict replay pass; rejection is preserved with cause/omission marker.
-AR-417 removes an unpackaged test-input dependency; extracted regression8pass.
-Codex plugin0.1.0+codex.823aab6fbe85 registered/enabled, restart required. Fresh
-hooks/list reports8modified/0trusted. Owner asked to review /hooks in a fresh TUI;
-no bypass or native attempt. Initial verifier launch was refused by namespace
-trust; same-version private Claude2.1.263 now passes transport checks. Isolated
-acceptance returned4/4satisfied for AR-416 and3/3for AR-417; those scoped fixes
-are complete. AR-414/415 remain open; no fresh native proof is claimed.
-
-Earlier PR788 checkpoint: native handoff captured and source diagnostic fix verified.
-Two exact native packets expose experiment-tracker assigned to non-experiment
-handoff review. The critic veto is supported by that mismatch; its named
-alternative is not verified as suitable. AR-416 retains a qualified veto's
-standard cause plus an explicit omitted-detail marker. Owner config restored
-byte-for-byte. Installed runtime and hook trust unchanged. Earlier ordinary
-native review has accepted staffing and exact-response Stop-hook acceptance.
+Trusted-native package done; isolated AR-414 four and AR-415 three criteria
+are satisfied against committed candidate5b5a36c8. Actual8/8hooks trusted after owner
+confirmation. One fresh native code-review accepted inference-owned code-reviewer,
+read-only scope, full card injection and five truthful header fields. Stop hook
+accepted the exact response; wall56.656s, staffing39.866s. No source/config change.
+Native session01a08279-181d-78c2-8991-d9a1c89503b4;
+trace01a08279-187c-7bd2-9796-188987e5e660.
+AR-414/415 scopes are complete; PR793 carries closure. AR-416/417 already done.
+Parent still reports stale projection; this is separate from fresh-process proof.
 
 ## Completed evidence
 
@@ -87,53 +80,31 @@ Embedding latency is recorded, not bundled into this recruiter repair.
 
 ## Exact blocker
 
-Historical receipt ba132c4d and fresh trace01a0820a still lack their proposals.
-New traces01a0821b-af73-70b0-b3bd-4ffd84b98bc9 and
-01a0821d-2379-7dc2-a360-eb3bedbac25b capture an identical handoff packet and valid
-wrong-neighbor-selection-documentation-evidence-researcher veto. Both failed;
-only staffing_critic_rejected survived receipt projection. AR-416 fixes this
-loss without changing staffing or critic approval. Critic named an alternative
-whose full contract it did not see; that alternative has narrow API-verification
-scope and is not endorsed. Details and hashes live in the captured-veto worklog.
-No operator trust/restart gate remains for the previously demonstrated process.
+None for the scoped native proof or AR-414/415 acceptance. Parent process still
+reports stale projection, and its confirmation turn abstained; neither is
+misrepresented as fresh-process acceptance. Historical handoff veto was supported
+and AR-416 retained its qualified cause without weakening the critic.
 
 ## Same-task continuity
 
-Read the installed-qualified-veto worklog first, then native receipts and recruiter
+Read the trusted-native worklog first, then installed-qualified-veto, then native receipts and recruiter
 recovery for configuration and
 reversal limits. The resumed clean baseline was mained9d5aa9; current delivery
 branch is named above. Keep unrelated worktrees and Windows items untouched.
 
 ## Next bounded work package
 
-After owner hook review, verify actual trust and a fresh native turn. Complete
-the remaining AR-414/415 acceptance gates. The repair is installed; qualify
-actual native diagnostic behavior before claiming current-artifact native proof. Keep AR-414/415 open until their
-isolated acceptance gates have evidence. Never retry merely for approval or
-manually select specialists. No broad staffing-policy repair is justified here.
+No further implementation or native attempt is required for this package.
+Merge PR793 and its exact merge-ledger PR, synchronize main, and verify tracker
+parity. Preserve bounded evidence; any future failure needs its own exact receipt.
 
 ## Verification
 
-Current captured-response/critic/receipt/inference124pass; fast production
-1151pass/3skip; UI224pass; Ruff779files and docs1334files pass. Routing and
-tracker408items match before the pending AR-416/417 tracker closure. Frozen-source conformance188/188killed,
-source_unchanged=true. No new installed/native diagnostic claim.
-Source replay preserves terminal failure and renders the retained cause.
-The remaining evidence below predates this source change.
-
-Current focused189pass, production1151pass/3skip, UI224pass; Ruff/docs/routing
-and strict tracker pass. Current frozen-source conformance188/188pass,
-source_unchanged=true, after resolving runner interpreter/umask setup failures.
-The following paragraph describes the prior recovery checkpoint.
-
-
-Focused inference/configuration/installer336pass including12fallback regressions.
-Named fast production spine1151pass/3skip; dashboard224pass. Metadata/docs1325
-and Ruff778files pass. Routing and strict tracker406items pass. The first
-conformance run was invalidated by a test edit; frozen-source repeat passes:
-188mutations killed,0survived/invalid, source_unchanged=true. Corrected focused
-336pass. Installed614file identity and six scope boundaries rechecked.
-No exhaustive suite, Windows matrix, new wheel, host reinstall or trust bypass.
+Fresh focused108pass, named production1151pass/3skip in72.66s, UI224pass.
+Installed source8629e2ed and all614package matches remain unchanged. Existing
+frozen-source conformance188/188passes, source_unchanged=true; no production or
+test delta in this package. Native exact-response Stop acceptance is now proven.
+No exhaustive suite, Windows matrix, new wheel, reinstall or trust bypass.
 
 ## Constraints
 

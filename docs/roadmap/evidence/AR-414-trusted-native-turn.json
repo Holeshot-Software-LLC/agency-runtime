@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "observed_date": "2026-09-08",
+  "source_candidate": "8629e2ed8006b2e3f7450d144e52abc9f0a9d31c",
+  "wheel_sha256": "a36fa23834dcf1010f23e99e8ce787a0760e9247f50560228ded1d6ce6506bfa",
+  "plugin_version": "0.1.0+codex.823aab6fbe85",
+  "published_projection": "6e7dc299c23e",
+  "projection_observation": "Fresh transcript has no stale-runtime notice; projection identity itself is not emitted in the transcript. Parent long-lived process still reports f72f24a788ca.",
+  "hook_trust": {
+    "status": "trusted",
+    "expected_count": 8,
+    "observed_count": 8,
+    "trusted_count": 8,
+    "managed_count": 0,
+    "modified_count": 0,
+    "untrusted_count": 0,
+    "disabled_count": 0,
+    "missing_count": 0,
+    "unexpected_count": 0,
+    "duplicate_count": 0,
+    "warning_count": 0,
+    "error_count": 0,
+    "events": {
+      "sessionStart": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:e58a3a71b04de00a9b6162b16a572ab087a0f1524d53013db27652150167bab0"
+      },
+      "userPromptSubmit": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:a18ee6fa5e032c1b41b0eef03ef2de096964041f4d623e8849c36ca21104c87a"
+      },
+      "preToolUse": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:bf1032159d1f46449a500a4a4db79f3c3246905fe233969e0f82bc9c6c457bfc"
+      },
+      "postToolUse": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:567b851c51093e1b56c5c032cbbcb8e3b9b5bb52a8b4bd6b415a403f48f9b1ea"
+      },
+      "subagentStart": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:3596249be85e7176c5686b8b6d2e7539d7e7ccba305507afb53d9bbf75a26137"
+      },
+      "subagentStop": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:380c96195635a2012049b55a07eebfc408240c74de0f1af6530ba8bb7c47d335"
+      },
+      "postCompact": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:09f3699dc9a0b64d6126e087f9192938912da2b87c0f48b9498cf303612a0108"
+      },
+      "stop": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:74a560dd0450a5b30249f5eaea8de7812fa3b9d41ba00ab92c2974f5c58165db"
+      }
+    }
+  },
+  "session_id": "01a08279-181d-78c2-8991-d9a1c89503b4",
+  "trace_id": "01a08279-187c-7bd2-9796-188987e5e660",
+  "request": "Review this Python function against these requirements: return the arithmetic mean, preserve fractional results, and raise ValueError for empty input. Explain what happens for [2, 7] and []. This is not a request to change the repository. Do not inspect repository files or modify anything.\n\ndef average(values):\n    return sum(values) // len(values)\n",
+  "request_fingerprint": "990f3f07b88f4533a36aa566361d0032778d1c7c598e2dadc3fb80d16572c54d",
+  "invocation": {
+    "fresh_session": true,
+    "model_override": false,
+    "trust_override": false,
+    "selection_override": false,
+    "provider_instrumentation": false,
+    "native_retry_count": 0,
+    "exit_code": 0,
+    "elapsed_seconds": 56.656
+  },
+  "run": {
+    "id": "d049042e-59c1-499d-b0d8-e8ec91262006",
+    "started_at": "2026-09-08T19:22:52.256086+00:00",
+    "ended_at": "2026-09-08T19:23:44.215323+00:00",
+    "status": "completed",
+    "preflight_state": "ready",
+    "terminal_finalization_id": "e7fefc6e-85d0-4ff3-b59b-4ae85a6f65a5"
+  },
+  "routing": {
+    "status": "accepted",
+    "source": "workforce_inference",
+    "cache_hit": false,
+    "session_reused": false,
+    "selected_ids": [
+      "code-reviewer"
+    ],
+    "latency_ms": 39866,
+    "work_units": {
+      "confidence": "high",
+      "count": 1,
+      "delegate": false,
+      "source": "verified-workforce-plan"
+    },
+    "workforce_unit_descriptors": [
+      {
+        "artifact_kind": "analysis",
+        "authority": "advise",
+        "lifecycle_phase": "discovery",
+        "mutation_scope": "read_only",
+        "ordinal": 1
+      }
+    ]
+  },
+  "provider_attempts": [
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-planner-v2",
+      "ordinal": 1,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "agency-planner",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-planner-v2",
+      "stage": "planner",
+      "status": "applied"
+    },
+    {
+      "model_group": "",
+      "ordinal": 2,
+      "provider_name": "local-workforce-embedding",
+      "provider_type": "ollama",
+      "reason_code": "dense_recall_applied",
+      "requested_model": "qwen3-embedding:latest",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "",
+      "ordinal": 3,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "local-workforce-reranker",
+      "provider_type": "ollama",
+      "reason_code": "provider_response_contract_invalid",
+      "requested_model": "qwen3-14b-abliterated:latest",
+      "stage": "recall_reranker",
+      "status": "rejected"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-recruiter-v2",
+      "ordinal": 4,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "agency-recruiter",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-recruiter-v2",
+      "stage": "recruiter",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-critic-v2",
+      "ordinal": 5,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "agency-recruiter-critic",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-critic-v2",
+      "stage": "critic",
+      "status": "applied"
+    }
+  ],
+  "staffing": {
+    "gap_count": 0,
+    "global_reason_codes": [],
+    "status": "accepted",
+    "truncated": false,
+    "units": [
+      {
+        "nominated_ids": [
+          "code-reviewer",
+          "silent-failure-hunter",
+          "type-design-analyzer"
+        ],
+        "proposed_ids": [
+          "code-reviewer"
+        ],
+        "reason_codes": [],
+        "unit_id": "unit-review-average-function"
+      }
+    ]
+  },
+  "specialist_loads": [
+    {
+      "agent_slug": "code-reviewer",
+      "loaded_at": "2026-09-08T19:23:33.337000+00:00",
+      "expired_at": "2026-09-08T19:23:44.215323+00:00"
+    }
+  ],
+  "injection": {
+    "header": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)\nRecruited via: inference",
+    "header_matches_response": true,
+    "complete_specialist_contract_present": true,
+    "developer_capsule_sha256": "c84afc053a31d2062e1fedd4a11e6ef3f5083b071f023d0f6adfadf30598e164",
+    "stale_projection_notice_present": false
+  },
+  "native_tool_call_count": 0,
+  "preflight_failure_count": 0,
+  "response": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)\nRecruited via: inference\nWhy: Review the supplied function against the three requirements.\nHow it shaped outcome: Identify correctness defects from the supplied code.\n\nThe function fails two requirements:\n\n- **Fractional means:** For `[2, 7]`, it returns `9 // 2`, which is `4`. The arithmetic mean is `4.5`. Use `/` to preserve fractional results.\n- **Empty input:** For `[]`, it evaluates `0 // 0`, raising `ZeroDivisionError` instead of the required `ValueError`. Check for empty input before dividing.\n\nA corrected version for a sequence would be:\n\n```python\ndef average(values):\n    if len(values) == 0:\n        raise ValueError(\"average requires non-empty input\")\n    return sum(values) / len(values)\n```\n\nThis is a static review; no tests were run, and no repository files were inspected or modified.",
+  "finalization": {
+    "id": "e7fefc6e-85d0-4ff3-b59b-4ae85a6f65a5",
+    "trace_id": "01a08279-187c-7bd2-9796-188987e5e660",
+    "host": "codex",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "f0575a3cc6111caa3d2c0e7b3e4791042a0705fa0968954c3277534e412c9b02",
+    "policy_response_hash": null,
+    "terminal_status": "completed",
+    "created_at": "2026-09-08T19:23:44.215323+00:00"
+  },
+  "response_hash_matches": true
+}
