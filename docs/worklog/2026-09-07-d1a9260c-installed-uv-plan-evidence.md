@@ -132,3 +132,19 @@ the current builder is unchanged and AR-190 stays in_progress. A future
 authorized package may add those bounded excerpts and recheck only criterion
 3 against the same candidate, retaining the other four valid digests. No
 third call or present-builder edit was made.
+
+## Serialized main integration
+
+Merge `7e718c15` incorporates accepted AR-185/189/408/409 history and the exact
+existing AR-409 merge ledger `cfa04838`, preserving both parent histories and
+all acceptance candidate ancestry. Shared registry conflicts retain the new
+AR-189 row and this branch's AR-190 row; the faithful worklog keeps both sets
+of rows and is regenerated in actual Git order. Queue order 44 records four
+current satisfied criteria and the retained criterion-3 citation gap, not an
+unimplemented uv planner or completion claim.
+
+The initial staged merge diff flags pre-existing trailing blank lines in two
+incoming AR-408 documents; those bytes are preserved from accepted main, not
+silently edited as part of AR-190. The AR-190 conflict resolutions and its
+PR-relative delta have no such whitespace error. No product source is changed
+relative to the integrated main by this evidence publication.
