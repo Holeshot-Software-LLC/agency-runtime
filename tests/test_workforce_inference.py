@@ -16,6 +16,10 @@ from agency_runtime.core.config import (
     WorkforceConfig,
 )
 from agency_runtime.core.preflight_failure import preflight_staffing_reason_codes
+from agency_runtime.core.reply_budget import (
+    PROVIDER_HTTP_STATUS_ERROR,
+    PROVIDER_MODEL_TEXT_NOT_JSON,
+)
 from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 from agency_runtime.core.selector.pipeline import _record_workforce_model_receipts
 from agency_runtime.core.selector.receipt_projection import project_nomination_failures
@@ -3502,9 +3506,9 @@ def test_recruiter_fallback_is_funded_and_still_requires_valid_staffing_and_crit
             return replace(
                 _result({}),
                 failure_reason=(
-                    "provider_http_error"
+                    PROVIDER_HTTP_STATUS_ERROR
                     if failure_kind == "http_404"
-                    else "provider_model_text_not_json"
+                    else PROVIDER_MODEL_TEXT_NOT_JSON
                 ),
                 http_status=404 if failure_kind == "http_404" else 0,
                 call_attempted=True,
@@ -3531,6 +3535,9 @@ def test_recruiter_fallback_is_funded_and_still_requires_valid_staffing_and_crit
     assert outcome.calls_used <= call_limit
     assert calls.count("recruiter") <= primary_attempts
     assert calls.count("recruiter-fallback") <= 2
+    if failure_kind == "http_404":
+        assert outcome.attempts[3].reason_code == PROVIDER_HTTP_STATUS_ERROR
+        assert outcome.attempts[3].http_status == 404
     if call_limit == 5:
         assert "recruiter-fallback" not in calls
         assert "critic" not in calls

@@ -16,7 +16,7 @@ type: worklog
 commit: 6d9c91fc481602df148ae61364dba47e833b6626
 short: 6d9c91fc
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/782
 related_issues:
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
 ---
@@ -87,6 +87,9 @@ its gateway response header identified deployment03d783b3 at the ZAI endpoint.
 
 The real fallback is not assumed infallible: the fault-path demonstration below
 received non-JSON content on its first answer and needed its funded repair.
+After correction, the exact order-2 transport deployment returned HTTP 200 in
+11.375 s with its ID and ZAI base in response headers, but omitted unit IDs and
+failed nomination validation. That proves repaired transport, not staffing.
 
 ## Verification
 
@@ -116,11 +119,16 @@ It does not establish latency improvement: embeddings dominated this sample.
 Named production spine1151passed/3skipped in94.39s; dashboard224passed;
 metadata/docs validation1325documents; Ruff check/format778files passed.
 Routing gates and strict tracker parity406items pass. Policy availability,
-worklog, metadata, strict docs and diff checks pass. Decision-conformance is
-still running at this checkpoint.
+worklog, metadata, strict docs and diff checks pass. The first conformance run
+was invalidated (source_unchanged=false) by correcting the new test's HTTP reason
+constant during evaluation. This was an operator sequencing error, not a passed
+gate. A repeat on frozen source is required. Corrected focused336pass also
+asserts the exact provider_http_status_error/404 receipt.
 The current long-lived hook process reports stale projection
 14852134f0aa versus publishedf72f24a788ca; direct installed-provider checks do
 not establish fresh native integration. No host restart or trust bypass occurs.
+Old/new generated hook timeouts are595seconds on Codex, Claude, Hermes and
+OpenClaw. No hook or package rewrite is needed for this owner-config recovery.
 
 ## Decisions and alternatives
 

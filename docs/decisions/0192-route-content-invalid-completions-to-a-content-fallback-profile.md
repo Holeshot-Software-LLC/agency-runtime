@@ -3,7 +3,7 @@ title: "Route content-invalid completions to a content-fallback profile"
 status: accepted
 category: decisions
 created: 2026-08-29
-updated: 2026-09-07
+updated: 2026-09-08
 tags: [reliability, workforce, inference, litellm, fallback]
 related:
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
@@ -71,3 +71,11 @@ malformed output was rejected previously and stays rejected: strict assurance
 does not edit model output. Adding client retries of the same provider was
 rejected as a violation of the zero-retry doctrine without changing the
 failure distribution.
+
+## Recovery evidence
+
+AR-414 checkpoint `6d9c91fc` verifies the existing policy with malformed primary
+responses and a real fallback/critic, and restores the missing owner route.
+The active mode's call ceiling must fund that route while preserving the critic
+reserve. Exact operational and negative evidence is linked in the recruiter
+recovery worklog; per-provider retry and acceptance contracts are unchanged.
