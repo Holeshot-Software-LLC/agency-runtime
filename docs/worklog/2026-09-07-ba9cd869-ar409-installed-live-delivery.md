@@ -60,3 +60,5 @@ Integration `ba2d0579` preserves all published AR-190/191/192/194 records and un
 Checkpoint `f158865a` records exact AR-410 source installation and the owner's code-first test deferral/midnight extension. Native rerun was not launched; no live success is inferred.
 
 Integration `ba58ad79` includes published AR-410 source PR #745 and its exact merge ledger while preserving separate installed/native scopes.
+
+Midnight extension checkpoint `ddcce039` replaces the bounded current capsule, preserves the prior chronology, and records the owner's explicit test deferral without changing acceptance authority.
