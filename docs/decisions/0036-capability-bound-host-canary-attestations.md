@@ -6,6 +6,8 @@ created: 2026-07-11
 updated: 2026-07-20
 tags: [hosts, canary, evidence, installation, security]
 related:
+  - docs/roadmap/issue-AR-410-disable-claude-warmup-staffing.md
+  - docs/decisions/0237-isolate-claude-bootstrap-from-agency-evaluation.md
   - docs/roadmap/issue-AR-03-supported-host-integrations.md
   - docs/roadmap/issue-AR-04-runtime-controls.md
   - docs/roadmap/issue-AR-07-public-release-readiness.md

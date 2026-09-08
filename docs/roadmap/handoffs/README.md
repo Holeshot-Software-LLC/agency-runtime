@@ -73,6 +73,7 @@ behavior.
 ## Active capsules
 
 - [AR-409 required staffing call reservations](issue-AR-409.md)
+- [AR-410 Claude transport warm-up isolation](issue-AR-410.md)
 - [AR-404 evidence-led backlog completion](issue-AR-404.md)
 - [AR-400 staffing correctness and performance](issue-AR-400.md)
 - [AR-119 inference-first workforce](issue-AR-119.md)
