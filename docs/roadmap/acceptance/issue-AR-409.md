@@ -370,3 +370,30 @@ exact combined-candidate installed live checkpoint.
 Subject plus both repairs and critic needs six calls, not five. Conservative future
 cache/gap reservations may abstain sooner, and no paired live quality,
 hiring-success or end-to-end latency-equivalence claim is supported.
+
+## Verifier execution notes
+
+The first frozen-candidate invocation used:
+
+```bash
+umask 077
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python scripts/verify_acceptance.py --issue AR-409 --all
+```
+
+It exited 2: each of criteria 1 through 5 reported `verifier unavailable or
+outside the vocabulary; nothing recorded`. No judgments were produced.
+The read-only local status explained the refusal:
+`executable refused as untrusted: its parent namespace permits substitution`.
+Exact stat checks found mode 0775 on
+`/home/holeshot/.npm-global/lib/node_modules/@anthropic-ai/claude-code` and its
+`bin` directory. The parent authorized a single exact nonrecursive repair:
+
+```bash
+chmod g-w /home/holeshot/.npm-global/lib/node_modules/@anthropic-ai/claude-code /home/holeshot/.npm-global/lib/node_modules/@anthropic-ai/claude-code/bin
+```
+
+Both became 0755. `inspect_cli_transport("claude")` then reported installed,
+authenticated and usable, version 2.1.263, empty reason. No executable bytes,
+credentials, owner model/profile or trust guard were changed. The actor that
+made the directories group-writable is unknown. One bounded repeat of the
+same all-five invocation is authorized; this note supplies no verdict.

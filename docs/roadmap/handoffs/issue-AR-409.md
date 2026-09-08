@@ -68,6 +68,10 @@ AR-408 is integrated. Its historical five-call current-flow test now exercises
 the isolated exhausted-critic boundary; the accepted original snapshot is
 unchanged. Acceptance is frozen to combined committed candidate `f670e6b5`.
 Final combined acceptance verdicts and live delivery evidence remain pending.
+The first all-five verifier invocation produced no judgments: the exact Claude
+package/bin directories were 0775 and the executable trust guard refused them.
+Authorized exact `chmod g-w` restored 0755 and local usable status. Actor unknown;
+no bytes/profiles/guards changed. One bounded all-five retry is next.
 
 ## Same-task continuity
 
