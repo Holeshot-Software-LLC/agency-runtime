@@ -11,10 +11,10 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: a10e31170825b363a291e4cb346095887c6c6409
+short: a10e3117
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/761
 related_issues: [docs/roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md]
 ---
 
@@ -57,3 +57,7 @@ Original named-kernel and doctor/latest-binding requirements remain open.
 Source checkpoint `a10e31170825b363a291e4cb346095887c6c6409` contains the bounded diagnostic correction and seven new regressions. Focused warning-strict execution passed 39 cases; no installed/native success is inferred.
 
 Integration `5180c14f` retains completed fallback, timeout and reviewed resident recovery source plus their records. Independent capsule links and worklog rows were united; diagnostic source remains unchanged.
+
+Integration `ae763a0a` includes resident recovery main merge760 and its exact ledger, preserving both historical branches. The warning/tests remain byte-identical to their 39-pass source checkpoint.
+
+PR #761 merged as `e85ce6048f3635715d79737cce7d0d55c7ce5282` at 2026-09-08T02:00:51Z. Process-versus-file guidance is published with 39 focused passing tests. Original kernel/doctor acceptance remains open; current parent cannot be reloaded by this change.

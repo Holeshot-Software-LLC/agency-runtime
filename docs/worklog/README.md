@@ -2200,6 +2200,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5180c14f` | 2026-09-07 | merge: integrate completed delivery slices into process diagnostics (AR-369) | [AR-369](../roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | [Detail](2026-09-08-ar369-process-refresh-guidance.md) |
 | `525029dd` | 2026-09-07 | merge: integrate wrap-up fixes into explicit config validation (AR-312) | [AR-312](../roadmap/issue-AR-312-validate-explicit-production-config.md) | [Detail](2026-09-08-ar312-explicit-config-validation.md) |
 | `7e0c919a` | 2026-09-07 | test(cli): assert card section bounds independently of decoration (AR-251) | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-08-ar251-card-test-bound.md) |
+| `5987be2f` | 2026-09-07 | Merge pull request #760 from Holeshot-Software-LLC/codex/ar371-recover-closed-resident-claims | [AR-371](../roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md) | [Detail](2026-09-07-c905dd0b-resident-recovery-retention.md) |
+| `ae763a0a` | 2026-09-07 | merge: record resident recovery publication before diagnostic delivery (AR-369) | [AR-369](../roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | [Detail](2026-09-08-ar369-process-refresh-guidance.md) |
+| `e85ce604` | 2026-09-07 | Merge pull request #761 from Holeshot-Software-LLC/codex/ar369-process-refresh-guidance | [AR-369](../roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | [Detail](2026-09-08-ar369-process-refresh-guidance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
