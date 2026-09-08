@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-07
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-251-cli-presentation-richness.md
   - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
   - docs/roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
@@ -78,6 +79,11 @@ changes rather than duplicating every commit.
 ## Unreleased
 
 ### Added
+
+- Explicit `--card` views for read-only roster list, policy, config show/get,
+  and configured provider list. Existing plain output, JSON precedence and
+  secret-redaction behavior are retained; detail truncation points to complete
+  output. AR-251 source is implemented with verification deferred.
 
 - OpenClaw uninstall recognizes the same complete stopped-service receipt as
   installation, including the expected exit code 1 when stopped RPC is
