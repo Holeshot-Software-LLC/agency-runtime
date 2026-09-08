@@ -12,10 +12,10 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: 7e0c919a3592e96a0c6e884442176b9f7c2bdeee
+short: 7e0c919a
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/762
 related_issues: [docs/roadmap/issue-AR-251-cli-presentation-richness.md]
 ---
 

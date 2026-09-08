@@ -16,7 +16,7 @@ type: worklog
 commit: 7de977936b7e21e39aa1c730a5a086c1432ad62f
 short: 7de97793
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/762
 related_issues:
   - docs/roadmap/issue-AR-312-validate-explicit-production-config.md
 ---
