@@ -78,3 +78,5 @@ Parent coordinates source review and normal PR publication; test execution
 and installed evidence await authorization. Tracker #754 is mapped and original
 acceptance requirements are retained, unchecked. Old unversioned SQL wrapper
 counts remain ambiguous and uninstrumented producers remain unknown.
+
+Integration `8705a545` incorporates the published OpenClaw, card, security-lock and delivery records. Reviewed AR-284 runtime/test blobs remain unchanged; preserved concurrent capsule links and all faithful ledger rows.
