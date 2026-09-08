@@ -2107,12 +2107,14 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9946461a` | 2026-09-07 | fix(workforce): reserve mandatory stages within owner budgets (AR-409) | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `00fc1aef` | 2026-09-07 | Merge pull request #736 from Holeshot-Software-LLC/codex/ar185-activation-proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 | `8c1845e5` | 2026-09-07 | chore(AR-408): integrate accepted activation and reservation filing | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
-| `f670e6b5` | 2026-09-07 | fix(AR-409): integrate truthful receipts with reserved staffing calls | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
-| `51909ae8` | 2026-09-07 | docs(AR-409): freeze combined reservation acceptance candidate | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
-| `70009cd7` | 2026-09-07 | docs(AR-409): preserve verifier namespace refusal before retry | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `f05e0bb8` | 2026-09-07 | docs(backlog): checkpoint accepted staffing diagnostics and next live work | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 | `bfe21d66` | 2026-09-07 | Merge pull request #737 from Holeshot-Software-LLC/codex/ar408-staffing-failure-receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `f670e6b5` | 2026-09-07 | fix(AR-409): integrate truthful receipts with reserved staffing calls | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `51909ae8` | 2026-09-07 | docs(AR-409): freeze combined reservation acceptance candidate | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `de008861` | 2026-09-07 | chore(AR-189): integrate accepted activation and staffing receipts | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | [Detail](2026-09-07-1c67e558-private-owner-uninstall-proof.md) |
+| `70009cd7` | 2026-09-07 | docs(AR-409): preserve verifier namespace refusal before retry | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `f408b6f2` | 2026-09-07 | Merge pull request #738 from Holeshot-Software-LLC/codex/ar189-private-uninstall-proof | AR-189 | [Detail](2026-09-07-1c67e558-private-owner-uninstall-proof.md) |
+| `2c5ee2b9` | 2026-09-07 | chore(AR-409): integrate accepted main without changing staffing source | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -88,3 +88,8 @@ checks found the Claude package/bin directories group-writable (0775); one
 authorized nonrecursive `chmod g-w` restored 0755 and usable authenticated
 CLI 2.1.263. Source bytes, credentials and trust guards were unchanged; the
 actor that changed the modes is unknown. One same-candidate retry is next.
+
+Normal merge `2c5ee2b9` integrates main `f408b6f2` after accepted AR-189
+publication. All incoming records and its new uninstall regression are retained.
+The complete `agency_runtime` tree is unchanged from artifact source `51909ae8`;
+the AR-409 candidate and isolated evidence digests remain unchanged.
