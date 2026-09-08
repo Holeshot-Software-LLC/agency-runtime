@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-414
 branch: codex/ar414-recruiter-20260908
-evidence_commit: 6d9c91fc481602df148ae61364dba47e833b6626
-minimum_ledger_commit: 08c6e69f783b12bebfe1cd0df1335d7c3af21e1c
+evidence_commit: 9e6d05c001910e21928f60834d84199075757664
+minimum_ledger_commit: 39cfdfd9136bed94b7c7bf7ce292d60210dcd7b1
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ---
@@ -28,7 +28,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ## Checkpoint
 
 Recruiter configuration recovery is live-demo complete at the installed provider
-boundary. Phase fast_verification before repository delivery. Fresh normal
+boundary. Phase waiting_for_operator for fresh native evidence. Fresh normal
 staffing reproduced two malformed primary replies, reached the new content
 fallback, passed strict staffing and critic, and accepted in96.503s. No native
 session or latency improvement claim. No production Python/defaults changed.
@@ -87,18 +87,18 @@ current delivery branch is named above. Continue from substantive/ledger pairs.
 
 ## Next bounded work package
 
-Finish remaining routing/conformance/tracker gates, commit and ledger the
-recruiter evidence, open PR and merge. After the owner refreshes the long-lived
-Agency integration, verify one ordinary native turn on the current installation.
+Delivery is recorded in PR782. After the owner refreshes the long-lived Agency
+integration, verify one ordinary native turn on the current installation.
 Keep AR-414/415 open until their actual isolated acceptance gates are satisfied.
 
 ## Verification
 
 Focused inference/configuration/installer336pass including12fallback regressions.
 Named fast production spine1151pass/3skip; dashboard224pass. Metadata/docs1325
-and Ruff778files pass. Routing and strict tracker406items pass. Conformance
-requires repeat on frozen source: a test correction during the first run
-invalidated source_unchanged. Corrected focused336pass.
+and Ruff778files pass. Routing and strict tracker406items pass. The first
+conformance run was invalidated by a test edit; frozen-source repeat passes:
+188mutations killed,0survived/invalid, source_unchanged=true. Corrected focused
+336pass. Installed614file identity and six scope boundaries rechecked.
 No exhaustive suite, Windows matrix, new wheel, host reinstall or trust bypass.
 
 ## Constraints

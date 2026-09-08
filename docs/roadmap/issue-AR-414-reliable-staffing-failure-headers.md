@@ -111,6 +111,9 @@ took38.258s; no latency improvement is claimed. Focused336pass, production
 1151pass/3skip, dashboard224pass. Native verification remains separate: this session
 reports a stale long-lived Agency process. See the linked recovery worklog for
 exact deployment IDs, scope, negative probes and reversal constraints.
+PR782 records the repair. Frozen-source decision-conformance passes188/188,
+source_unchanged=true; all614installed package files still match the wheel.
+Native verification waits for normal operator refresh of the stale process.
 
 Render validated failure diagnostics separately from accepted finalization.
 Preserve terminal immutability, exact session/trace binding and all staffing

@@ -124,11 +124,22 @@ was invalidated (source_unchanged=false) by correcting the new test's HTTP reaso
 constant during evaluation. This was an operator sequencing error, not a passed
 gate. A repeat on frozen source is required. Corrected focused336pass also
 asserts the exact provider_http_status_error/404 receipt.
+The frozen-source repeat now passes: baseline99.989s,188mutations killed,
+0survived/invalid, source_unchanged=true. No source edits followed that run.
+Installed package identity was rechecked: all614files still match the existing
+c1ef8566wheel, and the six positive/negative scope boundaries still pass.
 The current long-lived hook process reports stale projection
 14852134f0aa versus publishedf72f24a788ca; direct installed-provider checks do
 not establish fresh native integration. No host restart or trust bypass occurs.
 Old/new generated hook timeouts are595seconds on Codex, Claude, Hermes and
 OpenClaw. No hook or package rewrite is needed for this owner-config recovery.
+
+The fresh stock probe is reproducible without external project content: ask for
+a read-only review of `def average(values): return sum(values) // len(values)`,
+requiring fractional means for nonempty numeric sequences and ValueError for
+empty input, with examples `[2, 7]` and `[]`. No file inspection or modification
+is requested. The capture replay used the analogous clamp review described
+above; all candidate selection remained inference-owned.
 
 ## Decisions and alternatives
 
