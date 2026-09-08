@@ -149,3 +149,5 @@ Acceptance checkpoint `35cd65392adcaef9e78dc5f046f6dcb99e2c8270` records four is
 PR768 merged as `947dfaef34d07303ed23c4e9b909de2edea21ac2`; tracker765 is CLOSED. The verified d08c5008 wheel has identical production code to this merge and is installed in the owner runtime; Codex hook refresh follows.
 
 Owner-install checkpoint `013ab75f66c5c3ce1e147e9fd8794c2ea32aa168` records614matching installed files, a completed Codex refresh and the fresh trust requirement. No live activation is claimed; the planner payload failure remains open.
+
+PR769 merged as `2088ea069ba659edd5c95407e26cc9aa37e85842` with the installed delivery and operator trust checkpoint. AR-413 is closed; AR-404 remains open for planner reliability and fresh native activation.
