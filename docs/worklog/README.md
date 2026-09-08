@@ -2204,6 +2204,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e85ce604` | 2026-09-07 | Merge pull request #761 from Holeshot-Software-LLC/codex/ar369-process-refresh-guidance | [AR-369](../roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | [Detail](2026-09-08-ar369-process-refresh-guidance.md) |
 | `7e0c919a` | 2026-09-07 | test(cli): assert card section bounds independently of decoration (AR-251) | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-08-ar251-card-test-bound.md) |
 | `7087e9ac` | 2026-09-07 | merge: include published process diagnostics in final config delivery (AR-312) | [AR-312](../roadmap/issue-AR-312-validate-explicit-production-config.md) | [Detail](2026-09-08-ar312-explicit-config-validation.md) |
+| `4cbebf73` | 2026-09-07 | Merge pull request #762 from Holeshot-Software-LLC/codex/ar312-explicit-config-validation | [AR-312](../roadmap/issue-AR-312-validate-explicit-production-config.md) | [Detail](2026-09-08-ar312-explicit-config-validation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
