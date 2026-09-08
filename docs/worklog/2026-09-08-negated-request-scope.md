@@ -95,6 +95,10 @@ passes all thresholds. Bandit is unavailable in the verification environment;
 no scan claim. No exhaustive corpus, cross-OS matrix, Windows test, hosted CI
 dispatch or all-harness native claim.
 
+The decision-conformance baseline and every curated mutation pass; overall
+`passed:true` and `source_unchanged:true`. The baseline took102088ms. This was
+the named bounded conformance gate, not the exhaustive corpus or CI dispatch.
+
 Codex refresh completes at2026-09-08T15:42:44Z with dashboard opted out,
 registered/enabled true, activation_complete false and restart_required true.
 Plugin0.1.0+codex.07ad50ea4f52; bundle
