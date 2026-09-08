@@ -89,3 +89,5 @@ their own evidence gates pass. No installed/native claim from source tests.
 Recorded checkpoint: `8629e2ed` — test(packaging): make qualified veto regression self-contained.
 
 Recorded checkpoint: `0bc2f895` — docs(staffing): record installed qualified-veto proof and native trust gate.
+
+Recorded checkpoint: `130631b8` — docs(acceptance): cite installed veto and packaged regression evidence.
