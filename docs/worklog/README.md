@@ -2179,6 +2179,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e348d713` | 2026-09-07 | Merge pull request #753 from Holeshot-Software-LLC/codex/ar251-readonly-cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
 | `ca53e25e` | 2026-09-07 | chore(AR-412): integrate published read-only card views | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `f4264b54` | 2026-09-07 | Merge pull request #755 from Holeshot-Software-LLC/codex/ar412-security-lock-refresh | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `7de97793` | 2026-09-07 | fix(config): validate an explicit file without installed state | [AR-312](../roadmap/issue-AR-312-validate-explicit-production-config.md) | [Detail](2026-09-08-ar312-explicit-config-validation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
