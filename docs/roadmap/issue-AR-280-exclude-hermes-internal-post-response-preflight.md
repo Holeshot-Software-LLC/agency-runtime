@@ -1,9 +1,9 @@
 ---
 title: "Exclude Hermes internal post-response calls from Agency preflight"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-08-24
-updated: 2026-08-24
+updated: 2026-09-08
 tags: [hermes, lifecycle, inference, evidence, reliability]
 related:
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -15,6 +15,10 @@ related:
   - agency_runtime/adapters/hermes/
   - tests/test_hermes_turn_trace_payload.py
   - tests/test_adapter_parity.py
+  - docs/decisions/0064-classify-turn-intent-from-durable-state.md
+  - docs/roadmap/acceptance/evidence/AR-280-native-purpose-boundary-20260908.md
+  - docs/roadmap/handoffs/issue-AR-280.md
+  - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -39,6 +43,28 @@ reply, but they add avoidable provider work and misleading failure evidence.
 
 ## Current state
 
+The 2026-09-08 source-only reconciliation retains this issue: no safe bypass
+was implemented. Installed Hermes 0.21.0, clean source
+`7cd91114b462b7af76e558cc4e97f82201d2e884`, exposes no invocation-purpose
+authority in its native `pre_llm_call` payload. Its current title generator
+uses the auxiliary-client path outside that hook; title generation must not
+be presented as the demonstrated duplicate caller. Background-review forks
+do call the ordinary conversation loop and deliberately share the user
+session/platform, but their internal memory-write origin is not an
+authenticated, turn-bound plugin-purpose contract.
+
+Agency already excludes exactly resolved durable internal retries. A caller's
+purpose label, same-session parent, or serialized receipt cannot expand that
+exception under ADR-0064. The [portable source receipt](acceptance/evidence/AR-280-native-purpose-boundary-20260908.md)
+records the exact native schema, source identities, rejected shortcuts and
+remaining prerequisite. Twenty-one adversarial generated-plugin cases were
+written but **not run**, following the owner's code-first verification deferral.
+They preserve the untrusted-marker boundary, not prove a classification fix,
+successful headers, or any native performance improvement. All six original
+acceptance requirements below remain unchanged and unchecked.
+
+### Historical live diagnosis, 2026-08-24
+
 Fresh live Telegram proof on 2026-08-24 completed and delivered three intended
 Hermes user turns with correct `host=hermes` attribution, Store-backed headers,
 and exact parent routing. Immediately around the status and two substantive
@@ -56,6 +82,12 @@ claim. No internal prompt content, credential, or transport identifier is
 retained in this issue.
 
 ## Approach
+
+First obtain an explicit supported native invocation-purpose authority, or a
+documented equivalent bound to the active session and turn with stale/replay
+rejection. Do not read private agent fields or compose unrelated accounting,
+write-provenance and relay signals into a new implicit authority contract.
+Once that prerequisite is satisfied, continue the original bounded approach:
 
 1. Reproduce the internal post-response lifecycle call in a focused Hermes
    bridge test while retaining its native lifecycle metadata.

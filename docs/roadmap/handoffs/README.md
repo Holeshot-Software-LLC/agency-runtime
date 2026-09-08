@@ -17,6 +17,8 @@ superseded_by: null
 
 # Active recovery capsules
 
+Current optional-tool security refresh: [AR-412](issue-AR-412.md).
+
 An active recovery capsule is the bounded bootstrap projection for one
 long-running roadmap item. The canonical issue keeps the full planning and
 evidence history; the capsule contains only the current checkpoint, completed
@@ -72,9 +74,11 @@ behavior.
 
 ## Active capsules
 
+- [AR-251 read-only CLI cards](issue-AR-251.md)
 - [AR-411 bounded catalog-identity diagnostics](issue-AR-411.md)
 - [AR-409 required staffing call reservations](issue-AR-409.md)
 - [AR-410 Claude transport warm-up isolation](issue-AR-410.md)
+- [AR-270 OpenClaw installed-copy provenance](issue-AR-270.md)
 - [AR-404 evidence-led backlog completion](issue-AR-404.md)
 - [AR-400 staffing correctness and performance](issue-AR-400.md)
 - [AR-119 inference-first workforce](issue-AR-119.md)
@@ -91,6 +95,7 @@ behavior.
 - [AR-207 preflight and delegation failure diagnostics](issue-AR-207.md)
 - [AR-264 actionable contractor execution profiles](issue-AR-264.md)
 - [AR-284 provider fallback versus stage accounting](issue-AR-284.md)
+- [AR-280 authenticated Hermes internal invocation boundary](issue-AR-280.md)
 - [AR-265 contextual turn classification](issue-AR-265.md)
 - [AR-289 native reranker transports](issue-AR-289.md)
 - [AR-290 end-to-end guided setup](issue-AR-290.md)
