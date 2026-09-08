@@ -3,12 +3,13 @@ title: "AR-190 exact installed uv-plan evidence handoff"
 status: active
 category: roadmap
 created: 2026-07-28
-updated: 2026-09-07
+updated: 2026-09-08
 tags: [handoff, updates, uv, security, recovery]
 related:
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/acceptance/issue-AR-190.md
   - docs/roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-190-product-source-candidate-20260908.md
   - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
   - docs/worklog/README.md
 supersedes: []
@@ -17,7 +18,7 @@ type: handoff
 issue_id: AR-190
 branch: codex/ar190-uv-plan-reconciliation
 evidence_commit: d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f
-minimum_ledger_commit: 45716bd5e781724072132aa345fef7df7a1f3a59
+minimum_ledger_commit: 0199f8d3b19781a02679ea7b0b6a3f1e526adbcc
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -66,11 +67,22 @@ The first default isolated run accepted criteria 1–4 but returned `absent` for
 criterion 5 (`AR-190.5-20260907-42c2bd69`). It found the tests, lint, docs and
 live plan were at c64ce3ce/d28ccc23 rather than documentation candidate
 d1a9260c, and that source equivalence was unverifiable in its snapshot.
-All five actual verdicts are preserved. Status remains `in_progress`; no
-passing criterion was rerun and no unchanged-evidence retry occurred.
+All five actual verdicts are preserved at `a6efa01b`, ledger `0199f8d3`.
+The owner authorized one changed-evidence response and a second/final all-five
+review because changing the receipt candidate invalidates every digest.
+Status remains `in_progress`; no verdict is transplanted or handwritten.
+
+A fresh detached d1a9260c wheel (SHA-256
+`98b87cf098bf0b35b4a266d8ee35288e1a366914b7e19f9c6a8579c2ce23e457`)
+passed the canonical build/independent verifier and generated a same-SHA live
+uv plan at 2026-09-08T00:00:19Z. Installed planner hashes equal source hashes;
+all 669 compared files/receipt/entrypoint remain unchanged. Fresh focused tests
+pass 67 cases and Ruff is clean. The original criterion is retained verbatim
+beside the explicit final-product-source versus later receipt-commit wording.
 
 Normal ledger reconciliation resolved the inherited c64ce3ce merge-row failure.
-Documentation validation still passes for 1,240 Markdown files after verdicts.
+Documentation validation passes for 1,241 Markdown files with the new pending
+builder and clarified criterion, alongside metadata, policy, worklog and diff.
 
 The wheel's self-reported source revision is null, truthfully; its full source
 SHA is bound by the clean detached canonical build and independent verifier.
@@ -90,14 +102,13 @@ was reused before the isolated proof; worker checkpoints the completed slice.
 
 ## Next bounded work package
 
-1. Preserve this first absent verdict in a substantive/ledger checkpoint.
-2. Resolve criterion 5's exact product-source versus documentation-candidate
-   evidence binding explicitly, preserving the original wording and verdict.
-   The candidate SHA binds all five digests; changing it invalidates all five,
-   so do not carry satisfied verdicts across a candidate change.
-3. Only a bounded changed-evidence or explicit contract clarification may
-   justify the next criterion-5 verification; no unchanged retry or authority
-   weakening. Parent serializes publication. No owner reinstall is needed.
+1. Commit the new exact d1a9260c receipt, explicit criterion clarification and
+   clean record checks, with a faithful ledger pair.
+2. Freeze a new receipt candidate and audit all bounded excerpts. Run the
+   second/final default all-five isolated review under `umask 077`.
+3. Preserve every result; stop for analysis if not accepted. No third review,
+   unchanged retry or authority weakening. Parent serializes the PR after
+   earlier packages; the branch is pushed only to expose d1a9260c to lookup.
 
 ## Verification
 

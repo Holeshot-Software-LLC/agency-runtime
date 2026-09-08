@@ -3,12 +3,13 @@ title: "Resolve updates immutably and keep application attended"
 status: accepted
 category: decisions
 created: 2026-07-28
-updated: 2026-09-07
+updated: 2026-09-08
 tags: [release, security, cli, dashboard, operations]
 related:
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-190-product-source-candidate-20260908.md
   - docs/roadmap/issue-AR-211-bound-immutable-commit-resolution.md
   - docs/worklog/README.md
   - docs/decisions/0037-layered-pinned-supply-chain-gates.md
@@ -123,3 +124,9 @@ A legitimate default-directory uv environment without pip produced a usable
 nonexecuting plan, while all 669 compared prefix files, its entrypoint and uv
 receipt remained unchanged. The owner installation was untouched. This proves
 the existing planning boundary without adding package-mutation authority.
+
+The subsequent [exact d1a9260c product-source proof](../roadmap/acceptance/evidence/AR-190-product-source-candidate-20260908.md)
+preserves the first acceptance provenance finding and repeats the same safe
+installed plan from that exact source. Distinguishing the runtime candidate
+from its later evidence-only commit follows the existing acceptance lifecycle;
+it does not change this decision's owner-executed application boundary.

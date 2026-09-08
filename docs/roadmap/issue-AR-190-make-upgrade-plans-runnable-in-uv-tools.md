@@ -3,11 +3,12 @@ title: "AR-190: Make attended upgrade plans runnable in uv tools"
 status: in_progress
 category: roadmap
 created: 2026-07-28
-updated: 2026-09-07
+updated: 2026-09-08
 tags: [cli, updates, uv, packaging, security]
 related:
   - docs/roadmap/acceptance/issue-AR-190.md
   - docs/roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-190-product-source-candidate-20260908.md
   - docs/roadmap/handoffs/issue-AR-190.md
   - docs/roadmap/issue-AR-188-add-immutable-update-discovery.md
   - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
@@ -55,7 +56,11 @@ preserves the complete raw outputs, candidate/target distinction, hashes,
 namespace failure provenance and isolation bounds. The first isolated
 verification accepted criteria 1–4 but returned `absent` for criterion 5's
 exact-final-candidate provenance. Status remains `in_progress`; the criterion
-has not been weakened, bypassed or retried on unchanged evidence.
+has not been bypassed or retried on unchanged evidence. The owner authorized
+one changed-evidence response: a fresh exact d1a9260c build, same-SHA installed
+uv plan and focused checks, plus explicit product-source/receipt-commit wording.
+That new plan passed at 2026-09-08T00:00:19Z; its second-review builder is
+pending, and no first verdict is reused under the new receipt candidate.
 
 Planning now proves which installer the exact executing environment can use.
 A stable regular pip entry point inside the exact prefix retains an
@@ -104,10 +109,32 @@ pending explicit authorization for that outward-facing write.
   fails closed with no command.
 - [x] Upgrade planning and the dashboard remain copy-only and execute no package
   or host mutation.
-- [ ] Focused update/CLI tests, lint, docs checks, and one live installed uv-tool
-  plan pass from the exact final commit.
+- [ ] Focused update/CLI tests and lint pass for the exact final product-source
+  candidate identified by canonical build provenance, and a live installed
+  uv-tool plan passes from that candidate. Documentation checks pass at the
+  corresponding evidence checkpoint; subsequent evidence-only commits do not
+  redefine the runtime under test.
 
 ## Implementation evidence
+
+### September 8 exact product-source clarification and new proof
+
+The [second-review receipt](acceptance/evidence/AR-190-product-source-candidate-20260908.md)
+preserves the original criterion 5 verbatim and the first absent reason. The
+owner clarified exact final **product-source** identity rather than requiring
+a documentation commit to contain its own future execution receipt. Criteria
+1–4 and all installer/trust/nonexecution guards are unchanged. Documentation
+still has to pass its actual corresponding record gate.
+
+A new clean detached build at d1a9260c passed the canonical builder, strict
+Twine and independent portable verification. Its exact wheel SHA-256 is
+`98b87cf098bf0b35b4a266d8ee35288e1a366914b7e19f9c6a8579c2ce23e457`.
+The real default-directory uv installation generated a plan to the same full
+d1a9260c SHA at 00:00:19 UTC. Installed planner file digests match the recorded
+source digests; all 669 compared prefix files, receipt and entrypoint remain
+unchanged. Fresh source tests pass 67 cases in 0.83 seconds; Ruff checks pass.
+The new receipt candidate requires a fresh all-five digest-bound review;
+the first four verdicts cannot be transplanted across a candidate change.
 
 ### September 7 exact installed-candidate proof
 
