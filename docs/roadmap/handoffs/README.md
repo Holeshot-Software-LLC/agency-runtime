@@ -17,6 +17,8 @@ superseded_by: null
 
 # Active recovery capsules
 
+Current optional-tool security refresh: [AR-412](issue-AR-412.md).
+
 An active recovery capsule is the bounded bootstrap projection for one
 long-running roadmap item. The canonical issue keeps the full planning and
 evidence history; the capsule contains only the current checkpoint, completed
