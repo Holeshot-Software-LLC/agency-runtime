@@ -13,6 +13,7 @@ related:
   - docs/decisions/0003-response-telemetry-is-model-truth.md
   - docs/decisions/0027-authoritative-runtime-evidence-traces.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
+  - docs/decisions/0238-separate-provider-fallback-accounting-from-stage-order.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

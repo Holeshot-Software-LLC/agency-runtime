@@ -160,6 +160,7 @@ Status meanings:
 | [ADR-0233](0233-separate-hosted-run-timing-from-billing-administration.md) | Separate hosted-run timing from billing administration | Accepted |
 | [ADR-0045](0045-turn-scoped-specialist-activation.md) | Use turn-scoped specialist activation with immutable session history | Accepted |
 | [ADR-0047](0047-reconcile-litellm-model-and-router-evidence.md) | Reconcile LiteLLM actual-model and router evidence separately | Accepted |
+| [ADR-0238](0238-separate-provider-fallback-accounting-from-stage-order.md) | Separate provider fallback accounting from inference-stage order | Accepted |
 | [ADR-0065](0065-keep-compact-resident-manager-kernel.md) | Keep a compact resident manager kernel at the parent boundary | Superseded |
 | [ADR-0093](0093-atomic-finalization-evidence-batches.md) | Commit one finalization evidence batch atomically | Accepted |
 | [ADR-0120](0120-construct-first-pass-evidence-headers.md) | Construct evidence headers before first publication | Accepted |

@@ -69,3 +69,5 @@ Review record `8869cb40` preserves the independent parsed-lock comparison: only 
 Integration `a27d2c1a` incorporates the published AR-270 repair and its exact merge ledger. No overlapping source changes; all original verification limitations remain recorded.
 
 Integration `ca53e25e` incorporates the published AR-251 card source and its faithful ledger; the security lock delta remains unchanged and independently reviewed.
+
+PR #755 merged as `f4264b54` at 2026-09-08T01:32:24Z. Exact two-package optional-tooling lock refresh is published. Existing owner environments remain untouched; tests, installed tooling compatibility and acceptance remain deferred; #750 stays open.

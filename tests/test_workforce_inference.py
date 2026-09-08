@@ -3812,7 +3812,8 @@ def test_workforce_attempts_persist_router_alias_and_reconciled_actual_model() -
             "model_group": "task-agency-router",
             "resolved_provider": "agency-router",
             "resolved_model": "openai/gpt-5.6-mini",
-            "attempted_fallbacks": 0,
+            # This hand-built legacy attempt has no dispatch accounting.
+            "attempted_fallbacks": None,
             "source": "wrapper",
             # The provider layer measured this call; the receipt now carries it
             # instead of dropping it, which is what makes the cost of a turn
