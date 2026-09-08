@@ -17,7 +17,7 @@ type: worklog
 commit: 1c67e55844177ae266bf644e18e1f507bb56b960
 short: 1c67e558
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/738
 related_issues:
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -114,3 +114,7 @@ than changing the frozen packet; this branch's actual diff against origin/main
 passes whitespace checks. The immediate ledger records both upstream
 `bfe21d66` and integration `de008861`. No acceptance candidate is re-frozen,
 reviewed again or silently edited.
+
+Publication PR #738 contains the retained AR-189 proof, not a done-state flip
+or tracker closure. The normal PR links this exact substantive/integration
+history after strict documentation and tracker parity pass.
