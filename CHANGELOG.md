@@ -358,6 +358,11 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Staffing failures preserve the actual budget, deadline or provider cause
+  when no valid critic verdict exists, instead of claiming a critic veto.
+  Effective positive call allowances now survive durable failure projection;
+  expired pre-call deadlines do not claim a positive timeout (AR-408).
+
 - A host-scoped install reports residual projection drift only for its resolved
   targets. An unrelated host on another package no longer produces a false
   failed-refresh warning; global status still reports all host drift (AR-407).

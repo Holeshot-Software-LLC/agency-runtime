@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-189
 branch: codex/ar189-private-uninstall-proof
-evidence_commit: c64ce3ce54c6e51280292298b5e3600611cb72fc
-minimum_ledger_commit: d28ccc232dcc00af0162a2409930dd272bf97b5f
+evidence_commit: 1c67e55844177ae266bf644e18e1f507bb56b960
+minimum_ledger_commit: 56b7f41376e4f52fdf0e325299dbde615190475e
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -30,9 +30,12 @@ tracker_url: null
 The original private receipt ran on `08fab1c4`. Publication preparation safely
 fast-forwarded to `d28ccc23`, including main `c64ce3ce` and its faithful AR-184
 merge ledger; all four inherited draft file hashes survived unchanged.
-Metadata names that source checkpoint. The branch prepares one substantive
-test/records commit followed by its exact ledger; parent coordinates the normal
-PR/merge after AR-185 and AR-408. It is not yet published to main.
+Substantive `1c67e558` and ledger `56b7f413` freeze this proof. Parent then
+authorized serial AR-189 publication after AR-185/PR736 and AR-408/PR737;
+normal merge integrates main `bfe21d66` while retaining both histories and
+unchanged acceptance candidates. The uninstall transaction modules are
+unchanged; a fresh integrated focused rerun passes 127/two Windows skips in
+5.50 seconds. It is not yet published to main.
 No runtime source change, acceptance verdict or done-state change is included.
 
 ## Completed evidence
@@ -82,8 +85,9 @@ canonical tracker URL remains null without creating a duplicate issue.
 
 ## Next bounded work package
 
-1. Await the parent's publication signal, then publish this authority
-   reconciliation and private proof through one branch PR with its exact ledger.
+1. Publish this parent-authorized authority reconciliation and private proof
+   through one branch PR with its exact integration ledger, then release the
+   serial publication token before AR-190/AR-191.
 2. Leave meaningful Windows obligations visible; do not delete them to obtain
    a completion verdict or reinterpret Linux fixtures as native Windows proof.
 3. When owner Windows evidence is available, retain exact source/test identity

@@ -3,9 +3,11 @@ title: "Fund one repair per workforce inference stage"
 status: accepted
 category: decisions
 created: 2026-08-01
-updated: 2026-08-12
+updated: 2026-09-07
 tags: [routing, workforce, inference, configuration, budgets]
 related:
+  - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
+  - docs/decisions/0235-reserve-required-staffing-calls-before-optional-work.md
   - docs/roadmap/issue-AR-218-fund-one-repair-per-inference-stage.md
   - docs/roadmap/issue-AR-201-fund-default-workforce-repair.md
   - docs/roadmap/issue-AR-203-prove-product-canary-write-and-activation.md

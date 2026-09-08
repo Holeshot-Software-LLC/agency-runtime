@@ -22,8 +22,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar189-private-uninstall-proof
-evidence_commit: c64ce3ce54c6e51280292298b5e3600611cb72fc
-minimum_ledger_commit: d28ccc232dcc00af0162a2409930dd272bf97b5f
+evidence_commit: 1c67e55844177ae266bf644e18e1f507bb56b960
+minimum_ledger_commit: 56b7f41376e4f52fdf0e325299dbde615190475e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -54,8 +54,12 @@ passes at08fab1c4; same-SHA Windows equality/merged release set remain held.
 AR183 merged PR #733/30214408. AR184 reuses that exact producer receipt;
 both retain only their meaningful cross-platform proof obligations.
 AR-184 merged PR #734/c64ce3ce; its exact merge ledger is d28ccc23.
-AR-189's private owner-CLI uninstall proof is prepared on that source, not yet
-published. It retains native Windows clauses and makes no count/done change.
+AR-185's nine isolated criteria satisfy at500de085; PR736 merged00fc1aef at
+23:55:01Z, including AR409/#735 filing for parity. AR408's three criteria satisfy
+atd9dde3cd; PR737 mergedbfe21d66 at23:59:35Z and #732 is CLOSED, read back.
+AR-189's private owner-CLI proof now integrates those main records normally;
+parent authorized its next serial PR. Native Windows clauses remain open.
+Queue remains118 (41 mapped/77 legacy), including open AR409, before AR189.
 
 ## Completed evidence
 
@@ -116,16 +120,17 @@ ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
 AR-180 remains one-card exec only; parent also contains the same card, so its
 child-only wording is not literally met. AR-181 Windows remains unverified.
-Parent prepares AR-185/AR-408 publication while this branch checkpoints AR-189;
+Parent has published AR-185/AR-408 and authorized AR-189 serial publication;
 isolated uv-plan proof for AR-190 and AR-191 retirement remain separate.
 Parent owns sequential PR/merge coordination and acceptance.
 
 ## Next bounded work package
 
-1. Parent finishes AR-185/AR-408 publication; await its signal before AR-189 PR.
-2. Publish AR-189 private proof and retained Windows hold, then AR-190/AR-191.
-3. Keep staffing call-reservation optimization separate from truthful-receipt
-   repair; neither claim is proof of quality equivalence.
+1. Publish AR-189 private proof and retained Windows hold, then release the
+   serial publication token to the parent for AR-190/AR-191.
+2. Preserve accepted AR-185/AR-408 candidate hashes and verdicts unchanged.
+3. AR409 reserves mandatory stage calls within owner limits; independent review
+   passes. Integrate AR408, verify, publish and run fresh installed/live checks.
 4. Stop cleanly by September 8 01:00 UTC.
 
 ## Verification

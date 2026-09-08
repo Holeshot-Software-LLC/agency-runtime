@@ -8,6 +8,7 @@ tags: [backlog, review, acceptance, delivery]
 related:
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
+  - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
   - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
   - docs/roadmap/acceptance/evidence/AR-348-installed-delivery-20260905.md
@@ -36,7 +37,7 @@ epic: reliability
 issue_id: AR-404
 priority: p1
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
-depends_on: [AR-400, AR-401, AR-402, AR-403]
+depends_on: [AR-400, AR-401, AR-402, AR-403, AR-409]
 blocks: []
 ---
 
@@ -369,8 +370,10 @@ ceremony; all original criteria remain in the receipt and native Windows
 companion/handle-rename/PowerShell obligations remain open. Updated-source
 focused 127/two Windows skips, named spine 1,085/three skips, UI 224 and
 repository lint/format pass. No production code or owner integration changes,
-acceptance verdict or backlog-count reduction. Parent coordinates the PR
-after AR-185/AR-408; AR-190 and AR-191 remain separate packages.
+acceptance verdict or backlog-count reduction. AR-185/PR736 merged00fc1aef
+at23:55:01Z; AR-408/PR737 mergedbfe21d66 at23:59:35Z and #732 is CLOSED,
+all read back. Parent has authorized serial AR-189 publication; AR-190 and
+AR-191 remain separate packages. Integrated focused rerun:127/two skips5.50s.
 
 The owner requires oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
@@ -599,8 +602,8 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Finish parent-coordinated AR-185/AR-408 publication, publish AR-189's private
-owner-CLI proof with its Windows hold, then continue AR-190 and AR-191.
+Publish the authorized AR-189 private owner-CLI proof with its Windows hold,
+then release the serial token for parent-coordinated AR-190 and AR-191.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override

@@ -428,3 +428,29 @@ commit and its reasoning. Full decision-conformance mutation evaluation was
 not repeated for this test/records-only slice; its existing test module is
 included in the fresh named spine. Parent performs final remote parity and
 normal PR publication in sequence with the other prepared branches.
+
+## Serial publication integration
+
+After the clean `1c67e558` / `56b7f413` substantive/ledger checkpoint, the
+parent authorized AR-189 publication. Normal merge integrates main
+`bfe21d66b1e9cfd566c358cf000574edfaa377af`, preserving the frozen AR-185 and
+AR-408 acceptance files without any edit. Readback confirms PR736 merged
+`00fc1aef` at23:55:01Z, PR737 merged `bfe21d66` at23:59:35Z September7,
+and tracker732 is CLOSED.
+
+Exact diff against `d28ccc23` is empty for the current install/uninstall CLI,
+prepared uninstall, installer uninstall, shared lifecycle lock and ZCode
+implementation. The already-recorded focused/spine/UI evidence is reused at
+that scope, not as a claim that every inference byte is unchanged: AR-408
+changes staffing failure and timeout projections. The integrated source ran
+the same five-file focused command above again, exit zero:
+
+```text
+...............ss....................................................... [ 55%]
+.........................................................                [100%]
+127 passed, 2 skipped in 5.50s
+```
+
+There is no new owner-host operation or native Windows claim. The integration
+and upstream AR-408 merge receive immediate exact ledger entries before the PR;
+remote tracker parity and normal branch checks are verified for publication.
