@@ -15,7 +15,7 @@ type: worklog
 commit: 0e8e9307
 short: 0e8e9307
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/745
 related_issues: [docs/roadmap/issue-AR-410-disable-claude-warmup-staffing.md]
 ---
 
@@ -51,6 +51,15 @@ override session settings; do not change policy or treat simulation as live proo
 Final focused seven tests passed in 0.22s; focused Ruff and diff checks passed.
 Independent second review and installed changed-candidate live evidence were
 still pending when this source checkpoint was committed for parallel build.
+
+Final independent second review subsequently passed 28 checks in 1.37s with
+no scoped Critical/High/Medium finding. PR #745 merged normally at
+2026-09-08T00:52:47Z as `7c0c1221`; shared main was fast-forwarded cleanly.
+Metadata/docs 1272 and strict tracker 401 passed before merge. No attached CI
+checks existed; no CI, test or native rerun was started after the owner's
+code-first deferral. Parent reports exact-source installation and four hook
+refreshes complete; a fresh changed-candidate native canary was not launched.
+Issue #744 remains open/in_progress and isolated acceptance remains unjudged.
 
 ## Follow-ups
 

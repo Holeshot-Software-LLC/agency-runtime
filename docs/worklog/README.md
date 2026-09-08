@@ -2143,6 +2143,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0e8e9307` | 2026-09-07 | fix(canary): suppress hooks only during Claude bootstrap (AR-410) | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `fe608bc1` | 2026-09-07 | chore(AR-410): integrate published oldest-record checkpoint | null | null |
 | `9d615325` | 2026-09-07 | docs(AR-410): record native bootstrap isolation and deferred live proof | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
+| `7c0c1221` | 2026-09-07 | Merge pull request #745 from Holeshot-Software-LLC/codex/ar410-disable-claude-warmup-staffing | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
