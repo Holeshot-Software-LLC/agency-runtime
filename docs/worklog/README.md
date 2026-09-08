@@ -2232,6 +2232,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1b210542` | 2026-09-08 | docs(runtime): merge final AR-414 installed checkpoint (PR #776) | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [detail](2026-09-08-failed-headers-and-planner.md) |
 | `c1ef8566` | 2026-09-08 | fix(planning): respect explicitly negated change requests | [AR-415](../roadmap/issue-AR-415-respect-negated-change-requests.md) | [Detail](2026-09-08-negated-request-scope.md) |
 | `d0bb4127` | 2026-09-08 | fix(planning): merge negated request scope repair (PR #779) | [AR-415](../roadmap/issue-AR-415-respect-negated-change-requests.md) | [Detail](2026-09-08-negated-request-scope.md) |
+| `85f55021` | 2026-09-08 | docs(runtime): checkpoint installed AR-415 scope repair | [AR-415](../roadmap/issue-AR-415-respect-negated-change-requests.md) | [Detail](2026-09-08-negated-request-scope.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
