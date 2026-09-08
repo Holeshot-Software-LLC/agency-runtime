@@ -2254,6 +2254,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `39f5142a` | 2026-09-08 | docs(native): record trusted staffing and exact-response acceptance | AR-414, AR-415 | [Detail](2026-09-08-trusted-native-acceptance.md) |
 | `86d3728a` | 2026-09-08 | docs(acceptance): complete verified AR-414 and AR-415 scopes | AR-414, AR-415 | [Detail](2026-09-08-trusted-native-acceptance.md) |
 | `1162702f` | 2026-09-08 | docs(native): merge PR793 trusted native acceptance | AR-414, AR-415 | [Detail](2026-09-08-trusted-native-acceptance.md) |
+| `182ca4c9` | 2026-09-08 | docs(hosts): checkpoint Hermes refresh before native verification | AR-404 | [Detail](2026-09-08-hermes-openclaw-native-refresh.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
