@@ -130,3 +130,9 @@ Hermes has staffing/injection but truncation failure; OpenClaw has staffing and
 truthful headers but no finalization or exact card proof. AR-418/419 and umbrella
 AR-404 remain open. Next repair those exact lifecycle failures before another
 success claim. The package does not undo the separately accepted Codex proof.
+
+## Publication checkpoint
+
+PR795 merged as `ca0914cd25fa4f565fc1339da44882b07520edde` with the exact
+subject `docs(hosts): merge PR795 refreshed native verification`. This merge
+records both observed native failures and leaves AR-404, AR-418 and AR-419 open.

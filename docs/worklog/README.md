@@ -2257,6 +2257,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `182ca4c9` | 2026-09-08 | docs(hosts): checkpoint Hermes refresh before native verification | AR-404 | [Detail](2026-09-08-hermes-openclaw-native-refresh.md) |
 | `1dd69c3a` | 2026-09-08 | docs(hosts): record Hermes truncation and restored OpenClaw gateway | AR-404, AR-418 | [Detail](2026-09-08-hermes-openclaw-native-refresh.md) |
 | `eb981751` | 2026-09-08 | docs(hosts): record OpenClaw terminal gap and native verification limits | AR-404, AR-418, AR-419 | [Detail](2026-09-08-hermes-openclaw-native-refresh.md) |
+| `ca0914cd` | 2026-09-08 | docs(hosts): merge PR795 refreshed native verification | AR-404, AR-418, AR-419 | [Detail](2026-09-08-hermes-openclaw-native-refresh.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
