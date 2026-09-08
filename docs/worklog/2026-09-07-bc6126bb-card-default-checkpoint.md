@@ -16,7 +16,7 @@ type: worklog
 commit: bc6126bbced4e0f104987301d37575a98f22def4
 short: bc6126bb
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/753
 related_issues:
   - docs/roadmap/issue-AR-251-cli-presentation-richness.md
 ---
