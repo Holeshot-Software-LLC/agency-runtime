@@ -73,6 +73,10 @@ failure boundary to expose terminal evidence; original receipts remain intact.
 Claude is executable-discovered but native inventory is rejected because its
 executable parent namespace permits cross-account substitution. Zcode has enabled
 registered hooks but no discovered executable, version or native capability.
+Claude permissions are now repaired and its refreshed native inventory verifies
+2.1.265. OpenClaw terminal handoff is live-proven with exact accepted response hash
+in AR-419 evidence; injection remains unproven. Zcode desktop AppImage exists,
+while a supported CLI entrypoint is still being inspected.
 Both hosts remain explicitly in scope, and none of these installation observations
 is an accepted native turn. The current package preserves staffing and validators.
 

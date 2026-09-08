@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar418-ar419-native-terminal-20260908
-evidence_commit: 1dd69c3ad1e1c86db386dff69cd8a96ee8dc41ac
-minimum_ledger_commit: 70ba71d8f92a3f5bb536d5ec32ab34232d803b4c
+evidence_commit: 94b9eb28e99c7a9085e6ff6ab4638e506d25e313
+minimum_ledger_commit: 308b670ad2d8d600b96ab690100e3c0ce231c254
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -35,8 +35,10 @@ turn each. OpenClaw gateway stop/update/restart is included in that approval.
 Baseline clean main24b50cb8. Hermes native attempt failed after accepted staffing/injection (AR-418/#796).
 OpenClaw refreshed, gateway restored RPC-green; native turn returned correct
 headers but left Agency active with zero finalization (AR-419/#797).
-Bounded verification is complete with negative full-roundtrip verdicts.
-No native success claim yet. AR-404 stays open; AR-414/415 are acceptance-closed.
+Prior bounded verification had negative full-roundtrip verdicts. AR-419 now
+has live terminal-handoff proof on308b670a, exact hash81356a9c914b08463d76681650c7daf4ae24ad6d4236a880dff15df54066c466;
+injection remains unproven. PR799 is open; all other host gates remain.
+No all-host or full AR-419 acceptance claim. AR-404 stays open; AR-414/415 are acceptance-closed.
 
 ## Completed evidence
 
@@ -65,7 +67,10 @@ and continue in the same task. Preserve unrelated worktrees and operator files.
 Claude and Zcode remain explicitly in scope after these two hosts. Claude native
 inventory currently rejects executable-directory permissions; Zcode has no
 executable. AR-419 has a twelve-case Node-tested internal terminal handoff
-candidate, with153focused passes/one skip; installed proof is pending.
+candidate, with153focused passes/one skip; installed terminal proof passes.
+Claude permissions repaired and refresh complete; native turn next. Zcode has
+an AppImage but no discovered supported CLI. The optional OpenClaw observer
+requires native capability consent, asked once; do not bypass it.
 Repair the exact Hermes output-limit lifecycle under AR-418 and OpenClaw
 ordinary CLI terminal handoff under AR-419. Capture supported native context
 evidence before claiming exact OpenClaw card delivery. Do not repeat either

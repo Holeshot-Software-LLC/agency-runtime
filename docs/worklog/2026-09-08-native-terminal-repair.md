@@ -5,7 +5,7 @@ category: worklog
 created: 2026-09-08
 updated: 2026-09-08
 tags: [openclaw, hermes, claude, zcode, finalization]
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/799
 related:
   - docs/roadmap/issue-AR-419-finalize-openclaw-cli-responses.md
   - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
@@ -23,7 +23,8 @@ Starting main and origin match97e269ec, clean. Owned branch
 `codex/ar418-ar419-native-terminal-20260908` replaces the merged historical
 capsule branch. Observable outcome: an ordinary accepted native turn with exact
 headers, injection evidence and central finalization, then Claude/Zcode proof.
-Phase: fast_verification; native success remains pending.
+Phase: live_demo. The exact ordinary OpenClaw terminal handoff is proven;
+exact card injection remains unproven, so AR-419 stays open.
 
 The OpenClaw awaited `before_agent_finalize` hook exposes internal delivery as
 `ctx.channel=webchat`. A positive pre-verify result now passes its exact text,
@@ -37,7 +38,9 @@ Twelve executed generated-Node cases cover positive, rejected and unavailable
 policy results across webchat, external and missing channels. Focused adapter,
 correlation and boundary checks:153passed/one skipped in20.17seconds.
 Production spine:1151passed/three skipped in72.28seconds; UI224passed.
-Docs1342files, Ruff780files and metadata pass. Routing/conformance are pending. A missing shell Ruff
+Docs1342files, Ruff780files and metadata pass. Routing passes. Decision conformance passes188/188, source unchanged; the
+first baseline run failed private-directory creation under the default umask,
+then the same source passed with the required private umask077. A missing shell Ruff
 command is an environment lookup failure, not a lint result; use the existing
 private development environment. No exhaustive workflow was dispatched.
 
@@ -62,3 +65,39 @@ A fresh CLI wiring read reports Codex not_measured; that is not fresh hook proof
 Complete fast checks, install the immutable OpenClaw candidate through normal
 gateway maintenance, and capture one fresh native result. Preserve all failed
 receipts and keep AR-404/418/419 open until isolated criteria have evidence.
+
+## Installed native terminal evidence
+
+Immutable candidate308b670a (production change94b9eb28) built successfully from
+an isolated local clone after the shared clone exceeded the bounded Git-config
+inspection size. No build bound was changed. Independent artifact verification
+and Twine pass; all614installed package files match the wheel. Normal gateway
+stop/install/start restored RPC health and retained every configuration section.
+
+Fresh ordinary OpenClaw session `agent:openclaw:ar419-native-20260908`, trace
+`b2f9ef9e-1280-4c28-9934-6b094bdfcf6a`, returned in195.996seconds. Staffing
+accepted code-reviewer in159.779seconds; native answering model task-general.
+One central accept event binds exact response SHA256
+81356a9c914b08463d76681650c7daf4ae24ad6d4236a880dff15df54066c466.
+Store is completed/ready; no tool call, external delivery or manual finalization.
+The five-field header was validated by the central gate. The header builder
+correctly refuses a new evaluation after the turn is terminal; the authoritative
+accepted digest is the completion evidence.
+
+The session-scoped optional input observer failed native capability consent before
+installation; no observer remained installed and native configuration sections
+match the backup. The owner has been asked once about that separate consent.
+Exact injection remains unproven; this is terminal-handoff proof only. See
+`docs/roadmap/evidence/AR-419-openclaw-terminal-20260908.json`.
+
+Claude's two group-writable executable parent directories were tightened from775
+to755; native inventory now proves2.1.265 registered/enabled. Normal refresh from
+the candidate succeeds. Native turn proof follows. Zcode has a3.10.2Linux AppImage
+and desktop launcher, but no supported CLI command discovered yet; the extracted
+bundle is being inspected rather than assuming the desktop app is absent.
+
+The prior exact Codex handoff receipt was read: session
+01a08200-6530-79a3-a19c-4fb24b1983ae, trace
+01a082b9-e7df-70e2-b76c-b8be7e01ad5a, preflight_failed. Subject/reranker contract
+rejections and staffing_critic_rejected/critic_wrong_neighbor_selection are
+recorded. No old transport failure or erroneous critic verdict is inferred.
