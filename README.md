@@ -182,6 +182,7 @@ runtime-install transaction:
 
 ```bash
 python -m pip install .
+agency config validate --config /etc/agency/agency.yaml
 agency install \
   --production-container \
   --config /etc/agency/agency.yaml \
@@ -189,6 +190,13 @@ agency install \
   --no-dashboard \
   --json
 ```
+
+The explicit-file validation checks only the bounded YAML document and its
+configuration schema, including credential environment-variable names. It does
+not create a Store, change file permissions, contact providers, or verify that
+credentials or host integrations are available. Use the same absolute file for
+installation. Bare `agency config validate` retains the installed-health check
+against the normal effective config, including deployment overrides.
 
 Use `--agent codex`, `--agent claude`, or `--agent openclaw` instead of `--all`
 when the image contains one known harness. Package acquisition and harness
@@ -294,7 +302,7 @@ Use the repository's public surfaces as the authority:
   that a guarded CLI command can write.
 - For a dedicated unattended container, complete the interview before image
   execution, materialize the reviewed config and secret environment-variable
-  contract, run `agency config validate`, then run
+  contract, run `agency config validate --config <absolute-path>`, then run
   `agency install --production-container --config <absolute-path> --all
   --no-dashboard --json` (or one exact `--agent`). Treat any nonzero exit as a
   failed provision. Never substitute the invocation-scoped

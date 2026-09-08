@@ -12,6 +12,7 @@ from typing import Any
 
 import yaml
 
+from agency_runtime.core.bounded_io import FileSizeLimitError, read_bounded_regular_file
 from agency_runtime.core.bounded_yaml import BoundedYAMLError, safe_load_bounded
 from agency_runtime.core.cli_transport import discover_cli_models
 from agency_runtime.core.config import (
@@ -27,8 +28,10 @@ from agency_runtime.core.configuration import (
     read_config_state,
     replace_config_document,
     resolve_config_path,
+    validate_config_document,
 )
 from agency_runtime.core.configuration_contracts import MAX_CONFIG_BYTES
+from agency_runtime.core.configuration_persistence import assert_config_namespace
 from agency_runtime.core.detect import generate_config_from_detection
 from agency_runtime.core.display import safe_display_token
 from agency_runtime.core.doctor import format_report_human, run_doctor
@@ -634,12 +637,42 @@ def cmd_config_provider_remove(args: argparse.Namespace) -> int:
     return 0
 
 
+def _validate_explicit_config_document(argument: object) -> None:
+    """Read only the named document, without defaults, permission repair, or health probes."""
+
+    if not isinstance(argument, str) or not argument or not Path(argument).is_absolute():
+        raise ValueError("config validate --config requires an absolute file path")
+    # The shared resolver rejects links without dereferencing them. Its explicit
+    # path branch cannot select an environment or installed-service config.
+    path = resolve_config_path(argument)
+    assert_config_namespace(path)
+    try:
+        raw = read_bounded_regular_file(path, limit=MAX_CONFIG_BYTES, label="configuration file")
+    except FileSizeLimitError as exc:
+        raise ValueError("configuration file exceeds the 1 MiB size limit") from exc
+    except OSError as exc:
+        raise ValueError("explicit configuration file is unavailable or unsafe") from exc
+    assert_config_namespace(path)
+    try:
+        # Empty persisted documents have the same partial-schema meaning as
+        # runtime load_config; an explicit YAML null is still rejected below.
+        document = {} if not raw.strip() else safe_load_bounded(raw)
+    except BoundedYAMLError as exc:
+        raise ValueError("configuration file is not valid bounded UTF-8 YAML") from exc
+    validate_config_document(document)
+
+
 def cmd_config_validate(
     args: argparse.Namespace,
     *,
     dependencies: ConfigurationDependencies = DEFAULT_DEPENDENCIES,
 ) -> int:
-    """Validate config by running doctor checks."""
+    """Validate an explicit document, or preserve the ambient installed-health check."""
+    argument = getattr(args, "config", None)
+    if argument is not None:
+        _validate_explicit_config_document(argument)
+        print("✅ Config document valid — Store, host, and provider health not checked")
+        return 0
     cfg = dependencies.load_config()
     report = run_doctor(cfg)
     if report.exit_code == 0:

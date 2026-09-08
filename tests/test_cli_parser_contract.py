@@ -328,7 +328,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "ca0221ef36d806dc4bf86dcf53136b7d5c3553e135c2eb284bac32b4a6ef9863"
+EXPECTED_MANIFEST_SHA256 = "7326a90eb99bf336caaa3412054c92210f5e50e58ed9e4869981ba41e0a86657"
 
 
 def _handler(name: str):
@@ -434,6 +434,14 @@ def test_global_version_reports_the_canonical_package_version(
 
     assert raised.value.code == 0
     assert capsys.readouterr().out == f"agency {__version__}\n"
+
+
+def test_config_validate_accepts_explicit_file_or_preserves_ambient_default() -> None:
+    explicit = _parser().parse_args(["config", "validate", "--config", "/etc/agency/agency.yaml"])
+    ambient = _parser().parse_args(["config", "validate"])
+    assert explicit.config == "/etc/agency/agency.yaml"
+    assert ambient.config is None
+    assert explicit.func.__name__ == ambient.func.__name__ == "cmd_config_validate"
 
 
 def test_remediation_queue_parser_exposes_independent_cursor_paging() -> None:
