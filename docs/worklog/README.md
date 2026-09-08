@@ -2109,6 +2109,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f05e0bb8` | 2026-09-07 | docs(backlog): checkpoint accepted staffing diagnostics and next live work | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 | `bfe21d66` | 2026-09-07 | Merge pull request #737 from Holeshot-Software-LLC/codex/ar408-staffing-failure-receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 | `de008861` | 2026-09-07 | chore(AR-189): integrate accepted activation and staffing receipts | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | [Detail](2026-09-07-1c67e558-private-owner-uninstall-proof.md) |
+| `f408b6f2` | 2026-09-07 | Merge pull request #738 from Holeshot-Software-LLC/codex/ar189-private-uninstall-proof | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | [Detail](2026-09-07-1c67e558-private-owner-uninstall-proof.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
