@@ -115,3 +115,20 @@ the worker did not enter a chmod/retry loop. The owner instead selected the
 supported Codex verifier against the unchanged eac2d6a2 receipt candidate.
 Read-only checks found Codex CLI 0.153.4 installed, authenticated and usable;
 no owner configuration or credentials were changed.
+
+## Second actual review retained
+
+Commit `4d5f1528` records the Codex review against unchanged eac2d6a2:
+criteria 1, 2, 4 and 5 satisfied, criterion 3 absent. The exact-source installed
+evidence now satisfies criterion 5. Criterion 3's builder did not include the
+production caller path from present-invalid-uv rejection to `commands=[]`;
+the relevant existing source is `update_service.py:1220-1263` and `:1285-1318`.
+This is recorded as an evidence omission, not a new runtime defect or a silent
+override of the independent finding.
+
+The owner explicitly declined a third actual review in this package. All
+second-review digests and both reviews' historical verdicts remain faithful;
+the current builder is unchanged and AR-190 stays in_progress. A future
+authorized package may add those bounded excerpts and recheck only criterion
+3 against the same candidate, retaining the other four valid digests. No
+third call or present-builder edit was made.
