@@ -31,11 +31,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 
 ## Checkpoint
 
-Installed-verification package now in progress. Preliminary canonical b0dfd631
-artifacts pass integrity checks. Extracted regression failed because its JSON
-input is outside the archive allowlist; AR-417 makes that test self-contained.
-Focused124pass after refinement; no live runtime change yet. Rebuild and install
-next, followed by installed replay, native evidence and isolated acceptance.
+Installed-verification package waiting_for_operator. Verified8629e2ed wheel is
+installed; all614package files match. Fresh wheel/sdist smoke and installed
+captured-verdict replay pass; rejection is preserved with cause/omission marker.
+AR-417 removes an unpackaged test-input dependency; extracted regression8pass.
+Codex plugin0.1.0+codex.823aab6fbe85 registered/enabled, restart required. Fresh
+hooks/list reports8modified/0trusted. Owner asked to review /hooks in a fresh TUI;
+no bypass or native attempt. Independent isolated acceptance work continues.
 
 Native handoff capture complete; bounded source diagnostic fix verified in PR788.
 Two exact native packets expose experiment-tracker assigned to non-experiment
@@ -100,7 +102,8 @@ branch is named above. Keep unrelated worktrees and Windows items untouched.
 
 ## Next bounded work package
 
-Complete isolated acceptance verification for AR-416. Qualify upgraded
+After owner hook review, verify actual trust and a fresh native turn. Complete
+isolated acceptance for AR-416/417. Qualify upgraded
 installation/native diagnostic behavior under the release checklist before
 claiming this source change is installed. Keep AR-414/415/416 open until their
 isolated acceptance gates have evidence. Never retry merely for approval or

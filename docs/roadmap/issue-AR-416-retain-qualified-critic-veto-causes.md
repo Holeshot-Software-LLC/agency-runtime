@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [headers, critic, diagnostics]
 related:
+  - docs/roadmap/acceptance/evidence/AR-416-installed-qualified-veto-20260908.md
   - docs/roadmap/issue-AR-417-self-contained-qualified-veto-regression.md
   - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
@@ -32,6 +33,13 @@ the 56-character projection limit. The projection silently drops the whole reaso
 so both the failure receipt and native header lose the standard veto cause.
 
 ## Current state
+
+Latest checkpoint: verified 8629e2ed wheel installed, all614package files match,
+and captured-verdict replay preserves the cause and terminal rejection. Codex
+plugin0.1.0+codex.823aab6fbe85 is registered/enabled; fresh native trust inspection
+reports8modified/0trusted. Native verification is waiting_for_operator for /hooks
+review in a fresh TUI. No bypass or native attempt; isolated acceptance pending.
+
 
 Installed-verification package started from b0dfd631. Preliminary canonical
 artifacts pass integrity checks, but an extracted regression exposed AR-417.

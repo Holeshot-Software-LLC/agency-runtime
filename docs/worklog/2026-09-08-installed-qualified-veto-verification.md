@@ -16,7 +16,7 @@ type: worklog
 commit: 8629e2ed8006b2e3f7450d144e52abc9f0a9d31c
 short: 8629e2ed
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/791
 related_issues:
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
@@ -62,8 +62,22 @@ evidence; the test now carries the exact bounded verdict it exercises.
 
 Fresh focused checks before refinement: 124 passed. Fast production spine:
 1151 passed, 3 skipped in72.68s. After the test-only refinement, focused124passed.
-Targeted Ruff check/format pass. Rebuilt artifact, installed replay, native trust,
-fresh native turn and isolated acceptance remain pending at this checkpoint.
+Ruff779files, UI224tests and release hygiene2508inputs pass. Rebuilt artifacts
+pass canonical build, strict Twine and independent verification. Fresh wheel
+and sdist smoke and pip checks pass. Extracted sdist regression now8passed.
+The actual live installation matches all614wheel files, and its isolated-import
+captured-verdict replay retains the cause and omission marker without accepting
+the failure. See [installed evidence](../roadmap/acceptance/evidence/AR-416-installed-qualified-veto-20260908.md)
+for hashes, commands, outputs and exact scope.
+
+Codex refresh registered plugin0.1.0+codex.823aab6fbe85 with restart and activation
+required. Fresh native inspection reports8modified/0trusted hooks. The owner was
+asked to review through /hooks in a fresh TUI. No bypass or native inference
+attempt followed; native verification is waiting_for_operator. Independent
+acceptance work continues. Frozen-source conformance passes188/188, source_unchanged=true. Exact installed
+runtime dependency audit passes with zero advisories. Bandit reports one High
+B202 at the unchanged verify_acceptance.py legacy extraction fallback (line292);
+current Python3.12 uses the explicit data filter. No clean security-scan claim.
 
 ## Follow-ups
 

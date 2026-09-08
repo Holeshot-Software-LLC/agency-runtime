@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [packaging, tests, critic]
 related:
+  - docs/roadmap/acceptance/evidence/AR-416-installed-qualified-veto-20260908.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
   - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
@@ -34,7 +35,8 @@ Phase focused_review. Canonical b0dfd631 wheel/sdist passed strict Twine and
 independent verification. Running the regression from the extracted sdist
 produced one FileNotFoundError failure and seven passes. The fix pins the exact
 captured critic verdict in the test. Focused suite: 124 passed. Rebuilt source
-archive verification remains pending; no production behavior changed.
+archive verification passes: extracted regression8passed. No production behavior
+changed; isolated acceptance pending.
 
 ## Approach
 
