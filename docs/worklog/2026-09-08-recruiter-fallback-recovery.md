@@ -162,3 +162,7 @@ PATCH is not a verified clear. Restoring this known-broken backend is not advise
 AR-414 remains open for current-process native evidence and isolated acceptance
 verification. Reconnect/restart the stale Agency host by the normal operator
 workflow, then test a fresh session. Reinstall alone cannot refresh this process.
+
+Delivered on main through PR782, merge `7420ed57`; substantive checkpoints
+`6d9c91fc`, `9e6d05c0` and `369427db` have their exact ledger rows. No new package
+installation, host restart, acceptance closure or unrelated backlog change.

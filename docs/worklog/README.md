@@ -2237,6 +2237,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6d9c91fc` | 2026-09-08 | test(workforce): verify funded recruiter fallback recovery (AR-414) | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [Recruiter recovery](2026-09-08-recruiter-fallback-recovery.md) |
 | `9e6d05c0` | 2026-09-08 | test(workforce): pin exact fallback HTTP failure receipts (AR-414) | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [Recruiter recovery](2026-09-08-recruiter-fallback-recovery.md) |
 | `369427db` | 2026-09-08 | docs: record verified recruiter recovery handoff (AR-414) | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [Recruiter recovery](2026-09-08-recruiter-fallback-recovery.md) |
+| `7420ed57` | 2026-09-08 | Merge pull request #782 from Holeshot-Software-LLC/codex/ar414-recruiter-20260908 | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [Recruiter recovery](2026-09-08-recruiter-fallback-recovery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
