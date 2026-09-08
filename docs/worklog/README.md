@@ -2149,6 +2149,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a1d0c965` | 2026-09-07 | feat(cli): add explicit cards to read-only roster policy and config | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-a1d0c965-readonly-cli-cards.md) |
 | `19c5ecff` | 2026-09-07 | docs(AR-251): record read-only cards and deferred verification | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-19c5ecff-readonly-card-checkpoint.md) |
 | `54bdff1f` | 2026-09-07 | fix(cli): follow governed TTY defaults for read-only cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `bc6126bb` | 2026-09-07 | docs(AR-251): align checkpoint with governed card defaults | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-bc6126bb-card-default-checkpoint.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
