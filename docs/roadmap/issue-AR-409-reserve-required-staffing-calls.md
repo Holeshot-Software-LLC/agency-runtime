@@ -48,10 +48,11 @@ neither decision specified how those attempts share the earlier envelope.
 ## Current state
 
 The reviewed implementation is checkpointed on
-`codex/ar409-reserve-required-staffing`, integrated through `d28ccc23`. It is not on main
+`codex/ar409-reserve-required-staffing`, integrated through accepted AR-408
+checkpoint `ae916dd1`. It is not on main
 or installed. Package phase: fast_verification; source review and the bounded
-receipt recheck are complete, but combined-candidate integration and delivery
-remain pending. Tracker #735 and the filing records are published separately
+receipt recheck and combined-candidate integration are complete, but acceptance
+and delivery remain pending. Tracker #735 and the filing records are published separately
 from the reviewed implementation so tracker parity does not depend on its merge.
 
 Fixed-response tests now run subject1 + planner1 + recruiter2 + critic1 within
@@ -97,9 +98,9 @@ end-to-end latency-equivalence claim.
 
 ## Dependencies
 
-Integrate AR-408's truthful failure/timeout projection before freezing the
-combined candidate. Adapt its exhausted-critic test to replay the real exhausted
-critic boundary while preserving its committed pre-fix live provenance.
+AR-408's truthful failure/timeout projection is integrated. Its exhausted-critic
+test now replays the actual exhausted critic boundary while preserving its
+committed pre-fix live provenance; its projection fixture funds a real attempt.
 ADR-0235 reconciles ADR-0132 and ADR-0197 without retiring their unchanged rules.
 AR-401's shared deadline and AR-383's subject/context projection remain intact.
 

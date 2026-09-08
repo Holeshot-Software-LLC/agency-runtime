@@ -97,8 +97,9 @@ checks. None of these paths gains calls, credentials or execution authority.
 
 ## Consequences
 
-Policy filing: `96a048d6`, indexed in the worklog. The separately reviewed
-implementation remains branch-only until AR-408 integration and delivery.
+Policy filing: `96a048d6`; implementation: `9946461a`, indexed in the worklog.
+The separately reviewed implementation has integrated AR-408's accepted
+checkpoint and remains branch-only pending acceptance and installed delivery.
 
 The demonstrated subject2/planner1/recruiter2 exhaustion becomes at most
 subject1/planner1/recruiter2/critic1 under the same five-call strict cap, if the

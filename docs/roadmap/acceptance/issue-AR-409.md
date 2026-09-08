@@ -25,8 +25,9 @@ Builder evidence only; no acceptance verdict is supplied. The recorded tests
 ran on the implementation based on `2274823ca3d56ddeaa78cd69cf8a6d9dedf3407c`,
 branch `codex/ar409-reserve-required-staffing`; the branch has since normally
 integrated `d28ccc23`. Filing `96a048d6` and ledger `e010ed2a` publish tracker
-#735 and reciprocal records. AR-408's runtime integration remains pending.
-Freeze this record only after the combined candidate exists in an ancestor commit.
+#735 and reciprocal records. AR-408's accepted checkpoint `ae916dd1` is now
+normally integrated with both runtime corrections preserved. Freeze this record
+only after the combined candidate exists in an ancestor commit.
 
 ## Builder evidence
 
@@ -35,6 +36,7 @@ Freeze this record only after the combined candidate exists in an ancestor commi
 | 1 | file | Shared remaining ledger, stage-local total cap and pre-call reservation admission | 2026-09-07 | agency_runtime/core/workforce/inference.py:1244-1273 |
 | 1 | file | Reservations are checked before consumption and actual invocation; refusals refund existing ledger | 2026-09-07 | agency_runtime/core/workforce/inference.py:1752-1867 |
 | 1 | test | Explicit strict caps 1–8 and provider-fallback admission; no calls for an unaffordable uncached mandatory path | 2026-09-07 | tests/test_staffing_call_reservations.py:147-237 |
+| 1 | test | Fresh fast, balanced and strict defaults still fund both repairs without subject work | 2026-09-07 | tests/test_staffing_call_reservations.py:132-145 |
 | 1 | test | Stage limits count actual requests after a refunded pre-request refusal | 2026-09-07 | tests/test_staffing_call_reservations.py:283-315 |
 | 2 | test | One actual subject call across providers, including refunded refusal followed by fallback | 2026-09-07 | tests/test_staffing_call_reservations.py:179-192 |
 | 2 | test | Valid inferred subject still reaches planner and recruiter documents | 2026-09-07 | tests/test_staffing_call_reservations.py:239-255 |
@@ -45,11 +47,14 @@ Freeze this record only after the combined candidate exists in an ancestor commi
 | 3 | test | Subject plus both repairs requires six; strict five refuses the final recruiter repair after four calls | 2026-09-07 | tests/test_staffing_call_reservations.py:163-176 |
 | 3 | test | Genuine veto remains terminal; available critic semantic repair remains permitted | 2026-09-07 | tests/test_staffing_call_reservations.py:206-216 |
 | 3 | test | Invalid first critic reply receives its existing single semantic repair when funded | 2026-09-07 | tests/test_staffing_call_reservations.py:258-265 |
+| 3 | file | Integrated strict path still requires a real verdict and distinguishes refusal from veto | 2026-09-07 | agency_runtime/core/workforce/inference.py:4962-4994 |
 | 4 | test | Warm exact plan/recruiter cache spends no calls, including pre-used ledger; strict critic remains fresh | 2026-09-07 | tests/test_staffing_call_reservations.py:195-203 |
 | 4 | test | Cached stages are used before their own admission floor | 2026-09-07 | tests/test_staffing_call_reservations.py:268-280 |
 | 4 | test | Actual Store failure receipts for early zero-call and recruiter-reservation refusal retain budget cause | 2026-09-07 | tests/test_staffing_call_reservations.py:337-376 |
 | 4 | test | Exact budget cause appends to existing verifier causes without duplication or status change | 2026-09-07 | tests/test_staffing_call_reservations.py:379-400 |
 | 4 | file | Failure projection adds only the known missing closed budget reason | 2026-09-07 | agency_runtime/core/workforce/inference.py:4225-4260 |
+| 4 | test | Actual exhausted-critic boundary preserves budget cause after AR-408 integration | 2026-09-07 | tests/test_staffing_failure_receipts.py:93-125 |
+| 5 | command-output | Combined AR-408/409 focused suite, named production spine, policy mutation control and routing | 2026-09-07 | docs/roadmap/acceptance/issue-AR-409.md#combined-candidate-verification |
 | 5 | command-output | Focused/broad regression command outcomes, with source-stage and unsuccessful intermediate runs retained | 2026-09-07 | docs/roadmap/acceptance/issue-AR-409.md#test-command-evidence |
 | 5 | command-output | Full 188 pre-refinement conformance and fresh five post-refinement subset, with initial setup failures distinguished | 2026-09-07 | docs/roadmap/acceptance/issue-AR-409.md#mutation-command-evidence |
 | 5 | command-output | Routing corpus and source checks; no live model-quality inference | 2026-09-07 | docs/roadmap/acceptance/issue-AR-409.md#routing-and-source-checks |
@@ -65,16 +70,54 @@ Freeze this record only after the combined candidate exists in an ancestor commi
 These are retained terminal summaries and report fields from September 7 local
 commands, not an archive of every stdout byte. All paths below identify that
 historical execution environment; tests and source citations remain in this
-repository. No model/provider calls, installed activation, owner-profile edits,
-tracker writes or isolated acceptance runs occurred in this worker package.
+repository. No model/provider calls, installed activation or owner-profile edits
+occurred during these tests. Tracker #735 was subsequently created under owner
+authorization; isolated acceptance is a separate phase after candidate freezing.
 
 The routing corpus uses deterministic candidate recall and synthetic inference
 receipts. A passing routing or mutation gate is not live staffing quality,
 all-host delivery or end-to-end latency equivalence. Existing live receipt
 `3615c4fb-1c2f-4a9c-b76f-bd8638f59385` motivates the regression; it is not a
-successful execution of this candidate. Parent must integrate AR-408, adapt its
-historical exhausted-critic test and record the installed combined-candidate
-live checkpoint separately.
+successful execution of this candidate. AR-408 is integrated and its historical
+test now exercises the isolated exhausted-critic boundary; its accepted
+`d9dde3cd` snapshot retains the original sequence. Parent must record the
+installed combined-candidate live checkpoint separately.
+
+### Combined candidate verification
+
+Normal integration of accepted AR-408 ledger `ae916dd1` preserves the early
+effective-timeout binding and actual critic-failure classification. Its old
+current-flow reproduction is now an isolated exhausted-critic boundary test:
+two real setup calls, a deliberately pre-exhausted five-call ledger and no
+critic invocation. The new stage-aware AR-409 test proves the corrected
+subject1/planner1/recruiter2/critic1 flow. AR-408's timeout-projection fixture
+uses strict five instead of two so it still produces an attempt to project;
+the projection assertions and historical accepted snapshot are unchanged.
+
+```bash
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_staffing_call_reservations.py tests/test_staffing_failure_receipts.py tests/test_preflight_provider_deadline.py tests/test_preflight_failure_diagnosis.py tests/test_transport_failure_causes.py tests/test_workforce_inference.py tests/test_decision_conformance.py -q -W error -k 'not windows'
+```
+
+Retained terminal summary: `210 passed in 3.89s`.
+
+```bash
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_senior_audit_hardening.py tests/test_configuration_namespace_security.py tests/test_executable_namespace_security.py tests/test_storage_file_trust.py tests/test_dashboard_auth_boundary_regression.py tests/test_dashboard_transaction_refactors.py tests/test_routing_correctness.py tests/test_workforce_hiring_contract.py tests/test_workforce_selection_safety.py tests/test_workforce_dynamic_hiring.py tests/test_upstream_selection_eval.py tests/test_decision_conformance.py tests/test_delegation_p1_correctness.py tests/test_store_turn_atomicity.py tests/test_roster_snapshot_generation.py tests/test_mcp_protocol_hardening.py tests/test_cli_parser_contract.py tests/test_cli_upgrade.py tests/test_update_service.py tests/test_native_installer.py tests/test_host_uninstall.py tests/test_cli_uninstall.py tests/test_host_boundary_hardening.py tests/test_cli_owner_authority.py tests/test_security_turn_boundaries.py tests/test_canary_coverage_complete.py tests/test_complexity_refactors.py tests/test_coverage_final_host_cli.py tests/test_resident_manager_lifecycle.py -q -W error
+```
+
+Retained terminal summary: `1085 passed, 3 skipped in 69.50s (0:01:09)`.
+
+The exact five-selection mutation command under Mutation command evidence was
+rerun against this combined source: baseline exit zero/2271ms, 5 mutations,
+5 killed, 0 survived, 0 invalid, passed=true and source_unchanged=true. In listed
+order, default-budget control and four new anchors took 1179/1147/1132/1136/1218ms.
+The exact routing command below was also rerun: passed=true, 45 routing/30
+policy/22 delegation cases, all 39 gates; synthetic p95 1.209ms and cache p95
+0.213ms. These are not native model-call timings or quality equivalence.
+
+Whole-repository Ruff passed and format checked 769 files after integration.
+Immediately before integration the unchanged dashboard suite passed 224 tests,
+zero failures, duration 216.858642ms with `node --test tests/dashboard_ui.test.mjs`.
+No exhaustive coverage/matrix/workflow or new staffing provider request ran.
 
 ### Test command evidence
 
@@ -322,8 +365,8 @@ Focused Ruff check and format check passed for the two runtime files and new
 test file; metadata checked 1242 Markdown documents; `git diff --check` passed.
 
 All five criteria await isolated candidate-bound verification; this draft
-supplies no judgments. Parent must complete AR-408 integration, source/record
-publication and the exact combined-candidate installed live checkpoint.
+supplies no judgments. Parent must complete source/record publication and the
+exact combined-candidate installed live checkpoint.
 Subject plus both repairs and critic needs six calls, not five. Conservative future
 cache/gap reservations may abstain sooner, and no paired live quality,
 hiring-success or end-to-end latency-equivalence claim is supported.

@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-409
 branch: codex/ar409-reserve-required-staffing
-evidence_commit: 96a048d682721da5ce5cbc92e8f5ce18f113ff10
-minimum_ledger_commit: e010ed2a8770dab63ad2b06e430518c966f99c2d
+evidence_commit: 9946461a96007eda1ca06830121c4a29edeb2ea7
+minimum_ledger_commit: 967ff2e806752fc1d4191ed332b7b326f25e81e3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735
 ---
@@ -28,8 +28,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735
 ## Checkpoint
 
 This is a branch-only implementation checkpoint, not an installed build.
-The two metadata SHAs identify the published filing/ledger prerequisite;
-the containing implementation commit and its ledger retain the reviewed source.
+The two metadata SHAs identify the reviewed implementation/ledger prerequisite;
+the containing normal merge integrates AR-408's accepted `ae916dd1` checkpoint.
 Worktree: `/tmp/agency-runtime-ar409-reserve-required-staffing`.
 Tracker #735 and all filing reciprocals are present.
 
@@ -59,14 +59,15 @@ the parent owns final PR/merge and installed delivery. No provider requests ran.
   all five after refinement. Routing, Ruff, format and diff checks passed.
 - Initial nonprivate-umask conformance setup and four-only fixture-copy runs
   failed before mutations; exact attempts are preserved in the evidence draft.
+- Combined AR-408/409: 210 focused passes in 3.89s; named production spine
+  1085 passes/3 skips in 69.50s; fresh five mutation kills and routing passed.
 
 ## Exact blocker
 
-AR-408 has not yet been integrated into this worktree. Its historical
-five-call current-flow test needs adaptation to the isolated exhausted-critic
-boundary; preserve the committed live failure as provenance. Do not freeze
-acceptance or claim installed/native success before the combined candidate.
-Final combined acceptance verdicts and live delivery evidence are pending.
+AR-408 is integrated. Its historical five-call current-flow test now exercises
+the isolated exhausted-critic boundary; the accepted original snapshot is
+unchanged. Freeze acceptance to the combined committed candidate next.
+Final combined acceptance verdicts and live delivery evidence remain pending.
 
 ## Same-task continuity
 
@@ -79,9 +80,9 @@ substantive/ledger pair; checkpoint this implementation before live work.
 
 ## Next bounded work package
 
-1. Integrate the exact AR-408 main merge and adapt its exhausted-critic test.
-2. Run focused combined boundary tests and final source checks.
-3. Freeze acceptance to the combined candidate and run isolated verification.
+1. Commit the combined source/evidence and immediate ledger.
+2. Audit bounded excerpts and freeze acceptance to that combined candidate.
+3. Run isolated single-criterion verification for all five criteria.
 4. Parent installs/live-checks that exact combined candidate under existing
    configured authority, then records PR/merge and native evidence honestly.
 

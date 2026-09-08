@@ -1770,12 +1770,12 @@ def _invoke_stage_provider(
     reserve: int = 0,
 ) -> tuple[ProviderEntry, StructuredProviderResult | None, int]:
     timeout = remaining_provider_timeout(provider.timeout)
+    provider = replace(provider, timeout=timeout)
     if timeout <= 0:
         attempts.append(
             _attempt(stage, provider, status="failed", reason_code=PROVIDER_DEADLINE_EXHAUSTED)
         )
         raise _StageCallExhausted("workforce_inference_deadline_exhausted")
-    provider = replace(provider, timeout=timeout)
     if budget.remaining <= reserve or not budget.consume():
         raise _StageCallExhausted("workforce_call_budget_exhausted")
     started = time.monotonic()
@@ -4982,7 +4982,14 @@ def plan_and_staff_workforce(
                 attempts=attempts,
                 detail_codes=critic_reasons,
                 calls_used=_total_calls_used(budget, attempts),
-                staffing=_critic_rejected_staffing(critic_reasons),
+                # A veto requires a valid negative critic verdict. Exhausted
+                # budgets, unavailable providers and invalid replies did not
+                # deliver one, so retain their failure instead of inventing it.
+                staffing=(
+                    _critic_rejected_staffing(critic_reasons)
+                    if critic_reasons[0] == "staffing_critic_rejected"
+                    else _empty_staffing(critic_reasons[0], critic_reasons[1:])
+                ),
                 cache_hits=cache_hits,
             )
 
