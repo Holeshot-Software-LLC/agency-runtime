@@ -466,7 +466,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
-| [AR-419](issue-AR-419-finalize-openclaw-cli-responses.md) | `eb981751`, `ca0914cd`; native evidence PR795, repair pending | [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md) |
+| [AR-419](issue-AR-419-finalize-openclaw-cli-responses.md) | `eb981751`, `ca0914cd`, `94b9eb28`; internal CLI terminal candidate, native proof pending | [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md) |
 | [AR-418](issue-AR-418-preserve-hermes-truncation-terminal-evidence.md) | `1dd69c3a`, `eb981751`, `ca0914cd`; native evidence PR795, repair pending | [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md) |
 | [AR-415](issue-AR-415-respect-negated-change-requests.md) | `c1ef8566`, `d0bb4127`, `85f55021`, `21a8a39e`, `39f5142a`; native proof PR793 and isolated acceptance satisfied, `86d3728a`, `1162702f` | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md) |
 | [AR-417](issue-AR-417-self-contained-qualified-veto-regression.md) | `8629e2ed`, `0bc2f895`, `130631b8`, `f373d905`, `14459ffa`, `9d50063b` | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
