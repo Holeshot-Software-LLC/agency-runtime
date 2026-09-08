@@ -31,7 +31,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owned branch starts from clean synchronized main97e269ec. PR799 is open.
-Installed immutable source308b670a contains OpenClaw repair94b9eb28; all614
+Installed immutable source8921c77e contains OpenClaw repair94b9eb28 and
+Hermes adapteref7a0466; all614
 package files match its verified wheel. OpenClaw and Claude now have fresh
 ordinary accepted terminal evidence. AR-404/418/419 remain open; no all-host
 completion. AR-414/415 remain acceptance-closed. Windows work is untouched.
@@ -60,7 +61,8 @@ once. This is executable proof only.
 ## Exact blocker
 
 Hermes native candidate59e52e556a is preserved as a repository patch;34native
-tests and94adapter tests pass. It is not installed or upstream-merged. Original
+tests and94adapter tests pass. It is not installed or upstream-merged; a bounded candidate-source trial uses
+the existing owner profile after normal Agency refresh. Original
 Hermes output-limit early returns bypass native finalizer/session-end callbacks;
 outer runner and CLI can misclassify printable partial output as success. No
 supported terminal-result hook covers those returns. AR-418 needs native-boundary

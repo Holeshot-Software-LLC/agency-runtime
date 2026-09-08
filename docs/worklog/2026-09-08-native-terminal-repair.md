@@ -148,3 +148,12 @@ made no inference call. Removing that flag reaches a real configuration gate:
 CLI config has only hooks and no answering provider. Desktop separately selects
 Z.AI coding-plan OAuth. Provider choice was requested once; no credentials or
 models were substituted. Native executable is now available but no accepted turn.
+
+
+Candidate8921c77e builds canonically; independent artifact verification passes
+from the clean private clone (shared-clone Git config exceeds the existing
+inspection bound), Twine passes, all614installed package files match exactly.
+Normal Hermes Agency refresh succeeds. UI224and tracker410pass. One bounded
+Hermes candidate trial is prepared using native59e52e556a and the existing owner
+profile/credential loader; the normal native checkout and launcher stay unchanged.
+This will be candidate-source evidence, not an upstream-installed completion claim.
