@@ -115,3 +115,6 @@ performed the replacements. No active terminal was stopped. Owner clarification
 on concurrent installers is pending; further chmod retries were not performed.
 AR-420's source/native evidence and isolated verdicts remain valid observations;
 current Claude availability is an explicit separate AR-404 blocker.
+
+[PR806](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/806) merged as `ad8b05de`
+with exact subject `docs(hosts): merge PR806 Claude recurrence evidence`. Current Claude gate remains failing.
