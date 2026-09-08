@@ -21,8 +21,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-414
 branch: codex/ar416-installed-verification-20260908
-evidence_commit: 6a0eb8506bde7d4436ce5c4e63cf2aba5ae33c33
-minimum_ledger_commit: d8c6fa2ca04150bcfb1035784543558a3c7634c4
+evidence_commit: 0bc2f89526d8949d26699b49233c0a4307616205
+minimum_ledger_commit: caab485176d63c3c0062c022e55866d8733f19e7
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ---
@@ -37,7 +37,9 @@ captured-verdict replay pass; rejection is preserved with cause/omission marker.
 AR-417 removes an unpackaged test-input dependency; extracted regression8pass.
 Codex plugin0.1.0+codex.823aab6fbe85 registered/enabled, restart required. Fresh
 hooks/list reports8modified/0trusted. Owner asked to review /hooks in a fresh TUI;
-no bypass or native attempt. Independent isolated acceptance work continues.
+no bypass or native attempt. Initial verifier launch was refused by namespace
+trust; same-version private Claude2.1.263 now passes transport checks. Isolated
+acceptance work continues without changing the existing CLI or guards.
 
 Native handoff capture complete; bounded source diagnostic fix verified in PR788.
 Two exact native packets expose experiment-tracker assigned to non-experiment

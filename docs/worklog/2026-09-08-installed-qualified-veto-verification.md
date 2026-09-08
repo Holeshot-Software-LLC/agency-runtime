@@ -91,3 +91,13 @@ Recorded checkpoint: `8629e2ed` — test(packaging): make qualified veto regress
 Recorded checkpoint: `0bc2f895` — docs(staffing): record installed qualified-veto proof and native trust gate.
 
 Recorded checkpoint: `130631b8` — docs(acceptance): cite installed veto and packaged regression evidence.
+
+## Isolated verifier environment
+
+Initial AR-416/417 verifier attempts recorded zero verdicts: the installed
+Claude2.1.263 npm package has group-writable package/bin directories and the
+unchanged executable guard refused launch. No judgment was produced. A separate
+owner-private npm installation pinned to the same2.1.263 version passed native
+transport discovery, authentication and capability checks. Its command-scoped
+PATH is used only for the bounded isolated acceptance runner; the existing
+Claude installation and every runtime guard remain unchanged.
