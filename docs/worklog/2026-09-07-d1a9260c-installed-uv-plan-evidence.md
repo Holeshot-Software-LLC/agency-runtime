@@ -104,3 +104,14 @@ commit; no PR or owner install occurred. The new evidence candidate requires
 all five isolated verdicts to be regenerated. This changes evidence semantics,
 not installer safety, ownership or mutation authority; existing ADR-0107 and
 the acceptance lifecycle still govern.
+
+## Refused verifier admission
+
+Commit `7a387063` preserves the failed Claude admission before the second
+actual review. Its package directory had again become group-writable; the
+production resolver explicitly refused it as untrusted. The runner exited 2
+and recorded no verdict for any criterion. Actor identity is unproved, and
+the worker did not enter a chmod/retry loop. The owner instead selected the
+supported Codex verifier against the unchanged eac2d6a2 receipt candidate.
+Read-only checks found Codex CLI 0.153.4 installed, authenticated and usable;
+no owner configuration or credentials were changed.
