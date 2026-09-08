@@ -53,11 +53,14 @@ directories tightened775to755, normal refresh, native2.1.265. See
 
 Zcode desktop3.10.2 includes native CLI0.16.5. Installed an unchanged copy of
 its bundled zcode.cjs and a PATH launcher; native doctor passes. Normal Agency
-refresh succeeds. Native turn remains to be run with explicit build permissions
-because native headless default is yolo. This is executable proof only.
+refresh succeeds. Native build-mode trial reaches missing answering-model configuration; CLI
+config has only hooks, desktop uses separate Z.AI OAuth. Provider choice asked
+once. This is executable proof only.
 
 ## Exact blocker
 
+Hermes native candidate59e52e556a is preserved as a repository patch;34native
+tests and94adapter tests pass. It is not installed or upstream-merged. Original
 Hermes output-limit early returns bypass native finalizer/session-end callbacks;
 outer runner and CLI can misclassify printable partial output as success. No
 supported terminal-result hook covers those returns. AR-418 needs native-boundary

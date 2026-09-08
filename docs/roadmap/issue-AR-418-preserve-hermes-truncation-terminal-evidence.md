@@ -31,6 +31,20 @@ Exit status and installation success therefore conceal an incomplete native turn
 
 ## Current state
 
+A concrete native candidate is preserved in
+`evidence/AR-418-hermes-native-terminal.patch` (native commit59e52e556a on
+base7cd91114b4). The two real conversation-loop regressions fail on the unchanged
+base with missing failed state and pass with the patch. Native34tests pass:
+truncation failure diagnostics use a dedicated transform, emit session-end failure,
+and printable partial results exit nonzero. Agency now consumes that optional
+hook, derives failure headers from exact current Store correlation, and closes
+failed runs without accepting partial output. Missing/cross-session traces retain
+pass-through diagnostics and cannot close another turn. Adapter94tests pass.
+The native candidate is not installed or merged upstream; installed ordinary
+Hermes success and exact original provider branch remain unproven. No old failed
+receipt has been finalized. This is a candidate, not AR-418 acceptance.
+
+
 September 8 continuation source inspection confirms that native
 `agent/conversation_loop.py` returns early both for length exhaustion and for
 malformed tool-call JSON classified as truncated. These paths bypass

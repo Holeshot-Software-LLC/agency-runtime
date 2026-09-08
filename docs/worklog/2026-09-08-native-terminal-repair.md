@@ -120,3 +120,31 @@ launcher. Bundle SHA2563597160465b67da248fa3fb919920ca30d4e093003a4d70cde2a2e339
 Normal Agency Zcode refresh succeeds. Existing desktop launcher is untouched;
 its sandbox flags are not used. Trial will explicitly use native build permissions
 because headless prompt default is yolo. This records discovery/install only.
+
+
+## Hermes native and adapter candidate
+
+Native owned-worktree commit59e52e556a, exact subject
+`fix(lifecycle): preserve failure diagnostics on truncated turns`, based on
+7cd91114b4, is preserved as AR-418-hermes-native-terminal.patch. Two actual loop
+regressions fail on unpatched source with missing failed state. Patched34native
+tests pass through the canonical hermetic runner. First test iteration exposed
+a fixture home-selection error; corrected without weakening assertions. Native
+failure callback preserves observed finish_reason and source branch, not an
+inferred token cap. No native installed checkout was edited. Upstream publication
+and adoption are separate from this same-repository delivery.
+
+Agency's optional failure hook formats exact Store-backed diagnostic headers;
+session-end failed=true closes only the exact active session/trace as failed.
+It never accepts partial text. Focused94tests pass. Initial adapter fixtures lacked
+request_kind and an existing hook inventory expected the old list; corrected
+fixtures and the inventory. Existing correlation, ordinary acceptance and outbound
+checks remain. Refreshed production spine1151passed/three skipped in71.23s; Ruff780files,
+metadata, policy availability and docs1342pass. Conformance follows this clean
+checkpoint; the earlier188/188 verdict applies only to the earlier source.
+
+Zcode native parser advertises but rejects --max-turns; the parser-only attempt
+made no inference call. Removing that flag reaches a real configuration gate:
+CLI config has only hooks and no answering provider. Desktop separately selects
+Z.AI coding-plan OAuth. Provider choice was requested once; no credentials or
+models were substituted. Native executable is now available but no accepted turn.
