@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-192
 branch: codex/ar192-hook-trust-reconciliation
-evidence_commit: d39ec14dc0d79094cb8398d807da2554263a5c3f
-minimum_ledger_commit: f0e388633f9fa22d7d81e8a40e7265d3e5262d18
+evidence_commit: 6d8f6aae66812c76efe7c0602b0d16797d7955b2
+minimum_ledger_commit: 54ed5c7345521f67e5eccdb2b9c3fcb01a0c089f
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -29,6 +29,10 @@ Branch starts at clean f0e38863 after retained AR-190 publication. This package
 reconciles an implemented trust preflight with current ADR-0173 modes. It does
 not change runtime authority. Parent serializes publication after AR-191 and
 owns all installed/native operations. No acceptance run has started.
+Evidence is committed at 6d8f6aae with ledger 04f98f23. Normal merge
+8a5861e6 and ledger 54ed5c73 preserve published AR-191 retirement and all
+incoming frozen acceptance packets. The issue remains in_progress.
+Retained publication: [PR #742](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/742).
 
 ## Completed evidence
 
@@ -79,7 +83,10 @@ tests/test_host_canary.py -q -W error`: 180 passed in 11.34 seconds.
 Ruff: six files clean/formatted. Reused exact-source named-spine evidence is
 1085 passed/three skips in 69.50 seconds at combined f670e6b5; only the unrelated
 AR-189 test was added afterward. Documentation gates remain to be run after
-the complete evidence slice. No native Windows or exhaustive corpus executed.
+the complete evidence slice. Metadata and strict docs pass for 1259 files at
+the initial receipt; final integration checks pass for 1264 Markdown files,
+tracker parity for 400 records, policy, worklog and diff checks.
+No native Windows or exhaustive corpus executed.
 
 ## Constraints
 

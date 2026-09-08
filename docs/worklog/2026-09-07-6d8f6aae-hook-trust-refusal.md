@@ -16,7 +16,7 @@ type: worklog
 commit: 6d8f6aae66812c76efe7c0602b0d16797d7955b2
 short: 6d8f6aae
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/742
 related_issues:
   - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
 ---
@@ -74,3 +74,8 @@ Parent serializes this retained publication after AR-191 and before AR-194.
 Normal merge `8a5861e6` integrates AR-191 PR #741 merge `a8c2ca54` without
 changing any runtime or frozen acceptance packet. Adjacent registry/worklog
 conflicts were resolved by retaining both records and their exact annotations.
+
+Retained publication is PR #742. Final integration checks pass metadata and
+strict docs for 1264 Markdown files, policy availability, exact worklog index
+for 2107 substantive commits, tracker parity for 400 roadmap records and diff
+whitespace. The product/script/test/packaging diff against main is empty.

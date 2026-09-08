@@ -78,6 +78,9 @@ known missing evidence. The named source-equivalent production spine passed
 1085 cases with three skips in 69.50 seconds; its exact provenance is linked
 in the receipt.
 
+Retained evidence publication:
+[PR #742](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/742).
+
 ### Historical July implementation evidence
 
 Codex 0.145's read-only app-server `hooks/list` method is the authoritative
