@@ -2524,6 +2524,11 @@ class HookBridge:
             )
         except (EvidenceCorrelationError, KeyError, RuntimeError, ValueError):
             return ""
+        if marker == "INITIAL":
+            instruction += "\nAgency finalizer correlation: " + json.dumps(
+                {"session_id": session_id, "trace_id": trace_id},
+                separators=(",", ":"),
+            )
         return format_header_snapshot(marker, instruction, header)
 
     def _handle_user_prompt_submit(self, payload: dict[str, Any]) -> dict[str, Any]:

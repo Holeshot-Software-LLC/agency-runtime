@@ -11,6 +11,7 @@ from typing import Any, TypedDict
 from .contract import (
     HEADER_FIELDS,
     EvidenceCorrelationError,
+    failed_preflight_header,
     fill_header_fields,
     format_header,
     parse_header,
@@ -38,6 +39,7 @@ class FinalizationResult(_FinalizationOutcome, total=False):
     """
 
     verification_unavailable: bool
+    preflight_failed: bool
 
 
 class FinalizationBatchResult(FinalizationResult):
@@ -323,6 +325,21 @@ def finalize_response(
             trace_id,
         )
     except EvidenceCorrelationError as error:
+        # A correlated failure is readable evidence, not missing correlation.
+        # Return diagnostic bytes without accepting, reopening or changing the
+        # immutable failed turn. Completed/rejected turns keep replay rules.
+        try:
+            failure_header = failed_preflight_header(store, session_id, trace_id)
+        except (AttributeError, KeyError, RuntimeError, ValueError):
+            failure_header = None
+        if failure_header is not None:
+            body = _body_after_possible_header(draft_text)
+            return {
+                "action": "continue",
+                "text": f"{failure_header}\n\n{body}" if body else failure_header,
+                "missing": [] if body else ["response_body"],
+                "preflight_failed": True,
+            }
         return _unreadable_snapshot_result(error, draft_text)
 
     if not _clean(draft_text):
