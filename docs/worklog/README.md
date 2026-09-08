@@ -2155,11 +2155,14 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4f1c1c83` | 2026-09-07 | docs(backlog): integrate next-twenty source triage | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `e790c4d4` | 2026-09-07 | Merge pull request #747 from Holeshot-Software-LLC/codex/ar411-retain-catalog-failure-identity | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
 | `ae15183c` | 2026-09-07 | chore(delivery): integrate published recall failure diagnostic | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `8ce0461f` | 2026-09-07 | test(hermes): retain AR-280 native purpose authority boundary | AR-280 | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 | `378102d7` | 2026-09-07 | docs(backlog): link source triage and published diagnostic checkpoint | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `cb9e9a50` | 2026-09-07 | Merge pull request #748 from Holeshot-Software-LLC/codex/evening-live-delivery-20260907 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `fc699ff3` | 2026-09-07 | fix(openclaw): bind complete installed-copy provenance for AR-270 | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 | `a9073fe6` | 2026-09-07 | chore(AR-270): integrate published live-delivery checkpoint | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 | `6e701219` | 2026-09-07 | docs(AR-270): retain closed-provenance review and deferred runtime gates | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `77391f21` | 2026-09-07 | chore(AR-280): integrate published installed-delivery checkpoint | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
+| `9b15107a` | 2026-09-07 | Merge pull request #751 from Holeshot-Software-LLC/codex/ar280-authenticated-internal-purpose | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
