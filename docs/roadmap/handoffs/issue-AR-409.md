@@ -16,9 +16,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-409
-branch: codex/ar409-reserve-required-staffing
-evidence_commit: f670e6b564af75e4b6e5a1a576db4b719080efa6
-minimum_ledger_commit: 2236d99635bc9a54963c41a7f8dd17a19df260b6
+branch: codex/evening-live-delivery-20260907
+evidence_commit: 4db6be169a4f86185c261d93814f1106d79f0136
+minimum_ledger_commit: cfa04838cb3e52dbe27f04dc8e6a91199a8d025f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735
 ---
@@ -27,10 +27,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735
 
 ## Checkpoint
 
-This is a branch-only implementation checkpoint, not an installed build.
-The metadata SHAs identify the combined implementation/evidence and ledger;
-the normal merge integrates AR-408's accepted `ae916dd1` checkpoint.
-Worktree: `/tmp/agency-runtime-ar409-reserve-required-staffing`.
+Source is on main at `4db6be16` and installed in the owner CLI. Exact-main
+portable artifact checks and fresh installed generated-host smoke passed.
+All 613 package payload files match the exact-main wheel. Four owner hosts
+were refreshed to runtime `1b6aafe178de`; OpenClaw remains separately installed.
+Worktree: `/tmp/agency-runtime-evening-live-delivery`.
 Tracker #735 and all filing reciprocals are present.
 Source PR: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/739.
 It deliberately leaves #735 open pending the required installed live checkpoint.
@@ -38,7 +39,7 @@ It deliberately leaves #735 open pending the required installed live checkpoint.
 The reviewed code reserves required downstream calls and caps subject inference
 at one actual call. Its final receipt refinement appends only the exact budget
 cause when otherwise lost. The worker owns these scoped source/record commits;
-the parent owns final PR/merge and installed delivery. No provider requests ran.
+the parent owns installed delivery. Fresh native checks are the next boundary.
 
 ## Completed evidence
 
@@ -90,11 +91,11 @@ substantive/ledger pair; checkpoint this implementation before live work.
 
 ## Next bounded work package
 
-1. Publish the accepted-source PR without closing #735 or marking done.
-2. Run normal PR gates and merge, preserving the exact runtime identity.
-3. Notify the parent immediately so owner installation/live checks can start.
-4. Parent installs/live-checks that exact combined candidate under existing
-   configured authority, then records PR/merge and native evidence honestly.
+1. Fresh read-only Codex trust inventory, then one exact-profile native canary.
+2. One Claude native canary and ordinary Hermes/ZCode harness checks.
+3. Inspect actual headers, injection and durable attempt receipts; record
+   failures without expanding budgets or claiming generated smoke is live proof.
+4. Publish the bounded delivery receipt and merge before 01:00Z hard stop.
 
 ## Verification
 
