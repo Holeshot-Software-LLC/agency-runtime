@@ -2128,6 +2128,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4db6be16` | 2026-09-07 | Merge pull request #739 from Holeshot-Software-LLC/codex/ar409-reserve-required-staffing | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `7e718c15` | 2026-09-07 | chore(AR-190): integrate accepted main and retain bounded evidence gap | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `27715362` | 2026-09-07 | docs(AR-190): link retained publication and exact review limits | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
+| `d39ec14d` | 2026-09-07 | Merge pull request #740 from Holeshot-Software-LLC/codex/ar190-uv-plan-reconciliation | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
