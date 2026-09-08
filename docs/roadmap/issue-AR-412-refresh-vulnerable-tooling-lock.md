@@ -45,6 +45,14 @@ Dependency provenance from the lock is explicit:
 - `release` extra → twine → keyring → Linux secretstorage → cryptography.
 - The default runtime still requests only PyYAML.
 
+Twine excludes keyring on ppc64le/s390x; the cryptography path is therefore
+not present on every Linux architecture. Independent source review confirmed
+66 package records (65 distinct names because stevedore has two resolution
+records), unchanged global lock fields/edges, 64 other unchanged records and
+unchanged artifact tag inventories: 31 cryptography wheels and one pip wheel.
+The exact new lock SHA256 is
+`434787dd65fb133958b1d6ed537f622d403c9514709e99da717264652fbff89f`.
+
 The [pip maintainer release notes](https://pip.pypa.io/en/stable/news/) identify the repair removing a
 second URL-path decode and hardens download-path joins. Repository alert #2,
 GHSA-qwm4-qh6w-59xr, identifies versions below 26.2.0 as affected.
