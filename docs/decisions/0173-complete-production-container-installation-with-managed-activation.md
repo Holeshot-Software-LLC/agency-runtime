@@ -6,6 +6,7 @@ created: 2026-08-25
 updated: 2026-08-26
 tags: [installation, containers, codex, hooks, trust, automation]
 related:
+  - docs/roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/issue-AR-300-bind-explicit-install-config-to-managed-canary.md

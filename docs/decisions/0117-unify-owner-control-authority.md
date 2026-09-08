@@ -6,6 +6,8 @@ created: 2026-07-30
 updated: 2026-07-30
 tags: [security, dashboard, cli, controls, installation, automation]
 related:
+  - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
+  - docs/roadmap/acceptance/evidence/AR-194-service-runtime-reconciliation-20260907.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
   - docs/worklog/README.md

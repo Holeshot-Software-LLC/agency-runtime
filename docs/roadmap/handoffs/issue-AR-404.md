@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
+  - docs/roadmap/acceptance/evidence/AR-194-service-runtime-reconciliation-20260907.md
   - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
   - docs/roadmap/acceptance/evidence/AR-191-v2-checklist-retirement-20260907.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
@@ -23,9 +25,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar191-v2-checklist-retirement
-evidence_commit: 49bea737318f05667ab72a9c267fda05a31250c6
-minimum_ledger_commit: f2114595445eda65b7018fe4c83eae59f0323423
+branch: codex/ar194-service-runtime-reconciliation
+evidence_commit: cd62d6588d8660033bf309220b74dcc1dbdebef6
+minimum_ledger_commit: 78ee74bafacece87a16af9bf51fd07b3a4eafa17
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -62,14 +64,18 @@ atd9dde3cd; PR737 mergedbfe21d66 at23:59:35Z and #732 is CLOSED, read back.
 AR-189/PR738 merged f408b6f2 at00:06:15Z; native Windows clauses remain open.
 AR409 source merged PR739/4db6be16; installed/live delivery remains parent-owned.
 AR190/PR740 merged d39ec14d; four criteria pass, criterion3 retains its evidence
-gap and two-review limit. Main ledger f0e38863 is now merged normally into191.
-Parent authorizes AR191 retirement/order45; no original criterion is accepted.
+gap and two-review limit. AR191/PR741 merged a8c2ca54 at00:33:11Z September8;
+no original criterion is accepted. Main is now merged normally into AR194.
 
 ## Completed evidence
 
 AR191: obsolete grant checklist retires under ADR0236, successorAR255; all
 nine original states remain. Aliases/arguments/exit codes/Store guards stay.
 Fresh23 offline cases pass; no restored grants or invalid-turn fallback.
+
+AR-194:116 focused/42 deselections; installed read-only Linux status healthy,
+four inspection modules source-identical. Original Windows repair hold remains;
+only retired AR-196 presence dependency is removed under ADR-0117.
 
 AR-189: real private ZCode install, write-free plan, wrong-digest refusal, exact
 apply and repeat no-op; seven owned handlers removed, bundle retained unchanged,
@@ -122,18 +128,19 @@ variable. No current-turn header snapshot; do not reinstall OpenClaw.
 
 ## Same-task continuity
 
-Owned tree: codex/ar191-v2-checklist-retirement. Do not commit main or touch
+Owned tree: codex/ar194-service-runtime-reconciliation. Do not commit main or touch
 another worker's dirty tree. Substantive commits get immediate narrow worklog
 ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
 AR-180 remains one-card exec only; parent also contains the same card, so its
 child-only wording is not literally met. AR-181 Windows remains unverified.
-AR185/408/409 source and AR189/190 are published. AR191 holds the publication
-token, then releases it to AR192; AR194 waits at its clean separate checkpoint.
+AR185/408/409 source and AR189/190/191/192 are published. AR192/PR742 merged
+bad847ab at00:40:01Z; AR194 now holds the publication token, then returns it
+for the parent's final runtime-fix package. No next-oldest record tonight.
 
 ## Next bounded work package
 
-1. Publish AR191 retirement, then release the serial token to AR192.
+1. Publish AR194, then return the token for the final runtime-fix package.
 2. Preserve accepted AR-185/AR-408 candidate hashes and verdicts unchanged.
 3. Parent owns AR409 installed upgrade/live checks; do not duplicate those calls.
 4. Stop cleanly by September 8 01:00 UTC.
