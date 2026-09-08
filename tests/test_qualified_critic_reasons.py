@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from hashlib import sha256
 from pathlib import Path
 
@@ -26,13 +25,13 @@ _OMITTED = "critic_reason_detail_omitted"
 
 
 def test_captured_qualified_veto_survives_receipts_and_terminal_header(tmp_path: Path) -> None:
-    packet = json.loads(
-        (
-            Path(__file__).parents[1] / "docs/roadmap/evidence/AR-414-native-critic-packet.json"
-        ).read_text(encoding="utf-8")
-    )
-    response = json.loads(packet["response_text"])
-    verdict = json.loads(response["choices"][0]["message"]["content"])
+    # Pin the observed native response directly: JSON evidence attachments are
+    # intentionally outside the governed sdist payload (AR-417). The complete
+    # packet remains in docs/roadmap/evidence/AR-414-native-critic-packet.json.
+    verdict = {
+        "approved": False,
+        "reason_codes": ["wrong-neighbor-selection-documentation-evidence-researcher"],
+    }
     outcome, _ = _run(verdict)
     assert not outcome.accepted
     assert outcome.staffing.units == ()

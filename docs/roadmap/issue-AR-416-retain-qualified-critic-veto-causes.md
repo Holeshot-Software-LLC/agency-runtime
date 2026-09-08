@@ -1,11 +1,15 @@
 ---
 title: "AR-416: Retain qualified critic veto causes in bounded receipts"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-08
 updated: 2026-09-08
 tags: [headers, critic, diagnostics]
 related:
+  - docs/roadmap/acceptance/issue-AR-416.md
+  - docs/roadmap/acceptance/evidence/AR-416-installed-qualified-veto-20260908.md
+  - docs/roadmap/issue-AR-417-self-contained-qualified-veto-regression.md
+  - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
   - docs/decisions/0240-project-qualified-critic-veto-causes-with-an-omission-marker.md
   - docs/worklog/2026-09-08-captured-native-critic-veto.md
@@ -30,6 +34,24 @@ the 56-character projection limit. The projection silently drops the whole reaso
 so both the failure receipt and native header lose the standard veto cause.
 
 ## Current state
+
+Phase done for this issue’s acceptance scope. All four isolated criteria are satisfied at candidate caab4851. The scoped
+receipt repair is installed and its captured-verdict replay preserves rejection.
+Fresh native-session proof remains with AR-414 behind the operator hook-review
+gate; this completion does not claim that proof.
+
+The following paragraphs preserve earlier checkpoints.
+
+Latest checkpoint: verified 8629e2ed wheel installed, all614package files match,
+and captured-verdict replay preserves the cause and terminal rejection. Codex
+plugin0.1.0+codex.823aab6fbe85 is registered/enabled; fresh native trust inspection
+reports8modified/0trusted. Native verification is waiting_for_operator for /hooks
+review in a fresh TUI. No bypass or native attempt; isolated acceptance pending.
+
+
+Installed-verification package started from b0dfd631. Preliminary canonical
+artifacts pass integrity checks, but an extracted regression exposed AR-417.
+Its test-only refinement is verified locally; rebuild precedes live install.
 
 Phase fast_verification complete. Source fix and captured-response regressions
 pass in PR788; isolated acceptance verdicts remain pending. Two captured native turns reproduced the same packet and
@@ -57,11 +79,11 @@ records this bounded projection rule; the upstream critic contract is unchanged.
 
 ## Acceptance
 
-- [ ] The captured qualified veto retains `critic_wrong_neighbor_selection`
+- [x] The captured qualified veto retains `critic_wrong_neighbor_selection`
       and an explicit omitted-detail marker through routing and preflight receipts.
-- [ ] Invalid codes, ordinary short codes, approval, veto and existing length,
+- [x] Invalid codes, ordinary short codes, approval, veto and existing length,
       count and disclosure boundaries retain their behavior.
-- [ ] The real failed-header/finalizer path displays the retained cause while
+- [x] The real failed-header/finalizer path displays the retained cause while
       leaving the replayed failure terminal and unaccepted.
-- [ ] Repository, tracker, worklog and scoped verification evidence agree;
+- [x] Repository, tracker, worklog and scoped verification evidence agree;
       source replay is distinguished from an upgraded installed native run.

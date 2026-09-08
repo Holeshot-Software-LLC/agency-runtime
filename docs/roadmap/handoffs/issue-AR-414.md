@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [handoff, staffing, headers]
 related:
+  - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/worklog/2026-09-08-captured-native-critic-veto.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/worklog/2026-09-08-native-staffing-receipts.md
@@ -19,9 +20,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-414
-branch: codex/ar414-capture-native-veto-20260908
-evidence_commit: 6a0eb8506bde7d4436ce5c4e63cf2aba5ae33c33
-minimum_ledger_commit: d8c6fa2ca04150bcfb1035784543558a3c7634c4
+branch: codex/ar416-installed-verification-20260908
+evidence_commit: 0bc2f89526d8949d26699b49233c0a4307616205
+minimum_ledger_commit: caab485176d63c3c0062c022e55866d8733f19e7
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ---
@@ -30,7 +31,18 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 
 ## Checkpoint
 
-Native handoff capture complete; bounded source diagnostic fix verified in PR788.
+Installed-verification package waiting_for_operator. Verified8629e2ed wheel is
+installed; all614package files match. Fresh wheel/sdist smoke and installed
+captured-verdict replay pass; rejection is preserved with cause/omission marker.
+AR-417 removes an unpackaged test-input dependency; extracted regression8pass.
+Codex plugin0.1.0+codex.823aab6fbe85 registered/enabled, restart required. Fresh
+hooks/list reports8modified/0trusted. Owner asked to review /hooks in a fresh TUI;
+no bypass or native attempt. Initial verifier launch was refused by namespace
+trust; same-version private Claude2.1.263 now passes transport checks. Isolated
+acceptance returned4/4satisfied for AR-416 and3/3for AR-417; those scoped fixes
+are complete. AR-414/415 remain open; no fresh native proof is claimed.
+
+Earlier PR788 checkpoint: native handoff captured and source diagnostic fix verified.
 Two exact native packets expose experiment-tracker assigned to non-experiment
 handoff review. The critic veto is supported by that mismatch; its named
 alternative is not verified as suitable. AR-416 retains a qualified veto's
@@ -87,23 +99,24 @@ No operator trust/restart gate remains for the previously demonstrated process.
 
 ## Same-task continuity
 
-Read the native-receipts worklog, then recruiter recovery for configuration and
+Read the installed-qualified-veto worklog first, then native receipts and recruiter
+recovery for configuration and
 reversal limits. The resumed clean baseline was mained9d5aa9; current delivery
 branch is named above. Keep unrelated worktrees and Windows items untouched.
 
 ## Next bounded work package
 
-Complete isolated acceptance verification for AR-416. Qualify upgraded
-installation/native diagnostic behavior under the release checklist before
-claiming this source change is installed. Keep AR-414/415/416 open until their
+After owner hook review, verify actual trust and a fresh native turn. Complete
+the remaining AR-414/415 acceptance gates. The repair is installed; qualify
+actual native diagnostic behavior before claiming current-artifact native proof. Keep AR-414/415 open until their
 isolated acceptance gates have evidence. Never retry merely for approval or
 manually select specialists. No broad staffing-policy repair is justified here.
 
 ## Verification
 
 Current captured-response/critic/receipt/inference124pass; fast production
-1151pass/3skip; UI224pass; Ruff779files and docs1329files pass. Routing and
-strict tracker407items pass. Frozen-source conformance188/188killed,
+1151pass/3skip; UI224pass; Ruff779files and docs1334files pass. Routing and
+tracker408items match before the pending AR-416/417 tracker closure. Frozen-source conformance188/188killed,
 source_unchanged=true. No new installed/native diagnostic claim.
 Source replay preserves terminal failure and renders the retained cause.
 The remaining evidence below predates this source change.

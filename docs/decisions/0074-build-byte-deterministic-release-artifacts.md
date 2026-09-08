@@ -6,6 +6,8 @@ created: 2026-07-20
 updated: 2026-07-27
 tags: [release, packaging, reproducibility, git, archives, portability]
 related:
+  - docs/roadmap/issue-AR-417-self-contained-qualified-veto-regression.md
+  - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-167-normalize-windows-release-source-modes.md
@@ -125,3 +127,7 @@ test-only delivery and historical 71833c5c measurement.
 - **Weaken the verifier to semantic payload equality.** Rejected because the
   release claims one reviewed physical artifact pair, not an equivalence class
   of structurally different containers.
+
+AR-417 follow-up `8629e2ed` preserves this payload policy by making the packaged
+qualified-veto regression self-contained; see the linked installed-verification
+worklog for the extracted source-archive check.
