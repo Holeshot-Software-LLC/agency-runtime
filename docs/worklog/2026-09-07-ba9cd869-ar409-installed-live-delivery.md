@@ -64,3 +64,5 @@ Integration `ba58ad79` includes published AR-410 source PR #745 and its exact me
 Midnight extension checkpoint `ddcce039` replaces the bounded current capsule, preserves the prior chronology, and records the owner's explicit test deferral without changing acceptance authority.
 
 Integration `4f1c1c83` retains the twenty-record triage at its exact source scope: eleven proof-held, six reconciliation, and two concrete code targets plus one umbrella. No closures or acceptance judgments are inferred.
+
+Integration `ae15183c` incorporates the published AR-411 source merge and its faithful immediate ledger. AR-411 remains in progress; its regressions and fresh installed delivery are deferred under the owner's code-first direction.
