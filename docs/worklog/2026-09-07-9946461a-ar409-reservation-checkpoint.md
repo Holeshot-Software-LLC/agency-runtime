@@ -100,3 +100,9 @@ namespace became group-writable during the run (00:08:07/08Z mtimes). No
 adverse verdict was changed or completed criterion repeated. Further repair
 loops are not authorized; the parent separately authorized one supported
 Codex-verifier attempt for the missing fifth result, with the same candidate.
+
+Acceptance checkpoint `da1af1f4` records all five satisfied criteria after the
+supported criterion-5-only Codex invocation succeeded. Its excerpt-only scope
+is explicit; the four original Claude judgments and digests are unchanged.
+AR-409 remains in_progress and tracker #735 stays open pending the required
+installed owner-harness live checkpoint. No product bytes changed after `51909ae8`.
