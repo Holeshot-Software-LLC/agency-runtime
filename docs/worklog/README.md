@@ -2213,6 +2213,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c1e17448` | 2026-09-08 | docs(delivery): distinguish Codex launch repair from ordinary planner failures (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-codex-launch-roundtrip.md) |
 | `fce1726e` | 2026-09-08 | Merge pull request #766 from Holeshot-Software-LLC/codex/ar404-codex-roundtrip-20260908 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-codex-launch-roundtrip.md) |
 | `ed26177f` | 2026-09-08 | fix(receipts): preserve staffing HTTP statuses through durable evidence (AR-413) | [AR-413](../roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md) | [Detail](2026-09-08-planner-reliability.md) |
+| `0c240444` | 2026-09-08 | docs(delivery): checkpoint planner priority experiment before native proof (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-planner-reliability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

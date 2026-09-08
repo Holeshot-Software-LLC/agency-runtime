@@ -70,3 +70,5 @@ staffing/finalization with valid current binding and approved MCP-write mode.
 Do not promote the old activation into current ordinary reliability evidence.
 
 Source checkpoint `ed26177f281fba0e4aea807d2092574ea0e47e3d` preserves HTTP status through the full staffing failure path;80focused tests pass. Clean substantive/ledger pair precedes the authorized gateway experiment.
+
+Pre-live checkpoint `0c240444ce167c0ca34054b38b65a31d7950913c` records the reversible order-only planner experiment and successful fast verification. Native runtime remains the trusted prior payload; artifact build is blocked on a bounded Git output diagnostic.
