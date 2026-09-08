@@ -64,7 +64,12 @@ security review would change the product contract and is out of scope.
 
 ## Follow-ups
 
-Independent source review and normal PR publication remain pending. Reconcile
+Root's first independent source review of `fb360485` found no scoped finding;
+this is not executed verification. Integration `14899a51` normally merges
+published main plus immediate ledger `6d209d6d`, preserving both worklog
+histories and leaving the reviewed runtime delta unchanged.
+
+Normal PR publication remains pending. Reconcile
 AR-287's canonical record and capsule without claiming a current installed
 repair, live Hermes acceptance, test pass or completed issue. Run focused
 regressions and live verification only when authorized.

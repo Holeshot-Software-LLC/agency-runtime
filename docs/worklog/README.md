@@ -2162,7 +2162,6 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cb9e9a50` | 2026-09-07 | Merge pull request #748 from Holeshot-Software-LLC/codex/evening-live-delivery-20260907 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `54bdff1f` | 2026-09-07 | fix(cli): follow governed TTY defaults for read-only cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
 | `77391f21` | 2026-09-07 | chore(AR-280): integrate published installed-delivery checkpoint | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
-| `fb360485` | 2026-09-07 | fix(AR-287): budget reachable repair and fallback profiles | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `fc699ff3` | 2026-09-07 | fix(openclaw): bind complete installed-copy provenance for AR-270 | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 | `bc6126bb` | 2026-09-07 | docs(AR-251): align checkpoint with governed card defaults | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-bc6126bb-card-default-checkpoint.md) |
 | `a9073fe6` | 2026-09-07 | chore(AR-270): integrate published live-delivery checkpoint | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
@@ -2173,6 +2172,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ff9f11cb` | 2026-09-07 | Merge pull request #752 from Holeshot-Software-LLC/codex/ar270-openclaw-installed-copy-provenance | [AR-270](../roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md) | [Detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 | `5f20cac1` | 2026-09-07 | chore(delivery): integrate published OpenClaw provenance repair | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
 | `e348d713` | 2026-09-07 | Merge pull request #753 from Holeshot-Software-LLC/codex/ar251-readonly-cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `fb360485` | 2026-09-07 | fix(AR-287): budget reachable repair and fallback profiles | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
+| `14899a51` | 2026-09-07 | chore(AR-287): integrate published CLI and uninstall repairs | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
