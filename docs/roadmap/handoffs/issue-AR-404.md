@@ -11,13 +11,14 @@ related:
   - docs/roadmap/acceptance/evidence/AR-404-final-installed-evaluation-20260907.md
   - docs/worklog/2026-09-08-codex-launch-roundtrip.md
   - docs/roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md
+  - docs/worklog/2026-09-08-fresh-codex-activation.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar413-installed-delivery-20260908
-evidence_commit: 947dfaef34d07303ed23c4e9b909de2edea21ac2
-minimum_ledger_commit: 36a7f3039e6b0b7b86487d025fa72af6100cb1a3
+branch: codex/ar404-fresh-activation-20260908
+evidence_commit: 013ab75f66c5c3ce1e147e9fd8794c2ea32aa168
+minimum_ledger_commit: df45b6cb19b4b3dd4221d9892cd40d32d194b2df
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -29,15 +30,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner approved this bounded package after confirming trust: repair the launch,
 prove native staffing/injection/finalization, then measure a small cold/warm
 sample. No backlog wave or OpenClaw restart. No worker is active. Root owns this
-dedicated worktree; phase waiting_for_operator after the installed refresh.
+dedicated worktree; phase implementing after failed fresh native activation.
 Owner approved bounded planner/gateway changes and AR-413 status propagation.
 Main947dfaef contains PR768; AR-413/#765 is closed with four satisfied verdicts.
 
 Owner runtime now uses the independently verified d08c5008 wheel, whose
 production code matches PR768. All614installed package files match the wheel.
 Codex published bundle0fe533927f56, projectionab77dcb13e8e and plugin
-0.1.0+codex.fa16f6ec90e5. Registered/enabled but fresh trust required; the earlier
-activation is stale by bundle/install ID.
+0.1.0+codex.fa16f6ec90e5. Registered/enabled. Fresh direct inspection after resume
+confirms eight trusted hooks; owner approval is NOT the remaining blocker.
+The earlier activation remains stale; fresh verification failed during staffing.
 AR-413/#765 is now verified complete, leaving unfinished
 inventory120 =48 mapped +72 legacy; this is not120confirmed bugs.
 
@@ -78,7 +80,15 @@ route change. Ordinary staffing/finalization reliability remains NO-GO.
 AR-413 tracks HTTP status lost between StructuredProviderResult and workforce
 attempt/durable receipt. The four-hour idle expiry's role in this old parent's
 closed MCP remains unproven; do not remove the process-leak bound. This parent
-is still unstaffed/disconnected; fresh launch repairs cannot mutate it.
+was unstaffed/disconnected before resume. This resumed session's actual MCP
+status now succeeds with verified SQLite binding and293roster entries.
+
+Fresh no-bypass verification at14:25UTC fails preflight, trace
+01a08166-c945-7023-8ce2-7ae2c0b3c181: first planner rejected23809ms, repair
+applied34914ms, cold294-input embedding41911ms, reranker9643ms, recruiter744ms
+then recruiter_abstained/no_safe_sufficient_team. No child or attestation.
+The generic status trust field derives from activation, not fresh trust; do not
+misread unverified as proof that the owner's approval is missing.
 
 Previous other-host failures remain: Claude unstaffed/no child delivery; Hermes
 invalid reranker/recruiter timeout; existing OpenClaw staffed without accepted
@@ -107,11 +117,12 @@ prompt and1967-character schema fail HTTP408 in45704/45137ms on alias/direct.
 The configured planner thinking_level is medium; a low-effort request-only
 comparison also fails HTTP408 in45111ms; JSON-object mode45284ms. Neither
 request-only experiment changed configuration. Owner runtime and Codex bundle
-are updated; close old terminal TUIs, open a fresh `codex` terminal and trust
-the eight Agency hook events (`/hooks` in the terminal if needed), then run
-`agency install --agent codex --verify-activation`. This human gate was reported
-once; do not retry or bypass it. Other harness bundles were not refreshed here.
-Next diagnosis needs upstream full-payload evidence, not another native retry.
+are updated and all eight hooks are now directly proven trusted. Inspect the
+failed canary's planner/eligibility/recruiter boundary to explain abstention;
+separate isolated-canary cold cache from ordinary warm behavior. No repeated
+live run without a concrete hypothesis; no hand-picked worker or weaker gate.
+Other harness bundles were not refreshed. The expired timeboxed backlog goal
+is audited complete; this does not close AR-404 or the overall backlog.
 Worklog
 2026-09-08-planner-reliability owns details. No new credentials or trust bypass.
 

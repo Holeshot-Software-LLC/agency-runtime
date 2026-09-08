@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-08
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/worklog/2026-09-08-fresh-codex-activation.md
   - docs/worklog/2026-09-08-planner-reliability.md
   - docs/roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md
   - docs/roadmap/acceptance/evidence/AR-404-codex-roundtrip-20260908.md
@@ -62,6 +63,21 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+### Fresh resumed-session verification, September 8
+
+Owner approval is now directly verified: eight expected/observed/trusted hooks,
+zero trust defects. This session's actual Agency MCP status succeeds with293
+roster entries and verified SQLite binding. Generic status unverified is derived
+from activation attestation, not proof that hook approval is absent.
+
+One no-bypass180second-bounded activation attempt fails staffing at14:25UTC:
+planner repair succeeds, cold294-input embedding costs41.9seconds, then the
+recruiter abstains. No child, accepted final header or attestation. Exact stage
+durations and traces are in the linked fresh-activation worklog. No configuration
+change or repeated native retry. Next inspect the exact planner/eligibility/
+recruiter boundary. The expired September7timeboxed backlog goal is audited
+complete; AR-404 and the overall backlog remain open.
 
 ### HTTP-status delivery and planner isolation, September 8
 
