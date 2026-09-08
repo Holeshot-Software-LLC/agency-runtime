@@ -43,6 +43,19 @@ turns also lacked persisted steward-binding evidence; the close now retains the
 validated claim atomically. Focused header/store/preflight checks:117passed,
 1skipped before final formatting/helper extraction. Live verification pending.
 
+Checkpoint ae2220bb/ef29fc6b: new regression12pass; production spine1151pass,
+3skip; dashboard224pass. The hook now supplies the real session/trace IDs next
+to the initial header so the model need not guess from the hashed manager ID.
+No accepted finalization is claimed for diagnostic failure output.
+
+A bounded existing-deployment probe forwarding low via extra_body returns a
+valid five-unit plan after one semantic repair (17.1seconds); earlier low at
+the top level was filtered by the installed gateway OpenAI adapter. Current
+GLM5.3 documentation supports low/high/max, not medium. A reversible experiment
+sets only this planner deployment's order2to0 and extra_body.reasoning_effort
+to low; unchanged fields are checked exactly. End-to-end validation is pending;
+the experiment must be restored unless it proves useful in ordinary staffing.
+
 ## Approach
 
 Render validated failure diagnostics separately from accepted finalization.

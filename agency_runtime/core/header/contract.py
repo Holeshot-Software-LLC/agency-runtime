@@ -1184,7 +1184,10 @@ def fill_header_fields(
             evidence_snapshot,
             session_id,
             trace_id,
-            require_active=evidence_snapshot.get("status") != "preflight_failed",
+            require_active=not (
+                isinstance(evidence_snapshot, Mapping)
+                and evidence_snapshot.get("status") == "preflight_failed"
+            ),
         )
     elif (
         store is not None
@@ -1198,7 +1201,10 @@ def fill_header_fields(
                 raw_snapshot,
                 session_id,
                 trace_id,
-                require_active=raw_snapshot.get("status") != "preflight_failed",
+                require_active=not (
+                    isinstance(raw_snapshot, Mapping)
+                    and raw_snapshot.get("status") == "preflight_failed"
+                ),
             )
         except EvidenceCorrelationError:
             if not _is_legacy_unclassified_evidence_snapshot(

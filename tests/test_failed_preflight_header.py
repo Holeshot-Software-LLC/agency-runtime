@@ -38,6 +38,14 @@ def test_failed_turn_renders_receipt_without_accepting_or_reopening(tmp_path):
     assert "Recruited via: failed; preflight_lifecycle_failed" in result["text"]
     assert store.get_run("trace") == before
     assert store.get_open_traces_for_session("session") == []
+    from agency_runtime.adapters.hooks import HookBridge
+
+    context = HookBridge("codex", store=store)._header_snapshot_context(
+        session_id="session", trace_id="trace", model="", marker="INITIAL", instruction="Values"
+    )
+    assert 'Agency finalizer correlation: {"session_id":"session","trace_id":"trace"}' in context
+    assert "Agency/Agencies loaded: agency-steward" in context
+    assert "Recruited via: failed; preflight_lifecycle_failed" in context
     with pytest.raises(EvidenceCorrelationError, match="terminal Agency turn"):
         read_completion_evidence_snapshot(store, "session", "trace")
 

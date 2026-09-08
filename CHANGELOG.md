@@ -78,6 +78,10 @@ changes rather than duplicating every commit.
 
 ## Unreleased
 
+- Failed staffing headers now display validated failure reasons without claiming
+  successful finalization. Failed request-scoped turns retain their exact
+  steward binding; initial hook snapshots include usable finalizer correlation.
+
 ### September 7 wrap-up source delivery
 
 - Add exact-file, bounded pre-install config validation without Store or
