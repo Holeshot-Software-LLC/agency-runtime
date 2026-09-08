@@ -2181,6 +2181,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f4264b54` | 2026-09-07 | Merge pull request #755 from Holeshot-Software-LLC/codex/ar412-security-lock-refresh | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `c3b217f1` | 2026-09-07 | fix(residents): recover closed claims only on a later current turn (AR-371) | AR-371 | [detail](2026-09-07-c3b217f1-resident-claim-recovery.md) |
 | `4516e055` | 2026-09-07 | chore(AR-371): integrate published provenance and dependency fixes | AR-371 | [detail](2026-09-07-c3b217f1-resident-claim-recovery.md) |
+| `c905dd0b` | 2026-09-07 | fix(residents): preserve retired-turn ordering during claim recovery (AR-371) | AR-371 | [detail](2026-09-07-c905dd0b-resident-recovery-retention.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
