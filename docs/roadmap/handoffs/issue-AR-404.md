@@ -30,60 +30,68 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Owner approved refreshing Hermes and OpenClaw and testing one ordinary native
-turn each. OpenClaw gateway stop/update/restart is included in that approval.
-Baseline clean main24b50cb8. Hermes native attempt failed after accepted staffing/injection (AR-418/#796).
-OpenClaw refreshed, gateway restored RPC-green; native turn returned correct
-headers but left Agency active with zero finalization (AR-419/#797).
-Prior bounded verification had negative full-roundtrip verdicts. AR-419 now
-has live terminal-handoff proof on308b670a, exact hash81356a9c914b08463d76681650c7daf4ae24ad6d4236a880dff15df54066c466;
-injection remains unproven. PR799 is open; all other host gates remain.
-No all-host or full AR-419 acceptance claim. AR-404 stays open; AR-414/415 are acceptance-closed.
+Owned branch starts from clean synchronized main97e269ec. PR799 is open.
+Installed immutable source308b670a contains OpenClaw repair94b9eb28; all614
+package files match its verified wheel. OpenClaw and Claude now have fresh
+ordinary accepted terminal evidence. AR-404/418/419 remain open; no all-host
+completion. AR-414/415 remain acceptance-closed. Windows work is untouched.
 
 ## Completed evidence
 
-Codex fresh turn proved staffing, exact specialist injection, five headers and
-Stop acceptance in56.656s. All seven isolated AR-414/415 verdicts satisfied;
-merged PR793/794. This is not other-host proof.
-Installed source8629e2ed wheel matches all614package files. Both other hosts
-had old projection4d2934ddb59e versus installed6e7dc299c23e, enabled/runtime
-unverified and absent attestation. Hermes refresh now succeeds with backup
-20260908T195311.634794Z and bundlebdce2726fd10. Existing Hermes processes untouched.
+OpenClaw traceb2f9ef9e-1280-4c28-9934-6b094bdfcf6a: accepted staffing,
+truthful headers, one authoritative accept, exact visible-response SHA256
+81356a9c914b08463d76681650c7daf4ae24ad6d4236a880dff15df54066c466,
+completed Store state,195.996s total/159.779s staffing. Normal gateway
+maintenance restored RPC health and unchanged configuration sections. No delivery.
+See evidence/AR-419-openclaw-terminal-20260908.json. Exact injection is unproven.
+
+Claude trace16079749-cfc9-4d90-b4d4-6f6ce8104eec: full selected card in
+native rendered hook context, truthful headers, accepted exact response hash,
+completed Store,63.879s total/43.063s staffing. Two owned executable parent
+directories tightened775to755, normal refresh, native2.1.265. See
+ evidence/AR-404-claude-native-20260908.json. No permission bypass.
+
+Zcode desktop3.10.2 includes native CLI0.16.5. Installed an unchanged copy of
+its bundled zcode.cjs and a PATH launcher; native doctor passes. Normal Agency
+refresh succeeds. Native turn remains to be run with explicit build permissions
+because native headless default is yolo. This is executable proof only.
 
 ## Exact blocker
 
-No external gate blocks the approved work. Hermes returned an output-limit error after accepted staffing and full card
-injection; no finalization or five-line header. OpenClaw has truthful headers but no finalization or exact card proof. Their old
-failure records are preserved, not treated as current-artifact results.
+Hermes output-limit early returns bypass native finalizer/session-end callbacks;
+outer runner and CLI can misclassify printable partial output as success. No
+supported terminal-result hook covers those returns. AR-418 needs native-boundary
+repair, not fabricated adapter success. Original provider cause/token cap unproven.
+OpenClaw exact injection observer requires native capability consent, asked once;
+no observer was installed. Do not treat elapsed time as approval.
 
 ## Same-task continuity
 
-Read the linked Hermes/OpenClaw worklog. The previous capsule branch is historical and merged. Work in the new named owned branch.
-At or below50percent remaining, commit the smallest safe evidence/ledger pair
-and continue in the same task. Preserve unrelated worktrees and operator files.
+Read the linked native-refresh worklog and2026-09-08-native-terminal-repair.md.
+Continue in the named owned branch; old capsule branches are merged history.
+At or below50percent remaining, checkpoint the smallest safe evidence/ledger
+pair and continue. Preserve unrelated worktrees and operator files.
 
 ## Next bounded work package
 
-Claude and Zcode remain explicitly in scope after these two hosts. Claude native
-inventory currently rejects executable-directory permissions; Zcode has no
-executable. AR-419 has a twelve-case Node-tested internal terminal handoff
-candidate, with153focused passes/one skip; installed terminal proof passes.
-Claude permissions repaired and refresh complete; native turn next. Zcode has
-an AppImage but no discovered supported CLI. The optional OpenClaw observer
-requires native capability consent, asked once; do not bypass it.
-Repair the exact Hermes output-limit lifecycle under AR-418 and OpenClaw
-ordinary CLI terminal handoff under AR-419. Capture supported native context
-evidence before claiming exact OpenClaw card delivery. Do not repeat either
-trial merely for approval; preserve validators and inference-owned staffing.
+Run one ordinary Zcode trial against the repaired native entrypoint, preserving
+inference/critic/validators. Repair the native Hermes failure boundary and prove
+ordinary success. If owner consents, use the session-scoped OpenClaw observer
+for exact input evidence, then remove it and restore gateway RPC health. Close
+issues only after isolated acceptance. Merge PR799 with exact merge ledger.
 
 ## Verification
 
-Fresh host-focused254pass/1skip, production1151pass/3skip, UI224pass,
-Ruff/routing/docs/tracker pass and frozen conformance188/188 with source unchanged.
-No exhaustive suite, Windows matrix or all-host release certification.
+Candidate focused153passed/1skipped; production1151passed/3skipped; UI224;
+Ruff/docs/metadata/routing pass. Candidate frozen conformance188/188 passes,
+source unchanged, after private umask077 correction. No exhaustive dispatch,
+Windows matrix or all-host certification. Prior Codex56.656s roundtrip is historical
+comparison evidence; current Codex preflight failed and is honestly unstaffed.
+Exact prior handoff receipt preserves critic_wrong_neighbor_selection; no transport
+recurrence or erroneous veto is inferred. Fresh Codex hook projection still unproven.
 
 ## Constraints
 
-No manual specialist selection, trust bypass, weaker validator or critic,
-unbounded retries, credential replacement, unrelated backlog work or false
-finalization. Preserve normal gateway service restoration and exact PR ledgers.
+No manual specialist selection, trust bypass, weaker validator/critic, unbounded
+retries, credential replacement or manual finalization of failed receipts. Keep
+Claude and Zcode in scope. Preserve gateway restoration and exact PR ledgers.

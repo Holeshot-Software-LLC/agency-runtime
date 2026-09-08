@@ -101,3 +101,22 @@ The prior exact Codex handoff receipt was read: session
 01a082b9-e7df-70e2-b76c-b8be7e01ad5a, preflight_failed. Subject/reranker contract
 rejections and staffing_critic_rejected/critic_wrong_neighbor_selection are
 recorded. No old transport failure or erroneous critic verdict is inferred.
+
+
+## Claude evidence and Zcode entrypoint repair
+
+Claude completed a fresh ordinary turn with full selected code-reviewer card in
+both native hook content and its rendered model context. Exact response SHA256
+9edfb785eab7bc2cbcf4232d0141dfa123c169e0d5584ac35a9e6cc6ec99607f
+matches authoritative accept32588a29-1317-4e28-9911-eaa5ef863666; Store completed.
+Session31b0b550-d076-447c-8e68-bd070674a907, trace
+16079749-cfc9-4d90-b4d4-6f6ce8104eec. Total63.879s, staffing43.063s,
+exit0, permission denials empty. No permission bypass or model override.
+
+Zcode3.10.2 AppImage includes a working0.16.5 node bundle under resources/glm;
+native doctor confirms node-bundle packaging. Copied that unchanged resource
+directory to an owner-only-write stable installation and installed a thin PATH
+launcher. Bundle SHA2563597160465b67da248fa3fb919920ca30d4e093003a4d70cde2a2e33903cbabc.
+Normal Agency Zcode refresh succeeds. Existing desktop launcher is untouched;
+its sandbox flags are not used. Trial will explicitly use native build permissions
+because headless prompt default is yolo. This records discovery/install only.

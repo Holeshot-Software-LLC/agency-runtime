@@ -65,6 +65,15 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+September 8 native continuation: Claude now has exact rendered selected-card
+injection, truthful headers and an authoritative accepted matching response hash
+on trace16079749-cfc9-4d90-b4d4-6f6ce8104eec,63.879seconds. Evidence:
+`evidence/AR-404-claude-native-20260908.json`. Zcode's installed desktop AppImage
+contains CLI0.16.5; an unchanged bundle and launcher restore executable availability,
+native doctor and Agency refresh pass. Its native turn remains unverified. Hermes
+AR-418 and OpenClaw exact input evidence remain unresolved; no all-host completion.
+
+
 ### Four-host terminal continuation, September 8
 
 Main and origin rechecked at97e269ec. A new owned branch carries AR-419's
