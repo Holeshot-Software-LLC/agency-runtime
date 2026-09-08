@@ -72,3 +72,5 @@ files. The inspected native source remained clean after inspection.
 Obtain a supported session/turn-bound native purpose authority, then implement
 and verify the bounded skip under AR-280. Tracker authorization remains
 pending. Parent coordinates integration/publication; no PR was opened here.
+
+Integration `77391f21` preserves the published installed-delivery and twenty-record triage checkpoint, including all incoming faithful worklog rows. No runtime mutation or new verification is implied.
