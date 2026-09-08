@@ -8,6 +8,7 @@ tags: [routing, lifecycle, correlation, inference]
 related:
   - docs/roadmap/issue-AR-85-state-aware-turn-classification.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
+  - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md
   - docs/decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md
   - docs/roadmap/issue-AR-25-turn-scoped-specialist-evidence.md
   - docs/decisions/0045-turn-scoped-specialist-activation.md

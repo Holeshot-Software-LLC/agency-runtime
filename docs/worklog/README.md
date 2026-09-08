@@ -2155,7 +2155,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4f1c1c83` | 2026-09-07 | docs(backlog): integrate next-twenty source triage | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `e790c4d4` | 2026-09-07 | Merge pull request #747 from Holeshot-Software-LLC/codex/ar411-retain-catalog-failure-identity | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
 | `ae15183c` | 2026-09-07 | chore(delivery): integrate published recall failure diagnostic | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `8ce0461f` | 2026-09-07 | test(hermes): retain AR-280 native purpose authority boundary | AR-280 | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 | `378102d7` | 2026-09-07 | docs(backlog): link source triage and published diagnostic checkpoint | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `cb9e9a50` | 2026-09-07 | Merge pull request #748 from Holeshot-Software-LLC/codex/evening-live-delivery-20260907 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `77391f21` | 2026-09-07 | chore(AR-280): integrate published installed-delivery checkpoint | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

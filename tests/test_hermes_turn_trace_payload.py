@@ -5,6 +5,8 @@ from __future__ import annotations
 from types import ModuleType
 from typing import Any
 
+import pytest
+
 from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.installer_payload_hermes import render_hermes_plugin
 
@@ -126,3 +128,65 @@ def test_generated_plugin_replaces_stale_session_trace_on_each_preflight() -> No
     assert module._correlation({"session_id": "session"}) == ("session", "turn-one")
     module._pre_llm_call(session_id="session", user_message="second")
     assert module._correlation({"session_id": "session"}) == ("session", "turn-two")
+
+
+@pytest.mark.parametrize(
+    "untrusted_metadata",
+    [
+        {},
+        {"invocation_purpose": "title_generation"},
+        {"invocation_purpose": "background_review"},
+        {"invocation_purpose": "unknown"},
+        {"invocation_purpose": {"kind": "summary"}},
+        {"is_internal": True},
+        {
+            "origin_receipt": {
+                "origin": "internal_retry",
+                "session_id": "previous-session",
+                "trace_id": "previous-turn",
+            }
+        },
+    ],
+)
+@pytest.mark.parametrize(
+    "user_message",
+    ["agency status", "Use the requested skill.", "Review the proposed change."],
+)
+def test_generated_plugin_untrusted_purpose_never_suppresses_user_preflight(
+    untrusted_metadata: dict[str, Any], user_message: str
+) -> None:
+    """AR-280: caller labels are not authenticated native lifecycle evidence."""
+    module = _generated_plugin()
+    calls: list[tuple[str, dict[str, Any]]] = []
+
+    def invoke(action: str, payload: dict[str, Any] | None = None) -> Any:
+        values = dict(payload or {})
+        calls.append((action, values))
+        return {
+            "session_id": values["session_id"],
+            "trace_id": values["trace_id"],
+            "context": "preflight-result",
+        }
+
+    module._invoke = invoke
+    module._remember_turn("session", "previous-turn")
+    result = module._pre_llm_call(
+        session_id="session",
+        turn_id="current-turn",
+        user_message=user_message,
+        model="router",
+        **untrusted_metadata,
+    )
+
+    assert len(calls) == 1
+    action, payload = calls[0]
+    assert action == "pre_llm_call"
+    assert payload["session_id"] == "session"
+    assert payload["trace_id"] == "current-turn"
+    assert payload["user_message"] == user_message
+    assert not set(untrusted_metadata).intersection(payload)
+    assert result["trace_id"] == "current-turn"
+    assert module._correlation({"session_id": "session"}) == (
+        "session",
+        "current-turn",
+    )
