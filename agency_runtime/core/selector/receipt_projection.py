@@ -425,6 +425,17 @@ def _staffing_verification_failures(value: str) -> list[dict[str, Any]]:
     return failures
 
 
+def _http_status_fields(item: Mapping[str, Any]) -> dict[str, int]:
+    """AR-413: retain only an actual bounded integer, never infer a status.
+
+    Absent/zero remains absent so legacy receipt re-projection is unchanged.
+    Reject booleans, strings and floats instead of coercing provider metadata.
+    """
+
+    status = item.get("http_status")
+    return {"http_status": status} if type(status) is int and 100 <= status <= 599 else {}
+
+
 def _provider_attempts(value: object) -> list[dict[str, Any]]:
     if not isinstance(value, (list, tuple)):
         return []
@@ -443,6 +454,7 @@ def _provider_attempts(value: object) -> list[dict[str, Any]]:
             or _reason_family(item.get("reason_code")),
         }
         attempt.update(project_provider_attempt_metadata(item))
+        attempt.update(_http_status_fields(item))
         validation_failures = project_nomination_failures(
             item.get("validation_failures", item.get("validation_detail"))
         )
@@ -501,6 +513,7 @@ def project_model_receipt_attempts(value: object) -> list[dict[str, Any]] | None
             }
         )
         metadata = project_provider_attempt_metadata(item)
+        attempts[-1].update(_http_status_fields(item))
         if metadata:
             attempts[-1].update(metadata)
             attempts[-1]["ordinal"] = ordinal

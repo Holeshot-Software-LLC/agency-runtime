@@ -813,6 +813,7 @@ class WorkforceInferenceAttempt:
     # gateway would have answered; the pair can, and that comparison is the
     # whole point of separating provider_call_timed_out from its neighbours.
     timeout_ms: int = 0
+    http_status: int = 0
     validation_detail: str = ""
     validation_reason_codes: tuple[str, ...] = ()
     input_count: int = 0
@@ -1564,6 +1565,7 @@ def _attempt(
         # The effective deadline this call was given, after the transport's
         # own bound is applied -- the same figure `agency doctor` prints.
         timeout_ms=max(0, int(provider.timeout * 1000)),
+        http_status=0 if result is None else result.http_status,
         validation_detail=validation_detail,
         validation_reason_codes=tuple(validation_reason_codes),
         reply_budget_tokens=(

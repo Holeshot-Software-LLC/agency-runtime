@@ -262,6 +262,7 @@ def _provider_attempts(outcome: WorkforceRoutingOutcome) -> list[dict[str, Any]]
             "validation_reason_codes": list(item.validation_reason_codes),
             "latency_ms": item.latency_ms,
             "timeout_ms": item.timeout_ms,
+            "http_status": item.http_status,
             "input_count": item.input_count,
             "dimensions": item.dimensions,
             "candidate_count": item.candidate_count,

@@ -15,7 +15,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-codex-roundtrip-20260908
+branch: codex/ar413-planner-reliability-20260908
 evidence_commit: c5516afe9e15a0abeb6676bdc5cb54a210756ab7
 minimum_ledger_commit: 28815df43ec421d79dd46e924b2ed83faeaa682c
 hard_checkpoint_percent: 50
@@ -29,7 +29,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner approved this bounded package after confirming trust: repair the launch,
 prove native staffing/injection/finalization, then measure a small cold/warm
 sample. No backlog wave or OpenClaw restart. No worker is active. Root owns this
-dedicated worktree; phase blocked on ordinary staffing, not activation trust.
+dedicated worktree; phase implementing. Owner subsequently approved bounded
+planner/gateway changes and AR-413 status propagation. Main floor4c98e8f7.
 
 Main floor is c5516afe. Installed source remains4cbebf73, projection4d2934ddb59e;
 no product or generated hook changed. New AR-413/#765 makes the unfinished
@@ -87,11 +88,13 @@ The original owner launcher is retained privately; no secret file was backed up.
 
 ## Next bounded work package
 
-Stop repeat model calls. Diagnose planner/gateway first; get explicit scope before
-changing providers/routes or gateway configuration. AR-413 preserves status end
-to end under ADR-0209 without policy changes. Then prove a valid-bound staffed
-ordinary turn in an approved MCP-write mode, and only then sample latency.
-Do not label samples cold/warm without cache evidence. No backlog wave.
+AR-413 code now preserves bounded status through staffing/hiring and durable
+receipt projections;80focused tests pass, installed proof pending. The owner
+authorized gateway changes: inspect exact live deployment and temporarily set
+the existing GLM planner order2 to0, retaining subscription order1 and all other
+fields. Verify readback and restore on a failed experiment. Then prove a valid
+ordinary staffed/finalized turn in approved MCP-write mode. No new credentials,
+trust bypass or backlog wave. Worklog2026-09-08-planner-reliability owns details.
 
 ## Verification
 

@@ -1,6 +1,6 @@
 ---
 title: "AR-413: Preserve HTTP status in durable staffing failure receipts"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-08
 updated: 2026-09-08
@@ -12,6 +12,7 @@ related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/acceptance/evidence/AR-404-codex-roundtrip-20260908.md
   - docs/worklog/README.md
+  - docs/worklog/2026-09-08-planner-reliability.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -46,8 +47,15 @@ deadlines but no status. Gateway logs at the first failure timestamp show
 APITimeoutError and HTTP408; timestamp correlation is not a stored request-ID
 join. The linked AR-404 receipt contains the bounded native evidence.
 
-No implementation or acceptance pass is claimed. This is a focused follow-up
-under existing ADR-0209, not permission to alter providers or retry budgets.
+The downstream fields are now implemented in workforce/hiring attempts and both
+operator/routing and terminal-failure projections. Only exact integers100..599
+are retained; absent/zero stays absent and malformed values are omitted. Legacy
+receipt fixed points remain unchanged.80 focused tests pass, including actual
+failed workforce turns through SQLite for401/408/429/502, hiring failures and
+invalid/hostile metadata. Installed proof and acceptance verification are pending.
+
+The owner separately authorized a bounded planner/gateway repair under AR-404.
+Its live route experiment does not alter this code's staffing or retry policy.
 
 ## Approach
 

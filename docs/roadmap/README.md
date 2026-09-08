@@ -450,7 +450,7 @@ bounded package are in AR-404's
 | `AR-410` | [Keep Claude transport warm-up outside Agency staffing](issue-AR-410-disable-claude-warmup-staffing.md) | in_progress | p1 | host-integrations | [#744](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/744) |
 | `AR-411` | [Retain recall catalog identity in failure receipts](issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | in_progress | p2 | observability | [#746](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/746) |
 | `AR-412` | [Refresh vulnerable optional-tooling lock entries](issue-AR-412-refresh-vulnerable-tooling-lock.md) | in_progress | p1 | security | [#750](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/750) |
-| `AR-413` | [Preserve HTTP status in durable staffing failure receipts](issue-AR-413-preserve-http-status-in-staffing-receipts.md) | open | p1 | observability | [#765](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/765) |
+| `AR-413` | [Preserve HTTP status in durable staffing failure receipts](issue-AR-413-preserve-http-status-in-staffing-receipts.md) | in_progress | p1 | observability | [#765](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/765) |
 
 ## Traceability
 
