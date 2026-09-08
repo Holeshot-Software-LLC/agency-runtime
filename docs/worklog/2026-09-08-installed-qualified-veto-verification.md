@@ -87,3 +87,5 @@ Record isolated acceptance per criterion. AR-414/415/416/417 remain open until
 their own evidence gates pass. No installed/native claim from source tests.
 
 Recorded checkpoint: `8629e2ed` — test(packaging): make qualified veto regression self-contained.
+
+Recorded checkpoint: `0bc2f895` — docs(staffing): record installed qualified-veto proof and native trust gate.
