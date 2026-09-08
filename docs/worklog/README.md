@@ -2189,11 +2189,15 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4516e055` | 2026-09-07 | chore(AR-371): integrate published provenance and dependency fixes | AR-371 | [detail](2026-09-07-c3b217f1-resident-claim-recovery.md) |
 | `3540b790` | 2026-09-07 | docs(receipts): record independent review and wrap-up verification (AR-284) | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
 | `c905dd0b` | 2026-09-07 | fix(residents): preserve retired-turn ordering during claim recovery (AR-371) | AR-371 | [detail](2026-09-07-c905dd0b-resident-recovery-retention.md) |
+| `a10e3117` | 2026-09-07 | fix(diagnostics): distinguish running process drift from stale hook files (AR-369) | [AR-369](../roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | [Detail](2026-09-08-ar369-process-refresh-guidance.md) |
 | `34ea605b` | 2026-09-07 | Merge pull request #757 from Holeshot-Software-LLC/codex/ar284-receipt-fallback-semantics | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
 | `5e0e7168` | 2026-09-07 | docs(timeouts): record authorized focused wrap-up checks (AR-287) | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `63fa77fe` | 2026-09-07 | merge: integrate published fallback accounting into timeout delivery (AR-287) | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `884500a9` | 2026-09-07 | Merge pull request #759 from Holeshot-Software-LLC/codex/ar287-complete-static-timeout-routes | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `bc778daf` | 2026-09-07 | merge: integrate published receipt and timeout fixes into resident recovery (AR-371) | [AR-371](../roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md) | [Detail](2026-09-07-c905dd0b-resident-recovery-retention.md) |
+| `5180c14f` | 2026-09-07 | merge: integrate completed delivery slices into process diagnostics (AR-369) | [AR-369](../roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | [Detail](2026-09-08-ar369-process-refresh-guidance.md) |
+| `5987be2f` | 2026-09-07 | Merge pull request #760 from Holeshot-Software-LLC/codex/ar371-recover-closed-resident-claims | [AR-371](../roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md) | [Detail](2026-09-07-c905dd0b-resident-recovery-retention.md) |
+| `ae763a0a` | 2026-09-07 | merge: record resident recovery publication before diagnostic delivery (AR-369) | [AR-369](../roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | [Detail](2026-09-08-ar369-process-refresh-guidance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

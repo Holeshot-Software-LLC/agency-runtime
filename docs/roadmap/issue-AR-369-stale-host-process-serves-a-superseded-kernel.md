@@ -3,9 +3,13 @@ title: "AR-369: A stale host process keeps serving a superseded kernel after dep
 status: in_progress
 category: roadmap
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-08
 tags: [deploy, hermes, resident-managers, kernel, operations]
 related:
+  - agency_runtime/core/runtime_staleness.py
+  - tests/test_runtime_staleness.py
+  - docs/roadmap/handoffs/issue-AR-369.md
+  - docs/worklog/2026-09-08-ar369-process-refresh-guidance.md
   - docs/roadmap/issue-AR-337-run-harness-battery-on-version-change.md
   - docs/roadmap/issue-AR-366-openclaw-fail-open-withhold.md
   - docs/roadmap/issue-AR-357-canonical-response-contract-statement.md
@@ -55,6 +59,29 @@ time, which is what isolated the fault to the hermes process rather than the
 code.
 
 ## Current state
+
+### September 8 bounded diagnostic correction
+
+The current Codex process repeatedly reported projection `5059543ccea4`
+against published `d542bee67724` while a normal refresh returned
+`no_op: true`, `already_current`. This advisory pointer compares process and
+published projection; it does not inspect installed hook files. The warning
+incorrectly called the files stale and prescribed reinstall alone.
+
+`RuntimeStaleness.message` now distinguishes those facts, directs the operator
+to reload/reconnect the integration or restart its long-lived host process,
+then open a fresh session. A fresh-process mismatch retains the host-specific
+install command as the next conditional diagnostic. The pointer remains
+advisory and cannot select executable code. No automatic restart, trust change,
+credential mutation or stale-kernel acceptance bypass was introduced.
+
+All 39 tests in `tests/test_runtime_staleness.py` passed in 0.17 seconds,
+including seven new host/no-op regression cases. This is a diagnostic repair,
+not proof of the three original acceptance requirements below. Named kernel
+failure and doctor/latest-binding checks remain outstanding; AR-369 stays
+in_progress. Parent owns combined exact-main installed evaluation.
+
+### Historical operational evidence, September 2
 
 Fixed operationally: `systemctl --user restart hermes-gateway-nexus.service`
 made the next hermes turn write the v5 kernel, the snapshot read cleanly with
