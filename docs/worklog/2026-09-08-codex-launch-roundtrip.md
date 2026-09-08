@@ -53,3 +53,5 @@ and latency checks. Stop at explicit operator prerequisites; no OpenClaw restart
 or wide backlog work.
 
 Pre-live checkpoint `2c07c6539a0acfcd943ac85256d07f9d3d204731` records the owner launch repair, fresh trusted hooks and independent MCP startup. Native execution remains pending; this clean recovery pair precedes live evaluation under the context protocol.
+
+Activation checkpoint `60ccac3128d2746281c01989cd7260b6a4dae4e5` records the first normal trusted Codex activation, accepted native execution/finalization and exact latency. Ordinary MCP proof remains pending.

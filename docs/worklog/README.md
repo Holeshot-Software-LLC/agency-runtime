@@ -2209,6 +2209,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `4a820007` | 2026-09-07 | docs(delivery): record native failures and paused stopping point (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-final-installed-evaluation.md) |
 | `d60230c0` | 2026-09-07 | Merge pull request #763 from Holeshot-Software-LLC/codex/final-wrapup-20260907 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-final-installed-evaluation.md) |
 | `2c07c653` | 2026-09-08 | docs(delivery): checkpoint Codex launch repair before native proof (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-codex-launch-roundtrip.md) |
+| `60ccac31` | 2026-09-08 | docs(delivery): record fresh trusted Codex activation proof (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-codex-launch-roundtrip.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
