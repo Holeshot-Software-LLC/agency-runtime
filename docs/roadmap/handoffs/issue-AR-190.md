@@ -18,7 +18,7 @@ type: handoff
 issue_id: AR-190
 branch: codex/ar190-uv-plan-reconciliation
 evidence_commit: eac2d6a20c43d6296741074ff93470470a178bae
-minimum_ledger_commit: e4941a7556644b57bcd21efe407922b72c5ef0ff
+minimum_ledger_commit: 90ec6919fa711bde27f1915dca006f8e76650886
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -41,6 +41,10 @@ The new exact d1a9260c live proof and explicit product-source clarification are
 committed at `eac2d6a2`, ledger `e4941a75`. The second-review receipt candidate
 is frozen at `eac2d6a2`; the runtime under test remains exact d1a9260c.
 Freeze `d5e36996` and ledger `14f332ec` form its clean pre-review checkpoint.
+Second results are preserved at `4d5f1528`, ledger `d7b719bd`. Normal merge
+`7e718c15` plus ledger `90ec6919` integrate accepted main without changing
+the frozen candidate. Retained publication is
+[PR #740](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/740).
 
 ## Completed evidence
 
@@ -122,13 +126,13 @@ was reused before the isolated proof; worker checkpoints the completed slice.
 
 ## Next bounded work package
 
-1. Checkpoint the second actual results and faithful ledger; 1, 2, 4, 5 are
-   satisfied and 3 is absent, with exact digests retained.
-2. Stop for parent analysis. A targeted criterion-3 caller-excerpt addition
+1. Preserve the published second results: 1, 2, 4, 5 satisfied and 3 absent,
+   with both actual review histories and exact digests retained.
+2. A targeted criterion-3 caller-excerpt addition
    could preserve the same candidate and four valid verdicts, but an extra
    review requires explicit authorization; the default two-pass bound is met.
-3. No unchanged retry or authority weakening. Parent serializes publication;
-   the branch was pushed only to expose d1a9260c to official lookup.
+3. No unchanged retry, automatic closure or authority weakening. PR #740
+   retains the evidence; the next review is a separate authorized package.
 
 ## Verification
 
@@ -138,12 +142,15 @@ passes 67 tests. Exact commands and raw stdout are in the portable receipt.
 The first acceptance run returned four satisfied and one absent; exit zero
 means all verdicts were recorded, not completion. Its full stdout and reasons
 are in the canonical issue and acceptance record.
+Post-integration tests: 67 passed in 0.49 seconds; targeted Ruff and metadata/
+strict docs for 1,257 files pass. Tracker parity passes for 400 roadmap items.
 
 ## Constraints
 
-Only an existing local Unix-socket Docker engine/image was used. No image
+The live uv proof used an existing local Unix-socket Docker engine/image. No image
 pull, remote Docker host, privileged container, owner-home mount, credential,
-service/admin change, host uv install, or provider call. Public dependency and
+service/admin change, host uv install, or provider call occurred in that probe.
+Acceptance separately used the explicitly recorded isolated verifiers. Public dependency and
 official GitHub lookup traffic was bounded. No native Windows execution,
 exhaustive corpus, coverage shards, compatibility matrix or release signing.
 The container setup installs a disposable package; the subsequent plan does

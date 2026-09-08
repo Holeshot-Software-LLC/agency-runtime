@@ -17,7 +17,7 @@ type: worklog
 commit: d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f
 short: d1a9260c
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/740
 related_issues:
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
 ---
@@ -148,3 +148,13 @@ incoming AR-408 documents; those bytes are preserved from accepted main, not
 silently edited as part of AR-190. The AR-190 conflict resolutions and its
 PR-relative delta have no such whitespace error. No product source is changed
 relative to the integrated main by this evidence publication.
+
+## Publication checkpoint
+
+[PR #740](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/740)
+publishes this retained legacy record, not a closure. After integrating main,
+67 update/CLI tests pass in 0.49 seconds and targeted Ruff passes. Metadata and
+strict documentation checks pass for 1,257 Markdown files; worklog, policy,
+PR-relative whitespace and source-delta checks pass. Strict tracker validation
+passes for 400 roadmap items with the two established historical PR mappings
+skipped. Native Windows and exhaustive matrices were not rerun.

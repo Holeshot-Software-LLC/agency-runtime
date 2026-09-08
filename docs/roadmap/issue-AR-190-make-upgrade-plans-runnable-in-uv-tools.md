@@ -65,6 +65,9 @@ reused under the new receipt candidate. The second actual review accepted
 criteria 1, 2, 4 and 5, but returned `absent` for 3 because its bounded
 excerpts omitted the full helper-to-empty-command caller chain. That result
 is preserved; the issue is not done and no further review has run.
+The retained evidence is published through
+[PR #740](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/740),
+without creating or closing a legacy tracker.
 
 Planning now proves which installer the exact executing environment can use.
 A stable regular pip entry point inside the exact prefix retains an
