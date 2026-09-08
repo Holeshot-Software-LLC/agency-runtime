@@ -21,6 +21,8 @@ related_issues: [docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md]
 
 # Fresh Codex activation after resume
 
+PR771 merged as `1101b4eeefb4a711392fa0b0a63e6e004cce224e`. Trust and MCP are verified; activation and ordinary staffing remain unproven. This merge records evidence, not a staffing-policy repair.
+
 Evidence commit `681b6eab11f6333088c7f10f67c453dcd8bc593a` records the directly trusted hook set, working resumed MCP and one failed no-bypass activation attempt.
 
 ## Outcome
