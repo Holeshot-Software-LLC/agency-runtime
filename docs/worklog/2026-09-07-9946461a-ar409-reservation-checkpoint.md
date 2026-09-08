@@ -110,3 +110,10 @@ installed owner-harness live checkpoint. No product bytes changed after `51909ae
 Publication note `6f997877` links source PR #739 and the user-visible changelog.
 The PR deliberately references rather than closes #735, preserving the
 required installed combined-candidate checkpoint after source merge.
+
+PR #739 merged normally at 2026-09-08T00:15:47Z as `4db6be16`, pinned to head
+`399a8bf7` without an admin override. GitHub reported CLEAN/MERGEABLE and no
+attached checks or branch workflow runs; local documented gates passed.
+Clean main fast-forwarded to the merge and #735 read-back remained OPEN.
+The runtime tree still equals `51909ae8`; owner installation/live delivery
+is the next package, not a result claimed by this source publication.
