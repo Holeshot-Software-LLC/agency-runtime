@@ -54,6 +54,13 @@ answer despite asking for one when uncertain; that is separately observed in
 source, not established as the latest native response. The native critic remains
 unadjudicated. Planner/recruiter shape and coverage failures remain unresolved.
 
+The isolated verifier initially made no calls: Claude package and bin parents
+had reverted from755to775, and the normal executable gate refused their namespace.
+Both owner-owned directories were restored to755; the gate then resolved normally.
+The process responsible for the permission recurrence is not established.
+Two record-format preflights were corrected before any verifier call (empty result
+table and explicit line-bound citations); no verdict was fabricated.
+
 The first schema probe failed at import before making a provider call; its
 module path was corrected. The original-source integration test fails because
 the provider still receives a broad schema, then passes on the candidate. The
