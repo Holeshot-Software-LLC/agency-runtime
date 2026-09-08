@@ -61,7 +61,10 @@ one changed-evidence response: a fresh exact d1a9260c build, same-SHA installed
 uv plan and focused checks, plus explicit product-source/receipt-commit wording.
 That new plan passed at 2026-09-08T00:00:19Z; its second-review builder is
 frozen at receipt commit `eac2d6a2`, ledger `e4941a75`, and no first verdict is
-reused under the new receipt candidate.
+reused under the new receipt candidate. The second actual review accepted
+criteria 1, 2, 4 and 5, but returned `absent` for 3 because its bounded
+excerpts omitted the full helper-to-empty-command caller chain. That result
+is preserved; the issue is not done and no further review has run.
 
 Planning now proves which installer the exact executing environment can use.
 A stable regular pip entry point inside the exact prefix retains an
@@ -106,11 +109,11 @@ pending explicit authorization for that outward-facing write.
 - [x] A pip-capable environment retains an exact-SHA interpreter-bound command.
 - [x] A valid Agency uv-tool receipt plus safe uv resolution emits an exact-SHA
   uv-tool command containing no pip invocation.
-- [x] A missing, malformed, unrelated, unsafe, or unresolvable uv environment
+- [ ] A missing, malformed, unrelated, unsafe, or unresolvable uv environment
   fails closed with no command.
 - [x] Upgrade planning and the dashboard remain copy-only and execute no package
   or host mutation.
-- [ ] Focused update/CLI tests and lint pass for the exact final product-source
+- [x] Focused update/CLI tests and lint pass for the exact final product-source
   candidate identified by canonical build provenance, and a live installed
   uv-tool plan passes from that candidate. Documentation checks pass at the
   corresponding evidence checkpoint; subsequent evidence-only commits do not
@@ -136,6 +139,36 @@ source digests; all 669 compared prefix files, receipt and entrypoint remain
 unchanged. Fresh source tests pass 67 cases in 0.83 seconds; Ruff checks pass.
 The new receipt candidate requires a fresh all-five digest-bound review;
 the first four verdicts cannot be transplanted across a candidate change.
+
+### September 8 second actual review
+
+After the refused Claude admission was committed at `7a387063`, ledger
+`c651ff3a`, read-only production inspection found Codex CLI 0.153.4 installed,
+authenticated and usable. From that clean checkpoint, the supported alternate
+provider ran against the unchanged frozen eac2d6a2 candidate under `umask 077`:
+
+```bash
+env PYTHONPATH=. "$AR190_PYTHON" -u scripts/verify_acceptance.py --issue AR-190 --all --provider codex
+```
+
+Actual stdout, exit zero (all returned verdicts, not all satisfied):
+
+```text
+AR-190 criterion 1: satisfied (AR-190.1-20260907-1c53be4d)
+AR-190 criterion 2: satisfied (AR-190.2-20260907-6df8d0e8)
+AR-190 criterion 3: absent (AR-190.3-20260907-67a91336)
+AR-190 criterion 4: satisfied (AR-190.4-20260907-ab7e0291)
+AR-190 criterion 5: satisfied (AR-190.5-20260907-7be22889)
+```
+
+Criterion 5 accepted the new exact product-source/live-plan chain. Criterion 3
+said the helper tests rejected invalid uv environments, but the excerpts only
+proved empty commands when pip was unavailable. Its builder omitted the
+already-frozen `update_service.py:1220-1263` present-receipt rejection path and
+`:1285-1318` mapping of failed selection to `commands=[]`. Those paths were
+available to the first Claude snapshot review but not in criterion 3's Codex
+excerpts. No third verifier call has run; the result is retained for owner
+analysis, without claiming a new runtime failure or silently changing a verdict.
 
 ### September 8 verifier admission failure
 

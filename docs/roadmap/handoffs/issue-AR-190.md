@@ -92,6 +92,14 @@ the worker made no chmod repair or unchanged retry. The owner chose supported
 Codex verification against the unchanged candidate after safe version/auth
 inspection; this is the second actual review, not a third judgment pass.
 
+The second actual Codex review returned satisfied for 1, 2, 4 and 5, and
+`absent` for 3 (`AR-190.3-20260907-67a91336`). Its bounded excerpts include
+rejection-helper tests but omit the already-frozen production caller chain
+at `update_service.py:1220-1263` and `:1285-1318` that maps refusal to no
+commands. The first Claude review could inspect those in its snapshot;
+Codex receives only excerpts. Preserve this evidence omission without
+claiming a new runtime defect. No third review has run; status is in_progress.
+
 Normal ledger reconciliation resolved the inherited c64ce3ce merge-row failure.
 Documentation validation passes for 1,241 Markdown files with the new pending
 builder and clarified criterion, alongside metadata, policy, worklog and diff.
@@ -114,12 +122,13 @@ was reused before the isolated proof; worker checkpoints the completed slice.
 
 ## Next bounded work package
 
-1. Checkpoint the failed Claude admission and its faithful ledger.
-2. Check Codex executable/auth readiness, then telemetry. Run the second/final
-   all-five isolated review with `--provider codex` under `umask 077`.
-3. Preserve every result; stop for analysis if not accepted. No third review,
-   unchanged retry or authority weakening. Parent serializes the PR after
-   earlier packages; the branch is pushed only to expose d1a9260c to lookup.
+1. Checkpoint the second actual results and faithful ledger; 1, 2, 4, 5 are
+   satisfied and 3 is absent, with exact digests retained.
+2. Stop for parent analysis. A targeted criterion-3 caller-excerpt addition
+   could preserve the same candidate and four valid verdicts, but an extra
+   review requires explicit authorization; the default two-pass bound is met.
+3. No unchanged retry or authority weakening. Parent serializes publication;
+   the branch was pushed only to expose d1a9260c to official lookup.
 
 ## Verification
 
