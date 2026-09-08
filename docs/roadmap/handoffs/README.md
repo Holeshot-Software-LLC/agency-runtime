@@ -79,6 +79,7 @@ behavior.
 - [AR-180 Codex 0.149 hook compatibility](issue-AR-180.md)
 - [AR-189 ownership-bound host uninstall](issue-AR-189.md)
 - [AR-190 uv-tool upgrade planning](issue-AR-190.md)
+- [AR-192 current-policy hook-trust preflight](issue-AR-192.md)
 - [AR-196 dashboard-service two-phase activation](issue-AR-196.md)
 - [AR-199 Codex workforce evidence restoration](issue-AR-199.md)
 - [AR-200 diagnosable decision conformance](issue-AR-200.md)
