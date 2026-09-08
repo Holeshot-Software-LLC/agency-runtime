@@ -142,3 +142,6 @@ The next diagnostic package must capture a failing plan/proposal/critic packet
 together under the same native context, and fix only a demonstrated defect.
 The authoritative receipt must remain immutable; do not load the rejected team
 or recast an approved standalone sample as a repaired native handoff.
+
+Delivered through PR785, merge `8d79ca31`. Substantive receipts `389be187` and
+`0dd5f738` and the merge have exact worklog and roadmap traceability rows.
