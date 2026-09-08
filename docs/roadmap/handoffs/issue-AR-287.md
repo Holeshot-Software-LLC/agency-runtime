@@ -37,33 +37,31 @@ Config-only timeout resolution now counts a distinct content fallback only after
 a valid primary and includes safety repair when its repair budget is positive.
 The same helper still governs generated hooks and Store leases. Root's first
 independent source review found no scoped finding; scoped Ruff/diff checks pass.
-Twenty installer cases and two Store-lease cases are written, **all unrun**.
-The portable source receipt distinguishes expected arithmetic from measurement.
+The two focused files passed 186 cases with one skip in 29.28 seconds after
+the owner authorized wrap-up tests. All twenty-two new cases are included.
 
 ## Exact blocker
 
-Owner explicitly deferred tests, CI and live/provider verification. No current
-installed repair or acceptance verdict exists. Owner-authorized tracker #756
+The owner ended test deferral for installed evaluation. No current installed
+repair or acceptance verdict exists yet. Owner-authorized tracker #756
 now maps this legacy record; do not duplicate filing. PR publication is pending.
 
 ## Same-task continuity
 
-Agent owns this exclusive branch; parent coordinates review and normal PR
+Parent owns this handed-off branch and coordinates normal PR
 publication. Do not edit root's AR-251 tree or other workers' source. Continue
 from this clean source/ledger checkpoint without retrying historical failures.
 
 ## Next bounded work package
 
-Finish the canonical/receipt checkpoint, then let the parent publish through a
-normal PR under the serialized publication token. Run focused regressions and an exact installed
-bridge/lease check only when the owner's deferral ends. Do not mark AR-287 done.
+Parent publishes through a normal PR and evaluates the combined exact-main
+installation. Do not mark AR-287 done without remaining acceptance evidence.
 
 ## Verification
 
-Executed: scoped Ruff lint/format and `git diff --check`. Deferred:
-`tests/test_native_installer.py`, `tests/test_preflight_bounds.py`, production
-spine, CI, acceptance verifier and native/provider calls. Existing August 25
-results are historical and do not verify this source delta.
+Executed: scoped Ruff lint/format, diff check and 186 focused passing cases
+(one skip). Combined spine/native evidence belongs to parent delivery.
+Existing August 25 results remain historical.
 
 ## Constraints
 

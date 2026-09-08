@@ -18,6 +18,15 @@ superseded_by: null
 
 # AR-287 static timeout route repair
 
+## September 8 wrap-up update
+
+The owner subsequently authorized tests and installed evaluation. On unchanged
+source `fb360485` integrated at `6d0bb54a`, the command
+`python -m pytest tests/test_native_installer.py tests/test_preflight_bounds.py -q -W error`
+passed **186 cases with one skip in 29.28 seconds**, including all twenty-two
+new cases. UNRUN statements below describe the initial checkpoint, not the
+present result. Native/installed and isolated acceptance remain separate gates.
+
 ## Scope and provenance
 
 Source candidate `fb36048537277833a41a5189bd29621514a6d0d5` repairs the

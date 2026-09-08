@@ -46,7 +46,7 @@ process still owned.
 
 ## Current state
 
-### September 7 source repair; verification pending
+### September 7 source repair; September 8 focused verification
 
 - Source inspection found two remaining omissions: the independently routed
   `workforce.hiring.safety_repair` stage and configured content-fallback
@@ -57,10 +57,10 @@ process still owned.
   safety repair when its repair budget is positive. No call budget, profile
   selection, legacy floor, ten-second terminal reserve or 595-second ceiling
   changes. No environment-sensitive runtime resolver is used by the installer.
-- Twenty installer parameter cases and two Store-lease parameter cases are
-  written **but unrun**, per the owner's explicit test/CI deferral. Scoped
-  Ruff and whitespace checks passed; root's first independent source review
-  found no scoped finding. This is not a test, installed or live success claim.
+- After the owner ended test deferral for delivery, the focused installer and
+  preflight-bounds files passed **186 cases with one skip in 29.28 seconds**,
+  including all twenty-two new route/lease cases. Scoped Ruff/diff checks and
+  root source review found no scoped issue. This is not native proof.
 - The [portable source receipt](acceptance/evidence/AR-287-static-timeout-routes-20260907.md)
   records producer/consumer anchors and expected arithmetic. The original
   criteria below remain verbatim: no new acceptance verdict or `done` claim.
