@@ -144,6 +144,9 @@ def test_explicit_validation_and_install_load_the_same_file(
         "profile: standard\nstore:\n  db_path: uninstalled/agency.db\n", encoding="utf-8"
     )
     monkeypatch.setenv("AGENCY_CONFIG_PATH", str(tmp_path / "absent-ambient.yaml"))
+    # The suite's isolation fixture supplies this normal deployment override;
+    # remove it only here to compare the file's own relative Store binding.
+    monkeypatch.delenv("AGENCY_DB_PATH", raising=False)
     monkeypatch.setattr(config_commands, "run_doctor", _forbidden)
     reset_config_cache()
     try:

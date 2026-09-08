@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-312
 branch: codex/ar312-explicit-config-validation
-evidence_commit: f4264b54f68ebad6efc13df58b948642d81fe2ae
-minimum_ledger_commit: 1048a12072b315ed09fcc7edb88c977df8a3004c
+evidence_commit: 7de977936b7e21e39aa1c730a5a086c1432ad62f
+minimum_ledger_commit: a9f2fc954d376a00fe05985d52defe30e6d9e383
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/758
 ---
@@ -26,10 +26,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/758
 
 ## Checkpoint
 
-Exclusive branch starts at clean ledger 1048a120. The metadata commits identify
-the inherited clean floor, not this source slice's test result. The worklog
-records the new source commit in its immediately following ledger. The owner
-requested a clean stopping point before main installation and live evaluation.
+Exclusive branch starts at clean ledger 1048a120. Runtime source 7de97793 and
+immediate ledger a9f2fc95 are frozen. One subsequent test-only fixture correction
+does not alter runtime source. The owner requested a clean stopping point before
+main installation and live evaluation; parent owns those operations.
 
 ## Completed evidence
 
@@ -37,13 +37,15 @@ Source tracing confirmed the parser lacked an explicit config flag and the
 handler always ran doctor against ambient installed state. The new explicit
 absolute-file branch uses bounded strict document validation with no defaults,
 permission repair, Store, host or provider probe. Bare behavior remains intact.
-README and parser goldens agree. Targeted Ruff and diff checks pass; focused
-regressions are written, not yet executed.
+README and parser goldens agree. Targeted Ruff and diff checks pass. The first
+focused run reports 1 failed/47 passed because the test compared file-relative
+Store paths while the suite supplied a deployment override. Removing only that
+test-local override yields 48 passed in 0.65s. No runtime code changed.
 
 ## Exact blocker
 
-Coordinated focused execution, installed evidence and isolated acceptance remain
-pending. Authorized tracker #758 is filed; parent serializes publication. No done verdict.
+Installed evidence and isolated acceptance remain pending. Authorized tracker
+#758 is filed; parent serializes publication. No done verdict.
 
 ## Same-task continuity
 
@@ -58,10 +60,10 @@ installation; do not infer installed health from structural success.
 
 ## Verification
 
-Targeted Ruff lint/format and mechanical parser-golden regeneration only.
-No test functions, CI, native/provider invocation or acceptance review executed.
-When coordinated, focus on tests/test_cli_config_validate.py and
-tests/test_cli_parser_contract.py before installed verification.
+Targeted Ruff lint/format/diff pass. Under umask 077, the parent-authorized
+tests/test_cli_config_validate.py and tests/test_cli_parser_contract.py pair passes
+48 tests in 0.65s with -q -W error. The prior fixture failure is retained in the
+canonical issue/worklog. No CI, native/provider invocation or acceptance review.
 
 ## Constraints
 

@@ -67,8 +67,8 @@ following install will consume.
   Success means document validity, not a production-ready installation.
 - Bare `agency config validate` retains its existing ambient effective-config
   doctor behavior. README examples now pass the same absolute file to validation
-  and installation. Focused regressions are written but execution is deferred
-  until the parent's coordinated wrap-up; no acceptance verdict exists.
+  and installation. The parent-authorized focused wrap-up now passes 48 tests;
+  no isolated acceptance verdict exists.
 
 ## Approach
 
@@ -88,13 +88,27 @@ reviewed config.
 
 ## Verification checkpoint
 
-Targeted Ruff lint and formatting pass. The parser-manifest golden was
-mechanically regenerated from the declarative parser, without invoking any test
-function or product CLI command. Focused tests, the named spine, CI, installed
-smoke, provider/native calls, and acceptance verification have not run for this
-slice. The owner requested a clean stopping point; the parent owns publication,
-installation, and the coordinated live evaluation. All five original acceptance
-criteria below remain unchanged and unchecked.
+Runtime source `7de97793` and immediate ledger `a9f2fc95` freeze the implementation.
+Targeted Ruff lint/format and diff checks pass. The parser-manifest golden was
+mechanically regenerated without invoking test functions. The parent then
+authorized only the focused pair:
+
+```text
+umask 077
+python -m pytest tests/test_cli_config_validate.py tests/test_cli_parser_contract.py -q -W error
+```
+
+The first run returned 1 failed, 47 passed in 1.03s: the install-loader comparison
+expected the file's Store path while the suite's normal `AGENCY_DB_PATH` override
+selected its isolated Store. The test now removes only that test-local override
+before comparing file-relative paths. Runtime source is unchanged. The final
+run exits 0 with 48 passed in 0.65s. The canonical loader and CLI handlers run
+against private fixtures, with no actual Store creation or host/provider call.
+
+The named spine, CI, installed smoke, native/provider calls and acceptance review
+have not run in this worker's slice. The parent owns coordinated main installation
+and live evaluation. All five original acceptance criteria remain unchanged and
+unchecked; this focused result is not an isolated acceptance verdict.
 
 ## Acceptance
 

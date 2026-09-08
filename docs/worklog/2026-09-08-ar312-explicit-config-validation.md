@@ -62,7 +62,25 @@ without executing any test function. Written focused coverage includes exact
 file binding, missing/relative/linked/special/oversized inputs, invalid YAML,
 secret-name validation and value-free errors, unchanged file bytes/modes,
 absent Store, ignored ambient override and preserved bare doctor behavior.
-Tests, CI, native/provider calls and acceptance are not run at this checkpoint.
+The original clean source checkpoint recorded tests as unrun. The parent then
+authorized the focused pair only under umask 077:
+
+```text
+python -m pytest tests/test_cli_config_validate.py tests/test_cli_parser_contract.py -q -W error
+```
+
+First exact result: 1 failed, 47 passed in 1.03s. Failing node:
+tests/test_cli_config_validate.py::test_explicit_validation_and_install_load_the_same_file.
+The expected file-relative Store path differed from the suite's isolated
+AGENCY_DB_PATH deployment override. This was not a runtime validation failure;
+the explicit CLI branch had returned document-valid without creating state.
+The bounded correction removes that override only inside the comparison test.
+Runtime source remains byte-identical to 7de97793.
+
+Final raw summary: `48 passed in 0.65s`, exit 0. Targeted Ruff prints
+`All checks passed!` and `4 files already formatted`; diff check is clean.
+No named spine, CI, installed smoke, native/provider call or isolated acceptance
+review is claimed here. Tracker #758 was separately authorized and mapped.
 
 ## Follow-ups
 

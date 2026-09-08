@@ -66,3 +66,7 @@ including capability-safe creation below restricted host scratch.
 ## Provenance
 
 Commit 3b39f58 established config-first credentials, authenticated doctor checks, redaction, normalized booleans, and resolved user paths. The README documents the effective precedence as environment overrides, user configuration, then bundled defaults.
+
+AR-312 source `7de97793` reuses the strict persisted-document schema and trusted
+config identity for explicit file-only validation. This does not replace runtime
+deployment overrides, installed doctor checks or production activation proof.
