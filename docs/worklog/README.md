@@ -2184,6 +2184,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `185db01a` | 2026-09-07 | docs(AR-287): checkpoint reviewed timeout repair and deferred verification | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `c0c42ce2` | 2026-09-07 | chore(AR-287): integrate published security-lock refresh | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `5e0e7168` | 2026-09-07 | docs(timeouts): record authorized focused wrap-up checks (AR-287) | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
+| `3fb97e7d` | 2026-09-07 | fix(receipts): separate provider fallbacks from inference-stage order (AR-284) | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
+| `8705a545` | 2026-09-07 | chore(AR-284): integrate published card and security lock deliveries | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
+| `3540b790` | 2026-09-07 | docs(receipts): record independent review and wrap-up verification (AR-284) | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
+| `34ea605b` | 2026-09-07 | Merge pull request #757 from Holeshot-Software-LLC/codex/ar284-receipt-fallback-semantics | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

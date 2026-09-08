@@ -48,6 +48,7 @@ from agency_runtime.core.provider_deadline import (
     PREFLIGHT_CLOSE_MARGIN_SECONDS,
     bounded_preflight_route,
 )
+from agency_runtime.core.receipts.attempt_accounting import provider_fallback_count
 from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.selector import policy as policy_module
 from agency_runtime.core.selector.cache import (
@@ -1415,7 +1416,7 @@ def _record_workforce_model_receipts(
     if not callable(recorder):
         return
     attempts = tuple(getattr(outcome, "attempts", ()) or ())
-    for fallback_count, attempt in enumerate(attempts):
+    for attempt in attempts:
         attempt_status = str(getattr(attempt, "status", "")).strip().casefold()
         status = "success" if attempt_status == "applied" else "failed"
         recorder(
@@ -1428,7 +1429,7 @@ def _record_workforce_model_receipts(
                 getattr(attempt, "provider_name", "") or getattr(attempt, "provider", "") or ""
             ),
             resolved_model=str(getattr(attempt, "actual_model", "") or ""),
-            attempted_fallbacks=fallback_count,
+            attempted_fallbacks=provider_fallback_count(attempt),
             source="wrapper",
             # The provider layer already measured this call and the attempt has
             # carried it all along; dropping it here is what left every receipt

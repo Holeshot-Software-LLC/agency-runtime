@@ -33,6 +33,7 @@ from agency_runtime.core.preflight_versions import (
     PREFLIGHT_REPLAY_RECIPE_VERSION,
     SUPPORTED_PREFLIGHT_RECIPE_VERSIONS,
 )
+from agency_runtime.core.receipts.attempt_accounting import provider_fallback_count
 from agency_runtime.core.receipts.ingress import (
     ReceiptProvenance as _ReceiptProvenance,
 )
@@ -954,13 +955,13 @@ def _prepare_ready_evidence(
                     "model_group": attempt["model_group"],
                     "resolved_provider": attempt["provider_name"],
                     "resolved_model": attempt["actual_model"],
-                    "attempted_fallbacks": ordinal,
+                    "attempted_fallbacks": provider_fallback_count(attempt),
                     "source": "wrapper",
                     "status": ("success" if attempt["status"] == "applied" else "failed"),
                 },
                 provenance=_ReceiptProvenance.GENERIC,
             )
-            for ordinal, attempt in enumerate(projected_routing["model_receipts"])
+            for attempt in projected_routing["model_receipts"]
         ],
         pending_hiring_commits=projected_routing["pending_hiring_commits"],
         resident_manager_binding=(
@@ -1050,9 +1051,7 @@ def _commit_pending_hiring_evidence(
     bound_store, transaction_state = _ready_transaction_store(store, conn)
     for pending in evidence.pending_hiring_commits:
         commit_pending_contractor_hiring(pending, store=bound_store)
-        for fallback_count, receipt in enumerate(
-            pending.case_arguments["model_evidence"]["receipts"]
-        ):
+        for receipt in pending.case_arguments["model_evidence"]["receipts"]:
             bound_store.record_model_receipt(
                 trace_id=evidence.trace_id,
                 session_id=evidence.session_id,
@@ -1060,7 +1059,7 @@ def _commit_pending_hiring_evidence(
                 requested_model=str(receipt.get("requested_model") or ""),
                 resolved_provider=str(receipt.get("provider") or ""),
                 resolved_model=str(receipt.get("actual_model") or ""),
-                attempted_fallbacks=fallback_count,
+                attempted_fallbacks=provider_fallback_count(receipt),
                 source="wrapper",
                 status="success",
             )
