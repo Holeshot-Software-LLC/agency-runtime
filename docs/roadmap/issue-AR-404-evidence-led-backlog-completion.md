@@ -66,6 +66,17 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+September 8 staffing recurrence: AR-420 fixes a captured reranker cross-unit
+candidate defect and has three isolated satisfied criteria. Installed3fe3d7ba
+matches all614wheel files; fresh Codex trace01a0831f-1a40-7a12-a079-3386a3b439d3
+completes in41.514s with all stages applied, exact card injection and matching
+accepted response hash. This does not establish general staffing reliability.
+Prior trace01a0830f-8143-7542-ac77-5ace98ceb5d4 remains failed, its critic veto
+unadjudicated; the earlier long-task recruiter shape/coverage failures remain
+unresolved. Claude executable parent permissions recurred at775 and were restored
+to755; cause unproven. Hermes/OpenClaw/Claude/Zcode remain in scope and existing
+operator choices stay pending. See the AR-420 worklog and evidence; PR803.
+
 The continuation now proves an accepted Hermes candidate-source turn with full
 card injection and matching terminal hash; native default adoption remains.
 OpenClaw accepted terminal and Claude full native turn are proven. Zcode's restored

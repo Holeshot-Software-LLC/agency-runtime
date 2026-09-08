@@ -1,6 +1,6 @@
 ---
 title: "AR-420: Bind reranker responses to per-unit candidate membership"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-08
 updated: 2026-09-08
@@ -34,7 +34,9 @@ of every recruiter abstention or critic veto.
 
 ## Current state
 
-Phase live_demo. Main baseline b69c4926 was clean and synchronized. Current
+Phase done. All three isolated criteria are satisfied against candidate
+86c99a36; this closes only the reranker membership defect. General staffing
+reliability remains unresolved under AR-404. Main baseline b69c4926 was clean and synchronized. Current
 native trace 01a0830f-8143-7542-ac77-5ace98ceb5d4 failed with a subject rejection,
 a reranker rejection and critic_wrong_neighbor_selection. Its proposal was not
 persisted; the veto remains unadjudicated. The earlier long-task receipt
@@ -50,7 +52,7 @@ Focused164 and production1151/three skips pass; UI224 passes. The integration
 regression fails on original source. Canonical artifacts verified; installed
 source3fe3d7ba matches all614wheel files. Fresh native Codex trace01a0831f-1a40-7a12-a079-3386a3b439d3 has every staffing
 stage applied, full card injection, truthful headers and exact accepted final
-response hash in41.514s. Isolated acceptance remains pending; PR803 carries
+response hash in41.514s. Isolated acceptance is recorded in acceptance/issue-AR-420.md; PR803 carries
 the repair and evidence/AR-420-native-codex-20260908.json.
 
 ## Approach
@@ -69,10 +71,10 @@ broader unresolved reliability work.
 
 ## Acceptance
 
-- [ ] The original response/schema defect is reproduced and the real structured
+- [x] The original response/schema defect is reproduced and the real structured
       transport receives per-unit candidate enums and exact counts.
-- [ ] Candidate permutations remain inference-owned, while missing, duplicate,
+- [x] Candidate permutations remain inference-owned, while missing, duplicate,
       invented and cross-unit IDs and malformed units remain rejected; native
       transport, bounded recall fallback, recruiter and critic are unchanged.
-- [ ] Bounded real-provider replay and fresh installed evidence agree with
+- [x] Bounded real-provider replay and fresh installed evidence agree with
       focused/production checks and exact repository, tracker and worklog records.

@@ -45,7 +45,7 @@ bounded package are in AR-404's
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
-| `AR-420` | [Bind reranker responses to per-unit candidate membership](issue-AR-420-bind-reranker-candidate-membership.md) | in_progress | p1 | host-integrations | [#802](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/802) |
+| `AR-420` | [Bind reranker responses to per-unit candidate membership](issue-AR-420-bind-reranker-candidate-membership.md) | done | p1 | host-integrations | [#802](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/802) |
 | `AR-419` | [Finalize ordinary OpenClaw CLI responses with exact evidence](issue-AR-419-finalize-openclaw-cli-responses.md) | in_progress | p1 | host-integrations | [#797](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/797) |
 | `AR-418` | [Preserve Hermes truncation failure and terminal evidence](issue-AR-418-preserve-hermes-truncation-terminal-evidence.md) | in_progress | p1 | host-integrations | [#796](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/796) |
 | `AR-417` | [Keep qualified-veto regression self-contained in source archives](issue-AR-417-self-contained-qualified-veto-regression.md) | done | p2 | host-integrations | [#790](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/790) |

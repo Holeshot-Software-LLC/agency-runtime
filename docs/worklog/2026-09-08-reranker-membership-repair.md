@@ -54,8 +54,8 @@ answer despite asking for one when uncertain; that is separately observed in
 source, not established as the latest native response. The native critic remains
 unadjudicated. Planner/recruiter shape and coverage failures remain unresolved.
 
-The isolated verifier initially made no calls: Claude package and bin parents
-had reverted from755to775, and the normal executable gate refused their namespace.
+The isolated verifier initially made no calls: Claude2.1.265 package and bin parents
+had reverted from755to775 at22:24:43–44UTC, and the normal executable gate refused their namespace.
 Both owner-owned directories were restored to755; the gate then resolved normally.
 The process responsible for the permission recurrence is not established.
 Two record-format preflights were corrected before any verifier call (empty result
@@ -92,7 +92,9 @@ credentials or raw owner configuration. Timing is a single replay, not a benchma
 
 ## Follow-ups
 
-AR-420 stays open for isolated acceptance. AR-404 keeps
+AR-420 completed its three isolated acceptance criteria against86c99a36,
+verifier runsac570ab4,066b15e0,376408aa. PR803 closes only this membership
+defect; it does not establish general reliability. AR-404 keeps
 broader staffing reliability unresolved and retains all Hermes/OpenClaw/Claude/
 Zcode gates. Prior host successes do not prove this new candidate. Existing
 pending operator choices remain pending; no observer or upstream publication
