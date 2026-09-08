@@ -78,6 +78,20 @@ changes rather than duplicating every commit.
 
 ## Unreleased
 
+### September 7 wrap-up source delivery
+
+- Add exact-file, bounded pre-install config validation without Store or
+  provider probes (AR-312).
+- Separate actual provider fallback counts from stage/repair ordinals while
+  preserving unknown and historical receipts (AR-284).
+- Include reachable content-fallback and safety-repair routes in static hook
+  and Store-lease time budgets without changing configured call limits (AR-287).
+- Recover a closed pending resident claim only on a verified later current
+  turn, preserving acknowledgment, epoch and retired-turn barriers (AR-371).
+- Distinguish a stale running process from unverified installed hook files in
+  refresh guidance (AR-369). Installation is not native loading proof.
+- Refresh optional-tooling lock pins for pip and cryptography (AR-412).
+
 ### Added
 
 - Plain-text cards for read-only roster list, policy, config show/get, and

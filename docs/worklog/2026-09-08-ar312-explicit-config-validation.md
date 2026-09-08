@@ -94,3 +94,5 @@ AR-312 remains in_progress until its unchanged acceptance gates have evidence.
 Integration `525029dd` preserves all wrap-up source slices and independent capsule/ledger records. Root source review confirms explicit absolute identity, bounded read, strict schema and no Store/provider or permission-repair dependency; no scoped correctness finding. Original 48-pass focused receipt stays exact.
 
 Integration `7087e9ac` includes published diagnostic PR761 and its ledger. Product and parser source is identical to combined candidate4955b939; only card regression assertions/records changed after the passing named spine.
+
+PR #762 merged as `4cbebf73df18545120348628afd6848b8e67e3ff` at 2026-09-08T02:06:31Z. This exact main revision is the installed wrap-up candidate; all pending product slices are published. Production1151/3skip, UI224, scoped successes and bounded conformance limitations belong to the final delivery evidence.
