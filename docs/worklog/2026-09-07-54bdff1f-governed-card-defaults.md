@@ -60,3 +60,5 @@ or acceptance execution.
 Update the current canonical/capsule projection to this corrected source and
 its immediate ledger, then use parent-coordinated publication. Verification
 remains deferred at owner direction; do not close AR-251.
+
+Integration `93866796` preserves the published installed-delivery and retained Hermes purpose-boundary records with their faithful merge ledgers. Independent source ownership and deferred execution remain unchanged.

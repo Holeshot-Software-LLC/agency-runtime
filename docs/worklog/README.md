@@ -2156,14 +2156,15 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e790c4d4` | 2026-09-07 | Merge pull request #747 from Holeshot-Software-LLC/codex/ar411-retain-catalog-failure-identity | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
 | `a1d0c965` | 2026-09-07 | feat(cli): add explicit cards to read-only roster policy and config | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-a1d0c965-readonly-cli-cards.md) |
 | `19c5ecff` | 2026-09-07 | docs(AR-251): record read-only cards and deferred verification | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-19c5ecff-readonly-card-checkpoint.md) |
-| `54bdff1f` | 2026-09-07 | fix(cli): follow governed TTY defaults for read-only cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
-| `bc6126bb` | 2026-09-07 | docs(AR-251): align checkpoint with governed card defaults | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-bc6126bb-card-default-checkpoint.md) |
 | `ae15183c` | 2026-09-07 | chore(delivery): integrate published recall failure diagnostic | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `8ce0461f` | 2026-09-07 | test(hermes): retain AR-280 native purpose authority boundary | AR-280 | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 | `378102d7` | 2026-09-07 | docs(backlog): link source triage and published diagnostic checkpoint | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `cb9e9a50` | 2026-09-07 | Merge pull request #748 from Holeshot-Software-LLC/codex/evening-live-delivery-20260907 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `54bdff1f` | 2026-09-07 | fix(cli): follow governed TTY defaults for read-only cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
 | `77391f21` | 2026-09-07 | chore(AR-280): integrate published installed-delivery checkpoint | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
+| `bc6126bb` | 2026-09-07 | docs(AR-251): align checkpoint with governed card defaults | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-bc6126bb-card-default-checkpoint.md) |
 | `9b15107a` | 2026-09-07 | Merge pull request #751 from Holeshot-Software-LLC/codex/ar280-authenticated-internal-purpose | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
+| `93866796` | 2026-09-07 | chore(AR-251): integrate published delivery and Hermes boundary records | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
