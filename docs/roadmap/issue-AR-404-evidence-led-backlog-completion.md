@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
+  - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
   - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
   - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
@@ -361,6 +363,18 @@ The unchanged public-roster fixture belongs to AR-176. Windows stays excluded;
 the oldest-first ledger and capsule preserve all holds. Ordinary-session
 unverified Agency/header behavior remains a separate unfinished concern.
 
+AR-189 publication preparation now supplies a real private ZCode owner-CLI
+install/plan/refuse/apply/no-op proof without replacing authority, bindings,
+locks, replanning or retention. ADR-0117 supersedes only the old presence
+ceremony; all original criteria remain in the receipt and native Windows
+companion/handle-rename/PowerShell obligations remain open. Updated-source
+focused 127/two Windows skips, named spine 1,085/three skips, UI 224 and
+repository lint/format pass. No production code or owner integration changes,
+acceptance verdict or backlog-count reduction. AR-185/PR736 merged00fc1aef
+at23:55:01Z; AR-408/PR737 mergedbfe21d66 at23:59:35Z and #732 is CLOSED,
+all read back. Parent has authorized serial AR-189 publication; AR-190 and
+AR-191 remain separate packages. Integrated focused rerun:127/two skips5.50s.
+
 The owner requires oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
 The [oldest-first ledger](AR-404-oldest-first-reconciliation-20260905.md) is the
@@ -588,7 +602,8 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish accepted AR-175 through one normal PR/merge, then review AR-176.
+Publish the authorized AR-189 private owner-CLI proof with its Windows hold,
+then release the serial token for parent-coordinated AR-190 and AR-191.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override

@@ -14,7 +14,7 @@ type: worklog
 commit: 1adacdde58fdbf186e370e2d87677efc21da2516
 short: 1adacdde
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/737
 related_issues:
   - docs/roadmap/issue-AR-408-preserve-staffing-failure-receipts.md
 ---
@@ -55,7 +55,7 @@ UI224/current floors. Exact commands and scope in portable receipt.
 ## Follow-ups
 
 Freeze isolated acceptance, run package/installed smoke, then PR/merge and
-close732. Separately integrate the reviewed quality-preserving AR409 budget
+close732. Separately integrate the reviewed AR409 budget
 reservations; no live-quality equivalence is claimed here.
 
 Substantive `1adacdde` is the reviewed actual-cause/allowance repair; source tests and existing live traces establish this bounded diagnostic outcome without changing staffing budgets.
@@ -67,3 +67,10 @@ Packet `795ddf21` freezes three observation-only criteria against artifact-evide
 Completion `7674aca9` records allthree satisfied isolated judgments against d9dde3cd. Owner CLI replacement and AR409 allocation remain separate.
 
 Merge `8c1845e5` integrates accepted AR185/main00fc1aef and AR409 filing. Only documentary overlaps were resolved by retaining both histories and the accepted AR408 state.
+
+Checkpoint `f05e0bb8` updates queue and active recovery after AR185 publication and AR408 acceptance; AR409 implementation/live testing remains next.
+
+Publication `bfe21d66` merged PR #737 at 2026-09-07T23:59:35Z. Readback confirms
+the PR is MERGED and tracker #732 is CLOSED. Its frozen acceptance candidate
+`d9dde3cd` and all three satisfied judgments remain unchanged. AR-189's next
+serial publication carries this immediate faithful merge-ledger entry.
