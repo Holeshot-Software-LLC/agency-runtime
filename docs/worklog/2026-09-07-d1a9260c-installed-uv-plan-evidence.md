@@ -158,3 +158,11 @@ strict documentation checks pass for 1,257 Markdown files; worklog, policy,
 PR-relative whitespace and source-delta checks pass. Strict tracker validation
 passes for 400 roadmap items with the two established historical PR mappings
 skipped. Native Windows and exhaustive matrices were not rerun.
+
+PR #740 merged at `d39ec14dc0d79094cb8398d807da2554263a5c3f` on
+2026-09-08T00:23:02Z, exact reviewed head
+`f26645a98032f38edbb77c315a0210fa8296ca59`. The hosted readback reports MERGED;
+shared main advanced only by fast-forward and was clean at that merge. No
+hosted check runs were reported, and none are claimed. AR-190 remains
+in_progress with four current satisfied criteria and the explicit criterion-3
+caller-excerpt gap; no legacy tracker was created or closed.

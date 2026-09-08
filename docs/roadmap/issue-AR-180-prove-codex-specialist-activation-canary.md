@@ -41,7 +41,7 @@ epic: host-integrations
 issue_id: AR-180
 priority: p0
 tracker_url: null
-depends_on: [AR-143, AR-182, AR-185, AR-191, AR-192, AR-195, AR-255]
+depends_on: [AR-143, AR-182, AR-185, AR-192, AR-195, AR-255]
 blocks: [AR-119, AR-252, AR-253]
 ---
 
