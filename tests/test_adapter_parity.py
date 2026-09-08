@@ -730,6 +730,7 @@ print(json.dumps({
         "subagent_start",
         "subagent_stop",
         "transform_llm_output",
+        "transform_turn_failure",
     ]
     assert loaded["commands"] == ["agency"]
     assert loaded["tools"] == ["agency_finalize"]

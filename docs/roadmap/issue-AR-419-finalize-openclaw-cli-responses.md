@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [openclaw, cli, lifecycle, finalization]
 related:
+  - docs/worklog/2026-09-08-native-terminal-repair.md
   - docs/decisions/0016-central-finalization-and-session-correlation.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md
@@ -29,6 +30,21 @@ accepted staffing, yet leave Agency active with zero finalization events. Native
 ok/completed status does not establish a centrally accepted response.
 
 ## Current state
+
+September 8 continuation: the installed OpenClaw terminal callback is awaited
+before CLI delivery. Its native context identifies internal delivery as
+`channel=webchat`; the generated handler previously returned `allow_pending`
+without invoking the existing exact-text outbound gate. The candidate now invokes
+that gate only for this explicit native channel after a valid pre-verify result.
+Other channels retain their full-payload sealing path. Twelve executed Node
+callback cases cover the channel and policy split; focused integration passes
+153 tests with one existing skip. Fresh installed terminal proof passes: trace
+`b2f9ef9e-1280-4c28-9934-6b094bdfcf6a` has one authoritative accept event, exact
+visible-response hash81356a9c914b08463d76681650c7daf4ae24ad6d4236a880dff15df54066c466
+and completed Store state. All614installed files match verified308b670a wheel.
+Exact card injection remains unproven; a temporary observer requires separate
+native capability consent. See evidence/AR-419-openclaw-terminal-20260908.json.
+Named spine1151/three skips, UI224, docs/Ruff/routing and conformance188/188 pass.
 
 Fresh refreshed-gateway tracebfbdfdc5-59b8-481d-b0d6-8e4f4abc872a;
 Agency sessionagent:openclaw:ar404-native-20260908-2006;

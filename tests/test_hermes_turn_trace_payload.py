@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from types import ModuleType
+from pathlib import Path
+from types import ModuleType, SimpleNamespace
 from typing import Any
 
 import pytest
@@ -21,6 +22,60 @@ def _generated_plugin() -> ModuleType:
     module = ModuleType("generated_hermes_turn_trace")
     exec(compile(source, "<generated-hermes-turn-trace>", "exec"), module.__dict__)
     return module
+
+
+@pytest.mark.parametrize("trace_id", ["turn", "other-turn", ""])
+def test_native_failure_formats_only_exact_turn_and_never_accepts(
+    tmp_path: Path,
+    trace_id: str,
+) -> None:
+    from agency_runtime.adapters.hermes import bridge
+    from agency_runtime.core.header.contract import fill_header_fields, format_header
+    from agency_runtime.core.store.sqlite import Store
+
+    store = Store(tmp_path / "failure.db")
+    store.create_run(
+        trace_id="turn",
+        session_id="session",
+        host="hermes",
+        metadata={"request_kind": "nontrivial"},
+    )
+    store.create_run(trace_id="other-turn", session_id="other-session", host="hermes")
+    store.record_specialist_loaded("session", "code-reviewer", trace_id="turn")
+    adapter = SimpleNamespace(store=store)
+    payload = {
+        "session_id": "session",
+        "trace_id": trace_id,
+        "response_text": "Response truncated",
+        "failed": True,
+    }
+    expected = format_header(fill_header_fields({}, "session", store, "", "turn"))
+    result = bridge._transform_turn_failure(adapter, payload)
+    if trace_id == "turn":
+        assert result.startswith(expected + "\n\nNative Hermes turn failed:")
+    else:
+        assert result == "Response truncated"
+    assert store.get_run("turn")["status"] == "active"
+    bridge._close_session(adapter, payload)
+    assert store.get_run("turn")["status"] == ("failed" if trace_id == "turn" else "active")
+    assert store.get_run("other-turn")["status"] == "active"
+    assert store.get_authoritative_finalization("session", "turn") is None
+
+
+def test_generated_failure_hook_preserves_native_failure_and_correlation() -> None:
+    module = _generated_plugin()
+    calls = []
+    module._ACTIVE_TURN_TRACES["session"] = "turn"
+    module._invoke = lambda action, payload: calls.append((action, payload)) or "Diagnostic"
+    assert (
+        module._transform_turn_failure("Partial", session_id="session", failed=True) == "Diagnostic"
+    )
+    assert calls[0][0] == "transform_turn_failure"
+    assert calls[0][1]["trace_id"] == "turn"
+    module._on_session_end(session_id="session", completed=False, failed=True)
+    assert calls[-1][1]["failed"] is True
+    assert calls[-1][1]["completed"] is False
+    assert module._ACTIVE_TURN_TRACES == {}
 
 
 def test_generated_plugin_preserves_preflight_trace_for_current_hermes_hooks() -> None:

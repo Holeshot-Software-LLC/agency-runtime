@@ -2258,6 +2258,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1dd69c3a` | 2026-09-08 | docs(hosts): record Hermes truncation and restored OpenClaw gateway | AR-404, AR-418 | [Detail](2026-09-08-hermes-openclaw-native-refresh.md) |
 | `eb981751` | 2026-09-08 | docs(hosts): record OpenClaw terminal gap and native verification limits | AR-404, AR-418, AR-419 | [Detail](2026-09-08-hermes-openclaw-native-refresh.md) |
 | `ca0914cd` | 2026-09-08 | docs(hosts): merge PR795 refreshed native verification | AR-404, AR-418, AR-419 | [Detail](2026-09-08-hermes-openclaw-native-refresh.md) |
+| `94b9eb28` | 2026-09-08 | fix(openclaw): finalize verified internal CLI responses (AR-419) | [AR-419](../roadmap/issue-AR-419-finalize-openclaw-cli-responses.md) | [Detail](2026-09-08-native-terminal-repair.md) |
+| `1dffc669` | 2026-09-08 | docs(hosts): record accepted OpenClaw terminal and remaining native gates | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md), [AR-419](../roadmap/issue-AR-419-finalize-openclaw-cli-responses.md) | [Detail](2026-09-08-native-terminal-repair.md) |
+| `e157d715` | 2026-09-08 | docs(hosts): preserve accepted Claude turn and Zcode entrypoint repair | AR-404 | [Detail](2026-09-08-native-terminal-repair.md) |
+| `ef7a0466` | 2026-09-08 | fix(hermes): preserve correlated native failure diagnostics (AR-418) | AR-418 | [Detail](2026-09-08-native-terminal-repair.md) |
+| `616e7be2` | 2026-09-08 | docs(hosts): checkpoint installed Hermes adapter candidate | AR-418 | [Detail](2026-09-08-native-terminal-repair.md) |
+| `9418ab83` | 2026-09-08 | docs(hosts): record Hermes candidate success and remaining native gates | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

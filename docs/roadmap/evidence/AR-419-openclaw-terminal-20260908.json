@@ -1,0 +1,61 @@
+{
+  "host": "openclaw",
+  "candidate_commit": "308b670ad2d8d600b96ab690100e3c0ce231c254",
+  "invocation": {
+    "started_at": "2026-09-08T20:54:53.329786+00:00",
+    "ended_at": "2026-09-08T20:58:09.325622+00:00",
+    "elapsed_seconds": 195.996,
+    "exit_code": 0,
+    "session_key": "agent:openclaw:ar419-native-20260908"
+  },
+  "trace_id": "b2f9ef9e-1280-4c28-9934-6b094bdfcf6a",
+  "session_key": "agent:openclaw:ar419-native-20260908",
+  "native_session_id": "07d1fc04-670d-4976-90d4-cfd968a11878",
+  "native_status": "ok",
+  "native_summary": "completed",
+  "response": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: [router] task-agency-router -> linux-task-agency-router/task-agency-router (wrapper)\nRecruited via: inference\nWhy: The supplied function requires a correctness review against explicit behavioral requirements.\nHow it shaped outcome: The review prioritizes verified behavioral defects and the tests needed to cover them.\n\n**Findings**\n- **High \u2014 Fractional results are discarded.** The supplied return statement uses floor division (`//`). For `[2, 7]`, it evaluates `9 // 2` and returns `4`, but the required arithmetic mean is `4.5`.\n- **High \u2014 Empty input raises the wrong exception.** For `[]`, it evaluates `sum([]) // len([])`, or `0 // 0`, which raises `ZeroDivisionError`; the requirement calls for `ValueError`.\n\nA compliant implementation would explicitly reject empty input and use true division:\n\n```python\ndef average(values):\n    if not values:\n        raise ValueError(\"values must not be empty\")\n    return sum(values) / len(values)\n```\n\nTests should verify that `[2, 7]` returns `4.5` and `[]` raises `ValueError`. No repository files were inspected or modified.",
+  "response_sha256": "81356a9c914b08463d76681650c7daf4ae24ad6d4236a880dff15df54066c466",
+  "header_validated_by_central_gate": true,
+  "terminal": {
+    "id": "83daf52a-44a7-4071-9daa-3d92c0af631c",
+    "trace_id": "b2f9ef9e-1280-4c28-9934-6b094bdfcf6a",
+    "host": "openclaw",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "81356a9c914b08463d76681650c7daf4ae24ad6d4236a880dff15df54066c466",
+    "policy_response_hash": "81356a9c914b08463d76681650c7daf4ae24ad6d4236a880dff15df54066c466",
+    "terminal_status": "completed",
+    "created_at": "2026-09-08T20:58:08.336111+00:00",
+    "session_id": "agent:openclaw:ar419-native-20260908",
+    "status": "completed",
+    "ended_at": "2026-09-08T20:58:08.336111+00:00",
+    "authoritative": true
+  },
+  "agency_run": {
+    "id": "c37694c3-3052-4838-ac8f-97bb4ebe2550",
+    "trace_id": "b2f9ef9e-1280-4c28-9934-6b094bdfcf6a",
+    "session_id": "agent:openclaw:ar419-native-20260908",
+    "host": "openclaw",
+    "started_at": "2026-09-08T20:54:55.709000+00:00",
+    "last_activity_at": "2026-09-08T20:58:08.338000+00:00",
+    "turn_sequence": 1607,
+    "ended_at": "2026-09-08T20:58:08.336111+00:00",
+    "status": "completed",
+    "preflight_state": "ready"
+  },
+  "finalization_event_count": 1,
+  "routing": [
+    {
+      "status": "accepted",
+      "selected_ids": [
+        "code-reviewer"
+      ],
+      "latency_ms": 159779
+    }
+  ],
+  "exact_card_injection_proven": false,
+  "observer_status": "not_installed_native_capability_consent_required",
+  "configuration_sections_unchanged": true,
+  "installed_package_files_match_wheel": 614,
+  "native_tools": []
+}

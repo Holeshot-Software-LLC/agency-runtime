@@ -1,0 +1,89 @@
+{
+  "issue": "AR-418",
+  "host": "hermes",
+  "scope": "candidate-source native turn; normal installed native source unchanged",
+  "agency_source": "8921c77e6498874c37697bd49155cdafabcf35b4",
+  "native_source": "59e52e556a",
+  "native_patch": "AR-418-hermes-native-terminal.patch",
+  "invocation": {
+    "started_at": "2026-09-08T21:29:31.212084+00:00",
+    "ended_at": "2026-09-08T21:32:45.559117+00:00",
+    "elapsed_seconds": 194.347,
+    "exit_code": 0,
+    "process_timeout_seconds": 420,
+    "native_source": "59e52e556a",
+    "agency_source": "8921c77e",
+    "normal_native_installation_modified": false
+  },
+  "session_id": "20260908_172942_b70b9d",
+  "trace_id": "20260908_172942_b70b9d:e470edf4-fd92-4709-9d6c-69886a0465fd:5044c93c",
+  "staffing_latency_ms": 119165,
+  "selected_ids": [
+    "code-reviewer"
+  ],
+  "native_usage": {
+    "estimated_cost_usd": 0.0,
+    "cost_status": "unknown",
+    "cost_source": "none",
+    "input_tokens": 43576,
+    "output_tokens": 939,
+    "cache_read_tokens": 0,
+    "cache_write_tokens": 0,
+    "reasoning_tokens": 2679,
+    "total_tokens": 44515,
+    "api_calls": 3,
+    "model": "alias-hermes-chat",
+    "provider": "custom",
+    "session_id": "20260908_172942_b70b9d",
+    "completed": true,
+    "failed": false,
+    "service_tier": null
+  },
+  "injection": [
+    {
+      "message_id": 535318,
+      "role": "user",
+      "full_card_present": true,
+      "api_content_chars": 12629,
+      "api_content_sha256": "349137c53292f58671a8ecdf4e6f3fd2bab5a28c8930641b201adfff79b1668f"
+    }
+  ],
+  "native_tool_names": [
+    "tool_search",
+    "agency_finalize"
+  ],
+  "native_response": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: observed execution receipt: alias-hermes-chat -> glm-5.2 via alias-hermes-chat (host)\nRecruited via: inference\n\nReview of `def average(values): return sum(values) // len(values)` vs the three stated requirements \u2014 2 of 3 fail. Evidence is the supplied snippet itself; no repo access used, per the turn's constraint.\n\nFindings, ranked by impact:\n1. FAILS \"preserve fractional results\" (verified from the code): `//` is floor division, so every non-integral mean is truncated to an int. [2, 7] -> 9 // 2 -> 4; the correct mean is 4.5. It also floors toward negative infinity for negatives ([-3, -4] -> -4, not -3.5). Fix: true division `/`.\n2. FAILS \"raise ValueError for empty input\": [] -> len(values) == 0 -> ZeroDivisionError, not the required ValueError. Fix: explicit empty guard before dividing.\n3. \"Return the arithmetic mean\": holds only when the mean happens to be an integer; otherwise finding 1 applies. sum/len is the right numerator/denominator.\n\nBehavior answers:\n- [2, 7]: returns 4 (an int). The fractional result 4.5 is silently lost.\n- []: raises ZeroDivisionError (a bug class, but the wrong exception per spec).\n\nLazy fix (either satisfies all three requirements):\n  def average(values):\n      if not values:\n          raise ValueError(\"average() requires at least one value\")\n      return sum(values) / len(values)\nOr stdlib rung: `from statistics import mean` \u2014 mean([]) raises StatisticsError, a ValueError subclass, and fractional means are preserved.\n\nResidual risks / test gaps: no tests shown for the fractional or empty-input cases; one assert each would have caught both defects. No other callers inspected \u2014 out of scope by instruction.",
+  "response_sha256": "fc52279e58cc8cb519a23bd63d5932bb4ed7554904afc9b22f5a9b4c3362a8c5",
+  "run": {
+    "id": "e151528d-d9e9-43b8-a9a1-e97043d5a024",
+    "trace_id": "20260908_172942_b70b9d:e470edf4-fd92-4709-9d6c-69886a0465fd:5044c93c",
+    "session_id": "20260908_172942_b70b9d",
+    "host": "hermes",
+    "started_at": "2026-09-08T21:29:43.727000+00:00",
+    "last_activity_at": "2026-09-08T21:32:35.682000+00:00",
+    "turn_sequence": 1609,
+    "ended_at": "2026-09-08T21:32:35.681308+00:00",
+    "status": "completed",
+    "preflight_state": "ready"
+  },
+  "terminal": {
+    "id": "a07064af-f8c2-4c38-a32a-27729151f5dc",
+    "trace_id": "20260908_172942_b70b9d:e470edf4-fd92-4709-9d6c-69886a0465fd:5044c93c",
+    "host": "hermes",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "fc52279e58cc8cb519a23bd63d5932bb4ed7554904afc9b22f5a9b4c3362a8c5",
+    "policy_response_hash": null,
+    "terminal_status": "completed",
+    "created_at": "2026-09-08T21:32:35.681308+00:00",
+    "session_id": "20260908_172942_b70b9d",
+    "status": "completed",
+    "ended_at": "2026-09-08T21:32:35.681308+00:00",
+    "authoritative": true
+  },
+  "limitations": [
+    "Native patch is not upstream-merged or installed as the default.",
+    "Original failing receipt exact provider branch and token cap remain unproven.",
+    "No manual finalization of old failed receipts."
+  ]
+}

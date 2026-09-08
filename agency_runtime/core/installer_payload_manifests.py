@@ -79,6 +79,7 @@ def build_hermes_bundle(
             "  - subagent_stop\n"
             "  - pre_verify\n"
             "  - transform_llm_output\n"
+            "  - transform_turn_failure\n"
             "  - on_session_end\n"
             "mcp_servers: ./.mcp.json\n"
         ),

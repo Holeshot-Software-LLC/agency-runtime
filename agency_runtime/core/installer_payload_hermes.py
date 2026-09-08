@@ -589,6 +589,26 @@ def _transform_llm_output(response_text="", **kwargs):
     return result if isinstance(result, str) and result.strip() else response_text
 
 
+def _transform_turn_failure(response_text="", **kwargs):
+    session_id, trace_id = _correlation(kwargs)
+    if kwargs.get("failed") is not True or not session_id or not trace_id:
+        return response_text
+    try:
+        result = _invoke(
+            "transform_turn_failure",
+            {
+                "session_id": session_id,
+                "trace_id": trace_id,
+                "response_text": response_text,
+                "model": kwargs.get("model"),
+                "failed": True,
+            },
+        )
+    except Exception:
+        return response_text
+    return result if isinstance(result, str) and result.strip() else response_text
+
+
 def _finalize_tool_result(draft_text, missing):
     return json.dumps(
         {
@@ -666,6 +686,7 @@ def _on_session_end(**kwargs):
                 "trace_id": trace_id,
                 "completed": kwargs.get("completed") is True,
                 "interrupted": kwargs.get("interrupted") is True,
+                **({"failed": True} if kwargs.get("failed") is True else {}),
             },
         )
     except Exception:
@@ -725,6 +746,7 @@ def register(ctx):
     ctx.register_hook("subagent_stop", _subagent_stop)
     ctx.register_hook("pre_verify", _pre_verify)
     ctx.register_hook("transform_llm_output", _transform_llm_output)
+    ctx.register_hook("transform_turn_failure", _transform_turn_failure)
     ctx.register_hook("on_session_end", _on_session_end)
     ctx.register_command(
         "agency",

@@ -65,6 +65,40 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+The continuation now proves an accepted Hermes candidate-source turn with full
+card injection and matching terminal hash; native default adoption remains.
+OpenClaw accepted terminal and Claude full native turn are proven. Zcode's restored
+CLI reaches a missing answering-provider gate. Fresh Codex process status does
+not expose projection hashes, and its wiring command is blocked by native bwrap;
+no bypass was used. Current records are in the active handoff and
+`docs/worklog/2026-09-08-native-terminal-repair.md`. The package awaits the three
+owner choices recorded there; all-host and issue acceptance remain incomplete.
+
+
+September 8 native continuation: Claude now has exact rendered selected-card
+injection, truthful headers and an authoritative accepted matching response hash
+on trace16079749-cfc9-4d90-b4d4-6f6ce8104eec,63.879seconds. Evidence:
+`evidence/AR-404-claude-native-20260908.json`. Zcode's installed desktop AppImage
+contains CLI0.16.5; an unchanged bundle and launcher restore executable availability,
+native doctor and Agency refresh pass. Its native turn remains unverified. Hermes
+AR-418 and OpenClaw exact input evidence remain unresolved; no all-host completion.
+
+
+### Four-host terminal continuation, September 8
+
+Main and origin rechecked at97e269ec. A new owned branch carries AR-419's
+internal CLI terminal-handoff candidate. AR-418 requires the native early-return
+failure boundary to expose terminal evidence; original receipts remain intact.
+Claude is executable-discovered but native inventory is rejected because its
+executable parent namespace permits cross-account substitution. Zcode has enabled
+registered hooks but no discovered executable, version or native capability.
+Claude permissions are now repaired and its refreshed native inventory verifies
+2.1.265. OpenClaw terminal handoff is live-proven with exact accepted response hash
+in AR-419 evidence; injection remains unproven. Zcode desktop AppImage exists,
+while a supported CLI entrypoint is still being inspected.
+Both hosts remain explicitly in scope, and none of these installation observations
+is an accepted native turn. The current package preserves staffing and validators.
+
 ### Hermes and OpenClaw native package, September 8
 
 After AR-414/415's verified Codex completion, owner authorized Hermes refresh

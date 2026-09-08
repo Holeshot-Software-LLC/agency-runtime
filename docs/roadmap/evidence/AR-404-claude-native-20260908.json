@@ -1,0 +1,62 @@
+{
+  "issue": "AR-404",
+  "host": "claude",
+  "source_commit": "308b670ad2d8d600b96ab690100e3c0ce231c254",
+  "invocation": {
+    "session_id": "31b0b550-d076-447c-8e68-bd070674a907",
+    "started_at": "2026-09-08T21:03:30.705687+00:00",
+    "ended_at": "2026-09-08T21:04:34.584201+00:00",
+    "elapsed_seconds": 63.879,
+    "exit_code": 0
+  },
+  "trace_id": "16079749-cfc9-4d90-b4d4-6f6ce8104eec",
+  "native_version": "2.1.265",
+  "permissions_repaired": {
+    "owned_executable_parent_directories": 2,
+    "before": "775",
+    "after": "755"
+  },
+  "native_response": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)\nRecruited via: inference\nWhy: The request is a defect review of a supplied code excerpt against stated requirements, with no repository access.\nHow it shaped outcome: Findings are ranked by impact and tied to the exact operator and inputs that produce the wrong behavior.\n\nThe function fails two of the three requirements. Only \"return the arithmetic mean\" is met, and only for inputs where the mean happens to be a whole number.\n\n**Findings, most severe first**\n\n1. **Fractional results are discarded.** The `//` operator is floor division. It rounds toward negative infinity, so any non-integer mean is truncated. For `[2, 7]` the sum is 9 and the length is 2, and the function returns `4` instead of `4.5`. The same truncation happens with floats: `[2.0, 7.0]` returns `4.0`. Negative inputs are worse, since flooring goes downward: `[-3, 2]` returns `-1` rather than `-0.5`.\n\n2. **Empty input raises the wrong exception.** For `[]`, `sum([])` is `0` and `len([])` is `0`, so the expression is `0 // 0`. Python raises `ZeroDivisionError`, not the required `ValueError`. Callers that catch `ValueError` to handle empty input will not catch this, and the error message (\"integer division or modulo by zero\") does not describe the actual problem.\n\n3. **Minor: iterators are not supported.** If a generator or other one-shot iterable is passed, `sum` consumes it and then `len` raises `TypeError`. The requirements do not mention this case, so it is a residual risk rather than a violation.\n\n**Corrected version**\n\n```python\ndef average(values):\n    values = list(values)\n    if not values:\n        raise ValueError(\"average() requires at least one value\")\n    return sum(values) / len(values)\n```\n\nWith this version, `[2, 7]` returns `4.5` and `[]` raises `ValueError`. The `list()` call also closes the iterator gap in finding 3. Note that `statistics.mean` is an alternative, and its `StatisticsError` is a subclass of `ValueError`, but it is slower and its rounding behavior for mixed types is more involved than a plain division.\n\n**Test gaps to cover**\n\n- A non-integer mean, such as `[2, 7]` producing `4.5`.\n- A negative non-integer mean, such as `[-3, 2]` producing `-0.5`, which catches floor-division bugs that a positive case might miss.\n- Empty input asserting `ValueError` specifically, not just any exception.\n- A generator input, if that case matters to callers.",
+  "response_sha256": "9edfb785eab7bc2cbcf4232d0141dfa123c169e0d5584ac35a9e6cc6ec99607f",
+  "native_error": false,
+  "native_terminal_reason": "completed",
+  "native_permission_denials": [],
+  "staffing_latency_ms": 43063,
+  "run": {
+    "id": "ef39951f-7bcf-40a0-891e-a96e3737d07e",
+    "trace_id": "16079749-cfc9-4d90-b4d4-6f6ce8104eec",
+    "session_id": "31b0b550-d076-447c-8e68-bd070674a907",
+    "host": "claude",
+    "started_at": "2026-09-08T21:03:31.770923+00:00",
+    "last_activity_at": "2026-09-08T21:04:33.731000+00:00",
+    "turn_sequence": 1608,
+    "ended_at": "2026-09-08T21:04:33.729113+00:00",
+    "status": "completed",
+    "preflight_state": "ready"
+  },
+  "terminal": {
+    "id": "32588a29-1317-4e28-9911-eaa5ef863666",
+    "trace_id": "16079749-cfc9-4d90-b4d4-6f6ce8104eec",
+    "host": "claude",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "9edfb785eab7bc2cbcf4232d0141dfa123c169e0d5584ac35a9e6cc6ec99607f",
+    "policy_response_hash": null,
+    "terminal_status": "completed",
+    "created_at": "2026-09-08T21:04:33.729113+00:00",
+    "session_id": "31b0b550-d076-447c-8e68-bd070674a907",
+    "status": "completed",
+    "ended_at": "2026-09-08T21:04:33.729113+00:00",
+    "authoritative": true
+  },
+  "injection": {
+    "native_attachment_type": "hook_additional_context",
+    "uuid": "9a47f6ad-c2c9-4d12-95c6-4b57b380b6d3",
+    "timestamp": "2026-09-08T21:04:16.278Z",
+    "full_card_present_in_hook_context": true,
+    "full_card_present_in_rendered_context": true,
+    "context_chars": 6491,
+    "context_sha256": "24a08ed38bfc2e0e5b15c015fe3369aef92bd0443b654fd7ddb2522e7c9656f8",
+    "card_sha256": "fbd76fbe316a740eea7924c16dc69d17c8a27b5fba67a05841488c481a87e28d"
+  }
+}

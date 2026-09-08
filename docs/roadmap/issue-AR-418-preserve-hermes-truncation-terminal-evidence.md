@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [hermes, lifecycle, failure, finalization]
 related:
+  - docs/worklog/2026-09-08-native-terminal-repair.md
   - docs/decisions/0016-central-finalization-and-session-correlation.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md
@@ -30,6 +31,35 @@ without a truthful five-line header or accepted finalization; Agency remains act
 Exit status and installation success therefore conceal an incomplete native turn.
 
 ## Current state
+
+A concrete native candidate is preserved in
+`evidence/AR-418-hermes-native-terminal.patch` (native commit59e52e556a on
+base7cd91114b4). The two real conversation-loop regressions fail on the unchanged
+base with missing failed state and pass with the patch. Native34tests pass:
+truncation failure diagnostics use a dedicated transform, emit session-end failure,
+and printable partial results exit nonzero. Agency now consumes that optional
+hook, derives failure headers from exact current Store correlation, and closes
+failed runs without accepting partial output. Missing/cross-session traces retain
+pass-through diagnostics and cannot close another turn. Adapter94tests pass.
+Fresh candidate-source Hermes turn20260908_172942_b70b9d succeeds with exact
+card injection, truthful headers and accepted matching hash in194.347s; see
+`evidence/AR-418-hermes-candidate-native-20260908.json`. The normal native
+installation is unchanged and the candidate is not merged upstream. Installed
+repair evidence and exact original provider branch remain unproven. No old failed
+receipt has been finalized. This is a candidate, not AR-418 acceptance.
+
+
+September 8 continuation source inspection confirms that native
+`agent/conversation_loop.py` returns early both for length exhaustion and for
+malformed tool-call JSON classified as truncated. These paths bypass
+`agent/turn_finalizer.py`, including output transformation and `on_session_end`.
+The outer native runner classifies a result without `failed=true` as relay
+success even when `completed=false` and `partial=true`; the one-shot CLI also
+returns zero when partial failure has printable text. Existing supported plugin
+hooks expose no terminal-result transformation for those early returns. A repair
+must cover that native boundary; merely adding adapter cleanup cannot establish
+the original acceptance criteria. The original failed receipt remains unchanged,
+and its exact branch/provider cause is still unproven.
 
 Session20260908_155517_dc98fe, trace
 20260908_155517_dc98fe:8671381b-3125-48ae-98a4-29c8f43c4209:1c4ea053.

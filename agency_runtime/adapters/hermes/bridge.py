@@ -491,6 +491,35 @@ def _finalize(adapter: HermesAdapter, payload: Mapping[str, Any]) -> dict[str, A
     return result
 
 
+def _transform_turn_failure(adapter: HermesAdapter, payload: Mapping[str, Any]) -> str:
+    """Format correlated native failure evidence without accepting partial text."""
+    from agency_runtime.core.header.contract import fill_header_fields, format_header
+
+    text = _bounded_text(payload.get("response_text"))
+    session_id = _bounded_text(payload.get("session_id"), maximum_bytes=512)
+    trace_id = _bounded_text(payload.get("trace_id"), maximum_bytes=512)
+    if payload.get("failed") is not True or not session_id or not trace_id:
+        return text
+    run = adapter.store.get_run(trace_id)
+    if (
+        not run
+        or run.get("session_id") != session_id
+        or run.get("host") != "hermes"
+        or run.get("status") != "active"
+    ):
+        return text
+    header = format_header(
+        fill_header_fields(
+            {},
+            session_id,
+            adapter.store,
+            _bounded_text(payload.get("model"), maximum_bytes=512),
+            trace_id,
+        )
+    )
+    return f"{header}\n\nNative Hermes turn failed: {text}"
+
+
 def _close_session(adapter: HermesAdapter, payload: Mapping[str, Any]) -> None:
     session_id = _bounded_text(payload.get("session_id"), maximum_bytes=512)
     trace_id = _bounded_text(payload.get("trace_id"), maximum_bytes=512)
@@ -499,6 +528,8 @@ def _close_session(adapter: HermesAdapter, payload: Mapping[str, Any]) -> None:
     status = (
         "interrupted"
         if payload.get("interrupted") is True
+        else "failed"
+        if payload.get("failed") is True
         else "session_ended"
         if payload.get("completed") is True
         else "abandoned"
@@ -509,7 +540,7 @@ def _close_session(adapter: HermesAdapter, payload: Mapping[str, Any]) -> None:
 def _runtime_disabled_result(payload: Mapping[str, Any], action: str) -> Any:
     """Return one exact Hermes pass-through without config, Store, or evidence work."""
 
-    if action == "transform_llm_output":
+    if action in {"transform_llm_output", "transform_turn_failure"}:
         return _bounded_text(payload.get("response_text"))
     if action == "finalize":
         return _bounded_text(payload.get("draft_text"))
@@ -682,8 +713,11 @@ def handle(
         return _finalize(adapter, payload)
     if action == "accepted_replay":
         return _accepted_replay(adapter, payload)
-    if action == "transform_llm_output":
-        return _transform_output(adapter, payload)
+    if action in {"transform_llm_output", "transform_turn_failure"}:
+        return {
+            "transform_llm_output": _transform_output,
+            "transform_turn_failure": _transform_turn_failure,
+        }[action](adapter, payload)
     if action == "on_session_end":
         _close_session(adapter, payload)
         return None

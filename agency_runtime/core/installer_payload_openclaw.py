@@ -2227,6 +2227,29 @@ export default definePluginEntry({{
         rememberTerminalRejection(decision, event, ctx);
         return undefined;
       }}
+      if (decision?.action === "allow_pending" && ctx?.channel === "webchat") {{
+        // Native CLI/webchat has no reply_payload_sending delivery transaction.
+        // Its awaited terminal callback binds the exact visible text instead.
+        // External channels still bind their complete payload at the seal gate.
+        try {{
+          const gate = await invokeAgency({{
+            action: "outbound_gate",
+            sessionId: sessionId(event, ctx),
+            traceId: traceId(event, ctx),
+            finalResponse: finalText,
+            model: correlatedModel,
+          }});
+          if (gate?.action === "replace") {{
+            rememberTerminalRejection({{
+              ...verificationFailure,
+              message: gate?.message || FINALIZATION_UNAVAILABLE,
+            }}, event, ctx);
+          }}
+        }} catch {{
+          rememberTerminalRejection(verificationFailure, event, ctx);
+        }}
+        return undefined;
+      }}
       if (decision?.action === "allow_pending" || decision?.action === undefined) {{
         return undefined;
       }}
