@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-07
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/roadmap/issue-AR-251-cli-presentation-richness.md
   - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
@@ -78,6 +79,10 @@ Faithful commit history and reasoning-rich implementation notes remain in the
 changes rather than duplicating every commit.
 
 ## Unreleased
+
+- Retain standard critic veto causes when a valid qualified reason exceeds the
+  receipt length bound, with an explicit omitted-detail marker (AR-416).
+
 
 - Failed staffing headers now display validated failure reasons without claiming
   successful finalization. Failed request-scoped turns retain their exact

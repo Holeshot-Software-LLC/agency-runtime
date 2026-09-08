@@ -1,0 +1,861 @@
+{
+  "started_at": 1788889287.8395174,
+  "ended_at": 1788889297.4116082,
+  "request_sha256": "22dd712902d7ca8ab33d1af00dbe73ed994b8e2e3c09e013a222271918fcab33",
+  "response_sha256": "7cb2e56855c9ea72c117090c1411d81790d8ad8ea1a53eb8a9730af151d6ba16",
+  "http_status": 200,
+  "critic_packet": {
+    "critic_contract": {
+      "composition_uses_selected_workers_only": true,
+      "eligible_neighbourhood_is_complete_per_unit": true,
+      "execution_authority_holder": "host",
+      "minimum_confidence": 0.8,
+      "minimum_margin": 0.1,
+      "never_veto_for": [
+        "execution-or-installation-authority",
+        "waived-roster-coverage-gaps",
+        "plan-authority-units-for-host-side-work",
+        "implementation-units-the-planner-did-not-plan",
+        "completed-task-evidence"
+      ],
+      "plan_authority_units_for_host_side_work_are_intended": true,
+      "response_semantics": {
+        "approved_false_reason_codes": "one_or_more_unique_hyphenated_codes",
+        "approved_true_reason_codes": "empty"
+      },
+      "review_scope": "pre_execution_semantic_staffing",
+      "roster_coverage_gaps_are_runtime_waivers": true,
+      "selected_authority_bound_by_eligibility": true,
+      "unselected_categories": [
+        "acceptable",
+        "runner_up",
+        "forbidden",
+        "disabled_shadows",
+        "unavailable_shadows"
+      ],
+      "verified_staffing_hard_checks_passed": true,
+      "veto_grounds": [
+        "wrong-neighbor-selection",
+        "missing-lifecycle-assurance-the-plan-calls-for",
+        "unsafe-selected-team-composition",
+        "unsupported-confidence"
+      ],
+      "workforce_is_advisory": true,
+      "wrong_neighbor_must_name_an_eligible_card": true
+    },
+    "eligible_neighbourhood": {
+      "unit-handoff-draft": {
+        "eligible_candidate_ids": [
+          "finance-snapshot-json-documentation-verifier",
+          "project-delivery-response-documentation-specialist",
+          "technical-writer"
+        ],
+        "eligible_count": 3,
+        "ranked_eligible_cards": [
+          {
+            "agent_id": "finance-snapshot-json-documentation-verifier",
+            "archetype": "implementer",
+            "authority": "modify",
+            "display_name": "Finance Snapshot JSON Documentation Verifier",
+            "domains": [
+              "finance"
+            ],
+            "not_for": [
+              "live financial operations",
+              "ambiguous ownership of account data",
+              "open-ended analysis without a required output schema",
+              "external account writes"
+            ],
+            "outcomes": [
+              "documentation",
+              "verification",
+              "finance snapshot formatting",
+              "json shape validation",
+              "return one exact snapshot json object with the required fields.",
+              "preserve finance-specific masking and defaulting rules.",
+              "verify the output shape against the acceptance evidence."
+            ]
+          },
+          {
+            "agent_id": "project-delivery-response-documentation-specialist",
+            "archetype": "implementer",
+            "authority": "modify",
+            "display_name": "Project Delivery Response Documentation Specialist",
+            "domains": [
+              "project-delivery"
+            ],
+            "not_for": [
+              "open-ended strategy work",
+              "implementation-heavy changes",
+              "requests needing live external actions",
+              "tasks requiring secret or credential access"
+            ],
+            "outcomes": [
+              "documentation",
+              "concise synthesis",
+              "workspace-bound writing",
+              "produce concise response content that matches the requested text.",
+              "preserve the repository and workspace evidence boundary while drafting.",
+              "return documentation that is faithful to the supplied work unit and acceptance evidence."
+            ]
+          },
+          {
+            "agent_id": "technical-writer",
+            "archetype": "writer",
+            "authority": "modify",
+            "display_name": "Technical Writer",
+            "domains": [
+              "software-engineering"
+            ],
+            "not_for": [
+              "the request is neutral codebase discovery that forbids recommendations or content changes"
+            ],
+            "outcomes": [
+              "create repository-grounded technical documentation",
+              "structure tutorials, references, and operational guides",
+              "review docs for accuracy and discoverability"
+            ]
+          }
+        ],
+        "selected_are_whole_neighbourhood": false
+      },
+      "unit-handoff-review": {
+        "eligible_candidate_ids": [
+          "accessibility-auditor",
+          "accounts-payable-agent",
+          "agentic-identity-trust-architect",
+          "ai-citation-strategist",
+          "ai-evaluation-engineer",
+          "ai-generated-code-security-auditor",
+          "ai-governance-auditor",
+          "analytics-reporter",
+          "app-store-optimizer",
+          "application-integration-verifier",
+          "application-security-engineer",
+          "blockchain-security-auditor",
+          "bookkeeper-controller",
+          "brand-guardian",
+          "chief-financial-officer",
+          "civil-engineer",
+          "clinical-evidence-agent",
+          "code-reviewer",
+          "codebase-archaeologist",
+          "codebase-onboarding-engineer",
+          "compliance-auditor",
+          "cross-platform-release-verifier",
+          "cultural-intelligence-strategist",
+          "customer-service",
+          "data-privacy-officer",
+          "documentation-evidence-researcher",
+          "drone-reality-mapping-specialist",
+          "esg-sustainability-officer",
+          "evidence-collector",
+          "executive-summary-generator",
+          "experiment-tracker",
+          "fedramp-rmf-compliance-engineer",
+          "feedback-synthesizer",
+          "finance-security-snapshot-review-specialist",
+          "finance-snapshot-security-reviewer",
+          "finance-tracker",
+          "financial-analyst",
+          "gaussdb-expert-engineer",
+          "gis-qa-engineer",
+          "government-digital-presales-consultant",
+          "hallucination-root-cause-investigator",
+          "healthcare-marketing-compliance-specialist",
+          "historian",
+          "identity-graph-operator",
+          "inclusive-visuals-specialist",
+          "legal-billing-time-tracking",
+          "legal-client-intake",
+          "legal-compliance-checker",
+          "legal-document-review",
+          "loan-officer-assistant",
+          "macos-spatial-metal-engineer",
+          "medical-billing-coding-specialist",
+          "meeting-notes-specialist",
+          "model-qa-specialist",
+          "organizational-psychologist",
+          "paid-media-auditor",
+          "penetration-tester",
+          "performance-benchmarker",
+          "persona-walkthrough-specialist",
+          "pipeline-analyst",
+          "read-only-finance-security-snapshot-reviewer",
+          "real-estate-buyer-seller",
+          "reality-checker",
+          "recruitment-specialist",
+          "report-distribution-agent",
+          "retail-customer-returns",
+          "search-query-analyst",
+          "secrets-credential-hygiene-engineer",
+          "section-508-accessibility-specialist",
+          "selection-safety-critic",
+          "senior-secops-engineer",
+          "silent-failure-hunter",
+          "spatial-data-scientist",
+          "statistician",
+          "supply-chain-strategist",
+          "terminal-integration-specialist",
+          "test-results-analyzer",
+          "threat-intelligence-analyst",
+          "tool-evaluator",
+          "trend-researcher",
+          "type-design-analyzer",
+          "ux-researcher",
+          "visionos-spatial-engineer",
+          "x-twitter-intelligence-analyst"
+        ],
+        "eligible_count": 84,
+        "ranked_eligible_cards": [
+          {
+            "agent_id": "codebase-onboarding-engineer",
+            "archetype": "writer",
+            "authority": "review",
+            "display_name": "Codebase Onboarding Engineer",
+            "domains": [
+              "software-engineering",
+              "codebase-discovery"
+            ],
+            "not_for": [
+              "the request is to review defects, prescribe changes, or implement code"
+            ],
+            "outcomes": [
+              "map repository structure and execution flow",
+              "trace concepts to concrete files",
+              "produce evidence-only onboarding guides"
+            ]
+          },
+          {
+            "agent_id": "executive-summary-generator",
+            "archetype": "writer",
+            "authority": "review",
+            "display_name": "Executive Summary Generator",
+            "domains": [
+              "customer-operations"
+            ],
+            "not_for": [
+              "the request demands quantitative certainty absent from the source"
+            ],
+            "outcomes": [
+              "compress supplied evidence",
+              "surface decisions and risks",
+              "tailor summaries by audience"
+            ]
+          },
+          {
+            "agent_id": "experiment-tracker",
+            "archetype": "reviewer",
+            "authority": "review",
+            "display_name": "Experiment Tracker",
+            "domains": [
+              "project-delivery"
+            ],
+            "not_for": [
+              "the task asks for production rollout or uses personal data without consent and governance"
+            ],
+            "outcomes": [
+              "design experiment records",
+              "review experiment validity",
+              "track decision evidence"
+            ]
+          },
+          {
+            "agent_id": "finance-security-snapshot-review-specialist",
+            "archetype": "reviewer",
+            "authority": "review",
+            "display_name": "Finance-Security Snapshot Review Specialist",
+            "domains": [
+              "finance",
+              "security"
+            ],
+            "not_for": [
+              "ambiguous ownership of the snapshot.",
+              "tasks that require production mutation.",
+              "work requiring live account access or external writes.",
+              "credential handling."
+            ],
+            "outcomes": [
+              "review",
+              "verification",
+              "audit",
+              "validate the review-report artifact against the acceptance evidence.",
+              "confirm the snapshot uses only read-only repository evidence.",
+              "detect missing or malformed json fields, normalization errors, and unsupported numeric fallbacks.",
+              "verify visible tool catalog names and tools-called accuracy from evidence only.",
+              "reject outputs that expose account numbers, raw ids, personal data, credentials, or session data."
+            ]
+          },
+          {
+            "agent_id": "finance-snapshot-security-reviewer",
+            "archetype": "reviewer",
+            "authority": "review",
+            "display_name": "Read-Only Finance Snapshot Security Reviewer",
+            "domains": [
+              "finance",
+              "security"
+            ],
+            "not_for": [
+              "live account operations",
+              "billing changes",
+              "executive approval",
+              "broad financial planning"
+            ],
+            "outcomes": [
+              "review",
+              "verification",
+              "audit",
+              "redaction-review",
+              "output-shape-validation",
+              "validate snapshot output shape against the acceptance contract",
+              "verify numeric fallback and normalization rules",
+              "confirm only read-only tools were used"
+            ]
+          },
+          {
+            "agent_id": "meeting-notes-specialist",
+            "archetype": "writer",
+            "authority": "review",
+            "display_name": "Meeting Notes Specialist",
+            "domains": [
+              "project-delivery"
+            ],
+            "not_for": [
+              "the source cannot be handled under its privacy or confidentiality constraints"
+            ],
+            "outcomes": [
+              "summarize supplied meetings",
+              "extract decisions and action items",
+              "identify unresolved questions"
+            ]
+          },
+          {
+            "agent_id": "read-only-finance-security-snapshot-reviewer",
+            "archetype": "reviewer",
+            "authority": "review",
+            "display_name": "Read-Only Finance Security Snapshot Reviewer",
+            "domains": [
+              "finance",
+              "security"
+            ],
+            "not_for": [
+              "any task requiring transaction approval",
+              "any live account change",
+              "any task needing hidden credentials or session state",
+              "any production incident response"
+            ],
+            "outcomes": [
+              "review",
+              "verification",
+              "audit",
+              "schema-validation",
+              "provenance-checking",
+              "validate review-report json shape and required fields",
+              "verify numeric fallback and normalization rules",
+              "check visible tool names against the called tool catalog"
+            ]
+          }
+        ],
+        "selected_are_whole_neighbourhood": false
+      }
+    },
+    "plan": {
+      "plan_hash": "sha256:baafd328454ddf01b8e97e1e20e6450187629ca4e30368d1e3aa780c347eefbc",
+      "request_summary": "Prepare a handoff document summarizing current session state and context so a new session can continue the work seamlessly.",
+      "schema_version": 2,
+      "units": [
+        {
+          "acceptance_evidence": [
+            "Evidence proves the requested documentation outcome."
+          ],
+          "artifact_kind": "documentation",
+          "authority": "modify",
+          "claims": [
+            "documentation-accurate"
+          ],
+          "depends_on": [],
+          "domains": [
+            "project-delivery"
+          ],
+          "frameworks": [],
+          "languages": [],
+          "lifecycle_phase": "documentation",
+          "mutation_scope": "workspace_write",
+          "outcome": "Produce a handoff document capturing the session's goals, decisions, completed work, open items, and next steps so a new session can resume without loss of context.",
+          "parallelization": "unspecified",
+          "platforms": [
+            "linux"
+          ],
+          "required_capabilities": [
+            "documentation"
+          ],
+          "required_tools": [
+            "repository-read",
+            "repository-write"
+          ],
+          "resources": [
+            "request",
+            "repository"
+          ],
+          "risks": [
+            "regression"
+          ],
+          "trust_boundaries": [
+            "repository"
+          ],
+          "unit_id": "unit-handoff-draft"
+        },
+        {
+          "acceptance_evidence": [
+            "Evidence proves the requested review report outcome."
+          ],
+          "artifact_kind": "review-report",
+          "authority": "review",
+          "claims": [],
+          "depends_on": [
+            "unit-handoff-draft"
+          ],
+          "domains": [
+            "project-delivery"
+          ],
+          "frameworks": [],
+          "languages": [],
+          "lifecycle_phase": "review",
+          "mutation_scope": "read_only",
+          "outcome": "Review the handoff document for completeness, accuracy, and sufficiency of context, confirming a new session could continue work using only the handoff.",
+          "parallelization": "sequential",
+          "platforms": [
+            "linux"
+          ],
+          "required_capabilities": [
+            "review",
+            "verification"
+          ],
+          "required_tools": [
+            "repository-read"
+          ],
+          "resources": [
+            "request",
+            "repository"
+          ],
+          "risks": [],
+          "trust_boundaries": [
+            "repository"
+          ],
+          "unit_id": "unit-handoff-review"
+        }
+      ]
+    },
+    "proposal": {
+      "plan_hash": "sha256:baafd328454ddf01b8e97e1e20e6450187629ca4e30368d1e3aa780c347eefbc",
+      "roster_count": 293,
+      "roster_fingerprint": "sha256:2ee376d88ee62c9d00c15c615e183278465354d4f2e7800d7a0de7c9d34e9108",
+      "roster_generation": 395,
+      "schema_version": 2,
+      "units": [
+        {
+          "abstention_reasons": [],
+          "acceptable": [
+            "technical-writer"
+          ],
+          "confidence": 1.0,
+          "contexts": [
+            {
+              "agent_id": "project-delivery-response-documentation-specialist",
+              "context_id": "ctx-unit-handoff-draft-project-delivery-response-documentation-specialist"
+            }
+          ],
+          "delivery": "load",
+          "disabled_shadows": [],
+          "forbidden": [
+            "finance-snapshot-json-documentation-verifier"
+          ],
+          "margin": 0.1,
+          "ranked_enabled": [
+            {
+              "agent_id": "project-delivery-response-documentation-specialist",
+              "rank": 1,
+              "score": 1.0
+            },
+            {
+              "agent_id": "technical-writer",
+              "rank": 2,
+              "score": 0.9
+            },
+            {
+              "agent_id": "finance-snapshot-json-documentation-verifier",
+              "rank": 3,
+              "score": 0.8
+            }
+          ],
+          "ranked_executable": [
+            {
+              "agent_id": "project-delivery-response-documentation-specialist",
+              "rank": 1,
+              "score": 1.0
+            },
+            {
+              "agent_id": "technical-writer",
+              "rank": 2,
+              "score": 0.9
+            }
+          ],
+          "ranked_semantic": [
+            {
+              "agent_id": "project-delivery-response-documentation-specialist",
+              "rank": 1,
+              "score": 1.0
+            },
+            {
+              "agent_id": "technical-writer",
+              "rank": 2,
+              "score": 0.9
+            },
+            {
+              "agent_id": "finance-snapshot-json-documentation-verifier",
+              "rank": 3,
+              "score": 0.8
+            }
+          ],
+          "required": [
+            "project-delivery-response-documentation-specialist"
+          ],
+          "runner_up": [
+            "technical-writer"
+          ],
+          "selected": [
+            "project-delivery-response-documentation-specialist"
+          ],
+          "timing": "immediate",
+          "unavailable_shadows": [],
+          "unit_id": "unit-handoff-draft"
+        },
+        {
+          "abstention_reasons": [],
+          "acceptable": [
+            "executive-summary-generator",
+            "meeting-notes-specialist",
+            "codebase-onboarding-engineer"
+          ],
+          "confidence": 1.0,
+          "contexts": [
+            {
+              "agent_id": "experiment-tracker",
+              "context_id": "ctx-unit-handoff-review-experiment-tracker"
+            }
+          ],
+          "delivery": "load",
+          "disabled_shadows": [],
+          "forbidden": [
+            "finance-security-snapshot-review-specialist",
+            "finance-snapshot-security-reviewer",
+            "read-only-finance-security-snapshot-reviewer"
+          ],
+          "margin": 0.1,
+          "ranked_enabled": [
+            {
+              "agent_id": "experiment-tracker",
+              "rank": 1,
+              "score": 1.0
+            },
+            {
+              "agent_id": "executive-summary-generator",
+              "rank": 2,
+              "score": 0.9
+            },
+            {
+              "agent_id": "meeting-notes-specialist",
+              "rank": 3,
+              "score": 0.8
+            },
+            {
+              "agent_id": "codebase-onboarding-engineer",
+              "rank": 4,
+              "score": 0.7
+            },
+            {
+              "agent_id": "finance-security-snapshot-review-specialist",
+              "rank": 5,
+              "score": 0.6
+            },
+            {
+              "agent_id": "finance-snapshot-security-reviewer",
+              "rank": 6,
+              "score": 0.5
+            },
+            {
+              "agent_id": "read-only-finance-security-snapshot-reviewer",
+              "rank": 7,
+              "score": 0.4
+            }
+          ],
+          "ranked_executable": [
+            {
+              "agent_id": "experiment-tracker",
+              "rank": 1,
+              "score": 1.0
+            },
+            {
+              "agent_id": "executive-summary-generator",
+              "rank": 2,
+              "score": 0.9
+            },
+            {
+              "agent_id": "meeting-notes-specialist",
+              "rank": 3,
+              "score": 0.8
+            },
+            {
+              "agent_id": "codebase-onboarding-engineer",
+              "rank": 4,
+              "score": 0.7
+            }
+          ],
+          "ranked_semantic": [
+            {
+              "agent_id": "experiment-tracker",
+              "rank": 1,
+              "score": 1.0
+            },
+            {
+              "agent_id": "executive-summary-generator",
+              "rank": 2,
+              "score": 0.9
+            },
+            {
+              "agent_id": "meeting-notes-specialist",
+              "rank": 3,
+              "score": 0.8
+            },
+            {
+              "agent_id": "codebase-onboarding-engineer",
+              "rank": 4,
+              "score": 0.7
+            },
+            {
+              "agent_id": "finance-security-snapshot-review-specialist",
+              "rank": 5,
+              "score": 0.6
+            },
+            {
+              "agent_id": "finance-snapshot-security-reviewer",
+              "rank": 6,
+              "score": 0.5
+            },
+            {
+              "agent_id": "read-only-finance-security-snapshot-reviewer",
+              "rank": 7,
+              "score": 0.4
+            }
+          ],
+          "required": [
+            "experiment-tracker"
+          ],
+          "runner_up": [
+            "executive-summary-generator",
+            "meeting-notes-specialist"
+          ],
+          "selected": [
+            "experiment-tracker"
+          ],
+          "timing": "after_artifact",
+          "unavailable_shadows": [],
+          "unit_id": "unit-handoff-review"
+        }
+      ]
+    },
+    "request": "give me a handoff for a new session to continue",
+    "selected_worker_contracts": [
+      {
+        "agent_id": "experiment-tracker",
+        "archetype": "reviewer",
+        "artifact_kinds": [
+          "plan",
+          "analysis",
+          "review-report"
+        ],
+        "audit": {
+          "contract_valid": true,
+          "revision": "1",
+          "status": "approved"
+        },
+        "authority": "review",
+        "capability_ids": [
+          "planning",
+          "analysis",
+          "review"
+        ],
+        "composition": {
+          "complements": [],
+          "independence_class": "delivery-experiment-governance",
+          "must_follow": [],
+          "must_review_independently": [],
+          "requires": [],
+          "same_context_conflicts": [],
+          "selection_exclusive": [],
+          "substitutes_for": [],
+          "substitution_group": ""
+        },
+        "context_mode": "isolated_only",
+        "display_name": "Experiment Tracker",
+        "domains": [
+          "project-delivery"
+        ],
+        "employment": "employee",
+        "enabled": true,
+        "hosts": [
+          "codex",
+          "claude",
+          "openclaw",
+          "hermes"
+        ],
+        "lifecycle_phases": [
+          "planning",
+          "discovery",
+          "review"
+        ],
+        "not_for": [
+          "the task asks for production rollout or uses personal data without consent and governance"
+        ],
+        "origin": "upstream",
+        "outcomes": [
+          "design experiment records",
+          "review experiment validity",
+          "track decision evidence"
+        ],
+        "platforms": [
+          "windows",
+          "linux"
+        ],
+        "schema_version": "2",
+        "scope_qualifiers": [
+          "an experiment needs a pre-registered hypothesis, metric, and decision rule"
+        ],
+        "stacks": [],
+        "tool_classes": [
+          "analytics-reader",
+          "experiment-platform-reader"
+        ],
+        "version": "sha256:ecfe25b029bafd580d4855de283b66ed1132b1b2f1e602e367fbee30b9457de5",
+        "version_hash": "9aa0e914dfbd3932cc2778eded170daccc487c8b5492e76aef70736c56cf91a8",
+        "worker_id": "15a5d022-31b1-5b11-9283-1073bf40e6a9"
+      },
+      {
+        "agent_id": "project-delivery-response-documentation-specialist",
+        "archetype": "implementer",
+        "artifact_kinds": [
+          "documentation"
+        ],
+        "audit": {
+          "contract_valid": true,
+          "revision": "dynamic-v2-7504031fc18f016e",
+          "status": "approved"
+        },
+        "authority": "modify",
+        "capability_ids": [
+          "documentation"
+        ],
+        "composition": {
+          "complements": [],
+          "independence_class": "contractor-project-delivery-response-documentation-specialist",
+          "must_follow": [],
+          "must_review_independently": [],
+          "requires": [],
+          "same_context_conflicts": [],
+          "selection_exclusive": [],
+          "substitutes_for": [],
+          "substitution_group": ""
+        },
+        "context_mode": "direct_safe",
+        "display_name": "Project Delivery Response Documentation Specialist",
+        "domains": [
+          "project-delivery"
+        ],
+        "employment": "contractor",
+        "enabled": true,
+        "hosts": [
+          "codex",
+          "claude",
+          "hermes",
+          "openclaw"
+        ],
+        "lifecycle_phases": [
+          "documentation",
+          "discovery",
+          "review"
+        ],
+        "not_for": [
+          "open-ended strategy work",
+          "implementation-heavy changes",
+          "requests needing live external actions",
+          "tasks requiring secret or credential access"
+        ],
+        "origin": "agency",
+        "outcomes": [
+          "documentation",
+          "concise synthesis",
+          "workspace-bound writing",
+          "produce concise response content that matches the requested text.",
+          "preserve the repository and workspace evidence boundary while drafting.",
+          "return documentation that is faithful to the supplied work unit and acceptance evidence."
+        ],
+        "platforms": [
+          "linux"
+        ],
+        "schema_version": "2",
+        "scope_qualifiers": [
+          "a small documentation-only work unit needs a concise response.",
+          "the task requires wording grounded in supplied repository evidence.",
+          "a bounded edit must stay inside the workspace."
+        ],
+        "stacks": [],
+        "tool_classes": [
+          "repository-read",
+          "repository-write"
+        ],
+        "version": "contractor-2-7504031fc18f016e",
+        "version_hash": "sha256:7504031fc18f016e10887b7e551e98dbee7950fe32e59b9c917a509876f6a246",
+        "worker_id": "bdc0f76e-1e35-5b5e-a2e4-9f4cc43bc902"
+      }
+    ],
+    "verified_staffing": {
+      "abstention_reasons": [],
+      "status": "accepted",
+      "units": [
+        {
+          "contexts": [
+            [
+              "project-delivery-response-documentation-specialist",
+              "ctx-unit-handoff-draft-project-delivery-response-documentation-specialist"
+            ]
+          ],
+          "delivery": "load",
+          "disabled_shadows": [],
+          "selected": [
+            "project-delivery-response-documentation-specialist"
+          ],
+          "timing": "immediate",
+          "unavailable_shadows": [],
+          "unit_id": "unit-handoff-draft"
+        },
+        {
+          "contexts": [
+            [
+              "experiment-tracker",
+              "ctx-unit-handoff-review-experiment-tracker"
+            ]
+          ],
+          "delivery": "load",
+          "disabled_shadows": [],
+          "selected": [
+            "experiment-tracker"
+          ],
+          "timing": "after_artifact",
+          "unavailable_shadows": [],
+          "unit_id": "unit-handoff-review"
+        }
+      ]
+    }
+  },
+  "response_text": "{\"id\":\"chatcmpl-35ab6bf6-d1e8-4f77-b515-f2f6abc6c8c2\",\"created\":1788889287,\"model\":\"task-agency-critic-v2\",\"object\":\"chat.completion\",\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"content\":\"{\\\"approved\\\":false,\\\"reason_codes\\\":[\\\"wrong-neighbor-selection-documentation-evidence-researcher\\\"]}\",\"role\":\"assistant\"}}],\"usage\":{\"completion_tokens\":466,\"prompt_tokens\":6358,\"total_tokens\":6824,\"completion_tokens_details\":{\"reasoning_tokens\":439},\"prompt_tokens_details\":{\"cached_tokens\":1792}}}"
+}
