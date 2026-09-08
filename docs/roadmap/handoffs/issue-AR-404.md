@@ -92,7 +92,11 @@ AR-413 code now preserves bounded status through staffing/hiring and durable
 receipt projections;80focused tests pass, installed proof pending. The owner
 Fast spine1151/3skip and dashboard224pass. At12:36:01UTC exact gateway GLM entry
 was changed order2 to0, readback/other-parameter equality pass; restore2 on failure.
-Artifact build hits a Git output limit before publication, diagnosis pending.
+The native priority experiment fails plannerHTTP46910ms; restored order2 at
+12:40:26UTC with exact readback. No priority change remains. Canonical build,
+Twine and independent artifact verification pass in a clean same-source clone;
+shared Git config inspection exceeded its bounded output. Isolated wheel install
+proves real loopback401/408/429/502 through workforce intoSQLite without bodies.
 authorized gateway changes: inspect exact live deployment and temporarily set
 the existing GLM planner order2 to0, retaining subscription order1 and all other
 fields. Verify readback and restore on a failed experiment. Then prove a valid

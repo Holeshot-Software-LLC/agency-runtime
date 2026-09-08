@@ -65,6 +65,27 @@ hook-trust bypass or persistent approval reconfiguration. No empty IDs allowed.
 
 ## Follow-ups
 
+The order experiment failed: native session01a08106-8cc4-7930-8a16-8544d1bd0db4,
+trace01a08106-8d31-7d41-ace6-f019e6fc1295,73.764secondwall, planner HTTP failure
+46910ms, no staffing/delegation/finalization. At12:40:26UTC restored order0 to2;
+exact readback and unchanged other parameters pass. No speculative priority
+change remains. The approval reviewer was enabled but no valid binding existed,
+so this run cannot establish successful finalizer approval.
+
+The release Git limit came from repository configuration-name inspection,
+not source size. A clean local clone with the same exact d08c5008 source passes
+canonical build, strict Twine and independent distribution verification without
+raising limits or changing shared Git configuration. Wheel SHA256
+fb385b5cbfa79301fb53b5c626815a7424dcbc50ab1e04552aa51bda922a819a.
+An isolated target install executes four real loopback HTTP requests through
+installed workforce code and SQLite:401/408/429/502 all read back exactly,
+rejected turn status retained, private response body absent. Synthetic failure
+fixture, not external-provider or native-host success. Owner hooks remain on
+their trusted prior payload; this diagnostic installation did not refresh them.
+
+Deterministic routing gates pass. Decision-conformance's first baseline fails on
+private test-directory permissions under ambient umask; retry with077 is pending.
+
 AR-413 installed failure proof and isolated acceptance; AR-404 native ordinary
 staffing/finalization with valid current binding and approved MCP-write mode.
 Do not promote the old activation into current ordinary reliability evidence.

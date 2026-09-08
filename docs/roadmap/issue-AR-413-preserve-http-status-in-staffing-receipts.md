@@ -52,7 +52,11 @@ operator/routing and terminal-failure projections. Only exact integers100..599
 are retained; absent/zero stays absent and malformed values are omitted. Legacy
 receipt fixed points remain unchanged.80 focused tests pass, including actual
 failed workforce turns through SQLite for401/408/429/502, hiring failures and
-invalid/hostile metadata. Installed proof and acceptance verification are pending.
+invalid/hostile metadata. A canonical independently verified wheel fromd08c5008
+passes isolated-installed real loopback401/408/429/502 requests through workforce
+and SQLite; every status is retained and response bodies excluded. This is a
+synthetic failure fixture, not external-provider success. Isolated acceptance
+verification and owner-host refresh are still pending; do not mark done yet.
 
 The owner separately authorized a bounded planner/gateway repair under AR-404.
 Its live route experiment does not alter this code's staffing or retry policy.
