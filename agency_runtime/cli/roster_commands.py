@@ -490,12 +490,12 @@ def cmd_source_list(args: argparse.Namespace) -> int:
 
 def cmd_roster_list(args: argparse.Namespace) -> int:
     _path, roster = _activation_rows()
-    if getattr(args, "card", False):
+    if _render.use_card_default(args):
         cards = [
             _render.from_mapping(
                 title=agent["slug"],
                 fields=(("Name", agent.get("name", "")), ("Division", agent.get("division", ""))),
-                notes=("Omit --card for complete tab-separated values.",),
+                notes=("Use --no-card for complete tab-separated values.",),
             )
             for agent in roster
             if agent["enabled"]
@@ -1695,7 +1695,7 @@ def cmd_policy(
                 division_summary=division_summary,
             )
         )
-    elif getattr(args, "card", False):
+    elif _render.use_card_default(args):
         _print_policy_cards(
             _policy_json_summary(
                 actions=actions,

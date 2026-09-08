@@ -468,7 +468,12 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
 
     config_show = config_sub.add_parser("show", help="Print effective config")
     config_show.add_argument("--raw", action="store_true", help="Show secrets")
-    config_show.add_argument("--card", action="store_true", help="Render explicit plain-text cards")
+    config_show.add_argument(
+        "--card",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Render plain-text cards (default on a TTY)",
+    )
     _bind(config_show, handlers, "cmd_config_show")
 
     config_path = config_sub.add_parser("path", help="Print config file location")
@@ -478,7 +483,10 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
     config_get.add_argument("key", help="Dotted key (e.g. judge.model)")
     config_get.add_argument("--raw", action="store_true", help="Show secret values")
     config_get.add_argument(
-        "--card", action="store_true", help="Render an explicit plain-text card"
+        "--card",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Render a plain-text card (default on a TTY)",
     )
     _bind(config_get, handlers, "cmd_config_get")
 
@@ -510,7 +518,10 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
     provider_list = provider_sub.add_parser("list", help="List configured providers")
     provider_list.add_argument("--json", action="store_true", help="Print JSON")
     provider_list.add_argument(
-        "--card", action="store_true", help="Render explicit plain-text cards"
+        "--card",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Render plain-text cards (default on a TTY; --json wins)",
     )
     _bind(provider_list, handlers, "cmd_config_provider_list")
     provider_models = provider_sub.add_parser(
@@ -674,7 +685,12 @@ def _register_roster(sub: Subparsers, handlers: Handlers) -> None:
     roster = sub.add_parser("roster", help="Inspect and activate roster snapshots")
     roster_sub = roster.add_subparsers(dest="roster_command", required=True)
     roster_list = roster_sub.add_parser("list", help="List active roster")
-    roster_list.add_argument("--card", action="store_true", help="Render explicit plain-text cards")
+    roster_list.add_argument(
+        "--card",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Render plain-text cards (default on a TTY)",
+    )
     _bind(roster_list, handlers, "cmd_roster_list")
     roster_diff = roster_sub.add_parser("diff", help="Create/show diff for quarantined candidates")
     roster_diff.add_argument("--json", action="store_true", help="Print machine-readable results")
@@ -938,7 +954,12 @@ def _register_selection(sub: Subparsers, handlers: Handlers) -> None:
         help="Show companion policy and validate coverage against active roster",
     )
     policy_p.add_argument("--json", action="store_true", help="Print machine-readable results")
-    policy_p.add_argument("--card", action="store_true", help="Render explicit plain-text cards")
+    policy_p.add_argument(
+        "--card",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Render plain-text cards (default on a TTY; --json wins)",
+    )
     _bind(policy_p, handlers, "cmd_policy")
 
     explain = sub.add_parser("explain", help="Explain why specialists were selected for a task")

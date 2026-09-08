@@ -328,7 +328,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "281fdc085e51900d93fef7210e104920314831cd0d59e0c59d134246b1f73f3e"
+EXPECTED_MANIFEST_SHA256 = "ca0221ef36d806dc4bf86dcf53136b7d5c3553e135c2eb284bac32b4a6ef9863"
 
 
 def _handler(name: str):

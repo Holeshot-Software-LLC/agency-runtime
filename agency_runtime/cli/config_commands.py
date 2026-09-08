@@ -221,7 +221,9 @@ def cmd_doctor(
 def _config_card(title: str, body: str, *, raw: bool = False) -> _render.Card:
     """Frame an already-redacted display value without reading config again."""
     detail = _render.section("Value", body)
-    notes = ("Display truncated; omit --card for the complete value.",) if detail.truncated else ()
+    notes = (
+        ("Display truncated; use --no-card for the complete value.",) if detail.truncated else ()
+    )
     return _render.Card(
         title=title,
         subtitle="raw requested" if raw else "secrets redacted",
@@ -237,7 +239,7 @@ def cmd_config_show(
 ) -> int:
     cfg = dependencies.load_config()
     rendered = config_to_yaml(cfg, redact=not args.raw)
-    if getattr(args, "card", False):
+    if _render.use_card_default(args):
         # Split only the existing display projection: never serialize the raw
         # config object into a new presentation path with different redaction.
         projection = safe_load_bounded(rendered)
@@ -295,7 +297,7 @@ def cmd_config_get(
         raw=bool(getattr(args, "raw", False)),
     )
     rendered = _format_config_value(display)
-    if getattr(args, "card", False):
+    if _render.use_card_default(args):
         print(_config_card(args.key, rendered, raw=bool(getattr(args, "raw", False))).render())
     else:
         print(rendered)
@@ -466,7 +468,7 @@ def cmd_config_provider_list(args: argparse.Namespace) -> int:
     if not providers:
         print("No inference providers configured.")
         return 0
-    if getattr(args, "card", False):
+    if _render.use_card_default(args):
         cards = [
             _render.from_mapping(
                 title=f"{index}. {provider.get('name')}",

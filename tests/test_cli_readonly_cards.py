@@ -1,4 +1,4 @@
-"""Explicit read-only cards preserve their existing output and trust boundaries."""
+"""Read-only cards preserve output and trust boundaries under governed TTY defaults."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from tests.test_cli_parser_contract import _parser
 
 
 def _args(**changes):
-    return argparse.Namespace(**{"card": False, "json": False, "raw": False, **changes})
+    return argparse.Namespace(**{"card": None, "json": False, "raw": False, **changes})
 
 
 @pytest.mark.parametrize(
@@ -26,10 +26,11 @@ def _args(**changes):
         ["config", "provider", "list"],
     ],
 )
-def test_readonly_card_parser_is_explicit(argv):
+def test_readonly_card_parser_supports_default_enable_and_disable(argv):
     parser = _parser()
-    assert parser.parse_args(argv).card is False
+    assert parser.parse_args(argv).card is None
     assert parser.parse_args([*argv, "--card"]).card is True
+    assert parser.parse_args([*argv, "--no-card"]).card is False
 
 
 @pytest.mark.parametrize("argv", [["policy"], ["config", "provider", "list"]])
@@ -65,9 +66,9 @@ def roster(monkeypatch):
 
 
 @pytest.mark.parametrize("tty", [False, True])
-def test_roster_plain_bytes_do_not_change_with_tty(roster, monkeypatch, capsys, tty):
+def test_roster_non_tty_and_explicit_plain_bytes(roster, monkeypatch, capsys, tty):
     monkeypatch.setattr(_render, "_isatty", lambda: tty)
-    assert roster_commands.cmd_roster_list(argparse.Namespace()) == 0
+    assert roster_commands.cmd_roster_list(_args(card=False if tty else None)) == 0
     assert capsys.readouterr().out == "enabled\tEnabled worker\tengineering\n"
 
 
@@ -111,11 +112,13 @@ def test_config_show_cards_reuse_existing_redaction(config_dependencies, capsys,
 
 
 @pytest.mark.parametrize("tty", [False, True])
-def test_config_show_plain_yaml_bytes_stay_exact(config_dependencies, monkeypatch, capsys, tty):
+def test_config_show_non_tty_and_explicit_plain_bytes(
+    config_dependencies, monkeypatch, capsys, tty
+):
     monkeypatch.setattr(_render, "_isatty", lambda: tty)
     assert (
         config_commands.cmd_config_show(
-            argparse.Namespace(raw=False), dependencies=config_dependencies
+            _args(card=False if tty else None), dependencies=config_dependencies
         )
         == 0
     )
@@ -155,11 +158,12 @@ def test_config_get_missing_key_keeps_error_and_exit_code(config_dependencies, c
 
 
 @pytest.mark.parametrize("tty", [False, True])
-def test_config_get_plain_value_bytes_stay_exact(config_dependencies, monkeypatch, capsys, tty):
+def test_config_get_non_tty_and_explicit_plain_bytes(config_dependencies, monkeypatch, capsys, tty):
     monkeypatch.setattr(_render, "_isatty", lambda: tty)
     assert (
         config_commands.cmd_config_get(
-            argparse.Namespace(key="judge.api_key"), dependencies=config_dependencies
+            _args(card=False if tty else None, key="judge.api_key"),
+            dependencies=config_dependencies,
         )
         == 0
     )
@@ -177,7 +181,7 @@ def test_config_card_truncation_is_disclosed_and_bounded(capsys):
         == 0
     )
     output = capsys.readouterr().out
-    assert "Display truncated; omit --card for the complete value." in output
+    assert "Display truncated; use --no-card for the complete value." in output
     assert "x" * 5000 not in output
     assert len(output.encode()) < 5000
 
@@ -223,7 +227,8 @@ def test_provider_cards_only_display_existing_public_fields(configured_providers
     assert _render.divider() in output
 
 
-def test_provider_json_bytes_win_over_cards(configured_providers, capsys):
+def test_provider_json_bytes_win_over_cards(configured_providers, monkeypatch, capsys):
+    monkeypatch.setattr(_render, "_isatty", lambda: True)
     assert config_commands.cmd_config_provider_list(_args(json=True)) == 0
     original = capsys.readouterr().out
     assert config_commands.cmd_config_provider_list(_args(json=True, card=True)) == 0
@@ -238,11 +243,9 @@ def test_empty_provider_list_keeps_original_message(configured_providers, capsys
 
 
 @pytest.mark.parametrize("tty", [False, True])
-def test_provider_plain_bytes_do_not_change_with_tty(
-    configured_providers, monkeypatch, capsys, tty
-):
+def test_provider_non_tty_and_explicit_plain_bytes(configured_providers, monkeypatch, capsys, tty):
     monkeypatch.setattr(_render, "_isatty", lambda: tty)
-    assert config_commands.cmd_config_provider_list(argparse.Namespace(json=False)) == 0
+    assert config_commands.cmd_config_provider_list(_args(card=False if tty else None)) == 0
     assert capsys.readouterr().out == (
         "1. primary · cli · model/router=fixture-model · reasoning=high · fixture-transport\n"
     )
@@ -283,7 +286,8 @@ def test_policy_cards_preserve_validation_and_division_evidence(policy_projectio
     assert "review" in output
 
 
-def test_policy_json_bytes_win_over_cards(policy_projection, capsys):
+def test_policy_json_bytes_win_over_cards(policy_projection, monkeypatch, capsys):
+    monkeypatch.setattr(_render, "_isatty", lambda: True)
     assert roster_commands.cmd_policy(_args(json=True)) == 1
     original = capsys.readouterr().out
     assert roster_commands.cmd_policy(_args(json=True, card=True)) == 1
@@ -291,13 +295,13 @@ def test_policy_json_bytes_win_over_cards(policy_projection, capsys):
 
 
 @pytest.mark.parametrize("tty", [False, True])
-def test_policy_plain_report_path_stays_unchanged(policy_projection, monkeypatch, capsys, tty):
+def test_policy_non_tty_and_explicit_plain_report(policy_projection, monkeypatch, capsys, tty):
     monkeypatch.setattr(_render, "_isatty", lambda: tty)
     calls = []
     monkeypatch.setattr(
         roster_commands, "_print_policy_report", lambda **kwargs: calls.append(kwargs)
     )
-    assert roster_commands.cmd_policy(argparse.Namespace(json=False)) == 1
+    assert roster_commands.cmd_policy(_args(card=False if tty else None)) == 1
     assert calls[0]["validation"] is policy_projection
     assert capsys.readouterr().out == ""
 
@@ -320,3 +324,36 @@ def test_policy_load_failure_never_becomes_a_healthy_card(monkeypatch, capsys):
     output = capsys.readouterr()
     assert output.out == ""
     assert "fixture policy unavailable" in output.err
+
+
+@pytest.mark.parametrize("surface", ["roster", "policy", "config-show", "config-get", "providers"])
+@pytest.mark.parametrize("card,tty", [(None, True), (True, False), (False, True), (None, False)])
+def test_all_five_views_follow_card_tty_and_explicit_overrides(
+    surface,
+    card,
+    tty,
+    roster,
+    policy_projection,
+    config_dependencies,
+    configured_providers,
+    monkeypatch,
+    capsys,
+):
+    monkeypatch.setattr(_render, "_isatty", lambda: tty)
+    arguments = _args(card=card, key="judge.api_key")
+    if surface == "roster":
+        result = roster_commands.cmd_roster_list(arguments)
+    elif surface == "policy":
+        result = roster_commands.cmd_policy(arguments)
+    elif surface == "config-show":
+        result = config_commands.cmd_config_show(arguments, dependencies=config_dependencies)
+    elif surface == "config-get":
+        result = config_commands.cmd_config_get(arguments, dependencies=config_dependencies)
+    else:
+        result = config_commands.cmd_config_provider_list(arguments)
+    assert result == (1 if surface == "policy" else 0)
+    output = capsys.readouterr().out
+    assert (_render.divider() in output) is (card is True or (card is None and tty))
+    assert "fixture-judge-secret" not in output
+    assert "fixture-provider-secret" not in output
+    assert "fixture-do-not-display" not in output
