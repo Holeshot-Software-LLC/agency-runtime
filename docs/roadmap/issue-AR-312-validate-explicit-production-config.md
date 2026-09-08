@@ -1,18 +1,22 @@
 ---
 title: "AR-312: Validate an explicit production config before installation"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-08-26
-updated: 2026-08-26
+updated: 2026-09-08
 tags: [configuration, documentation, installation, production-container]
 related:
   - docs/roadmap/issue-AR-297-complete-unattended-container-bootstrap.md
   - docs/roadmap/handoffs/issue-AR-297.md
   - docs/decisions/0173-complete-production-container-installation-with-managed-activation.md
+  - docs/decisions/0006-config-first-redacted-configuration.md
+  - docs/roadmap/handoffs/issue-AR-312.md
   - README.md
   - agency_runtime/cli/parser.py
   - agency_runtime/cli/config_commands.py
   - tests/test_cli_parser_contract.py
+  - tests/test_cli_config_validate.py
+  - docs/worklog/2026-09-08-ar312-explicit-config-validation.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -20,7 +24,7 @@ type: issue
 epic: install
 issue_id: AR-312
 priority: p1
-tracker_url: null
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/758
 depends_on: []
 blocks: []
 ---
@@ -47,7 +51,24 @@ following install will consume.
 - The explicit config itself validates inside the production install and the
   install reaches real inference, so this is a preflight/documentation contract
   gap rather than the current Codex activation blocker.
-- Tracker creation is prohibited by the active AR-297 task.
+- Tracker creation was prohibited by the historical AR-297 task. The current
+  owner separately authorized the serialized write; tracker #758 is filed with
+  the canonical title and epic label. The original acceptance wording is retained.
+- The 2026-09-08 source slice adds
+  `agency config validate --config /absolute/file.yaml`. It reads only that
+  existing file through the shared link-safe identity, trusted parent namespace,
+  bounded regular-file reader, bounded UTF-8 YAML parser, and the same strict
+  persisted-document schema used by runtime loading. Missing, linked, special,
+  oversized, malformed, and schema-invalid files are refused.
+- Explicit validation does not materialize defaults or deployment overrides,
+  inspect installed services/hosts, open a Store, probe providers, check secret
+  availability, repair permissions, or save configuration. Empty partial documents
+  retain the existing schema meaning; a YAML null is not a mapping and is refused.
+  Success means document validity, not a production-ready installation.
+- Bare `agency config validate` retains its existing ambient effective-config
+  doctor behavior. README examples now pass the same absolute file to validation
+  and installation. Focused regressions are written but execution is deferred
+  until the parent's coordinated wrap-up; no acceptance verdict exists.
 
 ## Approach
 
@@ -64,6 +85,16 @@ reviewed config.
 - AR-297 retains the live four-harness acceptance package; this issue is
   recorded without expanding that package.
 - Tracker creation requires separate outward-write authorization.
+
+## Verification checkpoint
+
+Targeted Ruff lint and formatting pass. The parser-manifest golden was
+mechanically regenerated from the declarative parser, without invoking any test
+function or product CLI command. Focused tests, the named spine, CI, installed
+smoke, provider/native calls, and acceptance verification have not run for this
+slice. The owner requested a clean stopping point; the parent owns publication,
+installation, and the coordinated live evaluation. All five original acceptance
+criteria below remain unchanged and unchecked.
 
 ## Acceptance
 

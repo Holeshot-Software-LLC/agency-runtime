@@ -24,6 +24,7 @@ related:
   - docs/roadmap/issue-AR-68-require-trusted-config-and-policy-namespaces.md
   - docs/roadmap/issue-AR-73-require-private-custom-policy-files.md
   - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
+  - docs/roadmap/issue-AR-312-validate-explicit-production-config.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null

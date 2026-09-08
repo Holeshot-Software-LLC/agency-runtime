@@ -583,7 +583,14 @@ def _register_configuration(sub: Subparsers, handlers: Handlers) -> None:
         "cmd_config_provider_remove",
     )
 
-    config_validate = config_sub.add_parser("validate", help="Validate config + reachability")
+    config_validate = config_sub.add_parser(
+        "validate", help="Validate installed health or one explicit config document"
+    )
+    config_validate.add_argument(
+        "--config",
+        metavar="ABSOLUTE_PATH",
+        help="Validate only this config document; do not check installed health",
+    )
     _bind(config_validate, handlers, "cmd_config_validate")
 
     config_reset = config_sub.add_parser("reset", help="Reset to defaults")
