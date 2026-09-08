@@ -23,6 +23,9 @@ related_issues:
 
 # Worklog detail: Validate an explicit config without installed state
 
+Runtime source is 7de97793; focused-fixture correction and exact passing evidence
+are committed as ee17a65d. Each substantive commit has an immediate ledger.
+
 ## Purpose
 
 Make the README's fresh-container configuration preflight operate on the exact
