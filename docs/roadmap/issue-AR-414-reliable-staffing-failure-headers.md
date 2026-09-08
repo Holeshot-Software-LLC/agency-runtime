@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [staffing, headers, codex, reliability]
 related:
+  - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/decisions/0240-project-qualified-critic-veto-causes-with-an-omission-marker.md
   - docs/worklog/2026-09-08-captured-native-critic-veto.md
@@ -40,6 +41,18 @@ though the exact failure receipt is readable. Earlier calls also confused a
 hashed resident-manager turn reference with the actual trace/session IDs.
 
 ## Current state
+
+Latest checkpoint: AR-416 qualified-cause repair is installed from verified
+8629e2ed artifacts; all614package files match. Installed replay preserves the
+cause, omitted-detail marker and terminal failure. AR-416’s four and AR-417’s
+three isolated acceptance criteria are satisfied. Codex plugin
+0.1.0+codex.823aab6fbe85 is registered/enabled, but fresh hooks/list reports
+8modified/0trusted. Owner hook review in a fresh TUI is required; no bypass or
+native attempt followed. This issue remains waiting_for_operator for fresh
+native headers, injection, staffing and finalization. Earlier native proof is
+not new-artifact proof. The detailed worklog records the unchanged Bandit B202
+legacy-fallback finding and the exact scope of every passing check.
+
 
 Latest bounded checkpoint: two native handoff critic packets are captured in
 [the evidence record](evidence/AR-414-native-critic-packet.json). Both selected

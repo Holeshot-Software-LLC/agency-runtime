@@ -103,3 +103,18 @@ PATH is used only for the bounded isolated acceptance runner; the existing
 Claude installation and every runtime guard remain unchanged.
 
 Recorded checkpoint: `f373d905` — docs(acceptance): record trusted isolated verifier environment.
+
+## Isolated acceptance results
+
+Using the unchanged runner with the validated private Claude2.1.263, AR-416
+returned4/4satisfied and AR-417 returned3/3satisfied. No judged criterion was
+retried. Exact run IDs and evidence digests are in the reciprocal acceptance
+records, bound to candidate caab485176d63c3c0062c022e55866d8733f19e7.
+AR-416/417 are complete only for their checked acceptance scopes; tracker closure
+follows this PR’s merge. AR-414/415 remain open. Fresh native evidence for the new
+plugin is still waiting_for_operator and is not supplied by these verdicts.
+
+The live CLI reports package0.1.0 and source_revision=null. Exact artifact
+provenance is established by expected-commit build/verification plus all614
+installed byte comparisons, not by a self-reported CLI source revision. All eight
+new hook timeouts remain595s; owner configuration still matches its prior bytes.

@@ -1,11 +1,12 @@
 ---
 title: "AR-417: Keep qualified-veto regression self-contained in source archives"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-08
 updated: 2026-09-08
 tags: [packaging, tests, critic]
 related:
+  - docs/roadmap/acceptance/issue-AR-417.md
   - docs/roadmap/acceptance/evidence/AR-416-installed-qualified-veto-20260908.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/decisions/0074-build-byte-deterministic-release-artifacts.md
@@ -31,6 +32,12 @@ its input and fails before exercising the diagnostic behavior.
 
 ## Current state
 
+Phase done for this issue’s acceptance scope. All three isolated criteria are satisfied at candidate caab4851. The verified
+source archive runs all eight regressions with no excluded JSON dependency.
+The test-only fix leaves production behavior and archive policy unchanged.
+
+The following paragraphs preserve earlier checkpoints.
+
 Phase focused_review. Canonical b0dfd631 wheel/sdist passed strict Twine and
 independent verification. Running the regression from the extracted sdist
 produced one FileNotFoundError failure and seven passes. The fix pins the exact
@@ -51,9 +58,9 @@ existing canonical build boundary; this fix does not change its policy.
 
 ## Acceptance
 
-- [ ] The qualified-veto regression passes from the verified extracted source
+- [x] The qualified-veto regression passes from the verified extracted source
       archive without requiring the excluded JSON attachment.
-- [ ] The exact native qualified verdict still exercises the preserved veto,
+- [x] The exact native qualified verdict still exercises the preserved veto,
       receipt projection and failed finalizer, with unchanged production code
       and archive allowlist.
-- [ ] The issue, tracker, worklog and packaged verification evidence agree.
+- [x] The issue, tracker, worklog and packaged verification evidence agree.

@@ -127,3 +127,7 @@ test-only delivery and historical 71833c5c measurement.
 - **Weaken the verifier to semantic payload equality.** Rejected because the
   release claims one reviewed physical artifact pair, not an equivalence class
   of structurally different containers.
+
+AR-417 follow-up `8629e2ed` preserves this payload policy by making the packaged
+qualified-veto regression self-contained; see the linked installed-verification
+worklog for the extracted source-archive check.

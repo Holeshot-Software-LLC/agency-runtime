@@ -39,9 +39,10 @@ Codex plugin0.1.0+codex.823aab6fbe85 registered/enabled, restart required. Fresh
 hooks/list reports8modified/0trusted. Owner asked to review /hooks in a fresh TUI;
 no bypass or native attempt. Initial verifier launch was refused by namespace
 trust; same-version private Claude2.1.263 now passes transport checks. Isolated
-acceptance work continues without changing the existing CLI or guards.
+acceptance returned4/4satisfied for AR-416 and3/3for AR-417; those scoped fixes
+are complete. AR-414/415 remain open; no fresh native proof is claimed.
 
-Native handoff capture complete; bounded source diagnostic fix verified in PR788.
+Earlier PR788 checkpoint: native handoff captured and source diagnostic fix verified.
 Two exact native packets expose experiment-tracker assigned to non-experiment
 handoff review. The critic veto is supported by that mismatch; its named
 alternative is not verified as suitable. AR-416 retains a qualified veto's
@@ -98,24 +99,24 @@ No operator trust/restart gate remains for the previously demonstrated process.
 
 ## Same-task continuity
 
-Read the native-receipts worklog, then recruiter recovery for configuration and
+Read the installed-qualified-veto worklog first, then native receipts and recruiter
+recovery for configuration and
 reversal limits. The resumed clean baseline was mained9d5aa9; current delivery
 branch is named above. Keep unrelated worktrees and Windows items untouched.
 
 ## Next bounded work package
 
 After owner hook review, verify actual trust and a fresh native turn. Complete
-isolated acceptance for AR-416/417. Qualify upgraded
-installation/native diagnostic behavior under the release checklist before
-claiming this source change is installed. Keep AR-414/415/416 open until their
+the remaining AR-414/415 acceptance gates. The repair is installed; qualify
+actual native diagnostic behavior before claiming current-artifact native proof. Keep AR-414/415 open until their
 isolated acceptance gates have evidence. Never retry merely for approval or
 manually select specialists. No broad staffing-policy repair is justified here.
 
 ## Verification
 
 Current captured-response/critic/receipt/inference124pass; fast production
-1151pass/3skip; UI224pass; Ruff779files and docs1329files pass. Routing and
-strict tracker407items pass. Frozen-source conformance188/188killed,
+1151pass/3skip; UI224pass; Ruff779files and docs1334files pass. Routing and
+tracker408items match before the pending AR-416/417 tracker closure. Frozen-source conformance188/188killed,
 source_unchanged=true. No new installed/native diagnostic claim.
 Source replay preserves terminal failure and renders the retained cause.
 The remaining evidence below predates this source change.

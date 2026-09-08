@@ -45,8 +45,8 @@ bounded package are in AR-404's
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
-| `AR-417` | [Keep qualified-veto regression self-contained in source archives](issue-AR-417-self-contained-qualified-veto-regression.md) | in_progress | p2 | host-integrations | [#790](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/790) |
-| `AR-416` | [Retain qualified critic veto causes in bounded receipts](issue-AR-416-retain-qualified-critic-veto-causes.md) | in_progress | p1 | host-integrations | [#787](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/787) |
+| `AR-417` | [Keep qualified-veto regression self-contained in source archives](issue-AR-417-self-contained-qualified-veto-regression.md) | done | p2 | host-integrations | [#790](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/790) |
+| `AR-416` | [Retain qualified critic veto causes in bounded receipts](issue-AR-416-retain-qualified-critic-veto-causes.md) | done | p1 | host-integrations | [#787](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/787) |
 | `AR-415` | [Respect negated change requests in plan completeness](issue-AR-415-respect-negated-change-requests.md) | in_progress | p1 | host-integrations | [#778](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/778) |
 | `AR-414` | [Restore reliable staffing and truthful failed-turn headers](issue-AR-414-reliable-staffing-failure-headers.md) | in_progress | p1 | host-integrations | [#773](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773) |
 | `AR-01` | [Selection explain receipts](issue-AR-01-selection-explain-receipts.md) | done | p1 | observability | [#1](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/1) |
