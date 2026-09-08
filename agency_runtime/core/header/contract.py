@@ -181,7 +181,7 @@ def _validated_resident_binding(
         if recipe_version >= 8:
             raise EvidenceCorrelationError("resident manager binding could not be verified")
         return None
-    if recipe_version < 8:
+    if recipe_version < 8 and not (recipe_version == 0 and run.get("status") == "preflight_failed"):
         raise EvidenceCorrelationError("resident manager binding could not be verified")
     try:
         binding = validate_resident_manager_binding(raw_binding, session_id=session_id)
@@ -1184,6 +1184,7 @@ def fill_header_fields(
             evidence_snapshot,
             session_id,
             trace_id,
+            require_active=evidence_snapshot.get("status") != "preflight_failed",
         )
     elif (
         store is not None
@@ -1193,7 +1194,12 @@ def fill_header_fields(
     ):
         raw_snapshot = store.get_completion_evidence_snapshot(session_id, trace_id)
         try:
-            snapshot = _validate_completion_snapshot(raw_snapshot, session_id, trace_id)
+            snapshot = _validate_completion_snapshot(
+                raw_snapshot,
+                session_id,
+                trace_id,
+                require_active=raw_snapshot.get("status") != "preflight_failed",
+            )
         except EvidenceCorrelationError:
             if not _is_legacy_unclassified_evidence_snapshot(
                 raw_snapshot,
@@ -1261,9 +1267,49 @@ def fill_header_fields(
             snapshot.get("specialist_activations") if snapshot else None
         ),
     )
-    filled["recruited_via"] = _recruited_via_line(routing_receipt)
+    filled["recruited_via"] = (
+        _failed_preflight_line(snapshot)
+        if snapshot is not None and snapshot.get("status") == "preflight_failed"
+        else _recruited_via_line(routing_receipt)
+    )
 
     return filled
+
+
+def _failed_preflight_line(snapshot: Mapping[str, Any]) -> str:
+    """Project a terminal failure, never promote it to accepted staffing (AR-414)."""
+    from agency_runtime.core.preflight_failure import (
+        default_preflight_failure_receipt,
+        project_preflight_failure_receipt,
+    )
+
+    failure = snapshot.get("preflight_failure")
+    if not isinstance(failure, Mapping) or any(
+        failure.get(key) != snapshot.get(key) for key in ("session_id", "trace_id")
+    ):
+        raise EvidenceCorrelationError("preflight failure receipt could not be verified")
+    receipt = project_preflight_failure_receipt(
+        {key: failure.get(key) for key in default_preflight_failure_receipt()}
+    )
+    if receipt is None or failure.get("host") != snapshot["run"].get("host"):
+        raise EvidenceCorrelationError("preflight failure receipt could not be verified")
+    reasons = [receipt["reason_code"]]
+    for attempt in receipt["provider_attempts"]:
+        code = attempt.get("reason_code", "")
+        if code and attempt.get("status") != "applied":
+            reasons.append(f"{attempt['stage']}:{code}")
+    reasons.extend(receipt["staffing_reason_codes"])
+    return "failed; " + "; ".join(_dedupe(reasons)[-_MAX_HEADER_CODES:])
+
+
+def failed_preflight_header(store: Any, session_id: str, trace_id: str) -> str | None:
+    """Read diagnostic header bytes for an immutable failed turn, without closing it."""
+    snapshot = store.get_completion_evidence_snapshot(session_id, trace_id)
+    if not isinstance(snapshot, Mapping) or snapshot.get("status") != "preflight_failed":
+        return None
+    return format_header(
+        fill_header_fields({}, session_id, store, trace_id=trace_id, evidence_snapshot=snapshot)
+    )
 
 
 def finalize_header(

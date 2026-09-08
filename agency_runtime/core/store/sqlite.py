@@ -14,6 +14,7 @@ import stat
 import threading
 import time
 import uuid
+from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -1950,6 +1951,19 @@ class Store(
         finally:
             conn.close()
 
+    @staticmethod
+    def _failed_resident_binding(run: Mapping[str, Any], session_id: str) -> dict[str, Any] | None:
+        from agency_runtime.core.resident_manager_binding import validate_resident_manager_binding
+
+        if run["status"] != "preflight_failed" or run["failed_resident_manager_binding"] is None:
+            return None
+        encoded = str(run["failed_resident_manager_binding"])
+        if len(encoded) > 16384:
+            raise RuntimeError("failed resident manager binding is unbounded")
+        return validate_resident_manager_binding(
+            json.loads(encoded), session_id=session_id
+        ).as_dict()
+
     def get_completion_evidence_snapshot(
         self,
         session_id: str,
@@ -1966,6 +1980,9 @@ class Store(
                 "SELECT trace_id, session_id, host, status, ended_at, "
                 "terminal_finalization_id, evidence_revision, "
                 "preflight_state, preflight_result, "
+                "CASE WHEN json_valid(metadata) THEN "
+                "json_extract(metadata, '$.failed_resident_manager_binding') END "
+                "AS failed_resident_manager_binding, "
                 "COALESCE(NULLIF(preflight_request_kind, ''), CASE "
                 "WHEN json_valid(metadata) THEN json_extract(metadata, '$.request_kind') "
                 "ELSE '' END, '') AS request_kind "
@@ -2103,6 +2120,8 @@ class Store(
             raw_resident_binding = (
                 recipe.get("resident_manager_binding") if recipe is not None else None
             )
+            if raw_resident_binding is None:
+                raw_resident_binding = self._failed_resident_binding(run, normalized_session)
             resident_manager_binding = (
                 dict(raw_resident_binding) if isinstance(raw_resident_binding, dict) else None
             )

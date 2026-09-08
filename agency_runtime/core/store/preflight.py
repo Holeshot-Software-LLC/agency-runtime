@@ -2298,12 +2298,22 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                     # claim the planned delivery exactly as a ready commit would
                     # so the persistent-host lifecycle can acknowledge it and
                     # plan ``reused`` next turn (AR-367). Never fails the close.
-                    self.claim_resident_manager_binding_on_failure(
+                    claimed = self.claim_resident_manager_binding_on_failure(
                         conn,
                         session_id=session_id,
                         trace_id=trace_id,
                         binding=resident_manager_binding,
                     )
+                    if claimed:
+                        binding = validate_resident_manager_binding(
+                            resident_manager_binding, session_id=session_id
+                        )
+                        conn.execute(
+                            "UPDATE runs SET metadata = json_set(metadata, "
+                            "'$.failed_resident_manager_binding', json(?)) "
+                            "WHERE session_id = ? AND trace_id = ?",
+                            (json.dumps(binding.as_dict()), session_id, trace_id),
+                        )
                 conn.execute(
                     "UPDATE specialists_loaded SET expired_at = ? "
                     "WHERE session_id = ? AND trace_id = ? AND expired_at IS NULL",

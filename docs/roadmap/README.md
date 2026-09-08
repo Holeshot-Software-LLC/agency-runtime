@@ -45,6 +45,7 @@ bounded package are in AR-404's
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
+| `AR-414` | [Restore reliable staffing and truthful failed-turn headers](issue-AR-414-reliable-staffing-failure-headers.md) | in_progress | p1 | host-integrations | [#773](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773) |
 | `AR-01` | [Selection explain receipts](issue-AR-01-selection-explain-receipts.md) | done | p1 | observability | [#1](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/1) |
 | `AR-02` | [Close specialist coverage gaps](issue-AR-02-specialist-coverage-gaps.md) | done | p2 | roster-governance | [#2](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/2) |
 | `AR-03` | [Prove supported-host integrations](issue-AR-03-supported-host-integrations.md) | done | p0 | host-integrations | [#3](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/3) |
@@ -460,6 +461,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
+| [AR-414](issue-AR-414-reliable-staffing-failure-headers.md) | Pending substantive checkpoint | [ADR-0239](../decisions/0239-render-failed-turn-diagnostics-without-acceptance.md) |
 | [AR-413](issue-AR-413-preserve-http-status-in-staffing-receipts.md) | `c1e17448`, `ed26177f`, `6debb9f2`, `ecd1d26b`, `b4899374`, `35cd6539`, `947dfaef`; downstream HTTP statuses retained, installed failure proof and four isolated acceptance verdicts | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
 | [AR-369](issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | Diagnostic correction pending source checkpoint, `a10e3117`, `5180c14f`, `ae763a0a`, `e85ce604` | Existing advisory-runtime boundary; no policy change |
 | [AR-412](issue-AR-412-refresh-vulnerable-tooling-lock.md) | Pending substantive checkpoint, `7e66ea84`, `362a6c1e`, `59b541b7`, `8869cb40`, `a27d2c1a`, `ca53e25e`, `f4264b54`; narrow two-package lock refresh, tests deferred | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md) |

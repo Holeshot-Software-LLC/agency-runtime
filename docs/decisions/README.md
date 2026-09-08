@@ -59,6 +59,7 @@ Status meanings:
 
 | ID | Decision | Status |
 |---|---|---|
+| [ADR-0239](0239-render-failed-turn-diagnostics-without-acceptance.md) | Render failed-turn diagnostics without acceptance | Accepted |
 | [ADR-0004](0004-host-specific-compatibility-shim.md) | Cut over through a host-specific compatibility shim | Superseded |
 | [ADR-0005](0005-portable-core-thin-host-adapters.md) | Keep a portable core with thin host adapters | Accepted |
 | [ADR-0009](0009-uniform-generated-python-hooks.md) | Generate one Python hook scaffold for every host | Superseded |
