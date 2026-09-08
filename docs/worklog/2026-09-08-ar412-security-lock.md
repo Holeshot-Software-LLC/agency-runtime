@@ -59,3 +59,5 @@ Publish a normal PR. Later authorized isolated tooling checks and acceptance
 remain AR-412 work; issue stays in_progress.
 
 Source `7e66ea84` is the exact targeted lock refresh. The successful corrected read-only `uv tree --locked --universal --invert --package pip --package cryptography` confirms both optional-extra dependency paths without changing the lock or installing any package.
+
+Integration `362a6c1e` preserves the published installed-delivery and retained Hermes purpose-boundary records with their faithful merge ledgers. Independent source ownership and deferred execution remain unchanged.
