@@ -2131,6 +2131,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cd62d658` | 2026-09-07 | docs(backlog): reconcile service inspection and retain Windows repair proof | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
 | `27715362` | 2026-09-07 | docs(AR-190): link retained publication and exact review limits | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `d39ec14d` | 2026-09-07 | Merge pull request #740 from Holeshot-Software-LLC/codex/ar190-uv-plan-reconciliation | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
+| `ba9cd869` | 2026-09-07 | docs(AR-409): checkpoint exact-main installation before native delivery | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `889926d5` | 2026-09-07 | chore(AR-191): integrate published upgrade and staffing reservations | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 | `a8c2ca54` | 2026-09-07 | Merge pull request #741 from Holeshot-Software-LLC/codex/ar191-v2-checklist-retirement | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 | `6d8f6aae` | 2026-09-07 | docs(trust): retain AR-192 after installed fail-fast proof | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
@@ -2139,12 +2140,22 @@ This registry connects repository history to the roadmap and to optional detail 
 | `faae0baa` | 2026-09-07 | docs(AR-192): link retained publication and approval gate | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 | `bad847ab` | 2026-09-07 | Merge pull request #742 from Holeshot-Software-LLC/codex/ar192-hook-trust-reconciliation | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 | `0799b3df` | 2026-09-07 | chore(AR-194): integrate retained hook trust publication | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
+| `a005076c` | 2026-09-07 | docs(AR-409): record actual native failures and staffing latency | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `cbba0fd9` | 2026-09-07 | Merge pull request #743 from Holeshot-Software-LLC/codex/ar194-service-runtime-reconciliation | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
+| `ba2d0579` | 2026-09-07 | chore(delivery): integrate published oldest-first dispositions | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `0e8e9307` | 2026-09-07 | fix(canary): suppress hooks only during Claude bootstrap (AR-410) | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `fe608bc1` | 2026-09-07 | chore(AR-410): integrate published oldest-record checkpoint | null | null |
 | `9d615325` | 2026-09-07 | docs(AR-410): record native bootstrap isolation and deferred live proof | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `7c0c1221` | 2026-09-07 | Merge pull request #745 from Holeshot-Software-LLC/codex/ar410-disable-claude-warmup-staffing | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
+| `f158865a` | 2026-09-07 | docs(delivery): checkpoint warm-up fix installation and test deferral | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `ba58ad79` | 2026-09-07 | chore(delivery): integrate published Claude warm-up fix | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `596a774d` | 2026-09-07 | docs(backlog): triage next twenty unfinished records | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-596a774d-next-twenty-triage.md) |
 | `c514fb70` | 2026-09-07 | fix(observability): retain validated recall catalog digest (AR-411) | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
+| `ddcce039` | 2026-09-07 | docs(backlog): checkpoint code-first continuation to midnight Eastern | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `4f1c1c83` | 2026-09-07 | docs(backlog): integrate next-twenty source triage | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `e790c4d4` | 2026-09-07 | Merge pull request #747 from Holeshot-Software-LLC/codex/ar411-retain-catalog-failure-identity | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
+| `ae15183c` | 2026-09-07 | chore(delivery): integrate published recall failure diagnostic | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `378102d7` | 2026-09-07 | docs(backlog): link source triage and published diagnostic checkpoint | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

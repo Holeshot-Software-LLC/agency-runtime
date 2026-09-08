@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/AR-404-next20-triage-20260907.md
   - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
   - docs/roadmap/acceptance/evidence/AR-194-service-runtime-reconciliation-20260907.md
   - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
@@ -57,6 +58,39 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+### Midnight extension: current operating checkpoint
+
+The owner extended the September7 session through midnight Eastern
+(September8 04:00UTC) and explicitly prioritized code over waiting for CI/tests.
+Further test execution and acceptance remain deferred, not silently satisfied.
+Three native workers run within the session's four-agent total capacity; the
+next twenty unfinished non-Windows records have been triaged for real source
+gaps versus implemented/superseded work. Publication remains normal branch/PR/
+merge, and native Windows/owner trust changes stay outside unattended work.
+
+Main includes AR194 PR743/cbba0fd9 and AR410 PR745/7c0c1221. The installed CLI
+is exact0e8e9307, all613 payload files matched, with four refreshed hosts on
+runtime d542bee67724. Owner configuration, wrapper, separate OpenClaw install
+and running dashboard remain preserved. The planned new410 native test was not
+launched after the owner deferred tests. See the
+[installed and actual native receipt](acceptance/evidence/AR-409-installed-live-delivery-20260907.md).
+AR409/410 remain in_progress; no current all-host success is claimed.
+AR411's validated recall-catalog digest preservation is on main through PR747/
+e790c4d4; its written regressions and installed delivery remain deferred.
+Count after AR411 filing:119 unfinished =43 mapped +76 legacy; mapping a legacy
+item later changes that split, not the unfinished total.
+
+The [twenty-record source triage](AR-404-next20-triage-20260907.md) found eleven
+proof-held records, six stale or scope-reconciliation records, and three code
+scope rows: concrete gaps AR251/270 and the AR236 umbrella, not three new bugs.
+Those two implementations are in independent worktrees. A separate AR280 native
+source inspection found no authenticated invocation-purpose hook field; do not
+skip background calls using prompt text or an unbound private context label.
+The required Codex refresh at01:10UTC returned `already_current`, no-op and
+`enabled-runtime-unverified`; refreshing disk cannot restaff this older process.
+
+### Earlier September6–7 chronology
 
 **Resumed by the owner on September 6 at AR-131.** The previous pause checkpoint
 is on main through PR #696/f38720c7 and the exact PR #697 ledger/c1c5d9d9.

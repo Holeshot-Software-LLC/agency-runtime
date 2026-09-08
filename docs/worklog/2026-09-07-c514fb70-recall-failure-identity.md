@@ -16,7 +16,7 @@ type: worklog
 commit: c514fb70b109adb2360758bafdb3bda2cd994e71
 short: c514fb70
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/747
 related_issues:
   - docs/roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md
 ---
@@ -70,3 +70,5 @@ Root owns normal source PR publication and owner installation. AR-411 remains
 in_progress; focused execution and one organically produced failed-preflight
 receipt are deferred until authorized. Capsule checkpoint metadata names the
 clean inherited floor; this substantive source identity is c514fb70.
+
+PR #747 merged as `e790c4d4d957ae7ed951285922f5bff6733934c5` at2026-09-08T01:01:33Z; read back MERGED. Source regression execution/acceptance remains deferred under the owner directive; issue #746 stays open.
