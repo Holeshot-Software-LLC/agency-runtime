@@ -70,3 +70,7 @@ policy/worklog/diff checks pass. No Windows/exhaustive suite or model review.
 Supported owner approval of the exact settled definitions, authoritative 8/8
 trusted inspection, then one no-bypass canary remain for AR-192 criterion 6.
 Parent serializes this retained publication after AR-191 and before AR-194.
+
+Normal merge `8a5861e6` integrates AR-191 PR #741 merge `a8c2ca54` without
+changing any runtime or frozen acceptance packet. Adjacent registry/worklog
+conflicts were resolved by retaining both records and their exact annotations.
