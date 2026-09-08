@@ -23,6 +23,8 @@ related_issues: [docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md]
 
 ## Outcome
 
+Instruction and evidence follow-up:6786aaa242c69810b25baaa12b4090e24c0cd2a5.
+
 PR774 merged as905d37b8. The failed-turn renderer reads immutable failure
 evidence without accepting or reopening the run. Request-scoped failure closes
 persist their validated steward binding. Initial hook snapshots expose the real
