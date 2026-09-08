@@ -90,3 +90,5 @@ review is claimed here. Tracker #758 was separately authorized and mapped.
 Parent coordinates the owner-requested clean stop, serialized tracker filing,
 normal PR publication, focused verification, installation and live evaluation.
 AR-312 remains in_progress until its unchanged acceptance gates have evidence.
+
+Integration `525029dd` preserves all wrap-up source slices and independent capsule/ledger records. Root source review confirms explicit absolute identity, bounded read, strict schema and no Store/provider or permission-repair dependency; no scoped correctness finding. Original 48-pass focused receipt stays exact.
