@@ -62,3 +62,5 @@ Checkpoint `f158865a` records exact AR-410 source installation and the owner's c
 Integration `ba58ad79` includes published AR-410 source PR #745 and its exact merge ledger while preserving separate installed/native scopes.
 
 Midnight extension checkpoint `ddcce039` replaces the bounded current capsule, preserves the prior chronology, and records the owner's explicit test deferral without changing acceptance authority.
+
+Integration `4f1c1c83` retains the twenty-record triage at its exact source scope: eleven proof-held, six reconciliation, and two concrete code targets plus one umbrella. No closures or acceptance judgments are inferred.

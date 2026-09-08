@@ -2149,8 +2149,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7c0c1221` | 2026-09-07 | Merge pull request #745 from Holeshot-Software-LLC/codex/ar410-disable-claude-warmup-staffing | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `f158865a` | 2026-09-07 | docs(delivery): checkpoint warm-up fix installation and test deferral | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `ba58ad79` | 2026-09-07 | chore(delivery): integrate published Claude warm-up fix | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
-| `ddcce039` | 2026-09-07 | docs(backlog): checkpoint code-first continuation to midnight Eastern | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `596a774d` | 2026-09-07 | docs(backlog): triage next twenty unfinished records | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-596a774d-next-twenty-triage.md) |
+| `ddcce039` | 2026-09-07 | docs(backlog): checkpoint code-first continuation to midnight Eastern | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `4f1c1c83` | 2026-09-07 | docs(backlog): integrate next-twenty source triage | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
