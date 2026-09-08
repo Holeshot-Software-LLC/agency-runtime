@@ -82,6 +82,14 @@ pair and continue. Preserve unrelated worktrees and operator files.
 
 ## Next bounded work package
 
+Staffing reliability is the immediate priority after repeated owner-visible
+failures. AR-420 captures a reranker cross-unit candidate defect and a bounded
+schema repair; source focused112pass, installed/isolated acceptance pending.
+Latest native trace01a0830f-8143-7542-ac77-5ace98ceb5d4 remains failed with
+critic_wrong_neighbor_selection; its proposal is unavailable, veto unadjudicated.
+See2026-09-08-reranker-membership-repair.md. Preserve independent critic and
+validators; one accepted turn never establishes general reliability.
+
 Waiting for owner choices: standalone Zcode answering provider, native OpenClaw
 observer consent, and permission to submit the tested Hermes patch upstream.
 Then finish the three remaining gates without retries or trust bypass. Hermes

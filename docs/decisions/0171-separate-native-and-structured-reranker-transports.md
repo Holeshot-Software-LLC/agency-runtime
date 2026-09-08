@@ -6,6 +6,7 @@ created: 2026-08-25
 updated: 2026-08-25
 tags: [workforce, reranking, retrieval, inference, providers]
 related:
+  - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
   - docs/roadmap/issue-AR-289-native-reranker-transports.md
   - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
   - docs/roadmap/issue-AR-296-project-effective-inference-topology.md

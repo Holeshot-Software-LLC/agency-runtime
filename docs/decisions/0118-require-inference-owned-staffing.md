@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-08-12
 tags: [routing, inference, workforce, safety, failure]
 related:
+  - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/worklog/README.md
   - docs/roadmap/issue-AR-151-align-route-lab-host-eligibility.md

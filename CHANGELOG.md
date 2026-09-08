@@ -80,6 +80,8 @@ changes rather than duplicating every commit.
 
 ## Unreleased
 
+- Bind structured workforce reranker responses to each work unit’s offered candidate IDs and counts; preserve exact validation and inference-owned ranking (AR-420).
+
 - Retain standard critic veto causes when a valid qualified reason exceeds the
   receipt length bound, with an explicit omitted-detail marker (AR-416).
 

@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-08
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
   - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md
   - docs/worklog/2026-09-08-fresh-codex-activation.md
   - docs/worklog/2026-09-08-planner-reliability.md
