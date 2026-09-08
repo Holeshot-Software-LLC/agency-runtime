@@ -54,3 +54,5 @@ cases with three skips in 69.91s; it does not include this focused card file.
 
 Parent publishes the final delivery branch, installs exact main and records a
 real CLI demonstration. Tracker #260 remains open for isolated acceptance.
+
+Test-only correction `7e0c919a` preserves the initial failed execution and the corrected 61-pass result. No runtime byte changed. The final delivery PR also carries AR312 explicit-file validation.
