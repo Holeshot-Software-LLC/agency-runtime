@@ -467,7 +467,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
-| [AR-420](issue-AR-420-bind-reranker-candidate-membership.md) | Pending source checkpoint; captured schema repair | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0171](../decisions/0171-separate-native-and-structured-reranker-transports.md) |
+| [AR-420](issue-AR-420-bind-reranker-candidate-membership.md) | `5ff8e85c` (per-unit schema and captured replay) | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0171](../decisions/0171-separate-native-and-structured-reranker-transports.md) |
 | [AR-419](issue-AR-419-finalize-openclaw-cli-responses.md) | `eb981751`, `ca0914cd`, `94b9eb28`, `1dffc669`; internal CLI terminal proven, injection pending; `9418ab83` (native proof and remaining gates); `58247849` (PR799 merged); `80280bfe` (PR800 recovery merged) | [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md) |
 | [AR-418](issue-AR-418-preserve-hermes-truncation-terminal-evidence.md) | `1dd69c3a`, `eb981751`, `ca0914cd`; native evidence PR795, repair pending, `ef7a0466` (failure hook and native candidate); `9418ab83` (native proof and remaining gates); `58247849` (PR799 merged); `80280bfe` (PR800 recovery merged) | [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md) |
 | [AR-415](issue-AR-415-respect-negated-change-requests.md) | `c1ef8566`, `d0bb4127`, `85f55021`, `21a8a39e`, `39f5142a`; native proof PR793 and isolated acceptance satisfied, `86d3728a`, `1162702f` | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md) |
