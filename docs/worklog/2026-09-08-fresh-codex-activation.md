@@ -21,6 +21,8 @@ related_issues: [docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md]
 
 # Fresh Codex activation after resume
 
+Evidence commit `681b6eab11f6333088c7f10f67c453dcd8bc593a` records the directly trusted hook set, working resumed MCP and one failed no-bypass activation attempt.
+
 ## Outcome
 
 Owner approval is no longer the blocker. A direct native hook-trust inspection

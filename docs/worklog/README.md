@@ -2221,6 +2221,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `947dfaef` | 2026-09-08 | Merge pull request #768 from Holeshot-Software-LLC/codex/ar413-planner-reliability-20260908 | [AR-413](../roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md) | [Detail](2026-09-08-planner-reliability.md) |
 | `013ab75f` | 2026-09-08 | docs(delivery): record installed Codex refresh and fresh trust boundary (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-planner-reliability.md) |
 | `2088ea06` | 2026-09-08 | Merge pull request #769 from Holeshot-Software-LLC/codex/ar413-installed-delivery-20260908 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-planner-reliability.md) |
+| `681b6eab` | 2026-09-08 | docs(activation): prove hook trust and record staffing-stage failure (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Fresh activation](2026-09-08-fresh-codex-activation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
