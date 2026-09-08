@@ -84,7 +84,16 @@ fixture, not external-provider or native-host success. Owner hooks remain on
 their trusted prior payload; this diagnostic installation did not refresh them.
 
 Deterministic routing gates pass. Decision-conformance's first baseline fails on
-private test-directory permissions under ambient umask; retry with077 is pending.
+private test-directory permissions under ambient umask; the077 rerun passes,
+source_unchanged true. A minimal structured call to the exact GLM deployment
+returns the correct object in2951ms. This isolates basic deployment reachability,
+not full staffing quality. Alias comparison remains pending.
+
+The requested Codex install refresh reports already_current/no_op, enabled and
+registered but activation required, hook trust unverified. Its published bundle
+is f838a7676e42ac9b336da1335f3b26ca73e32cdc4c4126ace68c5d2c28f6aa7f,
+plugin0.1.0+codex.7773634d503c. This differs from the earlier experiment's
+projection: do not claim that earlier trust attests this later installation.
 
 AR-413 installed failure proof and isolated acceptance; AR-404 native ordinary
 staffing/finalization with valid current binding and approved MCP-write mode.

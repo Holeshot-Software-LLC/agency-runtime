@@ -32,8 +32,10 @@ sample. No backlog wave or OpenClaw restart. No worker is active. Root owns this
 dedicated worktree; phase implementing. Owner subsequently approved bounded
 planner/gateway changes and AR-413 status propagation. Main floor4c98e8f7.
 
-Main floor is c5516afe. Installed source remains4cbebf73, projection4d2934ddb59e;
-no product or generated hook changed. New AR-413/#765 makes the unfinished
+Installed source was4cbebf73 at the native priority experiment. A subsequent
+requested Codex refresh reports already_current/no_op with published bundle
+f838a7676e42 and unverified activation; do not reuse old trust evidence.
+New AR-413/#765 makes the unfinished
 inventory121 =49 mapped +72 legacy; it is a specific diagnostic gap, not121bugs.
 
 ## Completed evidence
@@ -88,20 +90,17 @@ The original owner launcher is retained privately; no secret file was backed up.
 
 ## Next bounded work package
 
-AR-413 code now preserves bounded status through staffing/hiring and durable
-receipt projections;80focused tests pass, installed proof pending. The owner
-Fast spine1151/3skip and dashboard224pass. At12:36:01UTC exact gateway GLM entry
-was changed order2 to0, readback/other-parameter equality pass; restore2 on failure.
-The native priority experiment fails plannerHTTP46910ms; restored order2 at
-12:40:26UTC with exact readback. No priority change remains. Canonical build,
-Twine and independent artifact verification pass in a clean same-source clone;
-shared Git config inspection exceeded its bounded output. Isolated wheel install
-proves real loopback401/408/429/502 through workforce intoSQLite without bodies.
-authorized gateway changes: inspect exact live deployment and temporarily set
-the existing GLM planner order2 to0, retaining subscription order1 and all other
-fields. Verify readback and restore on a failed experiment. Then prove a valid
-ordinary staffed/finalized turn in approved MCP-write mode. No new credentials,
-trust bypass or backlog wave. Worklog2026-09-08-planner-reliability owns details.
+AR-413 code preserves bounded status through staffing/hiring and durable receipt
+projections. Focused80, fast spine1151/3skip, dashboard224, routing and decision
+conformance pass. Canonical build, Twine and independent verification pass in a
+clean same-source clone. The installed wheel proves real loopback401/408/429/502
+through workforce intoSQLite, without response bodies or gateway-log inference.
+Formal isolated acceptance and PR delivery remain. The native priority experiment
+failed plannerHTTP46910ms; order2 was restored at12:40:26UTC with exact readback.
+No priority change remains. A direct minimal structured call to the existing GLM
+deployment succeeds in2951ms; this does not prove staffing quality or native
+success. Compare the alias before another full native run. Worklog
+2026-09-08-planner-reliability owns details. No new credentials or trust bypass.
 
 ## Verification
 
@@ -113,6 +112,7 @@ and use bounded owner-private captures.
 ## Constraints
 
 No self-staffing, trust bypass, new/substitute credentials, runtime secret-file
-fallback, provider-route changes, shared-service restart without approval, raw
+fallback, provider-route changes outside the approved bounded experiment,
+shared-service restart without approval, raw
 transcript publication, guessed headers or acceptance promotion. Use normal
 branch/PR/merge and exact ledgers for substantive repository work.
