@@ -6,6 +6,7 @@ created: 2026-08-03
 updated: 2026-08-03
 tags: [orchestration, inference, failure, header, product]
 related:
+  - docs/roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md

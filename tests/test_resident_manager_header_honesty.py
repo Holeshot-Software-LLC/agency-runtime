@@ -96,7 +96,8 @@ def test_a_stalled_acknowledgement_does_not_silence_later_turns(tmp_path: Path) 
     session_id = "ar371-stalled"
     # First turn claims the binding and is never acknowledged.
     _fail_open_turn(store, session_id=session_id, trace_id="ar371-stalled-first")
-    # A later turn in the same session cannot claim what is already pinned.
+    # AR-371 step 2 can recover this closed claim; either way delivery remains
+    # a per-turn fact, not an inference from an acknowledgment.
     _fail_open_turn(store, session_id=session_id, trace_id="ar371-stalled-later")
 
     later = store.get_completion_evidence_snapshot(session_id, "ar371-stalled-later")

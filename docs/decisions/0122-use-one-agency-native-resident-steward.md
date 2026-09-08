@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-07-30
 tags: [orchestration, managers, inference, roster, activation]
 related:
+  - docs/roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
