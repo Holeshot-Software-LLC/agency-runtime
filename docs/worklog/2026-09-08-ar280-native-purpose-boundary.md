@@ -17,7 +17,7 @@ type: worklog
 commit: 8ce0461f359f361384c8677e17705a42be7a730c
 short: 8ce0461f
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/751
 related_issues:
   - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md
 ---
