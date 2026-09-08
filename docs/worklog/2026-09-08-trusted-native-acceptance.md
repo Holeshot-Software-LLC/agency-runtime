@@ -79,3 +79,11 @@ or retried. Installed614file byte comparison and owner-config baseline compariso
 were repeated after the native turn and still match. The baseline file contains
 a bare digest, so `sha256sum --check` rejected its format; a direct SHA256
 comparison then proved equality without changing the file.
+
+## Merge checkpoint
+
+PR793 merged as1162702f66f81f54f251e1a28c5abf926b293d0f with exact subject
+`docs(native): merge PR793 trusted native acceptance`. Source evidence39f5142a
+and acceptance86d3728a are preserved with their immediately following ledgers.
+AR-414/#773 and AR-415/#778 closed on this merge after all seven isolated gates.
+The merge-ledger PR records the exact merge commit and reciprocal roadmap cells.
