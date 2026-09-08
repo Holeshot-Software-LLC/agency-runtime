@@ -79,6 +79,7 @@ behavior.
 - [AR-411 bounded catalog-identity diagnostics](issue-AR-411.md)
 - [AR-409 required staffing call reservations](issue-AR-409.md)
 - [AR-410 Claude transport warm-up isolation](issue-AR-410.md)
+- [AR-371 next-turn resident binding recovery](issue-AR-371.md)
 - [AR-270 OpenClaw installed-copy provenance](issue-AR-270.md)
 - [AR-404 evidence-led backlog completion](issue-AR-404.md)
 - [AR-400 staffing correctness and performance](issue-AR-400.md)

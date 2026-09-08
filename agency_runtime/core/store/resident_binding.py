@@ -24,9 +24,24 @@ from agency_runtime.core.runtime_control import (
     RuntimeControlError,
     read_effective_runtime_control_snapshot,
 )
-from agency_runtime.core.store.schema import STORE_CLOCK_SQL
+from agency_runtime.core.store.schema import STORE_CLOCK_SQL, _aware_timestamp
+from agency_runtime.core.store.trace_identity import correlation_digest
 
 _MAX_GENERATION = 2**63 - 1
+_RECOVERABLE_TERMINAL_RUN_STATUSES = frozenset(
+    {
+        "abandoned",
+        "canary_failed",
+        "completed",
+        "delegation_declined",
+        "preflight_failed",
+        "preflight_skipped",
+        "response_invalid",
+        "retry_exhausted",
+        "specialist_disabled",
+        "verification_failed",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,6 +226,67 @@ def _planned_delivery(state: _BindingState) -> str:
     if state.restore_generation > state.applied_restore_generation:
         return "restored"
     return "reused"
+
+
+def _closed_pending_claim_can_move(
+    conn: Any,
+    *,
+    session_id: str,
+    host: str,
+    pending_trace_id: str,
+    trace_id: str,
+) -> bool:
+    """Prove a later current turn, never infer abandonment from elapsed time.
+
+    The caller holds the ready/fail-open write transaction. Its full binding
+    CAS below moves the claim without clearing it or acknowledging delivery.
+    A fail-open close alone is insufficient: that same turn still awaits Stop.
+    """
+
+    row = conn.execute(
+        "SELECT prior.status AS prior_status, prior.ended_at AS prior_ended_at, "
+        "candidate.status AS candidate_status, "
+        "candidate.preflight_state AS candidate_preflight_state, "
+        "candidate.ended_at AS candidate_ended_at, candidate.turn_sequence "
+        "FROM runs AS prior JOIN runs AS candidate "
+        "ON candidate.session_id = prior.session_id "
+        "WHERE prior.session_id = ? AND prior.trace_id = ? "
+        "AND LOWER(TRIM(prior.host)) = ? AND candidate.trace_id = ? "
+        "AND LOWER(TRIM(candidate.host)) = ? "
+        "AND typeof(prior.turn_sequence) = 'integer' AND prior.turn_sequence > 0 "
+        "AND typeof(candidate.turn_sequence) = 'integer' "
+        "AND candidate.turn_sequence > prior.turn_sequence "
+        "AND NOT EXISTS (SELECT 1 FROM runs AS newer "
+        "WHERE newer.session_id = candidate.session_id "
+        "AND LOWER(TRIM(newer.host)) = LOWER(TRIM(candidate.host)) "
+        "AND newer.turn_sequence > candidate.turn_sequence)",
+        (session_id, pending_trace_id, host, trace_id, host),
+    ).fetchone()
+    if (
+        row is None
+        or row["prior_status"] not in _RECOVERABLE_TERMINAL_RUN_STATUSES
+        or _aware_timestamp(row["prior_ended_at"], maximum=64) is None
+    ):
+        return False
+    # Retention must not make an older candidate current again. Tombstones do
+    # not retain host identity, so any later retired turn in this same session
+    # is a conservative barrier, just as for authoritative finalization lookup.
+    session_digest = correlation_digest(conn, session_id, domain="session")
+    barrier = conn.execute(
+        "SELECT MAX(turn_sequence) AS turn_sequence FROM trace_tombstones WHERE session_digest = ?",
+        (session_digest,),
+    ).fetchone()
+    if barrier is not None and int(barrier["turn_sequence"] or 0) >= row["turn_sequence"]:
+        return False
+    if row["candidate_status"] == "active":
+        return (
+            row["candidate_preflight_state"] == "in_progress" and row["candidate_ended_at"] is None
+        )
+    return bool(
+        row["candidate_status"] == "preflight_failed"
+        and row["candidate_preflight_state"] == ""
+        and _aware_timestamp(row["candidate_ended_at"], maximum=64) is not None
+    )
 
 
 class ResidentManagerBindingStoreMixin:
@@ -571,7 +647,17 @@ class ResidentManagerBindingStoreMixin:
         binding: ResidentManagerBinding,
         state: _BindingState,
     ) -> bool:
-        if state.delivery_state == "pending" and state.pending_trace_id != trace_id:
+        if (
+            state.delivery_state == "pending"
+            and state.pending_trace_id != trace_id
+            and not _closed_pending_claim_can_move(
+                conn,
+                session_id=session_id,
+                host=binding.host,
+                pending_trace_id=state.pending_trace_id,
+                trace_id=trace_id,
+            )
+        ):
             return False
         required_mode = _planned_delivery(state)
         if binding.delivery_mode != required_mode:

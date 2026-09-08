@@ -87,3 +87,5 @@ and live verification only when authorized.
 Wrap-up checkpoint `5e0e7168` supersedes the test deferral above: the owner requested installed evaluation and the two focused files passed 186 cases with one skip in 29.28 seconds. Source fb360485 remains unchanged; native evidence and acceptance remain separate.
 
 Integration `63fa77fe` includes published fallback-accounting PR757 and its exact ledger. Only independent worklog rows conflicted; preserved both. Runtime files from both packages remain intact.
+
+PR #759 merged as `884500a923e640ce7ed5aefc16a57b1ce75875e7` at 2026-09-08T01:54:02Z. Source repair and 186-pass/one-skip focused verification are published; tracker756 remains open pending installed/acceptance proof.

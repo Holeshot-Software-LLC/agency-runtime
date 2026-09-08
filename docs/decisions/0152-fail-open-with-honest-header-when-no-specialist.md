@@ -6,6 +6,7 @@ created: 2026-08-03
 updated: 2026-08-03
 tags: [orchestration, inference, failure, header, product]
 related:
+  - docs/roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md
   - docs/decisions/0122-use-one-agency-native-resident-steward.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
@@ -89,6 +90,14 @@ deterministic no-match fallback worker — stands unchanged.
   specialist availability.
 - The README "fails loudly" promise is honored by the truthful header and
   persisted receipt, not by blocking the host.
+
+## Implementation trace
+
+Implementation checkpoint `c3b217f1` (AR-371) bounds a closed old resident claim
+only when a strictly later current turn reaches its own ready/fail-open claim
+boundary. Closing the same fail-open run is not delivery acknowledgment. The
+existing header truthfulness and non-staffing integrity refusals remain intact;
+the AR-371 evidence record distinguishes focused tests from pending native proof.
 
 ## Alternatives
 

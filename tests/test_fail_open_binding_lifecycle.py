@@ -164,17 +164,21 @@ def test_stop_acknowledges_the_fail_open_delivery_and_the_next_turn_reuses_it(
     assert row["last_trace_id"] == "turn-two"
 
 
-def test_a_conflicting_claim_never_fails_the_fail_open_close(tmp_path: Path) -> None:
+def test_a_closed_previous_claim_is_recovered_without_failing_the_close(tmp_path: Path) -> None:
     store = _persistent_store(tmp_path / "conflict.db")
     bridge = HookBridge("claude", store=store)
     _prompt(bridge, session_id="session", turn_id="turn-one")
-    # Leave turn-one pending (no Stop) and start another turn: its claim
-    # conflicts with the pending trace, the close still lands, and the row is
-    # left exactly as it was.
-    before = _binding_row(store, "session")
+    # The different, newer turn may recover the closed old claim (AR-371),
+    # but still owes its own Stop acknowledgment before any reuse is allowed.
 
     context = _prompt(bridge, session_id="session", turn_id="turn-two")
 
     assert store.get_run("turn-two")["status"] == "preflight_failed"
     assert FAIL_OPEN_DISCLOSURE_MARKER in context
-    assert _binding_row(store, "session") == before
+    row = _binding_row(store, "session")
+    assert row["delivery_state"] == "pending"
+    assert row["pending_trace_id"] == row["last_trace_id"] == "turn-two"
+    assert _stop(bridge, session_id="session", turn_id="turn-one") == {}
+    assert _binding_row(store, "session") == row
+    assert _stop(bridge, session_id="session", turn_id="turn-two") == {}
+    assert _binding_row(store, "session")["delivery_state"] == "acknowledged"
