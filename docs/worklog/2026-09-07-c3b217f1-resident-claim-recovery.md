@@ -72,3 +72,7 @@ this substantive/ledger pair is the bounded clean checkpoint.
 Finish independent frozen-source review, integrate current main and publish
 normally with #521 open/in_progress. Runtime checks, isolated acceptance and
 native installed evidence remain pending; do not claim accepted completion.
+
+Normal merge `4516e055` integrates published-main ledger `1048a120` (through
+AR-412's PR #755). Capsule/worklog append conflicts preserved both histories;
+all four AR-371 source/test blobs remain identical to `c3b217f1`.
