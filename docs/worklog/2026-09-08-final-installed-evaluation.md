@@ -57,3 +57,5 @@ at this pre-evaluation clean checkpoint; no all-host pass or release claim.
 
 Complete bounded native evaluation, record exact remaining blockers, merge this
 evidence and final ledger normally, and stop until the owner asks to continue.
+
+Installed checkpoint `c4f779e0624d8ddb8c301a1dd244bdfa6f45cad9` freezes exact-main artifacts, all five normal installer attempts, executed test boundaries and known operator prerequisites before native evaluation. This clean recovery pair satisfies the context checkpoint without pausing the task.
