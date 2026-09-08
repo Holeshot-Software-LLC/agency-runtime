@@ -66,6 +66,13 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+Final September8 Claude gate: package replacement at22:38:08UTC restored775
+parent modes after the earlier permission repair and successful isolated
+verification. Current executable trust fails. Replacing process remains
+unidentified; owner asked about other installers, and active user terminals
+were preserved. See evidence/AR-404-claude-install-recurrence-20260908.json.
+Do not treat repeated chmod or prior native success as a durable Claude repair.
+
 September 8 staffing recurrence: AR-420 fixes a captured reranker cross-unit
 candidate defect and has three isolated satisfied criteria. Installed3fe3d7ba
 matches all614wheel files; fresh Codex trace01a0831f-1a40-7a12-a079-3386a3b439d3

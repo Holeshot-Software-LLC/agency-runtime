@@ -1,0 +1,31 @@
+{
+  "observed_at": "2026-09-08T22:41:40.329169+00:00",
+  "executable_usable": false,
+  "reason": "executable refused as untrusted: its parent namespace permits substitution",
+  "package_version": "2.1.265",
+  "paths": [
+    {
+      "path": "/home/holeshot/.npm-global/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe",
+      "mode": "0o755",
+      "ctime": "2026-09-08T22:38:08.763191+00:00"
+    },
+    {
+      "path": "/home/holeshot/.npm-global/lib/node_modules/@anthropic-ai/claude-code/bin",
+      "mode": "0o775",
+      "ctime": "2026-09-08T22:38:08.763191+00:00"
+    },
+    {
+      "path": "/home/holeshot/.npm-global/lib/node_modules/@anthropic-ai/claude-code",
+      "mode": "0o775",
+      "ctime": "2026-09-08T22:38:08.018214+00:00"
+    }
+  ],
+  "earlier_replacement_utc": "2026-09-08T22:24:43.367763+00:00",
+  "second_replacement_utc": "2026-09-08T22:38:08.763191+00:00",
+  "limitations": [
+    "The replacing process is not identified.",
+    "Two long-running Claude processes use a deleted executable; this alone does not identify them as the updater.",
+    "No running user terminal was stopped and no trust rule was bypassed.",
+    "Owner asked whether another terminal or job is reinstalling Claude."
+  ]
+}

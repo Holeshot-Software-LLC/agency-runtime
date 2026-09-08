@@ -63,6 +63,15 @@ once. This is executable proof only.
 
 ## Exact blocker
 
+Final Claude recheck failed again after its package/executable were replaced at
+22:38:08UTC and the package/bin directories returned to775. Earlier replacement
+was22:24:43UTC. Repeated chmod is not a durable repair. The replacing process is
+unidentified; two old terminal processes use a deleted installation, but that
+alone does not prove responsibility. Owner asked about concurrent installers.
+No terminal was stopped or trust weakened. See
+ evidence/AR-404-claude-install-recurrence-20260908.json. Prior native/verifier
+success remains historical evidence; current Claude executable gate is failing.
+
 Hermes native candidate59e52e556a is preserved as a repository patch;34native
 tests and94adapter tests pass. Candidate-source session20260908_172942_b70b9d passes exact card/headers/accept
 in194.347s. Normal native checkout is unchanged; upstream PR consent asked once.
