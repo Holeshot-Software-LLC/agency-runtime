@@ -2165,6 +2165,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bc6126bb` | 2026-09-07 | docs(AR-251): align checkpoint with governed card defaults | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-bc6126bb-card-default-checkpoint.md) |
 | `9b15107a` | 2026-09-07 | Merge pull request #751 from Holeshot-Software-LLC/codex/ar280-authenticated-internal-purpose | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 | `93866796` | 2026-09-07 | chore(AR-251): integrate published delivery and Hermes boundary records | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `fc699ff3` | 2026-09-07 | fix(openclaw): bind complete installed-copy provenance for AR-270 | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `a9073fe6` | 2026-09-07 | chore(AR-270): integrate published live-delivery checkpoint | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `6e701219` | 2026-09-07 | docs(AR-270): retain closed-provenance review and deferred runtime gates | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `9aba5133` | 2026-09-07 | chore(AR-270): integrate published AR-280 rendering fix | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `ff9f11cb` | 2026-09-07 | Merge pull request #752 from Holeshot-Software-LLC/codex/ar270-openclaw-installed-copy-provenance | [AR-270](../roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md) | [Detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
