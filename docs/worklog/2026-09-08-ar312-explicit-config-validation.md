@@ -92,3 +92,5 @@ normal PR publication, focused verification, installation and live evaluation.
 AR-312 remains in_progress until its unchanged acceptance gates have evidence.
 
 Integration `525029dd` preserves all wrap-up source slices and independent capsule/ledger records. Root source review confirms explicit absolute identity, bounded read, strict schema and no Store/provider or permission-repair dependency; no scoped correctness finding. Original 48-pass focused receipt stays exact.
+
+Integration `7087e9ac` includes published diagnostic PR761 and its ledger. Product and parser source is identical to combined candidate4955b939; only card regression assertions/records changed after the passing named spine.
