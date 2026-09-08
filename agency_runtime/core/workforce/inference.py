@@ -605,38 +605,6 @@ def _closed_object(properties: Mapping[str, Any], required: Sequence[str]) -> di
     }
 
 
-_RECALL_AGENT_ID_ARRAY: dict[str, Any] = {
-    "items": {
-        "maxLength": 128,
-        "minLength": 1,
-        "pattern": r"^[a-z0-9][a-z0-9._:-]{0,127}$",
-        "type": "string",
-    },
-    "maxItems": 16,
-    "minItems": 1,
-    "type": "array",
-    "uniqueItems": True,
-}
-_RECALL_RERANK_ROW_SCHEMA = _closed_object(
-    {
-        "unit_id": {"pattern": r"^unit-[a-z0-9][a-z0-9-]{0,62}$", "type": "string"},
-        "ranked_candidate_ids": _RECALL_AGENT_ID_ARRAY,
-    },
-    ("unit_id", "ranked_candidate_ids"),
-)
-RECALL_RERANK_RESPONSE_SCHEMA = _closed_object(
-    {
-        "units": {
-            "items": _RECALL_RERANK_ROW_SCHEMA,
-            "maxItems": 16,
-            "minItems": 1,
-            "type": "array",
-        }
-    },
-    ("units",),
-)
-
-
 _WORK_UNIT_SCHEMA = _closed_object(
     {
         "unit_id": {"pattern": r"^unit-[a-z0-9][a-z0-9-]{0,62}$", "type": "string"},
@@ -2372,6 +2340,40 @@ def _recall_reranker_document(
     )
 
 
+def _recall_rerank_response_schema(
+    offered: Mapping[str, tuple[str, ...]],
+) -> dict[str, Any]:
+    """Bind each ranking to its offered IDs without prescribing their order."""
+
+    rows = [
+        _closed_object(
+            {
+                "unit_id": {"type": "string", "enum": [unit_id]},
+                "ranked_candidate_ids": {
+                    "type": "array",
+                    "minItems": len(candidate_ids),
+                    "maxItems": len(candidate_ids),
+                    "uniqueItems": True,
+                    "items": {"type": "string", "enum": list(candidate_ids)},
+                },
+            },
+            ("unit_id", "ranked_candidate_ids"),
+        )
+        for unit_id, candidate_ids in offered.items()
+    ]
+    return _closed_object(
+        {
+            "units": {
+                "type": "array",
+                "minItems": len(rows),
+                "maxItems": len(rows),
+                "items": {"oneOf": rows},
+            }
+        },
+        ("units",),
+    )
+
+
 def _parse_recall_rerank(
     value: Mapping[str, Any],
     offered: Mapping[str, tuple[str, ...]],
@@ -2730,7 +2732,7 @@ def _run_hybrid_recall(
             stage="recall_reranker",
             providers=(reranker_route.provider,),
             prompt=_json_prompt(reranker_document),
-            schema=RECALL_RERANK_RESPONSE_SCHEMA,
+            schema=_recall_rerank_response_schema(offered),
             system_prompt=_RECALL_RERANKER_SYSTEM,
             budget=recall_budget,
             invoker=invoker,

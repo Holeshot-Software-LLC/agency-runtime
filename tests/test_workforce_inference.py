@@ -1301,11 +1301,21 @@ def test_ar289_structured_text_reranker_does_not_dispatch_native_invoker() -> No
     clear_hybrid_recall_cache()
     snapshot = _hybrid_recall_snapshot()
 
-    def invoke(_provider, prompt, _schema, **_kwargs):
+    def invoke(_provider, prompt, schema, **_kwargs):
         payload = json.loads(prompt)
         if "planning_taxonomy" in payload:
             return _result(_compact_plan_document())
         if payload.get("recall_policy") == "deterministic_candidate_recall_only":
+            rows = schema["properties"]["units"]
+            assert rows["minItems"] == rows["maxItems"] == len(payload["units"])
+            for actual, expected in zip(rows["items"]["oneOf"], payload["units"], strict=True):
+                properties = actual["properties"]
+                assert properties["unit_id"]["enum"] == [expected["unit_id"]]
+                candidate_ids = [candidate["agent_id"] for candidate in expected["candidates"]]
+                ranking = properties["ranked_candidate_ids"]
+                assert ranking["items"]["enum"] == candidate_ids
+                assert ranking["minItems"] == ranking["maxItems"] == len(candidate_ids)
+                assert ranking["uniqueItems"] is True
             return _result(
                 {
                     "units": [

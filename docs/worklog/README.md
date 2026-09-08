@@ -2267,6 +2267,13 @@ This registry connects repository history to the roadmap and to optional detail 
 | `58247849` | 2026-09-08 | Merge pull request #799 from Holeshot-Software-LLC/codex/ar418-ar419-native-terminal-20260908 | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
 | `fd2b182d` | 2026-09-08 | docs(hosts): checkpoint merged native terminal repairs | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
 | `80280bfe` | 2026-09-08 | Merge pull request #800 from Holeshot-Software-LLC/codex/ar404-native-recovery-20260908 | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
+| `5ff8e85c` | 2026-09-08 | fix(staffing): bind reranker output to offered candidates | [AR-420](../roadmap/issue-AR-420-bind-reranker-candidate-membership.md) | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `36b491ec` | 2026-09-08 | docs(staffing): record AR420 installed repair checkpoint | [AR-420](../roadmap/issue-AR-420-bind-reranker-candidate-membership.md) | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `0540a5ad` | 2026-09-08 | docs(staffing): preserve AR420 fresh native acceptance evidence | [AR-420](../roadmap/issue-AR-420-bind-reranker-candidate-membership.md) | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `331d789b` | 2026-09-08 | docs(staffing): cite AR420 isolated acceptance evidence | [AR-420](../roadmap/issue-AR-420-bind-reranker-candidate-membership.md) | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `08cba8a6` | 2026-09-08 | docs(staffing): initialize AR420 verifier result table | [AR-420](../roadmap/issue-AR-420-bind-reranker-candidate-membership.md) | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `4cf917fb` | 2026-09-08 | docs(staffing): bind AR420 verifier citations to exact lines | [AR-420](../roadmap/issue-AR-420-bind-reranker-candidate-membership.md) | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `03692b46` | 2026-09-08 | docs(staffing): accept AR-420 without claiming general reliability | AR-404, AR-420 | [Detail](2026-09-08-reranker-membership-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

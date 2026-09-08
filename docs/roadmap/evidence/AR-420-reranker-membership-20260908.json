@@ -1,0 +1,229 @@
+{
+  "scope": "Captured standalone source diagnostic and one changed-schema replay; not a reconstruction of the historical native critic veto.",
+  "source_base": "b69c4926e318d7f0bb80800a8af77aa777425b26",
+  "native_failure_trace": "01a0830f-8143-7542-ac77-5ace98ceb5d4",
+  "native_failure_reasons": [
+    "subject:provider_response_contract_invalid",
+    "recall_reranker:provider_response_contract_invalid",
+    "staffing_critic_rejected",
+    "critic_wrong_neighbor_selection"
+  ],
+  "offered": {
+    "unit-discovery": [
+      "selection-safety-critic",
+      "software-test-engineer",
+      "hallucination-root-cause-investigator",
+      "test-results-analyzer",
+      "minimal-change-engineer",
+      "recruitment-specialist",
+      "multi-agent-systems-architect",
+      "ai-governance-auditor",
+      "read-only-finance-ops-snapshot-investigator",
+      "ai-observability-engineer",
+      "orgscript-engineer",
+      "ai-evaluation-engineer",
+      "senior-secops-engineer",
+      "workflow-architect",
+      "backend-service-engineer"
+    ],
+    "unit-fix": [
+      "software-test-engineer",
+      "orgscript-engineer",
+      "python-application-engineer",
+      "service-operations-engineer",
+      "infrastructure-maintainer",
+      "solidity-smart-contract-engineer"
+    ],
+    "unit-tests": [
+      "python-application-engineer",
+      "typescript-application-engineer"
+    ],
+    "unit-review-correctness": [
+      "hallucination-root-cause-investigator",
+      "recruitment-specialist",
+      "cross-platform-release-verifier",
+      "reality-checker"
+    ]
+  },
+  "provider": "local-workforce-reranker",
+  "request_sha256": "4e915bf241bffef4eab7e45607e1ec35855de116e130857d9e842fc6e1629e2b",
+  "original": {
+    "value": {
+      "units": [
+        {
+          "ranked_candidate_ids": [
+            "recruitment-specialist",
+            "selection-safety-critic",
+            "ai-governance-auditor",
+            "hallucination-root-cause-investigator",
+            "workflow-architect",
+            "senior-secops-engineer",
+            "multi-agent-systems-architect",
+            "orgscript-engineer",
+            "ai-evaluation-engineer",
+            "test-results-analyzer",
+            "software-test-engineer",
+            "minimal-change-engineer",
+            "backend-service-engineer",
+            "read-only-finance-ops-snapshot-investigator",
+            "infrastructure-maintainer",
+            "solidity-smart-contract-engineer"
+          ],
+          "unit_id": "unit-discovery"
+        },
+        {
+          "ranked_candidate_ids": [
+            "orgscript-engineer",
+            "software-test-engineer",
+            "python-application-engineer",
+            "service-operations-engineer",
+            "infrastructure-maintainer",
+            "solidity-smart-contract-engineer"
+          ],
+          "unit_id": "unit-fix"
+        },
+        {
+          "ranked_candidate_ids": [
+            "typescript-application-engineer",
+            "python-application-engineer",
+            "service-operations-engineer",
+            "infrastructure-maintainer",
+            "solidity-smart-contract-engineer"
+          ],
+          "unit_id": "unit-tests"
+        },
+        {
+          "ranked_candidate_ids": [
+            "hallucination-root-cause-investigator",
+            "recruitment-specialist",
+            "cross-platform-release-verifier",
+            "reality-checker"
+          ],
+          "unit_id": "unit-review-correctness"
+        }
+      ]
+    },
+    "failure_reason": "",
+    "finish_reason": "stop",
+    "latency_ms": 25561
+  },
+  "replay": {
+    "elapsed_seconds": 15.28,
+    "value": {
+      "units": [
+        {
+          "ranked_candidate_ids": [
+            "recruitment-specialist",
+            "selection-safety-critic",
+            "ai-governance-auditor",
+            "hallucination-root-cause-investigator",
+            "workflow-architect",
+            "senior-secops-engineer",
+            "multi-agent-systems-architect",
+            "orgscript-engineer",
+            "ai-evaluation-engineer",
+            "test-results-analyzer",
+            "software-test-engineer",
+            "minimal-change-engineer",
+            "backend-service-engineer",
+            "read-only-finance-ops-snapshot-investigator",
+            "ai-observability-engineer"
+          ],
+          "unit_id": "unit-discovery"
+        },
+        {
+          "ranked_candidate_ids": [
+            "orgscript-engineer",
+            "software-test-engineer",
+            "infrastructure-maintainer",
+            "python-application-engineer",
+            "solidity-smart-contract-engineer",
+            "service-operations-engineer"
+          ],
+          "unit_id": "unit-fix"
+        },
+        {
+          "ranked_candidate_ids": [
+            "typescript-application-engineer",
+            "python-application-engineer"
+          ],
+          "unit_id": "unit-tests"
+        },
+        {
+          "ranked_candidate_ids": [
+            "reality-checker",
+            "cross-platform-release-verifier",
+            "recruitment-specialist",
+            "hallucination-root-cause-investigator"
+          ],
+          "unit_id": "unit-review-correctness"
+        }
+      ]
+    },
+    "failure_reason": "",
+    "finish_reason": "stop",
+    "valid": true
+  },
+  "diagnostic": {
+    "request": "Investigate and repair intermittent workforce recruitment failures in agency-runtime. Preserve inference-owned selection, the independent critic and all validators. Add focused regression tests and verify the installed behavior.",
+    "elapsed_seconds": 71.781,
+    "accepted": true,
+    "abstention_codes": [],
+    "attempts": [
+      {
+        "stage": "subject",
+        "latency_ms": 2170,
+        "reason_code": "structured_response_applied",
+        "validation_reason_codes": [],
+        "validation_detail": "",
+        "actual_model": "task-agency-planner-v2"
+      },
+      {
+        "stage": "planner",
+        "latency_ms": 27688,
+        "reason_code": "structured_response_applied",
+        "validation_reason_codes": [],
+        "validation_detail": "",
+        "actual_model": "task-agency-planner-v2"
+      },
+      {
+        "stage": "recall_embedding",
+        "latency_ms": 3012,
+        "reason_code": "dense_recall_applied",
+        "validation_reason_codes": [],
+        "validation_detail": "",
+        "actual_model": "qwen3-embedding:latest"
+      },
+      {
+        "stage": "recall_reranker",
+        "latency_ms": 25561,
+        "reason_code": "provider_response_contract_invalid",
+        "validation_reason_codes": [],
+        "validation_detail": "recall reranker must return every offered candidate exactly once",
+        "actual_model": "qwen3-14b-abliterated:latest"
+      },
+      {
+        "stage": "recruiter",
+        "latency_ms": 8636,
+        "reason_code": "structured_response_applied",
+        "validation_reason_codes": [],
+        "validation_detail": "",
+        "actual_model": "task-agency-recruiter-v2"
+      },
+      {
+        "stage": "critic",
+        "latency_ms": 4304,
+        "reason_code": "structured_response_applied",
+        "validation_reason_codes": [],
+        "validation_detail": "",
+        "actual_model": "task-agency-critic-v2"
+      }
+    ]
+  },
+  "limitations": [
+    "Prior native proposal unavailable; critic veto not adjudicated.",
+    "Standalone full staffing accepted despite rejected optional reranker.",
+    "One schema replay is not a latency benchmark or general staffing reliability proof.",
+    "No configuration, model, credential, retry limit, staffing or critic change."
+  ]
+}

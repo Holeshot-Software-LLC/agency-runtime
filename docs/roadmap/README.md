@@ -45,6 +45,7 @@ bounded package are in AR-404's
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
+| `AR-420` | [Bind reranker responses to per-unit candidate membership](issue-AR-420-bind-reranker-candidate-membership.md) | done | p1 | host-integrations | [#802](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/802) |
 | `AR-419` | [Finalize ordinary OpenClaw CLI responses with exact evidence](issue-AR-419-finalize-openclaw-cli-responses.md) | in_progress | p1 | host-integrations | [#797](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/797) |
 | `AR-418` | [Preserve Hermes truncation failure and terminal evidence](issue-AR-418-preserve-hermes-truncation-terminal-evidence.md) | in_progress | p1 | host-integrations | [#796](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/796) |
 | `AR-417` | [Keep qualified-veto regression self-contained in source archives](issue-AR-417-self-contained-qualified-veto-regression.md) | done | p2 | host-integrations | [#790](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/790) |
@@ -466,6 +467,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
+| [AR-420](issue-AR-420-bind-reranker-candidate-membership.md) | `5ff8e85c` (per-unit schema and captured replay), `36b491ec` (installed checkpoint), `0540a5ad` (fresh native proof); `331d789b`, `08cba8a6`, `4cf917fb` (isolated evidence preparation); `03692b46` (three isolated criteria satisfied) | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md), [ADR-0171](../decisions/0171-separate-native-and-structured-reranker-transports.md) |
 | [AR-419](issue-AR-419-finalize-openclaw-cli-responses.md) | `eb981751`, `ca0914cd`, `94b9eb28`, `1dffc669`; internal CLI terminal proven, injection pending; `9418ab83` (native proof and remaining gates); `58247849` (PR799 merged); `80280bfe` (PR800 recovery merged) | [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md) |
 | [AR-418](issue-AR-418-preserve-hermes-truncation-terminal-evidence.md) | `1dd69c3a`, `eb981751`, `ca0914cd`; native evidence PR795, repair pending, `ef7a0466` (failure hook and native candidate); `9418ab83` (native proof and remaining gates); `58247849` (PR799 merged); `80280bfe` (PR800 recovery merged) | [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md) |
 | [AR-415](issue-AR-415-respect-negated-change-requests.md) | `c1ef8566`, `d0bb4127`, `85f55021`, `21a8a39e`, `39f5142a`; native proof PR793 and isolated acceptance satisfied, `86d3728a`, `1162702f` | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md) |

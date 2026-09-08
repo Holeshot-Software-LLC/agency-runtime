@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-native-recovery-20260908
-evidence_commit: 9418ab834cbba26dd91c4d5de7a14e9f80c7ceb4
-minimum_ledger_commit: 1106cf736bb2809a83695290c84f95f39f60300d
+branch: codex/ar420-staffing-reliability-20260908
+evidence_commit: 0540a5ad15b635ff227031a80831972f14a134d2
+minimum_ledger_commit: 86c99a36ec5fc2420f46cb57e70deda58e480e35
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -32,7 +32,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 PR799 merged at58247849. Repair/evidence branch is historical. This recovery
 branch records the merged checkpoint; if merged, create a new owned worktree.
-Installed immutable source8921c77e contains OpenClaw repair94b9eb28 and
+PR803 carries the AR-420 repair and isolated acceptance; recheck merge state.
+Installed immutable source3fe3d7ba contains OpenClaw repair94b9eb28 and
 Hermes adapteref7a0466; all614
 package files match its verified wheel. OpenClaw and Claude now have fresh
 ordinary accepted terminal evidence. AR-404/418/419 remain open; no all-host
@@ -82,6 +83,19 @@ pair and continue. Preserve unrelated worktrees and operator files.
 
 ## Next bounded work package
 
+Staffing reliability is the immediate priority after repeated owner-visible
+failures. AR-420 captures a reranker cross-unit candidate defect and a bounded
+schema repair, installed source3fe3d7ba/all614wheel files verified; focused164,
+production1151/three skips, UI224pass. Fresh native Codex41.514s completed with
+all staffing stages applied, full card injection and matching accepted response
+hash; trace01a0831f-1a40-7a12-a079-3386a3b439d3. Three isolated AR-420
+criteria satisfied; only the membership defect is closed, broader reliability open.
+Owned branchcodex/ar420-staffing-reliability-20260908, PR803.
+Latest native trace01a0830f-8143-7542-ac77-5ace98ceb5d4 remains failed with
+critic_wrong_neighbor_selection; its proposal is unavailable, veto unadjudicated.
+See2026-09-08-reranker-membership-repair.md. Preserve independent critic and
+validators; one accepted turn never establishes general reliability.
+
 Waiting for owner choices: standalone Zcode answering provider, native OpenClaw
 observer consent, and permission to submit the tested Hermes patch upstream.
 Then finish the three remaining gates without retries or trust bypass. Hermes
@@ -90,8 +104,11 @@ only after isolated acceptance. Preserve the completed PR799 merge and exact led
 
 ## Verification
 
-Latest focused94passed; native Hermes34passed; production1151passed/3skipped; UI224;
-Ruff/docs/metadata/routing pass. Current8921c77e frozen conformance188/188 passes,
+AR-420 focused164, conformance188/188 and docs1345pass on unchanged production
+source5ff8e85c. Claude2.1.265 parents reverted to775; restored755, normal gate
+and three isolated verifier runs pass. Mutation cause unproven.
+Prior host focused94passed; native Hermes34passed; production1151passed/3skipped; UI224;
+Ruff/docs/metadata/routing pass. Earlier8921c77e frozen conformance188/188 passes,
 source unchanged, after private umask077 correction. No exhaustive dispatch,
 Windows matrix or all-host certification. Prior Codex56.656s roundtrip is historical
 comparison evidence; current Codex preflight failed and is honestly unstaffed.
