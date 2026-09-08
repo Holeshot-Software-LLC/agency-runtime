@@ -1553,7 +1553,7 @@ class EvidenceStoreMixin(PreflightStoreMixin):
         resolved_provider: str = "",
         resolved_model: str = "",
         api_base: str = "",
-        attempted_fallbacks: int = 0,
+        attempted_fallbacks: int | None = 0,
         model_id: str = "",
         source: str = "unknown",
         started_at: str = "",

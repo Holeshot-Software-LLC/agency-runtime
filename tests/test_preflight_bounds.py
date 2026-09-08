@@ -1526,6 +1526,83 @@ def test_hermes_preflight_lease_matches_host_scoped_hook_budget(
     assert observed["lease_seconds"] == 595
 
 
+@pytest.mark.parametrize("kind,expected", [("safety_repair", 129), ("content_fallback", 91)])
+def test_preflight_lease_includes_reachable_repair_and_fallback_profiles(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    kind: str,
+    expected: int,
+) -> None:
+    from agency_runtime.core.config import (
+        HarnessInferenceConfig,
+        InferenceConfig,
+        InferenceProfile,
+        JudgeConfig,
+        OllamaConfig,
+        WorkforceConfig,
+    )
+    from agency_runtime.core.installer_payloads import hook_timeout_seconds
+
+    config = AgencyConfig(
+        judge=JudgeConfig(timeout=1, model="", base_url=""),
+        ollama=OllamaConfig(enabled=False, model=""),
+        workforce=WorkforceConfig(
+            mode="fast",
+            dense_recall_mode="off",
+            fast_call_budget=4,
+            max_work_units=1,
+            hiring_call_budget=6,
+            hiring_repair_budget=1,
+        ),
+        inference=InferenceConfig(
+            profiles={
+                name: InferenceProfile(
+                    name=name,
+                    adapter="ollama",
+                    model=f"{name}-model",
+                    base_url="http://127.0.0.1:11434",
+                    timeout_ms=timeout_ms,
+                )
+                for name, timeout_ms in (("primary", 1_000), ("slower", 20_000))
+            },
+            content_fallback_routes={"workforce.planner": "slower"}
+            if kind == "content_fallback"
+            else {},
+            harnesses={
+                "hermes": HarnessInferenceConfig(
+                    default_profile="primary",
+                    routes={"workforce.hiring.safety_repair": "slower"}
+                    if kind == "safety_repair"
+                    else {},
+                )
+            },
+        ),
+    )
+    store = Store(tmp_path / "agency.db")
+    _activate_test_specialist(store)
+    observed: dict[str, Any] = {}
+    original_begin = store.begin_preflight_attempt
+
+    def record_begin(**kwargs: Any) -> dict[str, Any]:
+        observed.update(kwargs)
+        return original_begin(**kwargs)
+
+    monkeypatch.setattr(store, "begin_preflight_attempt", record_begin)
+    monkeypatch.setattr(pipeline, "route", _route_to_test_specialist())
+
+    run_preflight(
+        store,
+        session_id="repaired-budget-session",
+        user_message="Review the bounded runtime lifecycle.",
+        host="hermes",
+        trace_id="repaired-budget-trace",
+        config=config,
+    )
+
+    assert observed["lease_seconds"] == expected
+    assert observed["lease_seconds"] == hook_timeout_seconds(config, harness="hermes")
+
+
 def test_store_clock_lease_exceeds_generated_hook_budget_by_write_margin(
     tmp_path: Path,
 ) -> None:
