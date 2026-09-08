@@ -14,7 +14,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-190
-candidate_commit: pending
+candidate_commit: eac2d6a20c43d6296741074ff93470470a178bae
 evidence_cutoff: 2026-09-08
 tracker_url: null
 ---
@@ -22,8 +22,9 @@ tracker_url: null
 # AR-190 second-review acceptance evidence
 
 First-review verdicts remain faithfully committed at a6efa01b, ledger
-0199f8d3: four satisfied, criterion 5 absent. This new builder is pending,
-with new d1a9260c exact-source installed proof and the explicit product-source
+0199f8d3: four satisfied, criterion 5 absent. This new builder is frozen at
+receipt candidate eac2d6a2, ledger e4941a75, with new d1a9260c exact-source
+installed proof and the explicit product-source
 criterion clarification. A new receipt candidate changes every digest, so
 no prior verdict is reused. The second and final review must run all five.
 
@@ -61,7 +62,7 @@ no prior verdict is reused. The second and final review must run all five.
 
 ## Verification
 
-No verdicts while pending. The first review remains in commit a6efa01b.
+The first review remains in commit a6efa01b.
 The isolated runner owns every verdict in the second and final all-five run.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |

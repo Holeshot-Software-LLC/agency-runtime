@@ -60,7 +60,8 @@ has not been bypassed or retried on unchanged evidence. The owner authorized
 one changed-evidence response: a fresh exact d1a9260c build, same-SHA installed
 uv plan and focused checks, plus explicit product-source/receipt-commit wording.
 That new plan passed at 2026-09-08T00:00:19Z; its second-review builder is
-pending, and no first verdict is reused under the new receipt candidate.
+frozen at receipt commit `eac2d6a2`, ledger `e4941a75`, and no first verdict is
+reused under the new receipt candidate.
 
 Planning now proves which installer the exact executing environment can use.
 A stable regular pip entry point inside the exact prefix retains an

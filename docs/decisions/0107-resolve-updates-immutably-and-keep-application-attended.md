@@ -125,7 +125,8 @@ nonexecuting plan, while all 669 compared prefix files, its entrypoint and uv
 receipt remained unchanged. The owner installation was untouched. This proves
 the existing planning boundary without adding package-mutation authority.
 
-The subsequent [exact d1a9260c product-source proof](../roadmap/acceptance/evidence/AR-190-product-source-candidate-20260908.md)
+Evidence commit `eac2d6a2` and the subsequent
+[exact d1a9260c product-source proof](../roadmap/acceptance/evidence/AR-190-product-source-candidate-20260908.md)
 preserves the first acceptance provenance finding and repeats the same safe
 installed plan from that exact source. Distinguishing the runtime candidate
 from its later evidence-only commit follows the existing acceptance lifecycle;

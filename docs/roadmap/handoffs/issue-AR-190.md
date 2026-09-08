@@ -17,8 +17,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-190
 branch: codex/ar190-uv-plan-reconciliation
-evidence_commit: d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f
-minimum_ledger_commit: 0199f8d3b19781a02679ea7b0b6a3f1e526adbcc
+evidence_commit: eac2d6a20c43d6296741074ff93470470a178bae
+minimum_ledger_commit: e4941a7556644b57bcd21efe407922b72c5ef0ff
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -36,6 +36,10 @@ isolated acceptance run. The worker owns this worktree's substantive/
 ledger checkpoints and acceptance runs; parent serializes PR publication and
 merge. This evidence-only package is not a done issue. Product implementation
 already exists at `8c7d8df44aa35d4bb7ab7698abaf0f7b2a93e47b`.
+
+The new exact d1a9260c live proof and explicit product-source clarification are
+committed at `eac2d6a2`, ledger `e4941a75`. The second-review receipt candidate
+is frozen at `eac2d6a2`; the runtime under test remains exact d1a9260c.
 
 ## Completed evidence
 
@@ -102,9 +106,8 @@ was reused before the isolated proof; worker checkpoints the completed slice.
 
 ## Next bounded work package
 
-1. Commit the new exact d1a9260c receipt, explicit criterion clarification and
-   clean record checks, with a faithful ledger pair.
-2. Freeze a new receipt candidate and audit all bounded excerpts. Run the
+1. Checkpoint this frozen second-review candidate with its faithful ledger.
+2. Audit all bounded excerpts and recheck telemetry/executable safety. Run the
    second/final default all-five isolated review under `umask 077`.
 3. Preserve every result; stop for analysis if not accepted. No third review,
    unchanged retry or authority weakening. Parent serializes the PR after
