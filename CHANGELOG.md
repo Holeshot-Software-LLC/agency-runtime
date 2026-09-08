@@ -80,9 +80,10 @@ changes rather than duplicating every commit.
 
 ### Added
 
-- Explicit `--card` views for read-only roster list, policy, config show/get,
-  and configured provider list. Existing plain output, JSON precedence and
-  secret-redaction behavior are retained; detail truncation points to complete
+- Plain-text cards for read-only roster list, policy, config show/get, and
+  configured provider list: automatic on a TTY, with `--card`/`--no-card`
+  overrides. Existing piped output, JSON precedence and secret-redaction
+  behavior are retained; detail truncation points to complete
   output. AR-251 source is implemented with verification deferred.
 
 - OpenClaw uninstall recognizes the same complete stopped-service receipt as

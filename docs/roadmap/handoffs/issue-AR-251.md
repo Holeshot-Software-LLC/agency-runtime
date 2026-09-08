@@ -9,14 +9,15 @@ related:
   - docs/roadmap/issue-AR-251-cli-presentation-richness.md
   - docs/decisions/0154-plain-text-cli-cards-over-rich-dependency.md
   - docs/worklog/2026-09-07-a1d0c965-readonly-cli-cards.md
+  - docs/worklog/2026-09-07-54bdff1f-governed-card-defaults.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-251
 branch: codex/ar251-readonly-cards
-evidence_commit: a1d0c965edc8bfb503646dbe318462740911c3d0
-minimum_ledger_commit: 869203544685b85877c246e16c47f104b1e068a0
+evidence_commit: 54bdff1f2ac3044bb0931ca4202a2320059a6f47
+minimum_ledger_commit: a6c34707ab4daf598f8bc7a4fa57ed421a0ea196
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/260
 ---
@@ -25,23 +26,26 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/260
 
 ## Checkpoint
 
-Source `a1d0c965` and immediate ledger `86920354` freeze five explicit
-read-only card views. Branch-only, verification pending; not accepted,
+Source `54bdff1f` and immediate ledger `a6c34707` freeze five read-only card
+views with ADR-0154 automatic TTY defaults and explicit overrides. The initial
+`a1d0c965` explicit-only default was corrected during review. No new ADR or
+presentation-policy exception remains. Branch-only, verification pending; not accepted,
 installed, or done. Current main AR-410/411 source and faithful merge ledgers
 were fast-forwarded through `c050be37` before this checkpoint.
 
 ## Completed evidence
 
 Source implements `roster list`, `policy`, `config show`, `config get`, and
-`config provider list` cards using the existing renderer. Default plain/TTY
-output paths remain unchanged; existing JSON branches take precedence.
+`config provider list` cards using the existing renderer and `use_card_default`.
+Non-TTY and explicit `--no-card` plain output remain unchanged; TTY defaults to
+cards, and existing JSON branches take precedence over both default and explicit cards.
 Config cards consume the original redacted display projection and preserve
 explicit `--raw`; provider cards omit direct keys. Disabled roster filtering,
 policy validation/exit codes, and empty/error paths remain in place.
 
-Detail truncation is disclosed with a complete-output alternative. New focused
+Detail truncation points to `--no-card` or existing `--json` for complete output. New focused
 regressions are written but unrun. Parser golden artifact mechanically refreshed
-to `281fdc085e51900d93fef7210e104920314831cd0d59e0c59d134246b1f73f3e`.
+to `ca0221ef36d806dc4bf86dcf53136b7d5c3553e135c2eb284bac32b4a6ef9863`.
 
 ## Exact blocker
 
@@ -74,6 +78,6 @@ owner configuration reads, installation, or dashboard/service mutation.
 
 ## Constraints
 
-No new dependency, automatic TTY change, implicit raw output, mutating wizard,
+No new dependency, TTY policy outside ADR-0154, implicit raw output, mutating wizard,
 upgrade control, roster-diff creation change, authenticated model discovery,
 live-watch client, acceptance verdict, tracker closure, or done-state flip.

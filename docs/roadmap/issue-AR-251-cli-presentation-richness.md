@@ -16,6 +16,7 @@ related:
   - tests/test_cli_readonly_cards.py
   - docs/roadmap/handoffs/issue-AR-251.md
   - docs/worklog/2026-09-07-a1d0c965-readonly-cli-cards.md
+  - docs/worklog/2026-09-07-54bdff1f-governed-card-defaults.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -42,24 +43,28 @@ grouped metadata. The user asked for the CLI to be "pretty too."
   hiring commands.
 - ADR-0154 records the decision to use plain-text cards over a `rich`
   dependency (zero-dependency install property).
-- September 7 source `a1d0c965`, immediate ledger `86920354`, adds the five
-  explicit read-only views below. This is a branch source checkpoint, not
+- September 7 source `54bdff1f`, immediate ledger `a6c34707`, adds the five
+  read-only views below, correcting initial `a1d0c965` to follow ADR-0154's
+  automatic TTY behavior. This is a branch source checkpoint, not
   installed delivery or verified acceptance. Tests are written but unrun at
   the owner's code-first/defer-tests-and-CI direction; status stays
   `in_progress`, with the original checkbox states preserved.
 
 | Command | Card projection | Compatibility boundary |
 |---|---|---|
-| `agency roster list --card` | One card per enabled row | Same enabled filter; plain tab-separated output unchanged |
+| `agency roster list --card` | One card per enabled row | Same enabled filter; non-TTY/`--no-card` tab-separated output unchanged |
 | `agency policy --card` | Summary, action and division cards | Existing validation/exit code; `--json` wins unchanged |
 | `agency config show --card` | One card per top-level display section | Uses existing redacted YAML projection; `--raw` only when explicitly requested |
 | `agency config get KEY --card` | One existing redacted display value | Same missing-key error/exit and explicit `--raw` behavior |
 | `agency config provider list --card` | Ordered public provider fields | Existing direct-key omission; `--json` wins unchanged |
 
-These new flags default false to preserve current plain/TTY output under the
-owner-approved compatibility scope. Existing hiring/workforce automatic TTY
-cards remain unchanged. Card fields visibly ellipsize; bounded detail sections
-report truncation and point to the complete plain/JSON output. No presentation
+All five views use the existing `use_card_default` policy: automatic cards on a
+TTY, plain output otherwise, explicit `--card`/`--no-card` overrides, and JSON
+precedence where supported. Existing hiring/workforce behavior is unchanged.
+The first source checkpoint's explicit-only default was corrected during review;
+it is historical, not a new ADR exception. Card fields visibly ellipsize;
+bounded detail sections report truncation and point to `--no-card` or existing
+`--json` for complete output. No presentation
 dependency, color system, live-watch client, wizard, mutation command,
 authenticated model discovery, or extra owner-state read was introduced.
 
@@ -77,12 +82,12 @@ AR-236; upgrade controls remain AR-250, not implicit work in this slice.
 
 ## Verification boundary
 
-`tests/test_cli_readonly_cards.py` covers parser opt-in and mutation refusal,
-default/plain compatibility, JSON precedence, enabled-roster filtering, config
+`tests/test_cli_readonly_cards.py` covers parser overrides and mutation refusal,
+automatic TTY cards, non-TTY/explicit plain bytes, JSON precedence, enabled-roster filtering, config
 scalar/nested redaction and explicit raw output, empty/error paths, policy
 validation, and truncation disclosure. These regressions have **not run**.
 The existing whole-parser golden was mechanically regenerated to
-`281fdc085e51900d93fef7210e104920314831cd0d59e0c59d134246b1f73f3e`,
+`ca0221ef36d806dc4bf86dcf53136b7d5c3553e135c2eb284bac32b4a6ef9863`,
 without executing test functions. Formatting and `git diff --check` are artifact
 maintenance, not a passing test result. No CI, acceptance verifier, live CLI,
 host canary, provider call, or installation was run for this source package.
