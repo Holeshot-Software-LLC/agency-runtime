@@ -27,96 +27,81 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735
 
 ## Checkpoint
 
-Source is on main at `4db6be16` and installed in the owner CLI. Exact-main
-portable artifact checks and fresh installed generated-host smoke passed.
-All 613 package payload files match the exact-main wheel. Four owner hosts
-were refreshed to runtime `1b6aafe178de`; OpenClaw remains separately installed.
-Worktree: `/tmp/agency-runtime-evening-live-delivery`.
-Tracker #735 and all filing reciprocals are present.
-Source PR: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/739.
-It deliberately leaves #735 open pending the required installed live checkpoint.
-
-The reviewed code reserves required downstream calls and caps subject inference
-at one actual call. Its final receipt refinement appends only the exact budget
-cause when otherwise lost. The worker owns these scoped source/record commits;
-the parent owns installed delivery. Fresh native checks are the next boundary.
+Source PR #739 merged as `4db6be169a4f86185c261d93814f1106d79f0136`.
+All five isolated source criteria satisfy the frozen `f670e6b5` candidate.
+Owner CLI installed exact merge; all 613 package files match its verified wheel.
+Codex, Claude, Hermes and ZCode refreshes exit zero/runtime `1b6aafe178de`.
+OpenClaw remains separately sourced; dashboard service and configuration unchanged.
+Package phase: live_demo; status remains in_progress, tracker #735 remains open.
+Owned tree: `/tmp/agency-runtime-evening-live-delivery`.
 
 ## Completed evidence
 
-- New fixed-response flow: subject1/planner1/recruiter2/critic1 succeeds within
-  strict five; subject plus both repairs requires six and refuses the doomed
-  repair under five. No-subject default repair controls remain unchanged.
-- Refunded pre-request failures may use a fallback; actual subject requests
-  across the entire provider chain never exceed one.
-- Exact stage caches remain usable before their own admission checks; the
-  strict critic is fresh. Valid subject propagation and critic veto/repair
-  behavior are covered without model calls.
-- Real Store tests retain budget causes for zero-call and recruiter-reservation
-  failure; existing status/verifier causes remain and duplicates are prevented.
-- Pre-receipt-refinement broad suite: 532 passed, 1 skipped, 3 Windows deselected
-  in 26.47s. Final related suite: 201 passed in 2.99s.
-- Independent review: no remaining findings after receipt recheck; final
-  independent subset 62 passed in 0.38s.
-- Full 188-mutation run passed before receipt refinement. Fresh five-mutation
-  subset (four new anchors plus fixture-support/default-budget control) killed
-  all five after refinement. Routing, Ruff, format and diff checks passed.
-- Initial nonprivate-umask conformance setup and four-only fixture-copy runs
-  failed before mutations; exact attempts are preserved in the evidence draft.
-- Combined AR-408/409: 210 focused passes in 3.89s; named production spine
-  1085 passes/3 skips in 69.50s; fresh five mutation kills and routing passed.
+- Fixed-response subject1/planner1/recruiter2/critic1 fits unchanged strict five.
+  Actual subject requests across fallback chain never exceed one; pre-request
+  refusals refund capacity. Mandatory validation/critic and exact caches remain.
+- Combined focused 210 passed; named spine 1085 passed/three skips in 69.50s;
+  independent 62 passed; final five mutation anchors killed; routing/UI224 pass.
+- Clean exact-main artifact build, portable verifier and strict Twine pass.
+  Fresh installed CLI/MCP/dashboard and all-five generated-host smoke: 8/0/0.
+- Read-only post-install trust: eight enabled/present Codex hooks, all modified,
+  none trusted. One current-profile verify refuses `codex_hook_trust_not_ready`
+  without output, child proof or attestation; no bypass/approval/retry.
+- Claude one native180s attempt times out. Exact fingerprint binds a 92s
+  preflight to the fixed warm-up, not the later nonce. Warm-up has subject1,
+  planner2; 89,300ms provider time, contract rejection then timeout. Actual nonce
+  has no surviving provider receipt; no zero-call inference from its absence.
+- Hermes actual ordinary process exits0 after401.603s, battery correctly fails
+  staffing completeness. All five header labels absent. Exact own preflight
+  records planner49,849ms, cold embedding43,371ms, rejected reranker31,040ms,
+  recruiter timeout120,226ms:244,486ms provider time in246,407ms window.
+- ZCode current install is registered/enabled; native executable/version absent.
+  Its ordinary-battery API is unsupported (one diagnostic mistake recorded);
+  supported readiness inspection confirms no live attempt.
 
 ## Exact blocker
 
-AR-408 is integrated. Its historical five-call current-flow test now exercises
-the isolated exhausted-critic boundary; the accepted original snapshot is
-unchanged. Acceptance is frozen to combined committed candidate `f670e6b5`.
-All five criteria have isolated satisfied judgments; installed owner-harness
-live delivery evidence remains pending. Keep AR-409 in_progress and #735 open.
-The first all-five verifier invocation produced no judgments: the exact Claude
-package/bin directories were 0775 and the executable trust guard refused them.
-Authorized exact `chmod g-w` restored 0755 and local usable status. Actor unknown;
-no bytes/profiles/guards changed. The retry satisfied 1–4, then criterion 5 was
-unavailable; both directories had returned to 0775 with 00:08:07/08Z mtimes.
-The parent authorized one supported Codex-verifier attempt for only missing
-criterion 5; it satisfied the same frozen candidate's excerpts. Preserve all
-five judgments. No additional Claude repairs or guard changes occurred.
+No successful current combined-candidate native staffing/child delivery is
+proven. Codex requires owner approval for new hook hashes; do not repeat checks
+unattended. Claude spends its shared deadline on a staffed bootstrap warm-up;
+AR-410 owns a separate private-control-off warm-up fix, without disabling the
+actual nonce canary. Hermes's current failure is provider/schema/timeout work,
+not the solved critic-budget attribution defect. Keep AR-409 open.
+
+Earlier Codex22:04 and OpenClaw ordinary successes retain their original source
+scope and do not prove AR-409. Running parent still has an old hook runtime and
+no current header snapshot; an on-disk install does not change its launch env.
 
 ## Same-task continuity
 
-Preserve the three reviewed runtime/test paths and their record paths.
-AR-408 and main `f408b6f2` are integrated. Runtime bytes remain identical to
-artifact source `51909ae8`. Never discard another worker's changes.
-Telemetry reached 40.8% remaining at 2026-09-07T23:31:11Z. The filing has a clean
-substantive/ledger pair; checkpoint this implementation before live work.
+Preserve all five acceptance judgments and their unavailable-attempt history.
+Claude executable namespace returned to0775 repeatedly; exact restrictive
+repairs were bounded, actor unknown. No jobs/updaters or guard policy changed.
+The exact-main artifact/install/native receipt is
+`docs/roadmap/acceptance/evidence/AR-409-installed-live-delivery-20260907.md`.
+Private raw captures contain no authority for broader claims.
+The next substantive/ledger pair records this live failure checkpoint.
 
 ## Next bounded work package
 
-1. Fresh read-only Codex trust inventory, then one exact-profile native canary.
-2. One Claude native canary and ordinary Hermes/ZCode harness checks.
-3. Inspect actual headers, injection and durable attempt receipts; record
-   failures without expanding budgets or claiming generated smoke is live proof.
-4. Publish the bounded delivery receipt and merge before 01:00Z hard stop.
+1. Finish AR-410's narrowly scoped warm-up fix, tests and independent review.
+2. If time permits, install that exact source and run one new-candidate Claude
+   canary with unchanged180s deadline; keep actual Agency proof requirements.
+3. Merge bounded delivery records and stop cleanly by September8 01:00UTC.
+4. On a later owner resume, address the explicit trust/provider/native gaps;
+   do not reopen accepted source tests or repeat unavailable operator actions.
 
 ## Verification
 
-Exact commands/results and failed intermediate attempts are in
-docs/roadmap/acceptance/issue-AR-409.md. The final focused command is:
-
-```bash
-env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_staffing_call_reservations.py tests/test_preflight_provider_deadline.py tests/test_preflight_failure_diagnosis.py tests/test_transport_failure_causes.py tests/test_workforce_inference.py tests/test_decision_conformance.py -q -W error -k 'not windows'
-```
-
-No exhaustive workflow, coverage shard, compatibility matrix or staffing model
-call was run. Two Claude passes produced four satisfied judgments; the first
-pass and second pass's fifth criterion were locally unavailable. One supported
-Codex-only missing-criterion invocation then satisfied criterion 5.
+Full commands, artifacts, native timings, hashes, trace IDs and limitations are
+in the acceptance and installed-delivery records. Header and child evidence
+were inspected, not inferred from exit codes. No exhaustive workflow, coverage
+shards, compatibility matrix or native Windows. No paired latency/quality
+equivalence or all-host success claim.
 
 ## Constraints
 
-Keep default/owner budgets, providers, zero-signal trigger, shared deadline,
-validation, critic and hiring policy. No deterministic picker, invented hints,
-trust bypass, credential/profile mutation or historical receipt rewriting.
-Conservative future cache/gap reservations can abstain sooner. Five calls do
-not fund subject plus both repairs and critic; no paired live quality or
-end-to-end latency-equivalence claim is supported. Builder records evidence;
-the isolated verifier alone judges acceptance.
+Keep owner budgets/providers, subject trigger, shared deadline, validation,
+critic and hiring policy. No deterministic staffing, trust bypass, persistent
+credential/profile changes, invented model/header fields or historical rewrites.
+Existing private client credential was supplied only to test child environments.

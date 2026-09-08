@@ -52,7 +52,10 @@ installed in the owner CLI. All 613 package payload files match the exact-main
 wheel. Codex, Claude, Hermes and ZCode were refreshed to runtime `1b6aafe178de`;
 OpenClaw's separate installation and the running dashboard were preserved.
 Package phase: live_demo. All five isolated source criteria are satisfied;
-fresh native output/injection checks remain pending. See
+fresh native output/injection checks have completed but do not pass: Codex
+requires renewed hook trust; Claude exhausts its native deadline after an
+expensive staffed warm-up; Hermes returns without completed staffing; ZCode
+lacks a native executable. See
 [installed delivery evidence](acceptance/evidence/AR-409-installed-live-delivery-20260907.md).
 Keep tracker #735 open until the scoped installed live checkpoint is recorded.
 
