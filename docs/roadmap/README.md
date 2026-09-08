@@ -449,6 +449,7 @@ bounded package are in AR-404's
 | `AR-409` | [Reserve required staffing calls before optional work](issue-AR-409-reserve-required-staffing-calls.md) | in_progress | p1 | reliability | [#735](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735) |
 | `AR-410` | [Keep Claude transport warm-up outside Agency staffing](issue-AR-410-disable-claude-warmup-staffing.md) | in_progress | p1 | host-integrations | [#744](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/744) |
 | `AR-411` | [Retain recall catalog identity in failure receipts](issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | in_progress | p2 | observability | [#746](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/746) |
+| `AR-412` | [Refresh vulnerable optional-tooling lock entries](issue-AR-412-refresh-vulnerable-tooling-lock.md) | in_progress | p1 | security | [#750](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/750) |
 
 ## Traceability
 
@@ -458,6 +459,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
+| [AR-412](issue-AR-412-refresh-vulnerable-tooling-lock.md) | Pending substantive checkpoint, `7e66ea84`, `362a6c1e`, `59b541b7`, `8869cb40`, `a27d2c1a`, `ca53e25e`, `f4264b54`; narrow two-package lock refresh, tests deferred | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md) |
 | [AR-01](issue-AR-01-selection-explain-receipts.md) | [`42f6580`](../worklog/README.md) | [ADR-0015](../decisions/0015-versioned-selection-explain-receipts.md) |
 | [AR-02](issue-AR-02-specialist-coverage-gaps.md) | [`2515bfc`](../worklog/README.md) | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md), [ADR-0021](../decisions/0021-full-companion-policy-with-precedence.md), [ADR-0033](../decisions/0033-explicit-companion-route-availability.md) |
 | [AR-03](issue-AR-03-supported-host-integrations.md) | [`17a62dd`](../worklog/README.md), [`2515bfc`](../worklog/README.md) | [ADR-0024](../decisions/0024-native-host-packages-and-minimal-bridges.md), [ADR-0028](../decisions/0028-host-support-maturity-and-reversible-install.md), [ADR-0036](../decisions/0036-capability-bound-host-canary-attestations.md) |

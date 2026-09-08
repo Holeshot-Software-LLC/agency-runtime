@@ -2165,16 +2165,23 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fc699ff3` | 2026-09-07 | fix(openclaw): bind complete installed-copy provenance for AR-270 | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 | `bc6126bb` | 2026-09-07 | docs(AR-251): align checkpoint with governed card defaults | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-bc6126bb-card-default-checkpoint.md) |
 | `a9073fe6` | 2026-09-07 | chore(AR-270): integrate published live-delivery checkpoint | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `7e66ea84` | 2026-09-07 | fix(deps): refresh vulnerable optional-tooling lock entries (AR-412) | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `9b15107a` | 2026-09-07 | Merge pull request #751 from Holeshot-Software-LLC/codex/ar280-authenticated-internal-purpose | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 | `6e701219` | 2026-09-07 | docs(AR-270): retain closed-provenance review and deferred runtime gates | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 | `93866796` | 2026-09-07 | chore(AR-251): integrate published delivery and Hermes boundary records | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `362a6c1e` | 2026-09-07 | chore(AR-412): integrate published delivery and Hermes boundary records | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `59b541b7` | 2026-09-07 | docs(AR-412): cite maintainer releases within repository link boundary | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `9aba5133` | 2026-09-07 | chore(AR-270): integrate published AR-280 rendering fix | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `8869cb40` | 2026-09-07 | docs(AR-412): record independent lock scope review | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `ff9f11cb` | 2026-09-07 | Merge pull request #752 from Holeshot-Software-LLC/codex/ar270-openclaw-installed-copy-provenance | [AR-270](../roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md) | [Detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 | `5f20cac1` | 2026-09-07 | chore(delivery): integrate published OpenClaw provenance repair | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `a27d2c1a` | 2026-09-07 | chore(delivery): integrate published OpenClaw provenance repair | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `e348d713` | 2026-09-07 | Merge pull request #753 from Holeshot-Software-LLC/codex/ar251-readonly-cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
 | `fb360485` | 2026-09-07 | fix(AR-287): budget reachable repair and fallback profiles | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `14899a51` | 2026-09-07 | chore(AR-287): integrate published CLI and uninstall repairs | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `185db01a` | 2026-09-07 | docs(AR-287): checkpoint reviewed timeout repair and deferred verification | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
+| `ca53e25e` | 2026-09-07 | chore(AR-412): integrate published read-only card views | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `f4264b54` | 2026-09-07 | Merge pull request #755 from Holeshot-Software-LLC/codex/ar412-security-lock-refresh | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
