@@ -45,12 +45,13 @@ Dependency provenance from the lock is explicit:
 - `release` extra → twine → keyring → Linux secretstorage → cryptography.
 - The default runtime still requests only PyYAML.
 
-The [pip maintainer repair](https://github.com/pypa/pip/pull/14110) removes a
+The [pip maintainer release notes](https://pip.pypa.io/en/stable/news/) identify the repair removing a
 second URL-path decode and hardens download-path joins. Repository alert #2,
 GHSA-qwm4-qh6w-59xr, identifies versions below 26.2.0 as affected.
-The [cryptography maintainer advisory](https://github.com/pyca/cryptography/security/advisories/GHSA-g6cj-pr64-35w5)
-identifies distinguishable PKCS#7 decryption failures, introduced in 44.0.0
-and repaired in 50.0.0. Its application-specific attack prerequisites are not
+The [cryptography maintainer release notes](https://cryptography.io/en/latest/changelog/)
+identify the repair for distinguishable PKCS#7 decryption failures in 50.0.0.
+Maintainer advisory GHSA-g6cj-pr64-35w5 identifies introduction in 44.0.0.
+Its application-specific attack prerequisites are not
 established in Agency. The repository alert labels it high while the maintainer
 page labels it moderate; the patch decision does not depend on that difference.
 

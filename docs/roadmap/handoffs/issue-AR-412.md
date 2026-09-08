@@ -14,8 +14,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-412
 branch: codex/ar412-security-lock-refresh
-evidence_commit: e790c4d4d957ae7ed951285922f5bff6733934c5
-minimum_ledger_commit: 245a70c85d938027145443d2c91b371b79b0c746
+evidence_commit: 7e66ea8412a3223f4c5601f598b233ec7b3251ce
+minimum_ledger_commit: c6bfd92ccfcb7dc6419d6d8a92f7b4142dc810db
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/750
 ---
