@@ -57,7 +57,11 @@ requires renewed hook trust; Claude exhausts its native deadline after an
 expensive staffed warm-up; Hermes returns without completed staffing; ZCode
 lacks a native executable. See
 [installed delivery evidence](acceptance/evidence/AR-409-installed-live-delivery-20260907.md).
-Keep tracker #735 open until the scoped installed live checkpoint is recorded.
+Keep tracker #735 open until the scoped installed live checkpoint passes.
+The later canary-only AR-410 source `0e8e9307` is installed and the four pointers
+now identify `d542bee67724`; staffing source remains unchanged. The owner
+deferred further CI/tests before its planned native rerun and extended coding
+through midnight Eastern. Installation is not native verification.
 
 Fixed-response tests now run subject1 + planner1 + recruiter2 + critic1 within
 five calls. They also demonstrate that subject1 + planner2 + recruiter2 +

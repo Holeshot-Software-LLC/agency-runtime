@@ -181,6 +181,39 @@ installation is unchanged, so its earlier ordinary native pass remains the
 available host evidence, not proof of AR-409's new source. A refreshed on-disk
 hook does not retroactively replace the running parent process.
 
+## Subsequent AR-410 installation and owner-directed verification deferral
+
+The separately reviewed warm-up-only correction is source
+`0e8e9307071bd25260d17fb623ebc7d88c56aef0`: four added argv lines apply
+Claude's supported session setting `disableAllHooks=true` only to bootstrap.
+The actual nonce invocation and its proof gates are unchanged. An ineffective
+private-control proposal was rejected by independent review before installation:
+installed hook argv binds owner control explicitly. That proposal was removed.
+
+Before the owner deferred further tests, the corrected source passed seven new
+focused cases, 28 independent adjacent checks, named spine1085/three skips in
+70.05s and UI224. Its detached canonical build, independent portable verifier
+and strict Twine check pass. Fresh isolated installed CLI/MCP/dashboard smoke
+and generated all-host smoke8/0/0 pass (5.20s), pip check clean.
+
+- Wheel SHA256: `7a98a457c338533597e4573747adb3d377498fe38d24be9b390ceb1c86a9387d`.
+- Sdist SHA256: `af73f855210edc25e4231c5a5b934d8dc6db53634f62207840db534fc219f0e7`.
+- Existing owner CLI upgraded to exact public VCS source at
+  00:49:18.283235–00:49:26.086800Z, exit zero. All613 payload files match that
+  wheel; metadata names the exact commit, Agency0.1.0/PyYAML6.0.3 unchanged.
+- Normal Claude/Codex/Hermes/ZCode refreshes all exit zero, spanning
+  00:50:11.579780–00:50:23.582966Z, with no dashboard restart.
+- At00:52:50.742539Z all four pointers identify
+  `d542bee67724d5793cc439ab7d0e5a3f7a0b34624767eea6e96cb8ded1c7f5d9`.
+  Owner wrapper/configuration and separate OpenClaw pointer remain identical
+  in bytes, mode, inode and recorded timestamps to the earlier inventory.
+
+The newly planned native Claude run was **not launched**: the owner explicitly
+prioritized code and deferred further CI/tests, then extended the timebox to
+midnight Eastern (2026-09-08T04:00Z). No new-candidate header, activation,
+warm-up timing improvement or all-host success is claimed. AR-410 remains
+in_progress pending that empirical check; AR-409's live limitations remain.
+
 Raw installation, artifact and pointer receipts remain owner-private; this
 repository contains their bounded evidence projection, not credentials or model
 bodies. No exhaustive workflow or native Windows work was run.

@@ -30,7 +30,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/735
 Source PR #739 merged as `4db6be169a4f86185c261d93814f1106d79f0136`.
 All five isolated source criteria satisfy the frozen `f670e6b5` candidate.
 Owner CLI installed exact merge; all 613 package files match its verified wheel.
-Codex, Claude, Hermes and ZCode refreshes exit zero/runtime `1b6aafe178de`.
+Initial Codex, Claude, Hermes and ZCode refreshes exit zero/runtime `1b6aafe178de`.
+Subsequent reviewed AR-410 source `0e8e9307` is installed/all613 files matched;
+four refreshes now identify `d542bee67724`. Its native rerun was not launched
+because the owner deferred tests and extended code-first work to04:00UTC.
 OpenClaw remains separately sourced; dashboard service and configuration unchanged.
 Package phase: live_demo; status remains in_progress, tracker #735 remains open.
 Owned tree: `/tmp/agency-runtime-evening-live-delivery`.
@@ -84,12 +87,11 @@ The next substantive/ledger pair records this live failure checkpoint.
 
 ## Next bounded work package
 
-1. Finish AR-410's narrowly scoped warm-up fix, tests and independent review.
-2. If time permits, install that exact source and run one new-candidate Claude
-   canary with unchanged180s deadline; keep actual Agency proof requirements.
-3. Merge bounded delivery records and stop cleanly by September8 01:00UTC.
-4. On a later owner resume, address the explicit trust/provider/native gaps;
-   do not reopen accepted source tests or repeat unavailable operator actions.
+1. Merge AR-410's reviewed source and the exact installation/delivery records.
+2. Continue code-first backlog work until September8 04:00UTC under the owner's
+   extension; defer new CI/tests and do not mislabel unverified work as done.
+3. Preserve the explicit trust/provider/native gates for subsequent verification;
+   do not repeat unavailable operator actions or change actual proof requirements.
 
 ## Verification
 
