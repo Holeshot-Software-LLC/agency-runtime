@@ -104,8 +104,12 @@ native review accepted uncached staffing in64.007s and its exact response hash
 matches terminal Stop-hook acceptance. The original handoff failure was a valid
 critic veto after a successful recruiter, not the earlier transport failure.
 The same handoff wording reproduced the veto in the fresh review session.
-Semantic diagnosis and isolated acceptance remain open; see the native-receipts
-worklog for exact sessions, traces, timings and evidence limitations.
+A single instrumented standalone call accepted a newly inferred handoff team
+in19.557s; that different proposal cannot adjudicate either native veto. No
+production or configuration repair is claimed for the veto. Frozen-source
+conformance passes188/188 with source_unchanged=true. The scoped ordinary native
+demonstration is complete; failing-proposal diagnosis and isolated acceptance
+remain open. See the native-receipts worklog for exact evidence and limitations.
 
 ## Approach
 

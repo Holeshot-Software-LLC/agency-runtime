@@ -93,18 +93,41 @@ planner, recall, recruiter and critic calls, followed by the same semantic veto.
 Whole command 65.692s. The native failure response carries truthful steward-only
 headers and delivers a bounded handoff without claiming staffing acceptance.
 This reproduces the rejection class in different preceding context; it is not
-an exact replay of the historical proposal. One instrumented installed-provider
-diagnostic remains pending to inspect the inferred plan and team.
+an exact replay of the historical proposal. The native failure has no accepted
+finalization event. Its body correctly preserves the earlier review-only scope.
+
+One instrumented call to the unmodified installed `plan_and_staff_workforce`,
+using the same handoff wording, recorded newly inferred planner/recruiter/critic
+packets in private temporary files. It accepted in19.557s. Inference selected
+`technical-writer` for handoff authoring and `reality-checker` for independent
+review; the critic returned approved true with no rejection codes. The complete
+eligible authoring set also included `project-delivery-response-documentation-specialist`
+and `finance-snapshot-json-documentation-verifier`. No specialist was selected,
+substituted or replayed by the operator. The normal call budget and strict
+validator remained intact. This was a fresh standalone request without the
+native session's preceding context, not a reconstruction of either failed team.
+
+The captured successful proposal cannot adjudicate either failed proposal. It
+shows that the wording is not deterministically rejected, not that the semantic
+veto is fixed or erroneous. No provider, critic, validator, retry limit or owner
+configuration is changed. Further useful diagnosis needs a failing proposal and
+its actual critic packet captured together; another uncaptured successful
+repeat would add no causal evidence.
 
 ## Verification
 
 Focused failure/inference/subject/finalization tests: 189 passed. Named Python
 production spine: 1151 passed, 3 skipped, 75.76s. UI: 224 passed. Ruff check and
 format: 778 files pass. Metadata/docs: 1325 documents. Strict tracker: 406 items.
-Routing gates pass. Decision-conformance remains pending after two environment
-setup failures: resolving a symlinked venv lost pytest, then a copied-interpreter
-run rejected test directories created under the inherited permissive umask.
-The corrected copied-interpreter/private-umask run is in progress on frozen source.
+Routing gates pass. Frozen-source decision-conformance passes all188mutations,
+zero survived/invalid, source_unchanged=true. Two earlier baseline attempts were
+runner-environment failures: resolving a symlinked venv lost pytest, then the
+copied-interpreter run rejected directories made under the inherited permissive
+umask. The successful run used the existing copied interpreter with pytest and
+umask077; no runtime trust check was weakened. Documentation edits are outside
+this gate's declared source scope. Use the repository's CLI entrypoint with that
+interpreter and `PYTHONPATH=.`; the system Python and bare Ruff executable were
+not sufficient in this session.
 No exhaustive corpus, coverage shards, compatibility matrix or Windows work.
 
 ## Decisions and follow-ups
@@ -112,6 +135,10 @@ No exhaustive corpus, coverage shards, compatibility matrix or Windows work.
 Preserve strict validators, critic independence and inference-owned selection.
 A valid veto is not a transport fault and a repeat cannot be declared erroneous
 without inspecting its proposal. Keep AR-414 and AR-415 open; no isolated
-acceptance verdicts or closure are claimed. Next bounded step: inspect the
-handoff diagnostic and finish the frozen-source gate, then record the scoped
-outcome through the owned branch, PR, and exact ledger.
+acceptance verdicts or closure are claimed. The bounded native demonstration is
+complete: current-process integration, injected cards, exact truthful header,
+and terminal acceptance have evidence. Handoff-veto correctness remains unknown.
+The next diagnostic package must capture a failing plan/proposal/critic packet
+together under the same native context, and fix only a demonstrated defect.
+The authoritative receipt must remain immutable; do not load the rejected team
+or recast an approved standalone sample as a repaired native handoff.
