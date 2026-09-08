@@ -79,3 +79,9 @@ Retained publication is PR #742. Final integration checks pass metadata and
 strict docs for 1264 Markdown files, policy availability, exact worklog index
 for 2107 substantive commits, tracker parity for 400 roadmap records and diff
 whitespace. The product/script/test/packaging diff against main is empty.
+
+PR #742 merged as `bad847ab3828f0cd3ac5dbd92b4c76e34edfee3e` at
+2026-09-08T00:40:01Z after exact-head review of
+`9cc0ab8eac613027288bce96a0b9a9013cc28188`; hosted readback is MERGED.
+No hosted checks were reported. The issue remains in_progress, and the
+publication token passes to AR-194. No mapped tracker was created or closed.

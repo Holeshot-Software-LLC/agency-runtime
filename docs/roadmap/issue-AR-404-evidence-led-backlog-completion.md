@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
+  - docs/roadmap/acceptance/evidence/AR-194-service-runtime-reconciliation-20260907.md
   - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
   - docs/roadmap/acceptance/evidence/AR-191-v2-checklist-retirement-20260907.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
@@ -385,9 +387,19 @@ Its exact aliases, arguments, exit-code reporting and existing-Store guards
 remain implemented; 23 fresh offline checks pass. All original checkbox states
 are preserved. AR-180's restricted one-card exec proof is not the removed grant
 graph or its broader TUI/Desktop/multi-card/child-only acceptance. Parent
-has authorized publication at order45 after AR189/190; normal main integration
-preserves all frozen acceptance candidates. Until merged this remains a branch
-disposition. No tracker action or fresh global count is claimed.
+published order45 in PR741, merged a8c2ca54 at00:33:11Z September8; normal main
+integration preserves all frozen acceptance candidates. No tracker action or
+fresh global count is claimed.
+
+AR-194's source-only cross-version inspection fix remains implemented. Fresh
+launcher/service-core/service tests pass116 with42 name-filtered deselections
+in2.75s. Installed owner CLI status is read-only and reports a current, owned,
+active, reachable Linux systemd service with no repair needed; four inspection
+modules match source. ADR-0117 removes only the obsolete AR-196 ceremony
+dependency, with reciprocity; all original five criterion states remain.
+Native Windows stale-task/runtime repair and post-repair reachability stay
+open. Queue order47 is reserved after AR-190/191/192; this is a branch-only
+checkpoint, not another completion or a claim of native Windows proof.
 
 The owner requires oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
@@ -616,9 +628,9 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish AR-191's authorized retirement at order45, then release the serial
-publication token for AR-192. Preserve every retained Windows and broader
-live-evidence hold. AR-185/408/409 source and AR-189/190 are already published.
+AR189/190/191 are published. Continue parent-coordinated serial AR192 and
+AR194 packages; merge current main normally, preserving frozen acceptance
+candidates and live identities. Root final delivery begins publication by00:52Z.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override
