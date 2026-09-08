@@ -2268,6 +2268,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fd2b182d` | 2026-09-08 | docs(hosts): checkpoint merged native terminal repairs | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
 | `80280bfe` | 2026-09-08 | Merge pull request #800 from Holeshot-Software-LLC/codex/ar404-native-recovery-20260908 | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
 | `5ff8e85c` | 2026-09-08 | fix(staffing): bind reranker output to offered candidates | null | null |
+| `36b491ec` | 2026-09-08 | docs(staffing): record AR420 installed repair checkpoint | null | null |
 <!-- worklog:end -->
 
 ## Provenance notes
