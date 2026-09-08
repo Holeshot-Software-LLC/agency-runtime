@@ -63,3 +63,5 @@ Source `7e66ea84` is the exact targeted lock refresh. The successful corrected r
 Integration `362a6c1e` preserves the published installed-delivery and retained Hermes purpose-boundary records with their faithful merge ledgers. Independent source ownership and deferred execution remain unchanged.
 
 Record correction `59b541b7` replaces cross-repository GitHub links rejected by the documentation gate with official maintainer release-note references. Advisory identifiers, patch floors and exact source checkpoint remain intact; no runtime or lock change.
+
+Review record `8869cb40` preserves the independent parsed-lock comparison: only the two requested records changed, all other 64 records and direct requirements unchanged, tag inventories retained. It also qualifies the Linux dependency path by Twine's architecture markers. No tests or installation ran.
