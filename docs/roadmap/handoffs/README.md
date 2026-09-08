@@ -75,10 +75,12 @@ behavior.
 ## Active capsules
 
 - [AR-369 process-versus-installed runtime guidance](issue-AR-369.md)
+- [AR-287 complete static timeout route budgets](issue-AR-287.md)
 - [AR-251 read-only CLI cards](issue-AR-251.md)
 - [AR-411 bounded catalog-identity diagnostics](issue-AR-411.md)
 - [AR-409 required staffing call reservations](issue-AR-409.md)
 - [AR-410 Claude transport warm-up isolation](issue-AR-410.md)
+- [AR-371 next-turn resident binding recovery](issue-AR-371.md)
 - [AR-270 OpenClaw installed-copy provenance](issue-AR-270.md)
 - [AR-404 evidence-led backlog completion](issue-AR-404.md)
 - [AR-400 staffing correctness and performance](issue-AR-400.md)
@@ -95,6 +97,7 @@ behavior.
 - [AR-205 inference-safe exact specialist staffing](issue-AR-205.md)
 - [AR-207 preflight and delegation failure diagnostics](issue-AR-207.md)
 - [AR-264 actionable contractor execution profiles](issue-AR-264.md)
+- [AR-284 provider fallback versus stage accounting](issue-AR-284.md)
 - [AR-280 authenticated Hermes internal invocation boundary](issue-AR-280.md)
 - [AR-265 contextual turn classification](issue-AR-265.md)
 - [AR-289 native reranker transports](issue-AR-289.md)

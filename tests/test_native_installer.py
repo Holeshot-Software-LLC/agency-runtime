@@ -8,6 +8,7 @@ import subprocess
 import threading
 import time
 from argparse import Namespace
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -832,6 +833,178 @@ def test_host_hook_timeout_covers_legacy_provider_gap_hiring_fallback() -> None:
     )
 
     assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == 145
+
+
+def _static_route_budget_config() -> AgencyConfig:
+    return AgencyConfig(
+        judge=JudgeConfig(timeout=1, model="", base_url=""),
+        ollama=OllamaConfig(enabled=False, model=""),
+        workforce=WorkforceConfig(
+            mode="fast",
+            dense_recall_mode="off",
+            fast_call_budget=4,
+            hiring_call_budget=6,
+            hiring_repair_budget=1,
+            max_work_units=1,
+        ),
+        inference=InferenceConfig(
+            profiles={
+                name: InferenceProfile(
+                    name=name,
+                    adapter="ollama",
+                    model=f"{name}-model",
+                    base_url="http://127.0.0.1:11434",
+                    timeout_ms=timeout_ms,
+                )
+                for name, timeout_ms in (("primary", 1_000), ("slower", 20_000))
+            },
+            harnesses={
+                host: HarnessInferenceConfig(default_profile="primary")
+                for host in ("hermes", "openclaw")
+            },
+        ),
+    )
+
+
+@pytest.mark.parametrize("owning_host,other_host", [("hermes", "openclaw"), ("openclaw", "hermes")])
+@pytest.mark.parametrize("timeout_ms,expected", [(20_000, 129), (120_000, 595)])
+def test_static_hook_budget_covers_safety_repair_and_preserves_host_cap(
+    owning_host: str, other_host: str, timeout_ms: int, expected: int
+) -> None:
+    cfg = _static_route_budget_config()
+    assert installer_payloads.hook_timeout_seconds(cfg, harness=owning_host) == 15
+    cfg = replace(
+        cfg,
+        inference=replace(
+            cfg.inference,
+            profiles={
+                **cfg.inference.profiles,
+                "slower": replace(cfg.inference.profiles["slower"], timeout_ms=timeout_ms),
+            },
+            harnesses={
+                **cfg.inference.harnesses,
+                owning_host: HarnessInferenceConfig(
+                    default_profile="primary",
+                    routes={"workforce.hiring.safety_repair": "slower"},
+                ),
+            },
+        ),
+    )
+
+    assert installer_payloads.hook_timeout_seconds(cfg, harness=owning_host) == expected
+    assert installer_payloads.hook_timeout_seconds(cfg, harness=other_host) == 15
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="codex") == 6
+    if owning_host == "hermes":
+        files, _ = _bundle_files("hermes", cfg)
+        assert f"_TIMEOUT_SECONDS = {expected}" in files["__init__.py"]
+
+
+@pytest.mark.parametrize(
+    "route,mode,expected",
+    [
+        ("workforce.planner", "fast", 91),
+        ("workforce.recruiter", "fast", 91),
+        ("workforce.recruiter.critic", "strict", 111),
+        ("workforce.hiring", "fast", 129),
+        ("workforce.hiring.critic", "fast", 129),
+        ("workforce.hiring.security_review", "fast", 129),
+        ("workforce.hiring.safety_repair", "fast", 129),
+    ],
+)
+def test_static_hook_budget_includes_each_reachable_content_fallback(
+    route: str, mode: str, expected: int
+) -> None:
+    cfg = _static_route_budget_config()
+    cfg = replace(
+        cfg,
+        workforce=replace(cfg.workforce, mode=mode),
+        inference=replace(cfg.inference, content_fallback_routes={route: "slower"}),
+    )
+
+    # Content fallback is global, but only hosts resolving a primary append it.
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == expected
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="openclaw") == expected
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="codex") == 6
+
+
+@pytest.mark.parametrize("route", ["workforce.planner", "workforce.hiring.safety_repair"])
+def test_static_content_fallback_budget_keeps_the_host_ceiling(route: str) -> None:
+    cfg = _static_route_budget_config()
+    cfg = replace(
+        cfg,
+        workforce=replace(cfg.workforce, mode="strict"),
+        inference=replace(
+            cfg.inference,
+            content_fallback_routes={route: "slower"},
+            profiles={
+                **cfg.inference.profiles,
+                "slower": replace(cfg.inference.profiles["slower"], timeout_ms=120_000),
+            },
+        ),
+    )
+
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == 595
+
+
+@pytest.mark.parametrize(
+    "route,profile,repair_budget",
+    [
+        ("workforce.planner", "primary", 1),
+        ("workforce.hiring.safety_repair", "primary", 1),
+        ("workforce.recruiter.critic", "slower", 1),
+        ("workforce.hiring.safety_repair", "slower", 0),
+        ("native.child.judge", "slower", 1),
+    ],
+)
+def test_static_hook_budget_ignores_duplicate_or_unreachable_content_fallback(
+    route: str, profile: str, repair_budget: int
+) -> None:
+    cfg = _static_route_budget_config()
+    cfg = replace(
+        cfg,
+        workforce=replace(cfg.workforce, hiring_repair_budget=repair_budget),
+        inference=replace(cfg.inference, content_fallback_routes={route: profile}),
+    )
+
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == 15
+
+
+def test_static_hook_budget_ignores_disabled_safety_repair_primary() -> None:
+    cfg = _static_route_budget_config()
+    cfg = replace(
+        cfg,
+        workforce=replace(cfg.workforce, hiring_repair_budget=0),
+        inference=replace(
+            cfg.inference,
+            harnesses={
+                "hermes": HarnessInferenceConfig(
+                    default_profile="primary",
+                    routes={"workforce.hiring.safety_repair": "slower"},
+                )
+            },
+        ),
+    )
+
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == 15
+
+
+def test_static_content_fallback_budget_preserves_legacy_floor_and_ignores_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cfg = _static_route_budget_config()
+    cfg = replace(
+        cfg,
+        providers=(
+            ProviderEntry(name="legacy", type="cli", transport="codex", model="test", timeout=30),
+        ),
+        inference=replace(cfg.inference, content_fallback_routes={"workforce.planner": "slower"}),
+    )
+    monkeypatch.setenv("AGENCY_INFERENCE_HARNESS", "hermes")
+
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="hermes") == 131
+    # No static Codex primary: the global fallback must not become reachable
+    # through the environment override used by the runtime's dynamic resolver.
+    assert installer_payloads.hook_timeout_seconds(cfg, harness="codex") == 305
 
 
 def test_codex_windows_hook_command_is_inert_powershell_argv(

@@ -9,6 +9,7 @@ from collections.abc import Mapping
 from hashlib import sha256
 from typing import Any
 
+from agency_runtime.core.receipts.attempt_accounting import project_provider_attempt_metadata
 from agency_runtime.core.workforce.staffing_verifier import (
     REQUIREMENT_AXES as _REQUIREMENT_AXES,
 )
@@ -441,6 +442,7 @@ def _provider_attempts(value: object) -> list[dict[str, Any]]:
             "reason_code": _reason_family(item.get("reason"))
             or _reason_family(item.get("reason_code")),
         }
+        attempt.update(project_provider_attempt_metadata(item))
         validation_failures = project_nomination_failures(
             item.get("validation_failures", item.get("validation_detail"))
         )
@@ -482,7 +484,7 @@ def project_model_receipt_attempts(value: object) -> list[dict[str, Any]] | None
     if not isinstance(value, (list, tuple)) or len(value) > _MAX_PROVIDER_ATTEMPTS:
         return None
     attempts: list[dict[str, Any]] = []
-    for item in value:
+    for ordinal, item in enumerate(value, start=1):
         if not isinstance(item, Mapping):
             return None
         attempts.append(
@@ -498,6 +500,10 @@ def project_model_receipt_attempts(value: object) -> list[dict[str, Any]] | None
                 or _reason_family(item.get("reason")),
             }
         )
+        metadata = project_provider_attempt_metadata(item)
+        if metadata:
+            attempts[-1].update(metadata)
+            attempts[-1]["ordinal"] = ordinal
         # AR-392: how long the call took and how long it was allowed. Both
         # loops have measured the elapsed time since ADR-0209 and neither
         # figure reached a durable receipt, so a reader could not tell an abort

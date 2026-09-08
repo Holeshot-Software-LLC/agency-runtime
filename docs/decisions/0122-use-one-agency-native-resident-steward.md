@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-07-30
 tags: [orchestration, managers, inference, roster, activation]
 related:
+  - docs/roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md
   - docs/roadmap/issue-AR-205-make-default-manager-inference-safe.md
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
   - docs/roadmap/issue-AR-207-persist-preflight-delegation-failure-diagnostics.md
@@ -102,6 +103,14 @@ generalist. Gap-hiring inference materializes a missing ideal role.
   substantive work is specialist-staffed or terminally unavailable.
 - Existing resident bindings become stale when the kernel version/hash changes
   and are re-injected through the existing lifecycle.
+
+## Implementation trace
+
+Implementation checkpoint `c3b217f1` (AR-371) preserves this resident authority
+while allowing a later current turn to CAS-recover an older closed pending
+delivery. Recovery stays pending and retains kernel, epoch and restore-generation
+validation; only the new trace's own Stop can acknowledge it. The AR-371 evidence
+record preserves the subsequent retention barrier and pending live scope.
 
 ## Alternatives
 

@@ -2177,9 +2177,24 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5f20cac1` | 2026-09-07 | chore(delivery): integrate published OpenClaw provenance repair | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
 | `a27d2c1a` | 2026-09-07 | chore(delivery): integrate published OpenClaw provenance repair | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `e348d713` | 2026-09-07 | Merge pull request #753 from Holeshot-Software-LLC/codex/ar251-readonly-cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `fb360485` | 2026-09-07 | fix(AR-287): budget reachable repair and fallback profiles | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `ca53e25e` | 2026-09-07 | chore(AR-412): integrate published read-only card views | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `3fb97e7d` | 2026-09-07 | fix(receipts): separate provider fallbacks from inference-stage order (AR-284) | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
+| `14899a51` | 2026-09-07 | chore(AR-287): integrate published CLI and uninstall repairs | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `f4264b54` | 2026-09-07 | Merge pull request #755 from Holeshot-Software-LLC/codex/ar412-security-lock-refresh | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `a10e3117` | 2026-09-07 | fix(diagnostics): distinguish running process drift from stale hook files (AR-369) | [AR-369](../roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | [Detail](2026-09-08-ar369-process-refresh-guidance.md) |
+| `8705a545` | 2026-09-07 | chore(AR-284): integrate published card and security lock deliveries | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
+| `185db01a` | 2026-09-07 | docs(AR-287): checkpoint reviewed timeout repair and deferred verification | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
+| `c0c42ce2` | 2026-09-07 | chore(AR-287): integrate published security-lock refresh | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
+| `c3b217f1` | 2026-09-07 | fix(residents): recover closed claims only on a later current turn (AR-371) | AR-371 | [detail](2026-09-07-c3b217f1-resident-claim-recovery.md) |
+| `4516e055` | 2026-09-07 | chore(AR-371): integrate published provenance and dependency fixes | AR-371 | [detail](2026-09-07-c3b217f1-resident-claim-recovery.md) |
+| `3540b790` | 2026-09-07 | docs(receipts): record independent review and wrap-up verification (AR-284) | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
+| `c905dd0b` | 2026-09-07 | fix(residents): preserve retired-turn ordering during claim recovery (AR-371) | AR-371 | [detail](2026-09-07-c905dd0b-resident-recovery-retention.md) |
+| `34ea605b` | 2026-09-07 | Merge pull request #757 from Holeshot-Software-LLC/codex/ar284-receipt-fallback-semantics | [AR-284](../roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md) | [Detail](2026-09-08-ar284-provider-attempt-accounting.md) |
+| `5e0e7168` | 2026-09-07 | docs(timeouts): record authorized focused wrap-up checks (AR-287) | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
+| `63fa77fe` | 2026-09-07 | merge: integrate published fallback accounting into timeout delivery (AR-287) | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
+| `884500a9` | 2026-09-07 | Merge pull request #759 from Holeshot-Software-LLC/codex/ar287-complete-static-timeout-routes | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
+| `bc778daf` | 2026-09-07 | merge: integrate published receipt and timeout fixes into resident recovery (AR-371) | [AR-371](../roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md) | [Detail](2026-09-07-c905dd0b-resident-recovery-retention.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

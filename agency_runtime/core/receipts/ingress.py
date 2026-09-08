@@ -198,7 +198,17 @@ def normalize_receipt_ingress(
         "resolved_provider": canonicalize_provider(values.get("resolved_provider")),
         "resolved_model": resolved_model,
         "api_base": _api_base(values.get("api_base")),
-        "attempted_fallbacks": _fallback_count(values.get("attempted_fallbacks")),
+        # AR-284: an explicitly unknown generic wrapper count is SQL NULL.
+        # Omitted defaults and authoritative callback normalization retain
+        # their existing behavior; no historical row is rewritten.
+        "attempted_fallbacks": (
+            None
+            if provenance is ReceiptProvenance.GENERIC
+            and source == "wrapper"
+            and "attempted_fallbacks" in values
+            and values["attempted_fallbacks"] is None
+            else _fallback_count(values.get("attempted_fallbacks"))
+        ),
         "model_id": _safe_text(values.get("model_id"), MAX_RECEIPT_MODEL_ID_CHARS),
         "source": source,
         "started_at": _timestamp(values.get("started_at")),
