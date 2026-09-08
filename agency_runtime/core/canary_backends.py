@@ -4080,6 +4080,10 @@ class SafeClaudeCanaryBackend:
                 "json",
                 "--max-turns",
                 "1",
+                # AR-410: bootstrap without launching installed hooks, which
+                # may bind the owner's control path. Never override the nonce.
+                "--settings",
+                '{"disableAllHooks":true}',
                 "--strict-mcp-config",
                 "--permission-mode",
                 "dontAsk",
