@@ -74,3 +74,5 @@ and verify the bounded skip under AR-280. Tracker authorization remains
 pending. Parent coordinates integration/publication; no PR was opened here.
 
 Integration `77391f21` preserves the published installed-delivery and twenty-record triage checkpoint, including all incoming faithful worklog rows. No runtime mutation or new verification is implied.
+
+PR #751 merged as `9b15107a` at 2026-09-08T01:17:41Z. All original acceptance criteria remain unchecked; this publishes source evidence and unrun boundary regressions, not an internal-call bypass or native success.

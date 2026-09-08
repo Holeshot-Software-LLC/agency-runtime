@@ -466,6 +466,30 @@ def _plugin_records(value: Any) -> list[dict[str, Any]]:
     return records
 
 
+def _openclaw_plugin_records(value: Any) -> list[dict[str, Any]]:
+    """Do not let a conflicting earlier identity hide an Agency registration."""
+
+    identities = {PLUGIN_ID, f"{PLUGIN_ID}@{MARKETPLACE_ID}"}
+    return [
+        item
+        for item in _walk_objects(value)
+        if any(
+            isinstance(item.get(key), str) and item[key].casefold() in identities
+            for key in ("id", "pluginId", "name", "plugin", "pluginName")
+        )
+    ]
+
+
+def _openclaw_identity_conflicts(record: Mapping[str, Any]) -> bool:
+    identities = {PLUGIN_ID, f"{PLUGIN_ID}@{MARKETPLACE_ID}"}
+    # OpenClaw's name is a human-readable label, not an alternative id.
+    return any(
+        key in record
+        and (not isinstance(record[key], str) or record[key].casefold() not in identities)
+        for key in ("id", "pluginId", "plugin", "pluginName")
+    )
+
+
 def _direct_record_paths(record: Mapping[str, Any]) -> set[Path] | None:
     """Read only documented path fields from one exact native record."""
 
@@ -506,11 +530,87 @@ def _marketplace_is_bound(record: Mapping[str, Any], target: Path) -> bool:
     return _direct_record_paths(record) == {target.resolve()}
 
 
+def _openclaw_provenance_path(value: object) -> Path | None:
+    """Refuse relative, traversing or substituted paths in a copied receipt."""
+
+    try:
+        parsed = _canonical_local_path(value)
+        lexical = Path(value) if isinstance(value, str) else None
+    except (OSError, RuntimeError, ValueError):
+        return None
+    if parsed is None or lexical is None:
+        return None
+    if not lexical.is_absolute() or ".." in lexical.parts or lexical != parsed:
+        return None
+    return parsed
+
+
+def _openclaw_installed_copy_is_bound(
+    record: Mapping[str, Any],
+    target: Path,
+    *,
+    expected_version: str | None,
+) -> bool:
+    """Validate one complete native installed-copy/managed-source receipt.
+
+    The native host owns the copied files; Agency still independently proves
+    its managed tree, install ID and bundle digest before planning retirement.
+    No individual matching alias can make an incomplete receipt authoritative.
+    """
+
+    install = record.get("install")
+    if record.get("id") != PLUGIN_ID or not isinstance(install, Mapping):
+        return False
+    if install.get("source") != "path":
+        return False
+    for identity in ("pluginId", "pluginName", "plugin"):
+        if identity in record and record[identity] != PLUGIN_ID:
+            return False
+    # These aliases are not part of OpenClaw's documented install record.
+    if any(key in install for key in ("root", "rootDir", "path", "directory", "marketplaceSource")):
+        return False
+    managed = _openclaw_provenance_path(install.get("sourcePath"))
+    copied = _openclaw_provenance_path(install.get("installPath"))
+    entry = _openclaw_provenance_path(record.get("source"))
+    roots = [record[key] for key in ("root", "rootDir") if key in record]
+    if (
+        managed != target.resolve()
+        or copied is None
+        or not roots
+        or any(_openclaw_provenance_path(value) != copied for value in roots)
+        or entry is None
+    ):
+        return False
+    if copied == managed or copied in managed.parents or managed in copied.parents:
+        return False
+    if entry == copied or copied not in entry.parents:
+        return False
+    for alias in ("path", "directory"):
+        if alias in record and _openclaw_provenance_path(record[alias]) != copied:
+            return False
+    if "marketplaceSource" in record:
+        return False
+    # Version is optional in the native schema. If exposed, it may not
+    # contradict the already-validated Agency ownership manifest.
+    for source in (record, install):
+        if "version" in source and (
+            not isinstance(source["version"], str)
+            or not source["version"]
+            or source["version"] != expected_version
+        ):
+            return False
+    return True
+
+
 def _plugin_is_bound(
     host: str,
     record: Mapping[str, Any],
     target: Path,
+    *,
+    expected_version: str | None = None,
 ) -> bool:
+    if host == "openclaw" and "install" in record:
+        return _openclaw_installed_copy_is_bound(record, target, expected_version=expected_version)
     paths = _direct_record_paths(record)
     if paths is None:
         return False
@@ -527,7 +627,9 @@ def _plugin_is_bound(
             and not paths
         )
     if host == "openclaw":
-        return paths == {root}
+        return paths == {root} and (
+            "rootDir" not in record or _canonical_local_path(record["rootDir"]) == root
+        )
     marketplace = str(
         record.get("marketplaceName")
         or record.get("marketplace")
@@ -698,7 +800,25 @@ def _inventory_plugin_records(
             for line in result.stdout.splitlines()
             if (record := _dispatch("_hermes_text_plugin_record", line)) is not None
         ]
-    return _plugin_records(_dispatch("_json_output", result))
+    payload = _dispatch("_json_output", result)
+    records = _openclaw_plugin_records(payload) if host == "openclaw" else _plugin_records(payload)
+    if (
+        host == "openclaw"
+        and isinstance(payload, Mapping)
+        and isinstance(payload.get("plugin"), Mapping)
+        and "install" in payload
+        and len(records) == 1
+        and records[0] is payload["plugin"]
+    ):
+        # Current inspect output carries provenance beside its plugin, not
+        # inside it. Join only this exact single-plugin envelope; never borrow
+        # an arbitrary nested/sibling install record from an inventory walk.
+        record = records[0]
+        conflicting = (
+            "install" in record or "rootDir" in payload or _direct_record_paths(payload) != set()
+        )
+        return [{**record, "install": None if conflicting else payload["install"]}]
+    return records
 
 
 def _native_preflight(
@@ -709,6 +829,7 @@ def _native_preflight(
     home_dir: str | Path | None,
     command_runner: CommandRunner | None,
     execution_binding: Mapping[str, Any],
+    expected_version: str | None = None,
 ) -> dict[str, Any]:
     """Read and bind native registration facts before any uninstall mutation."""
 
@@ -740,14 +861,20 @@ def _native_preflight(
     if not inventory.ok:
         return {"ok": False, "error": "Native plugin inventory is unavailable", "steps": steps}
     records = _inventory_plugin_records(host, inventory)
-    if len(records) > 1:
+    if len(records) > 1 or (
+        host == "openclaw" and any(_openclaw_identity_conflicts(record) for record in records)
+    ):
         return {
             "ok": False,
             "error": "Native Agency plugin inventory is ambiguous",
             "steps": steps,
         }
     record = records[0] if records else None
-    if host == "openclaw" and record is not None and not _plugin_is_bound(host, record, target):
+    if (
+        host == "openclaw"
+        and record is not None
+        and not _plugin_is_bound(host, record, target, expected_version=expected_version)
+    ):
         inspection = _run_bound_native_command(
             [str(executable), "plugins", "inspect", PLUGIN_ID, "--json"],
             host=host,
@@ -758,14 +885,16 @@ def _native_preflight(
         )
         steps.append(_safe_native_step("plugin_inspect_before", inspection))
         inspected = _inventory_plugin_records(host, inspection) if inspection.ok else []
-        if len(inspected) != 1:
+        if len(inspected) != 1 or _openclaw_identity_conflicts(inspected[0]):
             return {
                 "ok": False,
                 "error": "Native Agency plugin provenance is unavailable or ambiguous",
                 "steps": steps,
             }
         record = inspected[0]
-    if record is not None and not _plugin_is_bound(host, record, target):
+    if record is not None and not _plugin_is_bound(
+        host, record, target, expected_version=expected_version
+    ):
         return {
             "ok": False,
             "error": "Native plugin identity is not bound to the managed target",
@@ -1228,6 +1357,7 @@ def plan_agent_uninstall(
             home_dir=home_dir,
             command_runner=command_runner,
             execution_binding=execution_binding,
+            expected_version=ownership.get("plugin_version"),
         )
     except Exception:
         result.update(
@@ -1363,6 +1493,7 @@ def _commit_agent_uninstall(  # noqa: C901 - ordered fail-closed host transactio
             home_dir=home_dir,
             command_runner=command_runner,
             execution_binding=execution_binding,
+            expected_version=ownership.get("plugin_version"),
         )
     except Exception:
         result.update(
