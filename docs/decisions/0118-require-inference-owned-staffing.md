@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-08-12
 tags: [routing, inference, workforce, safety, failure]
 related:
+  - docs/worklog/2026-09-08-reranker-membership-repair.md
   - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/worklog/README.md
@@ -41,6 +42,11 @@ deciders: [maintainers]
 # ADR-0118: Require inference-owned specialist staffing
 
 ## Context
+
+AR-420 implementation `5ff8e85c`, merged in PR803 as `263a0ec3`, binds the
+structured reranker schema to supplied candidate membership while preserving
+inference-owned order, the independent critic and exact membership validation.
+Its roadmap and worklog record the narrow repair and remaining reliability limits.
 
 AR-415 implementation `c1ef8566` and merge `d0bb4127` preserve this authority:
 bounded scope exclusions remove falsely inferred mutation requirements without

@@ -99,3 +99,8 @@ broader staffing reliability unresolved and retains all Hermes/OpenClaw/Claude/
 Zcode gates. Prior host successes do not prove this new candidate. Existing
 pending operator choices remain pending; no observer or upstream publication
 approval is inferred from this repair request.
+
+PR803 merged as `263a0ec3` with exact subject
+`fix(staffing): merge PR803 bounded reranker membership`. AR-420/#802 is closed
+after isolated acceptance; AR-404/#672, AR-418/#796 and AR-419/#797 remain open.
+The merge and recovery records retain all unresolved gates and failed receipts.
