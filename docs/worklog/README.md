@@ -2119,6 +2119,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `da1af1f4` | 2026-09-07 | docs(AR-409): record five accepted source criteria pending live delivery | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `6f997877` | 2026-09-07 | docs(AR-409): link source publication and retain installed delivery gate | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `4db6be16` | 2026-09-07 | Merge pull request #739 from Holeshot-Software-LLC/codex/ar409-reserve-required-staffing | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `ba9cd869` | 2026-09-07 | docs(AR-409): checkpoint exact-main installation before native delivery | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
