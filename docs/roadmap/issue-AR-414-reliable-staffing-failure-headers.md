@@ -48,7 +48,8 @@ supports rejection. The critic-named alternative has narrower framework API
 verification scope and was visible only as an identity, so it is not endorsed.
 The valid qualified reason was silently lost by the56character receipt bound.
 AR-416 repairs that diagnostic projection while retaining the veto and all bounds.
-Focused124pass and production1151pass/3skip; final checks pending. Owner critic
+Focused124pass, production1151pass/3skip, UI224pass and frozen-source
+conformance188/188pass with source_unchanged=true. Docs/Ruff/routing/tracker pass. Owner critic
 configuration restored byte-for-byte. No new installed artifact or handoff
 acceptance claim; the earlier ordinary accepted native review remains evidence.
 See the captured-veto worklog for exact traces, packet hashes and limitations.

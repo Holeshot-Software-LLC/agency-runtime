@@ -72,9 +72,9 @@ verification of framework APIs, versions and defaults. Therefore the capture
 does not establish that the named alternative fits. No replacement is endorsed.
 These newly captured proposals do not reconstruct either older failure receipt.
 
-The critic accepts valid reasons up to128characters, but receipt projection
-allows56including critic_. The qualified cause exceeded that limit and vanished.
-The initial captured-response regressions failed4/8before the source fix.
+The critic accepts valid reasons up to 128 characters, but receipt projection
+allows 56 including critic_. The qualified cause exceeded that limit and vanished.
+The initial captured-response regressions failed 4/8 before the source fix.
 Subsequent test-harness corrections used the actual finalizer argument and dict
 return contract, and queried finalization events directly from the test store.
 
@@ -84,26 +84,31 @@ ADR-0240 retains a recognized standard veto-ground prefix at a hyphen boundary
 and explicitly reports critic_reason_detail_omitted for a valid oversized code.
 Unknown oversized codes get only that marker. Ordinary fitting codes stay exact.
 All existing validation, count, length and disclosure bounds remain. Expanding
-reason lengths could overflow the512character disclosure when four reasons are
+reason lengths could overflow the 512-character disclosure when four reasons are
 rendered. Truncating specialist identities would create misleading diagnostics.
 No recruiter prompt, critic approval, selection or repair behavior changed.
 
 ## Verification
 
-Focused captured-response/critic/receipt/inference suite:124passed. Named fast
-production spine:1151passed,3skipped. Ruff check and format:779files pass.
+Focused captured-response/critic/receipt/inference suite: 124 passed. Named fast
+production spine: 1151 passed, 3 skipped. Ruff check and format: 779 files pass.
 The real SQLite failed-header/finalizer replay retains the cause and omission
 marker, leaves the run failed, and creates zero accepted finalization events.
-UI, routing, frozen-source conformance and final documentation checks remain
-pending at this initial clean checkpoint. No exhaustive corpus or Windows matrix.
+Dashboard UI: 224 passed. Routing gates pass. Frozen-source decision conformance:
+188/188 killed, zero survived/invalid, source_unchanged=true. Metadata/docs:
+1329 files pass; policy availability and exact worklog checks pass; strict tracker
+parity: 407 items pass. No exhaustive corpus or Windows matrix. GitHub reported
+no hosted status checks on PR788; these are the required local gate results.
 
 ## Follow-ups
 
 AR-416 remains open pending isolated acceptance verification. This is a source
 fix and captured-response replay, not an upgraded installed native demonstration.
-The installed c1ef8566wheel and f72f24a788ca hook projection remain unchanged.
+The installed c1ef8566 wheel and f72f24a788ca hook projection remain unchanged.
 AR-414 retains its earlier ordinary accepted native review and exact Stop-hook
 acceptance; this package does not claim handoff acceptance or improved latency.
-AR-414/415 remain open. Next bounded package: finish source verification and PR
-integration; separately qualify installation/native evidence for this diagnostic
-change under the release checklist before claiming installed behavior.
+AR-414/415 remain open. PR788 carries the source change and evidence. Next
+bounded package: isolated acceptance verification for AR-416, with installation
+and native diagnostic evidence qualified under the release checklist before
+claiming installed behavior. Do not replace inference-owned staffing in response
+to the handoff veto or retry until approval.

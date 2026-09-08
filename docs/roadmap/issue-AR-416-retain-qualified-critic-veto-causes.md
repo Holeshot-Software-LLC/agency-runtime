@@ -25,17 +25,22 @@ blocks: []
 ## Problem
 
 A native critic returned valid `wrong-neighbor-selection-documentation-evidence-researcher`.
-The critic accepts reason codes up to128characters, but adding `critic_` exceeds
-the56character projection limit. The projection silently drops the whole reason,
+The critic accepts reason codes up to 128 characters, but adding `critic_` exceeds
+the 56-character projection limit. The projection silently drops the whole reason,
 so both the failure receipt and native header lose the standard veto cause.
 
 ## Current state
 
-Phase focused_review. Source fix and captured-response regressions implemented. Two captured native turns reproduced the same packet and
+Phase fast_verification complete. Source fix and captured-response regressions
+pass in PR788; isolated acceptance verdicts remain pending. Two captured native turns reproduced the same packet and
 qualified veto; each persisted only `staffing_critic_rejected`. The observer
 forwarded request/response bytes unchanged and restored owner configuration
 byte-for-byte. The actual packet is preserved under roadmap evidence. No
 recruiter, critic, eligibility, acceptance or retry change is proposed.
+
+Current checks: focused 124 passed; production spine 1151 passed/3 skipped;
+UI 224 passed; conformance 188/188 killed, source_unchanged=true; docs, Ruff,
+routing and strict tracker parity passed. Installed runtime unchanged.
 
 ## Approach
 

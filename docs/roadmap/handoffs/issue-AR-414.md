@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-414
 branch: codex/ar414-capture-native-veto-20260908
-evidence_commit: 8d79ca3123b7130849a40612322617759cd62278
-minimum_ledger_commit: de30705164a226cc9968a8d74e380b6cacdfaa58
+evidence_commit: 6a0eb8506bde7d4436ce5c4e63cf2aba5ae33c33
+minimum_ledger_commit: d8c6fa2ca04150bcfb1035784543558a3c7634c4
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ---
@@ -30,7 +30,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 
 ## Checkpoint
 
-Native handoff capture complete; bounded source diagnostic fix implemented.
+Native handoff capture complete; bounded source diagnostic fix verified in PR788.
 Two exact native packets expose experiment-tracker assigned to non-experiment
 handoff review. The critic veto is supported by that mismatch; its named
 alternative is not verified as suitable. AR-416 retains a qualified veto's
@@ -93,7 +93,7 @@ branch is named above. Keep unrelated worktrees and Windows items untouched.
 
 ## Next bounded work package
 
-Finish focused source verification and PR integration for AR-416. Then qualify
+Complete isolated acceptance verification for AR-416. Qualify upgraded
 installation/native diagnostic behavior under the release checklist before
 claiming this source change is installed. Keep AR-414/415/416 open until their
 isolated acceptance gates have evidence. Never retry merely for approval or
@@ -102,7 +102,9 @@ manually select specialists. No broad staffing-policy repair is justified here.
 ## Verification
 
 Current captured-response/critic/receipt/inference124pass; fast production
-1151pass/3skip; Ruff779files pass. Final checks pending at the clean checkpoint.
+1151pass/3skip; UI224pass; Ruff779files and docs1329files pass. Routing and
+strict tracker407items pass. Frozen-source conformance188/188killed,
+source_unchanged=true. No new installed/native diagnostic claim.
 Source replay preserves terminal failure and renders the retained cause.
 The remaining evidence below predates this source change.
 

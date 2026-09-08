@@ -8,6 +8,7 @@ tags: [critic, diagnostics, headers]
 related:
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
+  - docs/worklog/2026-09-08-captured-native-critic-veto.md
   - docs/worklog/README.md
   - docs/decisions/0239-render-failed-turn-diagnostics-without-acceptance.md
 supersedes: []
@@ -21,10 +22,10 @@ deciders: [owner]
 
 ## Context
 
-The strict critic accepts bounded128character hyphenated reason codes, while
-its receipt projection permits56characters including the `critic_` prefix.
+The strict critic accepts bounded 128-character hyphenated reason codes, while
+its receipt projection permits 56 characters including the `critic_` prefix.
 A real named-neighbor veto exceeded that bound and silently lost its cause.
-Four maximally bounded projected codes must still fit the512character disclosure.
+Four maximally bounded projected codes must still fit the 512-character disclosure.
 
 ## Decision
 
@@ -35,6 +36,9 @@ discarding the qualifier. Unknown oversized codes receive only that marker.
 The existing count, charset, length, receipt and disclosure validators remain.
 The projection never changes a critic decision, selects a worker or rewrites
 an existing terminal receipt.
+
+Implementation commit `6a0eb850` follows this rule; the linked worklog records
+the captured native packet and source replay limits.
 
 ## Consequences
 
