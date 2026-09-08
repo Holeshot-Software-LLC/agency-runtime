@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [staffing, headers, codex, reliability]
 related:
+  - docs/worklog/2026-09-08-native-staffing-receipts.md
   - docs/worklog/2026-09-08-recruiter-fallback-recovery.md
   - docs/decisions/0192-route-content-invalid-completions-to-a-content-fallback-profile.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
@@ -96,6 +97,15 @@ Its new bundle changes the eight hook hashes again; the next native run is
 waiting_for_operator for approval of plugin0.1.0+codex.07ad50ea4f52. No claim that
 the earlier native diagnostic proves this new artifact. Staffing reliability
 and current-artifact native scope verification remain unfinished.
+
+Native checkpoint 2026-09-08: the fresh live MCP projection matches the published
+f72f24a788ca pointer and all eight installed hooks are trusted. One ordinary
+native review accepted uncached staffing in64.007s and its exact response hash
+matches terminal Stop-hook acceptance. The original handoff failure was a valid
+critic veto after a successful recruiter, not the earlier transport failure.
+The same handoff wording reproduced the veto in the fresh review session.
+Semantic diagnosis and isolated acceptance remain open; see the native-receipts
+worklog for exact sessions, traces, timings and evidence limitations.
 
 ## Approach
 
