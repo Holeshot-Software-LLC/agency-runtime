@@ -2097,6 +2097,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `12bce920` | 2026-09-07 | docs(acceptance): freeze AR-190 installed uv-plan candidate | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | null |
 | `a6efa01b` | 2026-09-07 | docs(acceptance): retain AR-190 candidate-provenance gap | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `eac2d6a2` | 2026-09-07 | docs(acceptance): bind AR-190 evidence to exact product source | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
+| `d5e36996` | 2026-09-07 | docs(acceptance): freeze AR-190 second-review receipt candidate | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
