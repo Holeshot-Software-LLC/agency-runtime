@@ -30,6 +30,15 @@ ok/completed status does not establish a centrally accepted response.
 
 ## Current state
 
+September 8 continuation: the installed OpenClaw terminal callback is awaited
+before CLI delivery. Its native context identifies internal delivery as
+`channel=webchat`; the generated handler previously returned `allow_pending`
+without invoking the existing exact-text outbound gate. The candidate now invokes
+that gate only for this explicit native channel after a valid pre-verify result.
+Other channels retain their full-payload sealing path. Twelve executed Node
+callback cases cover the channel and policy split; focused integration passes
+153 tests with one existing skip. Fresh installed proof is pending.
+
 Fresh refreshed-gateway tracebfbdfdc5-59b8-481d-b0d6-8e4f4abc872a;
 Agency sessionagent:openclaw:ar404-native-20260908-2006;
 native sessionccce9bc3-4818-4454-b5bd-6ade5ded98fb. Total116.524s, staffing91.052s.

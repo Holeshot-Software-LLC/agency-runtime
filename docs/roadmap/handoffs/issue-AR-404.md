@@ -19,7 +19,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-hermes-openclaw-20260908
+branch: codex/ar418-ar419-native-terminal-20260908
 evidence_commit: 1dd69c3ad1e1c86db386dff69cd8a96ee8dc41ac
 minimum_ledger_commit: 70ba71d8f92a3f5bb536d5ec32ab34232d803b4c
 hard_checkpoint_percent: 50
@@ -56,12 +56,16 @@ failure records are preserved, not treated as current-artifact results.
 
 ## Same-task continuity
 
-Read the linked Hermes/OpenClaw worklog. Work only in the named owned branch.
+Read the linked Hermes/OpenClaw worklog. The previous capsule branch is historical and merged. Work in the new named owned branch.
 At or below50percent remaining, commit the smallest safe evidence/ledger pair
 and continue in the same task. Preserve unrelated worktrees and operator files.
 
 ## Next bounded work package
 
+Claude and Zcode remain explicitly in scope after these two hosts. Claude native
+inventory currently rejects executable-directory permissions; Zcode has no
+executable. AR-419 has a twelve-case Node-tested internal terminal handoff
+candidate, with153focused passes/one skip; installed proof is pending.
 Repair the exact Hermes output-limit lifecycle under AR-418 and OpenClaw
 ordinary CLI terminal handoff under AR-419. Capture supported native context
 evidence before claiming exact OpenClaw card delivery. Do not repeat either

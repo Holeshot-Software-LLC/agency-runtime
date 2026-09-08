@@ -65,6 +65,17 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+### Four-host terminal continuation, September 8
+
+Main and origin rechecked at97e269ec. A new owned branch carries AR-419's
+internal CLI terminal-handoff candidate. AR-418 requires the native early-return
+failure boundary to expose terminal evidence; original receipts remain intact.
+Claude is executable-discovered but native inventory is rejected because its
+executable parent namespace permits cross-account substitution. Zcode has enabled
+registered hooks but no discovered executable, version or native capability.
+Both hosts remain explicitly in scope, and none of these installation observations
+is an accepted native turn. The current package preserves staffing and validators.
+
 ### Hermes and OpenClaw native package, September 8
 
 After AR-414/415's verified Codex completion, owner authorized Hermes refresh
