@@ -2100,6 +2100,32 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d5e36996` | 2026-09-07 | docs(acceptance): freeze AR-190 second-review receipt candidate | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | null |
 | `7a387063` | 2026-09-07 | docs(acceptance): preserve AR-190 verifier admission failure | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `4d5f1528` | 2026-09-07 | docs(acceptance): retain AR-190 second-review evidence gap | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
+| `500de085` | 2026-09-07 | docs(backlog): bind AR-185 to exact installed activation proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `90c30a35` | 2026-09-07 | docs(acceptance): freeze AR-185 exact verification packet | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `1adacdde` | 2026-09-07 | fix(workforce): preserve actual failure and effective timeout receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `d9dde3cd` | 2026-09-07 | docs(evidence): record AR-408 exact installed artifact smoke | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `51af465d` | 2026-09-07 | docs(AR-185): preserve eight judgments and unavailable verifier evidence | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `795ddf21` | 2026-09-07 | docs(AR-408): freeze bounded diagnostics acceptance evidence | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `01ebcb7f` | 2026-09-07 | docs(AR-185): complete exact installed activation verification | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `7674aca9` | 2026-09-07 | fix(AR-408): complete truthful staffing failure receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `1c67e558` | 2026-09-07 | test(uninstall): prove private owner-CLI retirement | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | [Detail](2026-09-07-1c67e558-private-owner-uninstall-proof.md) |
+| `96a048d6` | 2026-09-07 | docs(roadmap): file required staffing call reservations (AR-409) | AR-409 | [Detail](2026-09-07-96a048d6-ar409-reservation-filing.md) |
+| `c095616a` | 2026-09-07 | docs(AR-409): integrate parallel reservation filing for tracker parity | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-96a048d6-ar409-reservation-filing.md) |
+| `9946461a` | 2026-09-07 | fix(workforce): reserve mandatory stages within owner budgets (AR-409) | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `00fc1aef` | 2026-09-07 | Merge pull request #736 from Holeshot-Software-LLC/codex/ar185-activation-proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
+| `8c1845e5` | 2026-09-07 | chore(AR-408): integrate accepted activation and reservation filing | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `f05e0bb8` | 2026-09-07 | docs(backlog): checkpoint accepted staffing diagnostics and next live work | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `bfe21d66` | 2026-09-07 | Merge pull request #737 from Holeshot-Software-LLC/codex/ar408-staffing-failure-receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `f670e6b5` | 2026-09-07 | fix(AR-409): integrate truthful receipts with reserved staffing calls | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `51909ae8` | 2026-09-07 | docs(AR-409): freeze combined reservation acceptance candidate | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `de008861` | 2026-09-07 | chore(AR-189): integrate accepted activation and staffing receipts | [AR-189](../roadmap/issue-AR-189-add-owned-host-integration-uninstall.md) | [Detail](2026-09-07-1c67e558-private-owner-uninstall-proof.md) |
+| `70009cd7` | 2026-09-07 | docs(AR-409): preserve verifier namespace refusal before retry | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `f408b6f2` | 2026-09-07 | Merge pull request #738 from Holeshot-Software-LLC/codex/ar189-private-uninstall-proof | AR-189 | [Detail](2026-09-07-1c67e558-private-owner-uninstall-proof.md) |
+| `2c5ee2b9` | 2026-09-07 | chore(AR-409): integrate accepted main without changing staffing source | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `985769e6` | 2026-09-07 | docs(AR-409): retain four judgments and recurring verifier refusal | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `da1af1f4` | 2026-09-07 | docs(AR-409): record five accepted source criteria pending live delivery | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `6f997877` | 2026-09-07 | docs(AR-409): link source publication and retain installed delivery gate | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `4db6be16` | 2026-09-07 | Merge pull request #739 from Holeshot-Software-LLC/codex/ar409-reserve-required-staffing | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

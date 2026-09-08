@@ -3,9 +3,12 @@ title: "AR-189: Add ownership-bound host-integration uninstall"
 status: in_progress
 category: roadmap
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-09-07
 tags: [cli, host-integrations, installation, security, operations]
 related:
+  - docs/decisions/0117-unify-owner-control-authority.md
+  - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
+  - tests/test_host_uninstall_live_boundary.py
   - docs/decisions/0110-remove-agency-owned-windows-hello.md
   - docs/roadmap/issue-AR-197-remove-agency-owned-windows-hello.md
   - docs/roadmap/handoffs/issue-AR-189.md
@@ -47,8 +50,8 @@ blocks: []
 
 ## Problem
 
-Agency Runtime can discover and install integrations for every supported host,
-but it lacks one equally clear command for removing those integrations. Manual
+The original request was for an equally clear inverse to Agency Runtime's
+supported-host installer; `agency uninstall` now supplies that command. Manual
 deletion risks leaving native registration behind, deleting an unowned file,
 confusing host removal with package or data removal, or giving the dashboard a
 new persistent-mutation surface.
@@ -60,6 +63,16 @@ and lifecycle contracts. Operators need a reversible host-integration action,
 not an implicit data purge.
 
 ## Current state
+
+September 7 reconciliation applies ADR-0117's existing owner-CLI authority to
+the older ADR-0108 safety contract. There is no second Agency-owned native
+human-presence ceremony. Commit `45be7ea575c8554fc6eb21103add26f9973b42b4`
+already removed the unconditional unavailable-authority failure while retaining
+binding validation. The new private CLI regression proves that path is actually
+reachable without replacing authority, locks, re-planning or removal. The
+[portable receipt](acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md)
+preserves all twelve original criteria and the superseded confirmation wording;
+this reconciliation changes no product authority or runtime implementation.
 
 The bounded implementation introduces `agency uninstall` with exactly one
 target selector (`--all` or `--agent <host>`) and exactly one mode (`--dry-run`
@@ -77,12 +90,12 @@ digest also binds the selector, canonical host order, status, and exact native
 command sequence. Native plugin and marketplace provenance use a closed set of
 documented path aliases; an invalid, relative, or conflicting alias
 blocks instead of letting one expected alias hide contradictory evidence.
-Applying a mutating plan enters the dedicated native Windows action
-`uninstall.host-integrations.v1`. Its aggregate binding covers one canonical
+Applying a mutating plan validates the prepared operation identity
+`uninstall.host-integrations.v1` under normal owner-CLI authority. Its aggregate binding covers one canonical
 operation UUID, selector, canonical hosts and transitions, confirmed outer plan
 hash, a hash over every per-host plan binding and exact retained destination,
 and fixed `runtime-data-and-marketplaces.v1` preservation and
-`retained-owned-bundles.v1` recovery policies. Denial or any changed primitive
+`retained-owned-bundles.v1` recovery policies. Refusal or any changed primitive
 fails before host mutation.
 
 `--all` searches the canonical supported-host inventory for a managed bundle or
@@ -90,17 +103,17 @@ installed Agency plugin; it does not treat every stale host directory or a
 Codex/Claude marketplace-only registration as removable authority. Each host
 is handled independently and reports exact native steps, failure stage, retained
 path, operation journal, and restart requirement. A mutating run writes its
-bounded owner-private intent only after native Windows authority succeeds, the
+bounded owner-private intent only after the prepared owner-CLI binding validates, the
 shared lifecycle lock is held, and the plan and aggregate binding have been
 revalidated, but before the first host mutation. It checkpoints each completed
 host under that lock; inability to record intent or a checkpoint stops work and
-reports every later selected host as `not_attempted`. Operator denial writes no
+reports every later selected host as `not_attempted`. Pre-mutation refusal writes no
 intent journal. An absent integration is an idempotent no-op.
 
 Successful uninstall unregisters or disables the exact native integration,
 proves detachment, and atomically moves the unchanged ownership-proven bundle
 to `~/.agency-runtime/backups/<host>/uninstall-<operation_uuid>`, the exact
-destination bound before native confirmation. It does not recursively delete
+destination bound before locked application. It does not recursively delete
 or expose a purge mode. The package, Agency Runtime configuration, Store,
 roster, evidence, all backups, and dashboard service remain present. Exact
 host-native registration or Agency-owned handler configuration necessarily
@@ -143,8 +156,8 @@ the managed tree and return a nonzero bounded recovery result.
 
 Serialize generic mutating install, rollback, native enable/disable
 toggle, prepared Codex refresh, and prepared host uninstall through one
-owner-private `host-integrations.lock`; dry runs remain write-free. After native
-uninstall verification, acquire that lock, rebuild current selection and plans,
+owner-private `host-integrations.lock`; dry runs remain write-free. After prepared
+binding validation, acquire that lock, rebuild current selection and plans,
 and require the plan and complete aggregate binding to match before recording
 intent or dispatch. On Windows, open the exact planned source directory, verify
 its file identity and ownership through that handle, rename that handle to the
@@ -153,21 +166,32 @@ object. This closes the target-path substitution window between final validation
 and rename; a failed postcondition attempts handle-bound restoration and
 otherwise reports the exact retained recovery path.
 
-Keep the command owner-terminal-only and subject its applying mode to the exact
-native `uninstall.host-integrations.v1` operator-presence action. Dry-run
-remains write-free. Do not add an HTTP, dashboard, MCP, hook, or
+Keep the command on the normal owner-CLI surface and validate its exact
+`uninstall.host-integrations.v1` prepared binding. An owner may delegate that
+CLI environment to an autonomous agent; the plan digest is transactional
+safety, not a second authentication or presence ceremony. Dry-run remains
+write-free. Do not add an HTTP, dashboard, MCP, hook, or
 restricted-broker mutation endpoint. The dashboard may copy only the fixed
 write-free preview command for use in an owner-controlled terminal.
 
 ## Dependencies
 
 ADR-0010 owns reversible host lifecycle, ADR-0028 owns native maturity and
-postcondition truth, ADR-0031 keeps dashboard-service lifecycle separate, and
-ADR-0096 requires genuine operator presence for persistent mutation. ADR-0108
-defines the bounded uninstall semantics. Tracker creation remains pending
-explicit authorization for the outward-facing write.
+postcondition truth, and ADR-0031 keeps dashboard-service lifecycle separate.
+ADR-0108 defines bounded uninstall semantics; ADR-0117 replaces the older
+ADR-0096/ADR-0108 human-presence requirement with normal owner-CLI authority
+without removing transactional safeguards. The legacy dependency on completed
+AR-197 records verifier removal; it does not restore its former fail-closed
+owner-control policy. This is an exempt pre-tracker legacy record; no duplicate
+tracker is created. The canonical tracker URL remains null, and the registry
+records the current private proof and retained native Windows obligations.
 
 ## Acceptance
+
+Criteria 4, 8 and 12 below are narrowly reconciled to ADR-0117. All ownership,
+effect-binding, lifecycle, retention and Windows clauses remain intact. The
+receipt retains the original wording and maps each criterion to source and
+evidence without issuing acceptance verdicts.
 
 - [ ] `agency uninstall` requires exactly one target selector and one of a
   write-free dry run or exact `plan_digest` confirmation.
@@ -178,9 +202,10 @@ explicit authorization for the outward-facing write.
   prepared launcher or any launcher artifact, host-profile environment, native
   plugin or marketplace source/alias, gateway state, or ZCode registration
   fails closed.
-- [ ] The native confirmation binds the operation UUID, selector, canonical
+- [ ] The prepared owner-CLI operation binding covers the operation UUID, selector, canonical
   hosts/transitions, outer plan hash, per-host bindings and exact retained
-  destinations, and fixed preservation/recovery policies.
+  destinations, and fixed preservation/recovery policies, with no second
+  native human-presence requirement.
 - [ ] Generic install, rollback, native toggle, prepared Codex
   refresh, and prepared uninstall serialize through one owner-private
   host-integrations lock; uninstall revalidates before journaling or mutation.
@@ -190,10 +215,10 @@ explicit authorization for the outward-facing write.
 - [ ] Repeating a completed uninstall is a successful no-op, while partial
   failures retain bounded evidence and the exact `--backup` recovery command;
   Windows renders it as PowerShell-safe single-quoted literals invoked with `&`.
-- [ ] A bounded owner-private operation journal records intent only after native
-  authority and locked revalidation but before the first mutation, then
+- [ ] A bounded owner-private operation journal records intent only after owner-CLI
+  binding validation and locked revalidation but before the first mutation, then
   checkpoints each host outcome without native output or configuration content;
-  denial writes no journal and every unattempted later host is explicit.
+  pre-mutation refusal writes no journal and every unattempted later host is explicit.
 - [ ] Hermes may retain only its exact disabled Agency inventory row; no other
   host residue or enabled Hermes row is misreported as detached.
 - [ ] The Python package, Agency Runtime configuration, Store, roster, evidence,
@@ -201,9 +226,56 @@ explicit authorization for the outward-facing write.
   and Codex/Claude marketplace registrations are retained, and no purge option
   exists.
 - [ ] No dashboard or other model-facing mutation endpoint is added.
-- [ ] Focused host, CLI, parser, operator-presence, and documentation checks pass.
+- [ ] Focused host, CLI, parser, owner-authority, and documentation checks pass.
 
 ## Implementation evidence
+
+### September 7 owner-CLI evidence
+
+At clean source `08fab1c4fb9b7f8ed167f0aa4366182960f6eada` plus the new
+test-only regression, the focused host/CLI package passes **68 tests with two
+native-Windows skips in 4.98 seconds**. The private live-boundary regression
+passes independently in 2.24 seconds; a retained-artifact receipt run passes
+again in 2.21 seconds at 23:14 UTC. The unchanged test file's SHA-256 is
+`17ce2f1462b8da72ede509262885129ec513f1f4e49953f41d19602169bbeba2`.
+Fresh parser/owner-authority tests pass 59 tests in 0.73 seconds.
+
+Publication preparation fast-forwards the branch to
+`d28ccc232dcc00af0162a2409930dd272bf97b5f`, including the faithful AR-184 merge
+ledger. All four inherited draft file hashes were unchanged by that update.
+The same private test and combined host/CLI/parser/owner-authority package then
+pass **127 tests with two native-Windows skips in 5.49 seconds**. The named fast
+Python production spine passes **1,085 tests with three platform skips in
+69.11 seconds**; dashboard UI passes 224. The original 23:14 receipt and its
+operation identities remain explicitly bound to the earlier source; these new
+runs are separate updated-source verification.
+
+The real in-process CLI installs a ZCode integration into an explicit disposable
+home, obtains a write-free plan, refuses a wrong digest without a journal,
+applies the exact digest through unpatched production authority and removal,
+and proves seven Agency handlers become zero. The original bundle is retained
+byte-for-byte at the operation-bound path. Runtime configuration, unrelated
+ZCode settings, history and the complete logical SQLite Store are unchanged;
+repeat plan/apply is a no-op with no new journal. Only explicit private path and
+launcher seams are used; no owner home variable or installed host is changed.
+SQLite `-wal`/`-shm` read-coordination sidecars are excluded only from the raw
+file snapshot; every logical database row is compared separately before and
+after both application and repeat. Exact output, plan/journal identities,
+seams and limits are recorded in the portable receipt.
+
+No fresh Windows companion-binding, handle-bound rename or native PowerShell
+rendering proof was performed. Those still-meaningful Windows clauses are not
+deleted or inferred from Linux behavior. No acceptance builder is prepared
+for all twelve criteria at this checkpoint, no verdict is issued, and status
+remains `in_progress`. No fresh all-host native uninstall or process-unload
+claim is made. The ZCode external same-account replacement race remains
+explicitly residual, not a reason to invent a stronger atomicity claim.
+
+### Historical July implementation evidence
+
+The following observations describe their original checkpoints, including the
+then-current native-presence architecture. They are retained as provenance,
+not fresh executions or governing authority after ADR-0117.
 
 The settled focused uninstall, parser, operator-presence, and native-asset slice
 passes 287 tests in 28.86 seconds. The latest host/CLI subset passes 42 tests in

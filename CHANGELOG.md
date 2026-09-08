@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-07
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
   - docs/roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md
   - docs/roadmap/issue-AR-170-fail-dashboard-response-correlation-closed.md
   - docs/roadmap/issue-AR-131-complete-mcp-cli-host-contracts.md
@@ -357,6 +358,16 @@ changes rather than duplicating every commit.
   cycle, and will not be removed before 0.3.0.
 
 ### Fixed
+
+- Staffing reserves downstream mandatory calls within the existing owner
+  budget and limits optional subject inference to one actual request across
+  providers. Strict staffing still requires a real critic verdict; unfundable
+  repairs retain an explicit budget cause instead of bypassing review (AR-409).
+
+- Staffing failures preserve the actual budget, deadline or provider cause
+  when no valid critic verdict exists, instead of claiming a critic veto.
+  Effective positive call allowances now survive durable failure projection;
+  expired pre-call deadlines do not claim a positive timeout (AR-408).
 
 - A host-scoped install reports residual projection drift only for its resolved
   targets. An unrelated host on another package no longer produces a false
