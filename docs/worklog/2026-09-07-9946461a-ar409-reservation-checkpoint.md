@@ -16,7 +16,7 @@ type: worklog
 commit: 9946461a96007eda1ca06830121c4a29edeb2ea7
 short: 9946461a
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/739
 related_issues: [docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md]
 ---
 
@@ -106,3 +106,7 @@ supported criterion-5-only Codex invocation succeeded. Its excerpt-only scope
 is explicit; the four original Claude judgments and digests are unchanged.
 AR-409 remains in_progress and tracker #735 stays open pending the required
 installed owner-harness live checkpoint. No product bytes changed after `51909ae8`.
+
+Publication note `6f997877` links source PR #739 and the user-visible changelog.
+The PR deliberately references rather than closes #735, preserving the
+required installed combined-candidate checkpoint after source merge.
