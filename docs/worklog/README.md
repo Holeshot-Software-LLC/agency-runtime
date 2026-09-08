@@ -2264,6 +2264,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ef7a0466` | 2026-09-08 | fix(hermes): preserve correlated native failure diagnostics (AR-418) | AR-418 | [Detail](2026-09-08-native-terminal-repair.md) |
 | `616e7be2` | 2026-09-08 | docs(hosts): checkpoint installed Hermes adapter candidate | AR-418 | [Detail](2026-09-08-native-terminal-repair.md) |
 | `9418ab83` | 2026-09-08 | docs(hosts): record Hermes candidate success and remaining native gates | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
+| `58247849` | 2026-09-08 | Merge pull request #799 from Holeshot-Software-LLC/codex/ar418-ar419-native-terminal-20260908 | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
+| `fd2b182d` | 2026-09-08 | docs(hosts): checkpoint merged native terminal repairs | AR-404, AR-418, AR-419 | [Detail](2026-09-08-native-terminal-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
