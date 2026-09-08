@@ -2262,6 +2262,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `1dffc669` | 2026-09-08 | docs(hosts): record accepted OpenClaw terminal and remaining native gates | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md), [AR-419](../roadmap/issue-AR-419-finalize-openclaw-cli-responses.md) | [Detail](2026-09-08-native-terminal-repair.md) |
 | `e157d715` | 2026-09-08 | docs(hosts): preserve accepted Claude turn and Zcode entrypoint repair | AR-404 | [Detail](2026-09-08-native-terminal-repair.md) |
 | `ef7a0466` | 2026-09-08 | fix(hermes): preserve correlated native failure diagnostics (AR-418) | AR-418 | [Detail](2026-09-08-native-terminal-repair.md) |
+| `616e7be2` | 2026-09-08 | docs(hosts): checkpoint installed Hermes adapter candidate | AR-418 | [Detail](2026-09-08-native-terminal-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
