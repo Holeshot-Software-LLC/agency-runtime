@@ -13,6 +13,14 @@ _NEGATED_SCOPE = re.compile(
     r"\b(?:do\s+not|don't|must\s+not|never|without)\b[^.;\n]*",
     re.IGNORECASE,
 )
+# A nominal disclaimer is just as explicit as "do not". Keep its scope
+# bounded so a separate positive instruction (including "but fix ...") is
+# still checked. This removes exclusions; it never authors a plan or worker.
+_NEGATED_REQUEST_SCOPE = re.compile(
+    r"\bnot\s+(?:a\s+request\s+to|asking(?:\s+you)?\s+to)\b"
+    r"(?:(?!\bbut\b)[^.;,\n])*",
+    re.IGNORECASE,
+)
 _NEGATED_EVIDENCE_SCOPE = re.compile(
     r"\b(?:do(?:es)?\s+not|don't|doesn't|must\s+not|never|nothing|without)\b[^.;,\n]*",
     re.IGNORECASE,
@@ -575,7 +583,7 @@ def plan_policy_violations(
 ) -> tuple[str, ...]:
     """Reject incomplete plans while preserving an explicit one-unit topology."""
 
-    actionable_request = _NEGATED_SCOPE.sub(" ", request)
+    actionable_request = _NEGATED_SCOPE.sub(" ", _NEGATED_REQUEST_SCOPE.sub(" ", request))
     tokens = frozenset(_TOKENS.findall(actionable_request.casefold()))
     docs_mutation = bool(
         tokens & _MUTATION
