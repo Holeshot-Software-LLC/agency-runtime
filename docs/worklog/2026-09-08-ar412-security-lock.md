@@ -12,8 +12,8 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: 7e66ea8412a3223f4c5601f598b233ec7b3251ce
+short: 7e66ea84
 date: 2026-09-08
 pr: null
 related_issues:
@@ -57,3 +57,5 @@ acceptance execution is claimed.
 
 Publish a normal PR. Later authorized isolated tooling checks and acceptance
 remain AR-412 work; issue stays in_progress.
+
+Source `7e66ea84` is the exact targeted lock refresh. The successful corrected read-only `uv tree --locked --universal --invert --package pip --package cryptography` confirms both optional-extra dependency paths without changing the lock or installing any package.
