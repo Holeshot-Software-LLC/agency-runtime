@@ -2108,6 +2108,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8c1845e5` | 2026-09-07 | chore(AR-408): integrate accepted activation and reservation filing | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 | `f670e6b5` | 2026-09-07 | fix(AR-409): integrate truthful receipts with reserved staffing calls | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `51909ae8` | 2026-09-07 | docs(AR-409): freeze combined reservation acceptance candidate | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `70009cd7` | 2026-09-07 | docs(AR-409): preserve verifier namespace refusal before retry | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

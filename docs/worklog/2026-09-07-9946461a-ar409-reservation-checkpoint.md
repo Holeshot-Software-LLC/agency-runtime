@@ -81,3 +81,10 @@ ledger `2236d996`. Bounded excerpt audit included every cited row for all five
 criteria (5/5, 5/5, 5/5, 6/6 and 5/5 excerpts, each below the 32KiB budget).
 Documentation validation passed for 1251 Markdown files. Isolated judgments
 and installed delivery remain subsequent work.
+
+Execution note `70009cd7` preserves the first all-five verifier invocation's
+five unavailable results and no recorded verdicts. Exact local namespace
+checks found the Claude package/bin directories group-writable (0775); one
+authorized nonrecursive `chmod g-w` restored 0755 and usable authenticated
+CLI 2.1.263. Source bytes, credentials and trust guards were unchanged; the
+actor that changed the modes is unknown. One same-candidate retry is next.
