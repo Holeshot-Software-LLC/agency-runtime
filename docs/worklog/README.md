@@ -2183,6 +2183,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f4264b54` | 2026-09-07 | Merge pull request #755 from Holeshot-Software-LLC/codex/ar412-security-lock-refresh | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `185db01a` | 2026-09-07 | docs(AR-287): checkpoint reviewed timeout repair and deferred verification | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `c0c42ce2` | 2026-09-07 | chore(AR-287): integrate published security-lock refresh | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
+| `5e0e7168` | 2026-09-07 | docs(timeouts): record authorized focused wrap-up checks (AR-287) | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
