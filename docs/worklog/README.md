@@ -2154,12 +2154,31 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ddcce039` | 2026-09-07 | docs(backlog): checkpoint code-first continuation to midnight Eastern | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `4f1c1c83` | 2026-09-07 | docs(backlog): integrate next-twenty source triage | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `e790c4d4` | 2026-09-07 | Merge pull request #747 from Holeshot-Software-LLC/codex/ar411-retain-catalog-failure-identity | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
+| `a1d0c965` | 2026-09-07 | feat(cli): add explicit cards to read-only roster policy and config | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-a1d0c965-readonly-cli-cards.md) |
+| `19c5ecff` | 2026-09-07 | docs(AR-251): record read-only cards and deferred verification | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-19c5ecff-readonly-card-checkpoint.md) |
 | `ae15183c` | 2026-09-07 | chore(delivery): integrate published recall failure diagnostic | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `8ce0461f` | 2026-09-07 | test(hermes): retain AR-280 native purpose authority boundary | AR-280 | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 | `378102d7` | 2026-09-07 | docs(backlog): link source triage and published diagnostic checkpoint | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `cb9e9a50` | 2026-09-07 | Merge pull request #748 from Holeshot-Software-LLC/codex/evening-live-delivery-20260907 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `54bdff1f` | 2026-09-07 | fix(cli): follow governed TTY defaults for read-only cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
 | `77391f21` | 2026-09-07 | chore(AR-280): integrate published installed-delivery checkpoint | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
-| `9b15107a` | 2026-09-07 | Merge pull request #751 from Holeshot-Software-LLC/codex/ar280-authenticated-internal-purpose | null | null |
+| `fc699ff3` | 2026-09-07 | fix(openclaw): bind complete installed-copy provenance for AR-270 | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `bc6126bb` | 2026-09-07 | docs(AR-251): align checkpoint with governed card defaults | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-bc6126bb-card-default-checkpoint.md) |
+| `a9073fe6` | 2026-09-07 | chore(AR-270): integrate published live-delivery checkpoint | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `7e66ea84` | 2026-09-07 | fix(deps): refresh vulnerable optional-tooling lock entries (AR-412) | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `9b15107a` | 2026-09-07 | Merge pull request #751 from Holeshot-Software-LLC/codex/ar280-authenticated-internal-purpose | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
+| `6e701219` | 2026-09-07 | docs(AR-270): retain closed-provenance review and deferred runtime gates | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `93866796` | 2026-09-07 | chore(AR-251): integrate published delivery and Hermes boundary records | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `362a6c1e` | 2026-09-07 | chore(AR-412): integrate published delivery and Hermes boundary records | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `59b541b7` | 2026-09-07 | docs(AR-412): cite maintainer releases within repository link boundary | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `9aba5133` | 2026-09-07 | chore(AR-270): integrate published AR-280 rendering fix | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `8869cb40` | 2026-09-07 | docs(AR-412): record independent lock scope review | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `ff9f11cb` | 2026-09-07 | Merge pull request #752 from Holeshot-Software-LLC/codex/ar270-openclaw-installed-copy-provenance | [AR-270](../roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md) | [Detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `5f20cac1` | 2026-09-07 | chore(delivery): integrate published OpenClaw provenance repair | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `a27d2c1a` | 2026-09-07 | chore(delivery): integrate published OpenClaw provenance repair | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `e348d713` | 2026-09-07 | Merge pull request #753 from Holeshot-Software-LLC/codex/ar251-readonly-cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `ca53e25e` | 2026-09-07 | chore(AR-412): integrate published read-only card views | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `f4264b54` | 2026-09-07 | Merge pull request #755 from Holeshot-Software-LLC/codex/ar412-security-lock-refresh | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `c3b217f1` | 2026-09-07 | fix(residents): recover closed claims only on a later current turn (AR-371) | AR-371 | [detail](2026-09-07-c3b217f1-resident-claim-recovery.md) |
 <!-- worklog:end -->
 

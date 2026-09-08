@@ -780,6 +780,272 @@ def test_plan_rejects_duplicate_or_unbound_marketplace_records(
     assert runner.mutation_commands == []
 
 
+def _openclaw_copy_record(target: Path, copied: Path, *, root_alias: str = "rootDir") -> dict:
+    return {
+        "id": PLUGIN_ID,
+        "version": "0.1.0",
+        root_alias: str(copied),
+        "source": str(copied / "index.js"),
+        "install": {
+            "source": "path",
+            "sourcePath": str(target),
+            "installPath": str(copied),
+            "version": "0.1.0",
+        },
+    }
+
+
+@pytest.mark.parametrize("root_alias", ["root", "rootDir"])
+@pytest.mark.parametrize("envelope", [False, True])
+def test_openclaw_complete_installed_copy_provenance_binds_only_exact_managed_source(
+    tmp_path: Path, root_alias: str, envelope: bool
+) -> None:
+    target = tmp_path / "managed"
+    copied = tmp_path / "extensions" / PLUGIN_ID
+    record = _openclaw_copy_record(target, copied, root_alias=root_alias)
+    payload: dict = record
+    if envelope:
+        payload = {
+            "plugin": {key: value for key, value in record.items() if key != "install"},
+            "install": record["install"],
+        }
+    native = NativeCommandResult(("openclaw",), 0, json.dumps(payload), "")
+    records = uninstall_subject._inventory_plugin_records("openclaw", native)
+    assert len(records) == 1
+    assert records[0]["install"] == record["install"]
+    assert uninstall_subject._plugin_is_bound(
+        "openclaw", records[0], target, expected_version="0.1.0"
+    )
+
+
+@pytest.mark.parametrize("missing", ["source", "sourcePath", "installPath"])
+def test_openclaw_partial_install_receipt_never_uses_legacy_path_fallback(
+    tmp_path: Path, missing: str
+) -> None:
+    target = tmp_path / "managed"
+    record = _openclaw_copy_record(target, tmp_path / "copy")
+    del record["install"][missing]
+    assert not uninstall_subject._plugin_is_bound(
+        "openclaw", record, target, expected_version="0.1.0"
+    )
+    record.update({"root": str(target), "source": str(target)})
+    assert not uninstall_subject._plugin_is_bound(
+        "openclaw", record, target, expected_version="0.1.0"
+    )
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "wrong-id",
+        "conflicting-id",
+        "missing-root",
+        "conflicting-root-alias",
+        "relative-root",
+        "traversing-entry",
+        "entry-outside",
+        "entry-is-root",
+        "wrong-managed",
+        "wrong-copy",
+        "remote-source",
+        "partial-install",
+        "wrong-version",
+        "wrong-install-version",
+        "conflicting-path",
+        "install-alias",
+    ],
+)
+def test_openclaw_conflicting_or_unsafe_copy_receipts_remain_unbound(
+    tmp_path: Path, fault: str
+) -> None:
+    target, copied = tmp_path / "managed", tmp_path / "copy"
+    record = _openclaw_copy_record(target, copied)
+    if fault in {"wrong-id", "conflicting-id"}:
+        record[{"wrong-id": "id", "conflicting-id": "pluginId"}[fault]] = "unrelated"
+    elif fault == "missing-root":
+        del record["rootDir"]
+    elif fault == "conflicting-root-alias":
+        record["root"] = str(tmp_path / "other")
+    elif fault == "relative-root":
+        record["rootDir"] = "copy"
+    elif fault == "traversing-entry":
+        record["source"] = str(copied / "nested" / ".." / "index.js")
+    elif fault == "entry-outside":
+        record["source"] = str(tmp_path / "other.js")
+    elif fault == "entry-is-root":
+        record["source"] = str(copied)
+    elif fault in {"wrong-managed", "wrong-copy"}:
+        alias = {"wrong-managed": "sourcePath", "wrong-copy": "installPath"}[fault]
+        record["install"][alias] = str(tmp_path / "other")
+    elif fault == "remote-source":
+        record["install"]["source"] = "npm"
+    elif fault == "partial-install":
+        record["install"] = None
+    elif fault == "wrong-version":
+        record["version"] = "foreign-version"
+    elif fault == "wrong-install-version":
+        record["install"]["version"] = "foreign-version"
+    elif fault == "conflicting-path":
+        record["path"] = str(tmp_path / "other")
+    elif fault == "install-alias":
+        record["install"]["path"] = str(target)
+    assert not uninstall_subject._plugin_is_bound(
+        "openclaw", record, target, expected_version="0.1.0"
+    )
+
+
+def test_openclaw_optional_version_fields_and_legacy_direct_binding(tmp_path: Path) -> None:
+    target = tmp_path / "managed"
+    record = _openclaw_copy_record(target, tmp_path / "copy")
+    del record["version"]
+    del record["install"]["version"]
+    assert uninstall_subject._plugin_is_bound("openclaw", record, target)
+    direct = {"id": PLUGIN_ID, "source": {"path": str(target)}}
+    assert uninstall_subject._plugin_is_bound("openclaw", direct, target)
+    direct["rootDir"] = str(tmp_path / "foreign")
+    assert not uninstall_subject._plugin_is_bound("openclaw", direct, target)
+    direct.pop("rootDir")
+    direct["install"] = None
+    assert not uninstall_subject._plugin_is_bound("openclaw", direct, target)
+
+
+@pytest.mark.parametrize("fault", ["duplicate", "outer-alias", "nested-install", "unrelated"])
+def test_openclaw_inspect_envelope_never_borrows_or_discards_conflicting_provenance(
+    tmp_path: Path, fault: str
+) -> None:
+    target = tmp_path / "managed"
+    record = _openclaw_copy_record(target, tmp_path / "copy")
+    install = record.pop("install")
+    payload: dict = {"plugin": record, "install": install}
+    if fault == "duplicate":
+        payload["other"] = dict(record)
+    elif fault == "outer-alias":
+        payload["root"] = str(tmp_path / "foreign")
+    elif fault == "nested-install":
+        record["install"] = install
+    elif fault == "unrelated":
+        payload = {"plugin": record, "other": {"install": install}}
+    records = uninstall_subject._inventory_plugin_records(
+        "openclaw", NativeCommandResult(("openclaw",), 0, json.dumps(payload), "")
+    )
+    assert len(records) != 1 or not uninstall_subject._plugin_is_bound(
+        "openclaw", records[0], target, expected_version="0.1.0"
+    )
+
+
+@pytest.mark.skipif(os.name == "nt", reason="owner handles Windows symlink cases separately")
+def test_openclaw_copy_entry_symlink_is_not_provenance(tmp_path: Path) -> None:
+    target, copied = tmp_path / "managed", tmp_path / "copy"
+    copied.mkdir()
+    foreign = tmp_path / "foreign.js"
+    foreign.write_text("not Agency")
+    (copied / "index.js").symlink_to(foreign)
+    assert not uninstall_subject._plugin_is_bound(
+        "openclaw", _openclaw_copy_record(target, copied), target, expected_version="0.1.0"
+    )
+
+
+class InstalledCopyNativeRunner(UninstallNativeRunner):
+    def __init__(self, target: Path, *, envelope: bool) -> None:
+        super().__init__("openclaw", target)
+        self.copied = target.parent / "native-copy"
+        self.envelope = envelope
+
+    def _plugin_inventory(self, *, inspected: bool = False) -> dict[str, Any]:
+        if not inspected:
+            return super()._plugin_inventory(inspected=inspected)
+        record = _openclaw_copy_record(self.target, self.copied)
+        payload = {"plugin": record, "install": record.pop("install")} if self.envelope else record
+        return {"returncode": 0, "stdout": json.dumps(payload)}
+
+
+@pytest.mark.parametrize("envelope", [False, True])
+def test_openclaw_copy_inspect_fallback_is_write_free_and_digest_bound(
+    tmp_path: Path, private_installer_launcher: tuple[Path, Path], envelope: bool
+) -> None:
+    del private_installer_launcher
+    target = Path(_stage_owned_bundle("openclaw", tmp_path)["target"])
+    runner = InstalledCopyNativeRunner(target, envelope=envelope)
+    before = _tree_snapshot(tmp_path)
+    original = _plan("openclaw", tmp_path, runner)
+    assert original["ok"] is True
+    assert runner.openclaw_inspect_count >= 1
+    assert runner.mutation_commands == []
+    assert _tree_snapshot(tmp_path) == before
+    runner.copied = target.parent / "different-native-copy"
+    changed = _plan("openclaw", tmp_path, runner)
+    assert changed["ok"] is True
+    assert original["binding_digest"] != changed["binding_digest"]
+    assert _digest([original]) != _digest([changed])
+    assert runner.mutation_commands == []
+    assert _tree_snapshot(tmp_path) == before
+
+
+def test_openclaw_copy_receipt_does_not_authorize_an_unowned_managed_tree(
+    tmp_path: Path, private_installer_launcher: tuple[Path, Path]
+) -> None:
+    del private_installer_launcher
+    target = Path(_stage_owned_bundle("openclaw", tmp_path)["target"])
+    (target / "owner-added.txt").write_text("must remain untouched")
+    runner = InstalledCopyNativeRunner(target, envelope=True)
+    before = _tree_snapshot(tmp_path)
+    plan = _plan("openclaw", tmp_path, runner)
+    assert plan["ok"] is False
+    assert plan["ownership"]["owned"] is False
+    assert runner.mutation_commands == []
+    assert _tree_snapshot(tmp_path) == before
+
+
+@pytest.mark.parametrize("shape", ["inventory", "flat-inspect", "envelope-inspect"])
+@pytest.mark.parametrize("alias", ["id", "pluginId", "plugin", "pluginName"])
+def test_openclaw_conflicting_identity_is_never_planned_as_native_absence(
+    tmp_path: Path,
+    private_installer_launcher: tuple[Path, Path],
+    shape: str,
+    alias: str,
+) -> None:
+    del private_installer_launcher
+
+    class ConflictingIdentityRunner(InstalledCopyNativeRunner):
+        def _plugin_inventory(self, *, inspected: bool = False) -> dict[str, Any]:
+            result = super()._plugin_inventory(inspected=inspected)
+            if inspected == (shape != "inventory"):
+                payload = json.loads(result["stdout"])
+                record = (
+                    payload["plugin"]
+                    if shape == "envelope-inspect"
+                    else payload
+                    if inspected
+                    else payload["plugins"][0]
+                )
+                if alias == "id":
+                    record["pluginId"] = PLUGIN_ID
+                record[alias] = "unrelated-plugin"
+                result["stdout"] = json.dumps(payload)
+            return result
+
+    target = Path(_stage_owned_bundle("openclaw", tmp_path)["target"])
+    runner = ConflictingIdentityRunner(target, envelope=shape == "envelope-inspect")
+    before = _tree_snapshot(tmp_path)
+    plan = _plan("openclaw", tmp_path, runner)
+    assert plan["ok"] is False
+    assert plan["status"] == "blocked"
+    assert "ambiguous" in plan["error"]
+    assert runner.openclaw_inspect_count == (0 if shape == "inventory" else 1)
+    assert runner.mutation_commands == []
+    assert _tree_snapshot(tmp_path) == before
+
+
+def test_openclaw_extraction_preserves_unrelated_plugins_and_display_names(tmp_path: Path) -> None:
+    record = _openclaw_copy_record(tmp_path / "managed", tmp_path / "copy")
+    record["name"] = "Agency display name"
+    payload = {"plugins": [{"id": "unrelated-plugin", "name": "Unrelated"}, record]}
+    result = NativeCommandResult(("openclaw",), 0, json.dumps(payload), "")
+    records = uninstall_subject._inventory_plugin_records("openclaw", result)
+    assert records == [record]
+    assert not uninstall_subject._openclaw_identity_conflicts(records[0])
+
+
 def test_openclaw_live_gateway_refuses_plan_without_mutation(
     tmp_path: Path,
     private_installer_launcher: tuple[Path, Path],
