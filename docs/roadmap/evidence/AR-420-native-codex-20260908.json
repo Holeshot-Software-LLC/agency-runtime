@@ -1,0 +1,169 @@
+{
+  "source_commit": "3fe3d7ba",
+  "run": {
+    "id": "6a988fc1-4148-4eba-8656-e1bae559d731",
+    "trace_id": "01a0831f-1a40-7a12-a079-3386a3b439d3",
+    "session_id": "01a0831f-19d5-72c2-9226-6ce47e6642be",
+    "host": "codex",
+    "started_at": "2026-09-08T22:24:11.573515+00:00",
+    "last_activity_at": "2026-09-08T22:24:49.248000+00:00",
+    "turn_sequence": 1614,
+    "ended_at": "2026-09-08T22:24:49.246678+00:00",
+    "status": "completed",
+    "preflight_state": "ready"
+  },
+  "routing": {
+    "status": "accepted",
+    "latency_ms": 28148,
+    "selected_ids": "[\"code-reviewer\"]"
+  },
+  "attempts": [
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-planner-v2",
+      "ordinal": 1,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "agency-planner",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-planner-v2",
+      "stage": "planner",
+      "status": "applied"
+    },
+    {
+      "model_group": "",
+      "ordinal": 2,
+      "provider_name": "local-workforce-embedding",
+      "provider_type": "ollama",
+      "reason_code": "dense_recall_applied",
+      "requested_model": "qwen3-embedding:latest",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "",
+      "ordinal": 3,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "local-workforce-reranker",
+      "provider_type": "ollama",
+      "reason_code": "structured_response_applied",
+      "requested_model": "qwen3-14b-abliterated:latest",
+      "stage": "recall_reranker",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-recruiter-v2",
+      "ordinal": 4,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "agency-recruiter",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-recruiter-v2",
+      "stage": "recruiter",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-critic-v2",
+      "ordinal": 5,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "agency-recruiter-critic",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-critic-v2",
+      "stage": "critic",
+      "status": "applied"
+    }
+  ],
+  "finalization": {
+    "id": "9a0df117-341a-490f-af7d-6eb0a23a7d6d",
+    "trace_id": "01a0831f-1a40-7a12-a079-3386a3b439d3",
+    "host": "codex",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "275f342c32095feede701491e437d2db3da280d7799c352dd1adfbae19f3921f",
+    "policy_response_hash": null,
+    "terminal_status": "completed",
+    "created_at": "2026-09-08T22:24:49.246678+00:00",
+    "session_id": "01a0831f-19d5-72c2-9226-6ce47e6642be",
+    "status": "completed",
+    "ended_at": "2026-09-08T22:24:49.246678+00:00",
+    "authoritative": true
+  },
+  "invocation": {
+    "command": [
+      "codex",
+      "exec",
+      "--sandbox",
+      "read-only",
+      "--skip-git-repo-check",
+      "--json",
+      "-C",
+      "/home/holeshot/.agency-runtime/ephemeral/ar420-staffing-diagnosis/native",
+      "-o",
+      "/home/holeshot/.agency-runtime/ephemeral/ar420-staffing-diagnosis/native/response.txt",
+      "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Give a concise correctness review with examples for [1.0, 2.0] and []. Use only this supplied code; do not read or modify repository files."
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 41.514
+  },
+  "response": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)\nRecruited via: inference\n\nWhy: Correctness review of the supplied function.\nHow it shaped outcome: Checked both requirements using only the supplied code.\n\nTwo correctness defects:\n\n- `//` performs floor division: `[1.0, 2.0]` returns `1.0`, but the required mean is `1.5`. Use `/`.\n- Empty input causes `0 // 0`, raising `ZeroDivisionError` instead of `ValueError`. Add an explicit empty-input check before dividing.\n\nThese conclusions follow from code inspection; no tests were run or repository files accessed.",
+  "response_sha256": "275f342c32095feede701491e437d2db3da280d7799c352dd1adfbae19f3921f",
+  "store_header_evidence": {
+    "model_receipt": {
+      "id": "cf2de0af-9b61-4d2b-9e2b-7356adca1dde",
+      "trace_id": "01a0831f-1a40-7a12-a079-3386a3b439d3",
+      "session_id": "01a0831f-19d5-72c2-9226-6ce47e6642be",
+      "host": "codex",
+      "requested_model": "task-agency-critic-v2",
+      "model_group": "task-agency-critic-v2",
+      "resolved_provider": "agency-recruiter-critic",
+      "resolved_model": "task-agency-critic-v2",
+      "attempted_fallbacks": 0,
+      "model_id": "",
+      "source": "wrapper",
+      "recorded_at": "2026-09-08T22:24:40.816000+00:00",
+      "started_at": "2026-09-08T22:24:40.813000+00:00",
+      "ended_at": "2026-09-08T22:24:40.813000+00:00",
+      "status": "success"
+    },
+    "skills": [],
+    "specialists": [
+      "code-reviewer"
+    ],
+    "resident_managers": [
+      "agency-steward"
+    ],
+    "selected_specialists": [
+      {
+        "slug": "code-reviewer",
+        "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+        "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+        "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance \u2014 not style preferences.",
+        "capabilities": [
+          "review diffs for correctness and regressions",
+          "identify security and maintainability defects",
+          "rank findings by impact and evidence"
+        ]
+      }
+    ],
+    "delegations": []
+  },
+  "exact_card_in_native_context": true,
+  "card_sha256": "fbd76fbe316a740eea7924c16dc69d17c8a27b5fba67a05841488c481a87e28d",
+  "exact_response_matches_finalization": true,
+  "limits": [
+    "One native correctness-review turn, not general reliability proof.",
+    "Older parent process and failed receipts remain separate.",
+    "No published projection hash is exposed in this native context."
+  ]
+}

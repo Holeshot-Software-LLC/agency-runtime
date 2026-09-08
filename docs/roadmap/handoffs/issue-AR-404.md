@@ -85,7 +85,9 @@ pair and continue. Preserve unrelated worktrees and operator files.
 Staffing reliability is the immediate priority after repeated owner-visible
 failures. AR-420 captures a reranker cross-unit candidate defect and a bounded
 schema repair, installed source3fe3d7ba/all614wheel files verified; focused164,
-production1151/three skips, UI224pass. Native/isolated acceptance pending.
+production1151/three skips, UI224pass. Fresh native Codex41.514s completed with
+all staffing stages applied, full card injection and matching accepted response
+hash; trace01a0831f-1a40-7a12-a079-3386a3b439d3. Isolated acceptance pending.
 Owned branchcodex/ar420-staffing-reliability-20260908, PR803.
 Latest native trace01a0830f-8143-7542-ac77-5ace98ceb5d4 remains failed with
 critic_wrong_neighbor_selection; its proposal is unavailable, veto unadjudicated.

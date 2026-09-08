@@ -70,7 +70,14 @@ availability, routing and tracker411 pass. Canonical private-clone build,
 independent distribution verification and strict Twine pass. Immutable installed
 source3fe3d7ba has all614package files equal to its verified wheel, SHA256
 1b1e8cb40fd0bbc5af4cb60ceb9dd82ab27fb53084d0ed1ce9e0927cf09535b1.
-Native evidence and frozen-source conformance are pending. The first conformance
+Native Codex trace01a0831f-1a40-7a12-a079-3386a3b439d3 completed in41.514s
+(staffing28.148s), with every staffing stage applied, exact full card in native
+context, truthful five headers and authoritative finalization9a0df117-341a-490f-af7d-6eb0a23a7d6d.
+Visible-response hash275f342c32095feede701491e437d2db3da280d7799c352dd1adfbae19f3921f
+matches Store. No trust bypass or model override. Source identity is independently
+verified installed bytes; native context exposes no published projection hash.
+See evidence/AR-420-native-codex-20260908.json. Frozen-source conformance passes188/188 with zero survived/invalid and
+source_unchanged=true. No exhaustive corpus, coverage or Windows matrix dispatch. The first conformance
 launcher selected a Python lacking pytest; rerun uses the existing test venv.
 The first policy-availability invocation lacked PYTHONPATH; corrected check passes.
 The repository evidence contains offered sets and observed responses, no headers,
@@ -78,7 +85,7 @@ credentials or raw owner configuration. Timing is a single replay, not a benchma
 
 ## Follow-ups
 
-AR-420 stays open for installed evidence and isolated acceptance. AR-404 keeps
+AR-420 stays open for isolated acceptance. AR-404 keeps
 broader staffing reliability unresolved and retains all Hermes/OpenClaw/Claude/
 Zcode gates. Prior host successes do not prove this new candidate. Existing
 pending operator choices remain pending; no observer or upstream publication

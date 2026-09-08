@@ -34,7 +34,7 @@ of every recruiter abstention or critic veto.
 
 ## Current state
 
-Phase demo_ready. Main baseline b69c4926 was clean and synchronized. Current
+Phase live_demo. Main baseline b69c4926 was clean and synchronized. Current
 native trace 01a0830f-8143-7542-ac77-5ace98ceb5d4 failed with a subject rejection,
 a reranker rejection and critic_wrong_neighbor_selection. Its proposal was not
 persisted; the veto remains unadjudicated. The earlier long-task receipt
@@ -48,8 +48,10 @@ prompt, credentials and configuration were unchanged. Evidence is
 [evidence/AR-420-reranker-membership-20260908.json](evidence/AR-420-reranker-membership-20260908.json).
 Focused164 and production1151/three skips pass; UI224 passes. The integration
 regression fails on original source. Canonical artifacts verified; installed
-source3fe3d7ba matches all614wheel files. Native behavior and isolated acceptance
-remain pending. PR803 carries the repair and exact evidence.
+source3fe3d7ba matches all614wheel files. Fresh native Codex trace01a0831f-1a40-7a12-a079-3386a3b439d3 has every staffing
+stage applied, full card injection, truthful headers and exact accepted final
+response hash in41.514s. Isolated acceptance remains pending; PR803 carries
+the repair and evidence/AR-420-native-codex-20260908.json.
 
 ## Approach
 
