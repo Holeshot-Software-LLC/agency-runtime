@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [handoff, staffing, headers]
 related:
+  - docs/worklog/2026-09-08-recruiter-fallback-recovery.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/worklog/2026-09-08-negated-request-scope.md
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
@@ -15,7 +16,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-414
-branch: codex/ar414-resumed-verification-20260908
+branch: codex/ar414-recruiter-20260908
 evidence_commit: c1ef85662b01da7e8bbfa93917d6afdda1534aca
 minimum_ledger_commit: 6291746a3916f6c2ee08be94197c9d2470b2597d
 hard_checkpoint_percent: 50
@@ -26,80 +27,79 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 
 ## Checkpoint
 
-Header repair merged PR774/905d37b8; planner instructions merged PR775/975ce7b4.
-Both are installed. Owner approval enabled a native diagnostic on that artifact.
-AR-415's scope repair is now merged PR779/d0bb4127 and installed fromc1ef8566.
-Phase waiting_for_operator: the new refresh changes8hook hashes again. No native
-child is active; no bypass or retry before approval for this exact new bundle.
+Recruiter configuration recovery is live-demo complete at the installed provider
+boundary. Phase fast_verification before repository delivery. Fresh normal
+staffing reproduced two malformed primary replies, reached the new content
+fallback, passed strict staffing and critic, and accepted in96.503s. No native
+session or latency improvement claim. No production Python/defaults changed.
 
 ## Completed evidence
 
-Actual installed SQLite/MCP returns a truthful failed header and leaves the run
-failed. Real IDs are supplied beside initial header values. Synthetic timeout
-fixture is not native activation. Header fast spine1151/3skip, UI224,
-focused117/1skip and112, decision conformance188/188 pass.
-Final canonical6786aaa2 artifact independently verified;614installed files match.
-Wheel843b117756bb6991b24f2c9a2551468c2c44785ebea52a2b4aa09d1f9cdca190;
-bundle dc60673491f287f7eae05e2602fae25c02bbbaee4a24b9b1df5d14d9e1527fac;
-plugin0.1.0+codex.6c3ad021798c. Final planner/header focused176pass;
-final production spine1151pass,3skip. Actual final installed MCP diagnostic passes.
+Header repair merged PR774/905d37b8; planner instructions PR775/975ce7b4.
+Actual SQLite/MCP diagnostic renders truthful failed headers without accepting
+the failed run. Earlier normal native session01a081a6-c4bf-7ee3-916a-5dff92d0b43b
+delivered all five failure-header fields and exposed AR-415's negated-scope bug.
+AR-415 repair merged PR779/d0bb4127, evidence PR780/21a8a39e, ledgercea0020b.
+Installed c1ef8566 wheel74988840e7f2e01aebd1db45ccef56372cfe07a1c87b7ce515b6df19577590bc;
+all614package files matched. Historical native evidence is not new-artifact proof.
 
-Gateway correction retained on the existing Agency planner GLM deployment:
-order0 instead of2; extra_body.reasoning_effort low instead of empty. No other
-parameter, secret or service changed. The OpenAI-compatible adapter drops the
-top-level reasoning parameter; current GLM accepts low/high/max, not medium.
-Candidate explicit empty-string novelty instructions yield accepted staffing
-25.078seconds, with all planner/recruiter/critic checks intact. Warm sample only.
+Recruiter failure isolated: same captured real53,782-character packet returns
+200 on MiniMax,404/model_not_found on the GPT-5.5 fallback. Owner configuration
+had no content-fallback route and strict budget5 could starve fallback/critic.
+GPT-5.6-sol candidate timed out60s and was not adopted. GLM candidate passed
+the actual nomination accumulator and staffing verifier. See worklog for IDs.
+
+Two existing recruiter fallback deployments now use openai/glm-5-turbo, existing
+ZAI credential reference and low reasoning through extra_body. Stored mode is
+chat, base_model glm-5-turbo; failing intermediate /responses mismatch corrected.
+Original MiniMax primary, critic and unrelated gateway deployments unchanged.
+Agency adds only recruiter content-fallback profile/mapping and strict budget8.
+Budget covers subject1, planner2, recruiter2, fallback2, critic1; bounds unchanged.
+Unrelated owner configuration compared equal after excluding these additions.
+
+Explicit fault demo: inject two primary empty objects; actual fallback first
+returns non-JSON15.282s, repair accepted18.783s, actual critic approved3.171s.
+Accepted37.282s including two synthetic faults and three simulated prior calls;
+all8funded budget units used, no hidden retry, no validator changes.
+
+Fresh unmodified installed pipeline: {} then units:string rejected with exact
+recruiter_response_shape_invalid; content fallback12.509s and critic2.396s pass.
+Accepted96.503s: subject2.963, planner6.413, embedding38.258, reranker8.880,
+primary3.639+21.166seconds. Naturally reproduced failure recovered, not just a retry.
+Embedding latency is recorded, not bundled into this recruiter repair.
 
 ## Exact blocker
 
-Historical install result below; the resumed evidence supersedes its trust status.
-
-Fresh inspection after install:8modified hooks,0trusted. Previous old bundle
-was genuinely trusted. New ordinary run has0Agency rows and0header fields.
-No more native retries before fresh approval; no bypass. Candidate instruction
-probe accepted25.078seconds with a wrapper. A final stock installed call on a
-fresh fractional-mean input took48.626seconds: subject3818ms, planner10925ms,
-embedding2859ms and reranker6213ms applied; recruiter13178/11456ms replies both
-failed validation, second recruiter_response_shape_invalid. No accepted stock
-staffing or native execution is claimed. Planner latency is not whole-turn latency.
-
-## Resumed native evidence
-
-Normal native session01a081a6-c4bf-7ee3-916a-5dff92d0b43b,57.119s,exit0
-delivers all five truthful failed headers. One failed run and preflight receipt;
-no accepted finalization. Failure is now planner completeness: `not a request to
-change` was misread as positive mutation. AR-415 reproduces this deterministically.
-Instrumented stock staffing32.141s accepted; fresh median input17.906s HTTP
-failure; bounded warm retry18.118s accepted. No recruiter schema patch or general
-reliability claim. See the new scope worklog for exact attempts and limitations.
+Current long-lived hook reports projection14852134f0aa but last published
+projectionf72f24a788ca. Normal operator reconnect/restart and a fresh session
+are required for native verification. That mismatch does not verify installed
+hook files. Reinstalling alone cannot refresh the current process. Do not
+reinterpret earlier trust/installation receipts as proof of this process.
 
 ## Same-task continuity
 
-Worktree branch contains the initial implementation and merge ledger. Read the
-linked worklog for exact artifact IDs and probe scopes. Keep all unrelated
-worktrees intact. Continue from a clean substantive/ledger pair at the50% gate.
+Read the recruiter recovery worklog for changes, negative probes and reversal
+limitations. Keep unrelated worktrees intact. Source baseline was maincea0020b;
+current delivery branch is named above. Continue from substantive/ledger pairs.
 
 ## Next bounded work package
 
-Await approval for plugin0.1.0+codex.07ad50ea4f52, bundle
-7385d3a795c5bf7dcca4ced6c6e1ebf81f92159e27479a0c11e15b34b53531a2.
-Then repeat the unchanged native review and run normal activation. Installed
-scope check passes;614files match wheel74988840e7f2e01aebd1db45ccef56372cfe07a1c87b7ce515b6df19577590bc.
-Production1151/3skip, focused185, UI224, routing and artifact gates pass.
-Keep recruiter shape/transport reliability open in AR-414; no weaker validators
-or hand-picked specialist. Never close AR414/415 on predecessor native evidence.
+Finish remaining routing/conformance/tracker gates, commit and ledger the
+recruiter evidence, open PR and merge. After the owner refreshes the long-lived
+Agency integration, verify one ordinary native turn on the current installation.
+Keep AR-414/415 open until their actual isolated acceptance gates are satisfied.
 
 ## Verification
 
-Focused planner/header tests and named fast spine; docs metadata, worklog,
-policy, strict tracker, Ruff and diff gates. Canonical artifact verification,
-installed byte identity, actual MCP and one real provider staffing call.
-Precede live calls with context telemetry. No exhaustive suite or Windows run.
+Focused inference/configuration/installer336pass including12fallback regressions.
+Named fast production spine1151pass/3skip; dashboard224pass. Metadata/docs1325
+and Ruff778files pass. Routing, decision-conformance and tracker pending here.
+No exhaustive suite, Windows matrix, new wheel, host reinstall or trust bypass.
 
 ## Constraints
 
-No manual specialist choice, relaxed validator, false acceptance, credential
-replacement, trust bypass, OpenClaw restart, or unrelated backlog wave. Preserve
-failed-run immutability and exact correlation. Reversal of the gateway change
-is order2 and empty extra_body on the same deployment only.
+No manual specialist choice, weaker validator, false acceptance, credential
+replacement, cross-provider nomination merge, OpenClaw restart or backlog wave.
+Preserve failed-run immutability and correlation. Owner config backup exists;
+reverse only owned fields after concurrent-change checks. Gateway PATCH ignores
+ordinary null fields: do not claim a null PATCH clears the new ZAI parameters.

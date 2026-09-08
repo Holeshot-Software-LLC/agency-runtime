@@ -6,6 +6,8 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [staffing, headers, codex, reliability]
 related:
+  - docs/worklog/2026-09-08-recruiter-fallback-recovery.md
+  - docs/decisions/0192-route-content-invalid-completions-to-a-content-fallback-profile.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/worklog/2026-09-08-negated-request-scope.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -96,6 +98,19 @@ the earlier native diagnostic proves this new artifact. Staffing reliability
 and current-artifact native scope verification remain unfinished.
 
 ## Approach
+
+Recruiter recovery checkpoint: HTTP404 isolated to the existing GPT-5.5 fallback;
+replace only recruiter fallback deployments with live-qualified GLM-5-turbo,
+including chat API-mode metadata. Restore the missing ADR-0192 content-fallback
+mapping and fund the strict bounded path with8calls instead of5. Installed
+fault-path evidence accepts in37.282s after two injected primary shape failures,
+one real fallback non-JSON reply and its repair, followed by a real critic.
+Fresh unmodified installed stock naturally reproduced {} then units as a string;
+the fallback and critic recovered accepted staffing in96.503s overall. Embeddings
+took38.258s; no latency improvement is claimed. Focused336pass, production
+1151pass/3skip, dashboard224pass. Native verification remains separate: this session
+reports a stale long-lived Agency process. See the linked recovery worklog for
+exact deployment IDs, scope, negative probes and reversal constraints.
 
 Render validated failure diagnostics separately from accepted finalization.
 Preserve terminal immutability, exact session/trace binding and all staffing

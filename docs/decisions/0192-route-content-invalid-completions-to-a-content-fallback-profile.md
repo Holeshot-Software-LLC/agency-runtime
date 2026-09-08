@@ -6,6 +6,8 @@ created: 2026-08-29
 updated: 2026-09-07
 tags: [reliability, workforce, inference, litellm, fallback]
 related:
+  - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
+  - docs/worklog/2026-09-08-recruiter-fallback-recovery.md
   - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
