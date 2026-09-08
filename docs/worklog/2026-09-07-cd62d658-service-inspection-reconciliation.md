@@ -17,7 +17,7 @@ type: worklog
 commit: cd62d6588d8660033bf309220b74dcc1dbdebef6
 short: cd62d658
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/743
 related_issues:
   - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
 ---
@@ -100,6 +100,8 @@ bound to their earlier read, before any parent-owned upgrade. Main integration
 does not alter those four source modules or authorize another service action.
 
 Parent coordinates normal main integration, PR URL and serial publication.
+PR743 carries the retained record; final docs require-tracker pass1,267 files,
+strict tracker parity400, repository Ruff/format770 and diff checks pass.
 AR192/PR742 merged `bad847ab` at00:40:01Z; normal integration `0799b3df`
 includes its exact immediate ledger `fde0d891`. Two documentation conflicts
 preserve both current rows and the retained AR194 slice. Product/tests/scripts
