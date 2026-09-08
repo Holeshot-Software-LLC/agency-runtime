@@ -65,7 +65,7 @@ A fresh CLI wiring read reports Codex not_measured; that is not fresh hook proof
 After the pending owner choices: capture exact OpenClaw input through its native
 consent surface, submit/adopt the native Hermes patch, and configure the chosen
 Zcode answering provider. Preserve all failed receipts; keep AR-404/418/419 open
-until isolated criteria have evidence. Same-repository PR799 is ready to merge.
+until isolated criteria have evidence. Same-repository PR799 merged at58247849.
 
 ## Installed native terminal evidence
 
@@ -202,3 +202,13 @@ abstention; this is not an accepted staffing demo or latency benchmark. The
 successful fresh MCP status probe likewise exposes no projection hash. The exact
 prior handoff receipt and original stale-projection report remain preserved.
 See `docs/roadmap/evidence/AR-404-codex-freshness-20260908.json`.
+
+
+## Merged delivery
+
+PR799 merged at58247849. This delivers the OpenClaw terminal fix, optional
+Hermes failure adapter and native candidate patch, and exact four-host evidence.
+The native candidate remains outside the default Hermes checkout. AR-404/418/419
+stay open; AR-414/415 stay closed. The recovery branch updates the capsule to this
+merged checkpoint; subsequent ledger-only maintenance records its merge. No
+additional production or provider configuration changes occur in that maintenance.

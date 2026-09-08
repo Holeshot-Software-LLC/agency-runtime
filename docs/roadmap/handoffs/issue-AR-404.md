@@ -1,5 +1,5 @@
 ---
-title: "AR-404 Hermes and OpenClaw native verification"
+title: "AR-404 native terminal repairs and remaining gates"
 status: active
 category: roadmap
 created: 2026-09-05
@@ -19,18 +19,19 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar418-ar419-native-terminal-20260908
-evidence_commit: 94b9eb28e99c7a9085e6ff6ab4638e506d25e313
-minimum_ledger_commit: 308b670ad2d8d600b96ab690100e3c0ce231c254
+branch: codex/ar404-native-recovery-20260908
+evidence_commit: 9418ab834cbba26dd91c4d5de7a14e9f80c7ceb4
+minimum_ledger_commit: 1106cf736bb2809a83695290c84f95f39f60300d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
 
-# AR-404 Hermes and OpenClaw native verification
+# AR-404 native terminal repairs and remaining gates
 
 ## Checkpoint
 
-Owned branch starts from clean synchronized main97e269ec. PR799 is open.
+PR799 merged at58247849. Repair/evidence branch is historical. This recovery
+branch records the merged checkpoint; if merged, create a new owned worktree.
 Installed immutable source8921c77e contains OpenClaw repair94b9eb28 and
 Hermes adapteref7a0466; all614
 package files match its verified wheel. OpenClaw and Claude now have fresh
@@ -74,7 +75,8 @@ no observer was installed. Do not treat elapsed time as approval.
 ## Same-task continuity
 
 Read the linked native-refresh worklog and2026-09-08-native-terminal-repair.md.
-Continue in the named owned branch; old capsule branches are merged history.
+The branch field is provenance; recheck merge state and use a new owned branch
+for subsequent changes.
 At or below50percent remaining, checkpoint the smallest safe evidence/ledger
 pair and continue. Preserve unrelated worktrees and operator files.
 
@@ -84,7 +86,7 @@ Waiting for owner choices: standalone Zcode answering provider, native OpenClaw
 observer consent, and permission to submit the tested Hermes patch upstream.
 Then finish the three remaining gates without retries or trust bypass. Hermes
 candidate-source success is proven; default native adoption remains. Close issues
-only after isolated acceptance. Merge PR799 with exact merge ledger.
+only after isolated acceptance. Preserve the completed PR799 merge and exact ledger.
 
 ## Verification
 
