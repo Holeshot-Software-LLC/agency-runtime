@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [handoff, backlog, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
+  - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
   - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
@@ -19,9 +21,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar408-staffing-failure-receipts
-evidence_commit: 51af465da9b03c6e0225c5aea39d1b9b93933c19
-minimum_ledger_commit: 5c46594cd4785a66d466842ed1a962b9751a1637
+branch: codex/ar189-private-uninstall-proof
+evidence_commit: 1c67e55844177ae266bf644e18e1f507bb56b960
+minimum_ledger_commit: 56b7f41376e4f52fdf0e325299dbde615190475e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -50,14 +52,23 @@ queue119 (41 mapped/78 legacy) until its reviewed repair is accepted.
 AR181 merged PR #731/2274823c. AR183 detached Linux producer evidence now
 passes at08fab1c4; same-SHA Windows equality/merged release set remain held.
 AR183 merged PR #733/30214408. AR184 reuses that exact producer receipt;
-both retain only their meaningful cross-platform proof obligations. AR184
-merged PR734/c64ce3ce. AR185 allnine isolated criteria satisfy at500de085;
-localdone reduces legacy byone to77 before separate AR409 filing. PR736 merged
-00fc1aef at23:55:01Z, including only AR409/#735 filing to preserve parity.
-AR408 allthree criteria now satisfy at d9dde3cd; PR/closure next. Combined
-local queue is118 (41 mapped/77 legacy), with AR409 still open.
+both retain only their meaningful cross-platform proof obligations.
+AR-184 merged PR #734/c64ce3ce; its exact merge ledger is d28ccc23.
+AR-185's nine isolated criteria satisfy at500de085; PR736 merged00fc1aef at
+23:55:01Z, including AR409/#735 filing for parity. AR408's three criteria satisfy
+atd9dde3cd; PR737 mergedbfe21d66 at23:59:35Z and #732 is CLOSED, read back.
+AR-189's private owner-CLI proof now integrates those main records normally;
+parent authorized its next serial PR. Native Windows clauses remain open.
+Queue remains118 (41 mapped/77 legacy), including open AR409, before AR189.
 
 ## Completed evidence
+
+AR-189: real private ZCode install, write-free plan, wrong-digest refusal, exact
+apply and repeat no-op; seven owned handlers removed, bundle retained unchanged,
+configuration/history/logical Store preserved. Authority, locks, replanning and
+retirement are unpatched. Updated-source focused 127/two Windows skips, fresh
+spine 1,085/three skips, UI 224 and repository Ruff/format pass. No owner-host
+mutation or native process unload claim; existing ADR-0117 authority applies.
 
 AR-407: actual scoped-warning repair, 158 focused/one Windows deselection,
 independent review no findings/35 pass, fresh spine1085/three skips and UI224.
@@ -103,19 +114,21 @@ variable. No current-turn header snapshot; do not reinstall OpenClaw.
 
 ## Same-task continuity
 
-Owned tree: codex/ar185-activation-proof. Do not commit main or touch
+Owned tree: codex/ar189-private-uninstall-proof. Do not commit main or touch
 another worker's dirty tree. Substantive commits get immediate narrow worklog
 ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
 AR-180 remains one-card exec only; parent also contains the same card, so its
 child-only wording is not literally met. AR-181 Windows remains unverified.
-Fanout now prepares AR-185, AR-189 and isolated uv-plan proof for AR-190.
-Parent owns publication, acceptance and shared-registry changes.
+Parent has published AR-185/AR-408 and authorized AR-189 serial publication;
+isolated uv-plan proof for AR-190 and AR-191 retirement remain separate.
+Parent owns sequential PR/merge coordination and acceptance.
 
 ## Next bounded work package
 
-1. Publish accepted AR408 diagnostics fix and close732 after merge.
-2. Publish retained AR189 Windows hold and actual UV-installed AR190 proof.
+1. Publish AR-189 private proof and retained Windows hold, then release the
+   serial publication token to the parent for AR-190/AR-191.
+2. Preserve accepted AR-185/AR-408 candidate hashes and verdicts unchanged.
 3. AR409 reserves mandatory stage calls within owner limits; independent review
    passes. Integrate AR408, verify, publish and run fresh installed/live checks.
 4. Stop cleanly by September 8 01:00 UTC.

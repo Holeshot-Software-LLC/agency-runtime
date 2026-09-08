@@ -69,3 +69,8 @@ Completion `7674aca9` records allthree satisfied isolated judgments against d9dd
 Merge `8c1845e5` integrates accepted AR185/main00fc1aef and AR409 filing. Only documentary overlaps were resolved by retaining both histories and the accepted AR408 state.
 
 Checkpoint `f05e0bb8` updates queue and active recovery after AR185 publication and AR408 acceptance; AR409 implementation/live testing remains next.
+
+Publication `bfe21d66` merged PR #737 at 2026-09-07T23:59:35Z. Readback confirms
+the PR is MERGED and tracker #732 is CLOSED. Its frozen acceptance candidate
+`d9dde3cd` and all three satisfied judgments remain unchanged. AR-189's next
+serial publication carries this immediate faithful merge-ledger entry.
