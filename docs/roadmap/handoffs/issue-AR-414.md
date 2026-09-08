@@ -13,9 +13,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-414
-branch: codex/ar414-installed-evidence-20260908
-evidence_commit: 992d148d8ae60e82dc5856de1af4df2c1a4c015c
-minimum_ledger_commit: 3b240fd636c9aced07079f24e012870b48eff78e
+branch: codex/ar414-final-checkpoint-20260908
+evidence_commit: 6786aaa242c69810b25baaa12b4090e24c0cd2a5
+minimum_ledger_commit: 51851f640fd4f23c9695a7e23c39cc6d9da93a25
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ---
@@ -24,9 +24,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 
 ## Checkpoint
 
-Header repair merged PR774/905d37b8; private follow-up owns planner instructions
-and evidence. Phase implementing; native package waiting_for_operator after
-install changed the eight hook hashes. No worker or native child is active.
+Header repair merged PR774/905d37b8; planner instructions merged PR775/975ce7b4.
+Both are installed. Phase waiting_for_operator after install changed the eight
+hook hashes. No worker or native child is active.
 
 ## Completed evidence
 
@@ -34,7 +34,11 @@ Actual installed SQLite/MCP returns a truthful failed header and leaves the run
 failed. Real IDs are supplied beside initial header values. Synthetic timeout
 fixture is not native activation. Header fast spine1151/3skip, UI224,
 focused117/1skip and112, decision conformance188/188 pass.
-Canonical992d148d artifact independently verified;614installed files match.
+Final canonical6786aaa2 artifact independently verified;614installed files match.
+Wheel843b117756bb6991b24f2c9a2551468c2c44785ebea52a2b4aa09d1f9cdca190;
+bundle dc60673491f287f7eae05e2602fae25c02bbbaee4a24b9b1df5d14d9e1527fac;
+plugin0.1.0+codex.6c3ad021798c. Final planner/header focused176pass;
+final production spine1151pass,3skip. Actual final installed MCP diagnostic passes.
 
 Gateway correction retained on the existing Agency planner GLM deployment:
 order0 instead of2; extra_body.reasoning_effort low instead of empty. No other
@@ -48,7 +52,11 @@ Candidate explicit empty-string novelty instructions yield accepted staffing
 Fresh inspection after install:8modified hooks,0trusted. Previous old bundle
 was genuinely trusted. New ordinary run has0Agency rows and0header fields.
 No more native retries before fresh approval; no bypass. Candidate instruction
-probe still uses a wrapper; stock installed follow-up remains to be recorded.
+probe accepted25.078seconds with a wrapper. A final stock installed call on a
+fresh fractional-mean input took48.626seconds: subject3818ms, planner10925ms,
+embedding2859ms and reranker6213ms applied; recruiter13178/11456ms replies both
+failed validation, second recruiter_response_shape_invalid. No accepted stock
+staffing or native execution is claimed. Planner latency is not whole-turn latency.
 
 ## Same-task continuity
 
@@ -58,9 +66,11 @@ worktrees intact. Continue from a clean substantive/ledger pair at the50% gate.
 
 ## Next bounded work package
 
-Finish, verify, merge and install the planner instruction follow-up. Record the
-final bundle and one stock installed staffing call. Then await owner /hooks
-approval; run normal activation plus ordinary native turn only after that.
+Await owner /hooks approval in a fresh Codex process for the exact final bundle.
+Then run normal activation plus an ordinary native turn with no overrides.
+The remaining staffing repair is the recorded recruiter response-shape boundary;
+inspect it before another paid full-path run, without weaker validation or a
+hand-picked specialist. Trust approval alone does not fix that recruiter failure.
 Never mark AR414 or AR404 done on the synthetic or wrapped probe alone.
 
 ## Verification
