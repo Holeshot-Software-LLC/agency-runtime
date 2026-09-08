@@ -120,3 +120,11 @@ installed byte comparisons, not by a self-reported CLI source revision. All eigh
 new hook timeouts remain595s; owner configuration still matches its prior bytes.
 
 Recorded checkpoint: `14459ffa` — docs(acceptance): complete verified AR-416 and AR-417 scopes.
+
+Recorded checkpoint: `9d50063b` — fix(staffing): merge PR791 installed veto verification.
+
+PR791 merged as `9d50063b` with exact subject
+`fix(staffing): merge PR791 installed veto verification`.
+Trackers AR-416/#787 and AR-417/#790 are closed after their recorded isolated
+acceptance gates; AR-414/#773 and AR-415/#778 remain open. Current native proof
+continues to wait for the owner’s review of the refreshed eight hooks.
