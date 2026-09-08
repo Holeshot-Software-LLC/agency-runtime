@@ -70,6 +70,10 @@ provider call, isolated acceptance, uninstall, disable or owner mutation ran.
 
 ## Follow-ups
 
+Normal merge `a9073fe6` integrates published main `cb9e9a50` (PR #748) with no
+AR-270 source/test conflict. The worklog append conflict retained both histories
+and faithful annotations. Source bytes remain those in `fc699ff3`.
+
 Finish the bounded independent corrected-delta review and reconcile current main
 before normal PR publication. Keep tracker #749 open/in_progress; runtime tests,
 isolated acceptance and any mutating/native delivery remain pending under AR-270.
