@@ -3,12 +3,13 @@ title: "Exact installed uv-plan evidence for AR-190"
 status: active
 category: worklog
 created: 2026-09-07
-updated: 2026-09-07
+updated: 2026-09-08
 tags: [updates, uv, evidence, isolation]
 related:
   - docs/worklog/README.md
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
   - docs/roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-190-product-source-candidate-20260908.md
   - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
 supersedes: []
 superseded_by: null
@@ -87,3 +88,19 @@ to include its own future execution. A new receipt candidate changes every
 criterion digest, so the second and final review must run all five; it cannot
 reuse the first four verdicts under a different candidate SHA. No third review
 is authorized by this bounded package.
+
+## Exact d1a9260c response
+
+Commit `eac2d6a2` retains the original criterion verbatim and distinguishes
+exact tested product source from the later commit carrying its receipt. A
+fresh clean detached d1a9260c wheel, independently verified and genuinely
+installed by uv, generated a same-SHA plan at 2026-09-08T00:00:19Z. Installed
+planner SHA-256 values match the detached source; the full path-scoped source
+diff is empty, and 669 prefix files plus receipt/entrypoint remain unchanged.
+Fresh focused tests and Ruff pass; record gates pass for 1,241 documents.
+
+The branch was pushed only to let official GitHub resolution see that exact
+commit; no PR or owner install occurred. The new evidence candidate requires
+all five isolated verdicts to be regenerated. This changes evidence semantics,
+not installer safety, ownership or mutation authority; existing ADR-0107 and
+the acceptance lifecycle still govern.
