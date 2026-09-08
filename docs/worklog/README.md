@@ -2115,6 +2115,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `70009cd7` | 2026-09-07 | docs(AR-409): preserve verifier namespace refusal before retry | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `f408b6f2` | 2026-09-07 | Merge pull request #738 from Holeshot-Software-LLC/codex/ar189-private-uninstall-proof | AR-189 | [Detail](2026-09-07-1c67e558-private-owner-uninstall-proof.md) |
 | `2c5ee2b9` | 2026-09-07 | chore(AR-409): integrate accepted main without changing staffing source | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
+| `985769e6` | 2026-09-07 | docs(AR-409): retain four judgments and recurring verifier refusal | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

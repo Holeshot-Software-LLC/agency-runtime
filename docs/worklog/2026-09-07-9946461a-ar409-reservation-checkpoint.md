@@ -93,3 +93,10 @@ Normal merge `2c5ee2b9` integrates main `f408b6f2` after accepted AR-189
 publication. All incoming records and its new uninstall regression are retained.
 The complete `agency_runtime` tree is unchanged from artifact source `51909ae8`;
 the AR-409 candidate and isolated evidence digests remain unchanged.
+
+Checkpoint `985769e6` retains four satisfied single-criterion judgments. The
+second pass's fifth criterion produced no judgment after the same executable
+namespace became group-writable during the run (00:08:07/08Z mtimes). No
+adverse verdict was changed or completed criterion repeated. Further repair
+loops are not authorized; the parent separately authorized one supported
+Codex-verifier attempt for the missing fifth result, with the same candidate.
