@@ -267,6 +267,13 @@ def _recall_performance_counts(source: Mapping[str, Any], stage: str) -> dict[st
     hit = source.get("catalog_cache_hit")
     if stage == "recall_embedding" and isinstance(hit, bool):
         result["catalog_cache_hit"] = hit
+    identity = source.get("catalog_identity")
+    if (
+        stage == "recall_embedding"
+        and isinstance(identity, str)
+        and re.fullmatch(r"sha256:[0-9a-f]{64}", identity) is not None
+    ):
+        result["catalog_identity"] = identity
     return result
 
 

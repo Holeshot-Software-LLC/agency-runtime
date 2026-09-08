@@ -72,6 +72,7 @@ behavior.
 
 ## Active capsules
 
+- [AR-411 bounded catalog-identity diagnostics](issue-AR-411.md)
 - [AR-409 required staffing call reservations](issue-AR-409.md)
 - [AR-410 Claude transport warm-up isolation](issue-AR-410.md)
 - [AR-270 OpenClaw installed-copy provenance](issue-AR-270.md)
