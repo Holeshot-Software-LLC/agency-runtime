@@ -2130,6 +2130,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `27715362` | 2026-09-07 | docs(AR-190): link retained publication and exact review limits | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `d39ec14d` | 2026-09-07 | Merge pull request #740 from Holeshot-Software-LLC/codex/ar190-uv-plan-reconciliation | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `6d8f6aae` | 2026-09-07 | docs(trust): retain AR-192 after installed fail-fast proof | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
+| `49bea737` | 2026-09-07 | docs(backlog): retire obsolete Codex V2 grant checklist | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
+| `889926d5` | 2026-09-07 | chore(AR-191): integrate published upgrade and staffing reservations | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
