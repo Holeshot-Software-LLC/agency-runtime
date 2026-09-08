@@ -25,6 +25,7 @@ from agency_runtime.core.runtime_control import (
     read_effective_runtime_control_snapshot,
 )
 from agency_runtime.core.store.schema import STORE_CLOCK_SQL, _aware_timestamp
+from agency_runtime.core.store.trace_identity import correlation_digest
 
 _MAX_GENERATION = 2**63 - 1
 _RECOVERABLE_TERMINAL_RUN_STATUSES = frozenset(
@@ -246,7 +247,7 @@ def _closed_pending_claim_can_move(
         "SELECT prior.status AS prior_status, prior.ended_at AS prior_ended_at, "
         "candidate.status AS candidate_status, "
         "candidate.preflight_state AS candidate_preflight_state, "
-        "candidate.ended_at AS candidate_ended_at "
+        "candidate.ended_at AS candidate_ended_at, candidate.turn_sequence "
         "FROM runs AS prior JOIN runs AS candidate "
         "ON candidate.session_id = prior.session_id "
         "WHERE prior.session_id = ? AND prior.trace_id = ? "
@@ -266,6 +267,16 @@ def _closed_pending_claim_can_move(
         or row["prior_status"] not in _RECOVERABLE_TERMINAL_RUN_STATUSES
         or _aware_timestamp(row["prior_ended_at"], maximum=64) is None
     ):
+        return False
+    # Retention must not make an older candidate current again. Tombstones do
+    # not retain host identity, so any later retired turn in this same session
+    # is a conservative barrier, just as for authoritative finalization lookup.
+    session_digest = correlation_digest(conn, session_id, domain="session")
+    barrier = conn.execute(
+        "SELECT MAX(turn_sequence) AS turn_sequence FROM trace_tombstones WHERE session_digest = ?",
+        (session_digest,),
+    ).fetchone()
+    if barrier is not None and int(barrier["turn_sequence"] or 0) >= row["turn_sequence"]:
         return False
     if row["candidate_status"] == "active":
         return (

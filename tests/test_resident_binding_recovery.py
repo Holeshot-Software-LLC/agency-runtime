@@ -313,6 +313,53 @@ def test_recovery_is_strictly_forward_to_latest_turn(tmp_path: Path, ordering: s
     assert _row(store) == before
 
 
+@pytest.mark.parametrize(
+    ("retired_session", "retired_host", "retired_first", "permitted"),
+    [
+        ("session", "claude", False, False),
+        ("session", "codex", False, False),
+        ("other", "claude", False, True),
+        ("session", "claude", True, True),
+    ],
+)
+def test_retention_cannot_make_a_stale_candidate_current_again(
+    tmp_path: Path,
+    retired_session: str,
+    retired_host: str,
+    retired_first: bool,
+    permitted: bool,
+) -> None:
+    store = _store(tmp_path / "retired-ordering.db")
+    if retired_first:
+        _begin(store, "retired", session=retired_session, host=retired_host)
+    binding = _fail(store, "old")
+    token = _begin(store, "candidate")
+    if not retired_first:
+        _begin(store, "retired", session=retired_session, host=retired_host)
+    store.complete_run("retired", status="completed")
+    conn = store._connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        retired = conn.execute(
+            "SELECT trace_id, session_id, turn_sequence FROM runs WHERE trace_id = 'retired'"
+        ).fetchone()
+        assert (
+            store._record_trace_tombstones(conn, [retired], retired_at="2026-09-07T00:00:00+00:00")
+            == 1
+        )
+        conn.execute("DELETE FROM runs WHERE trace_id = 'retired'")
+        conn.commit()
+    finally:
+        conn.close()
+    before = _row(store)
+    expected = "committed" if permitted else "binding_conflict"
+    assert _ready(store, "candidate", token, binding) == {"outcome": expected}
+    if permitted:
+        assert _row(store)["pending_trace_id"] == "candidate"
+    else:
+        assert _row(store) == before
+
+
 def test_stale_claim_and_late_stop_cannot_overwrite_the_new_owner(tmp_path: Path) -> None:
     store = _store(tmp_path / "cas.db")
     binding = _fail(store, "old")

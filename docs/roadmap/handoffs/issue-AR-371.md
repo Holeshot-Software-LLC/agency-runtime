@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-371
 branch: codex/ar371-recover-closed-resident-claims
-evidence_commit: 9b15107a3769ac475fd2d1a72d4f6598b7d1cef1
-minimum_ledger_commit: 9b15107a3769ac475fd2d1a72d4f6598b7d1cef1
+evidence_commit: c3b217f1bca39968f19f9935fe7c44a1c236ed9e
+minimum_ledger_commit: 5538beb6969ee3c63922143236e5176f54c5df82
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/521
 ---
@@ -26,10 +26,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/521
 
 ## Checkpoint
 
-Branch-only step 2 candidate; metadata names the clean source base, not an
-accepted or installed changed build. Worktree:
+Branch-only step 2 candidate; metadata names the first source/ledger checkpoint,
+not an accepted or installed build. Final retention correction and wrap-up
+evidence accompany this capsule; exact history is in the worklog. Worktree:
 `/tmp/agency-runtime-ar371-recover-closed-resident-claims`.
-Phase: implementing. Existing step 1 header evidence/history is preserved.
+Phase: fast_verification. Existing step 1 header evidence/history is preserved.
 
 ## Completed evidence
 
@@ -37,30 +38,33 @@ Source trace confirms every conflicting pending trace was refused forever.
 Candidate permits the existing CAS to move a closed old claim to a newer/latest
 same-host/session turn only at its valid claim boundary. Delivery stays pending,
 with identical mode/restore generation and all epoch/kernel checks retained.
-Thirty-two new real-Store cases and an updated hook lifecycle regression are
-written, not run. Scoped Ruff lint/format and diff checks pass.
+The final source also checks retired-turn ordering through the existing verified
+HMAC session tombstones. Thirty-six new real-Store cases plus nearby lifecycle
+and header checks passed: 46 tests in 11.90s. Bounded independent source review
+reported no remaining scoped finding; scoped Ruff lint/format and diff checks pass.
 
 ## Exact blocker
 
-Frozen-source review, test execution, isolated acceptance and native proof are
-pending. No accepted-completion claim; tracker #521 stays open/in_progress.
+Broad suite, isolated acceptance and installed native proof remain pending.
+No accepted-completion claim; tracker #521 stays open/in_progress.
 
 ## Same-task continuity
 
-Owner requested code-first with no new tests, CI, live canaries or model calls.
+Owner initially deferred tests, then authorized focused wrap-up execution while
+requesting a clean stopping point and parent-run installation/live evaluation.
 No owner Store read/write, profile mutation or host operation was performed.
-Continue in this same task after recording the substantive/ledger checkpoint.
+Finish the clean handoff; no new triage or provider/native calls in this task.
 
 ## Next bounded work package
 
-Finish bounded independent source review; fix scoped findings, integrate current
-main and publish an in-progress PR. Leave tests and acceptance explicit until
-the owner reopens execution. Do not close the issue on static evidence.
+Parent integrates/publishes the reviewed in-progress candidate, then owns the
+combined artifact installation and native evaluation. Do not close the issue
+on source review and focused tests alone; preserve outstanding acceptance gates.
 
 ## Verification
 
-Static commands and exact written test boundaries are in the source evidence
-receipt. A test assertion's presence is not a passing test result.
+Exact focused command, result and review/retention scope are in the source
+evidence receipt. No full trim-command, broader suite or native claim is made.
 
 ## Constraints
 
@@ -69,3 +73,5 @@ logging or cross-host/session recovery. The same fail-open turn may still be
 awaiting Stop; run closure alone is not abandonment. Missing/retired run proof,
 unknown status, invalid timestamps, active prior turns and stale candidates stay
 closed. Additional restore generations must not be consumed early.
+Newer retired turns block conservatively per session because tombstones retain
+no host field; retirement cannot make an older candidate latest again.

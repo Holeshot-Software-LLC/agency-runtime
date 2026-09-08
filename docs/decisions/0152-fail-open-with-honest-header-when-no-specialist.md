@@ -91,6 +91,14 @@ deterministic no-match fallback worker — stands unchanged.
 - The README "fails loudly" promise is honored by the truthful header and
   persisted receipt, not by blocking the host.
 
+## Implementation trace
+
+Implementation checkpoint `c3b217f1` (AR-371) bounds a closed old resident claim
+only when a strictly later current turn reaches its own ready/fail-open claim
+boundary. Closing the same fail-open run is not delivery acknowledgment. The
+existing header truthfulness and non-staffing integrity refusals remain intact;
+the AR-371 evidence record distinguishes focused tests from pending native proof.
+
 ## Alternatives
 
 - **Keep the hard block (ADR-0122 as written).** Rejected because it bricks the

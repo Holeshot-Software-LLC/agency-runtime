@@ -58,8 +58,8 @@ The failure is self-perpetuating and silent.
 
 ## Current state
 
-2026-09-07 code-first continuation: step 2 has a source candidate and 32 new
-written, unrun real-Store cases. Recovery moves an older closed pending claim
+2026-09-07 continuation: step 2 has a reviewed source candidate and 36 new
+real-Store cases. Recovery moves an older closed pending claim
 only to a different, strictly newer, latest run in the same host/session, at
 that incoming run's own ready or fail-open claim boundary. The full existing
 binding CAS still owns the write; it neither releases an unclaimed window nor
@@ -70,9 +70,11 @@ The existing fail-open lifecycle regression now describes that intentional
 next-turn recovery and preserves the delayed old Stop/new Stop distinction.
 Active, unknown, missing, malformed, out-of-order and wrong-scope run evidence
 stays refused. Kernel/control-epoch/generation checks are unchanged. Static
-Ruff lint/format and diff checks pass; independent frozen-source review,
-runtime tests, isolated acceptance and native delivery remain pending.
-No test, CI, model/provider call or owner Store mutation ran in this package.
+Ruff lint/format and diff checks pass. The owner's wrap-up authorization reopened
+focused execution: 46 tests passed in 11.90s, with no preceding failed attempt.
+Bounded independent source review reported no remaining scoped finding. Broad
+suite, isolated acceptance and installed native delivery remain pending. No CI,
+model/provider call, native operation or owner Store mutation ran in this package.
 
 ### Preserved historical state
 
@@ -129,6 +131,11 @@ recognized terminal old status with a valid bounded aware end timestamp, and
 positive increasing durable turn sequences. The incoming run must be latest
 for the same canonical host/session and be active/in-progress or just closed
 preflight_failed with a valid end timestamp.
+An existing verified HMAC session tombstone lookup prevents retention from
+making an older candidate latest again. Since tombstones have no host field,
+newer retired turns in the same session conservatively refuse recovery even
+when they originated on another host; unrelated sessions and older tombstones
+do not block. No new identity fields or schema writes are introduced.
 
 `_commit_current_binding` then uses its existing state compare-and-swap to
 retarget pending/last trace fields while preserving delivery mode and the
