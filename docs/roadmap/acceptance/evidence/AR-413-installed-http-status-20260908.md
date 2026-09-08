@@ -34,6 +34,12 @@ and 13 malformed/unknown values. Provider bodies, endpoints, headers and keys
 are deliberately supplied to the projection and checked absent afterward.
 Only exact integer statuses 100 through 599 survive; zero/absent stays absent.
 
+An isolated acceptance reviewer requested explicit non-HTTP and absent-field
+legacy evidence. Three additional cases now test timeout/network failures
+through workforce, SQLite and hiring plus legacy projection fixed points.
+The same focused command then completed with 83 passed in 1.40 seconds.
+This adds tests only; the installed production implementation is unchanged.
+
 ## Installed failure demonstration
 
 Canonical wheel and sdist built from exact source

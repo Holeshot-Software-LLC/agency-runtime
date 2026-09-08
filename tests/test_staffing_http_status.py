@@ -97,3 +97,48 @@ def test_hiring_failure_keeps_transport_status(status):
     assert (
         project_preflight_provider_attempts([failures[0].as_receipt()])[0]["http_status"] == status
     )
+
+
+@pytest.mark.parametrize("reason", ["provider_call_timed_out", "provider_call_failed"])
+def test_non_http_failure_does_not_invent_status(tmp_path, reason):
+    failure = replace(fixtures._result({}), failure_reason=reason, call_attempted=True)
+    outcome, _ = receipts._run([failure])
+    assert not outcome.accepted
+    routing = receipts._routing(outcome)
+    stored = receipts._persist_failure(tmp_path, routing)
+    assert "http_status" not in stored["provider_attempts"][0]
+    for project in (
+        _provider_attempts,
+        project_model_receipt_attempts,
+        project_preflight_provider_attempts,
+    ):
+        assert "http_status" not in project(routing["provider_attempts"])[0]
+    _, _, failures = hiring._invoke(
+        [_litellm()],
+        prompt="p",
+        schema={"type": "object"},
+        system="s",
+        stage="hiring",
+        invoker=lambda *args, **kwargs: failure,
+        budget=hiring._CallBudget(1),
+    )
+    assert failures[0].http_status == 0
+    assert "http_status" not in project_preflight_provider_attempts([failures[0].as_receipt()])[0]
+
+
+def test_legacy_receipt_without_status_remains_a_fixed_point():
+    legacy = {
+        "stage": "planner",
+        "provider_name": "planner",
+        "provider_type": "litellm",
+        "status": "failed",
+        "reason_code": PROVIDER_HTTP_STATUS_ERROR,
+    }
+    for project in (
+        _provider_attempts,
+        project_model_receipt_attempts,
+        project_preflight_provider_attempts,
+    ):
+        projected = project([legacy])
+        assert "http_status" not in projected[0]
+        assert project(projected) == projected

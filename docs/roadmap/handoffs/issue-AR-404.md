@@ -34,7 +34,8 @@ planner/gateway changes and AR-413 status propagation. Main floor4c98e8f7.
 
 Installed source was4cbebf73 at the native priority experiment. A subsequent
 requested Codex refresh reports already_current/no_op with published bundle
-f838a7676e42 and unverified activation; do not reuse old trust evidence.
+f838a7676e42. Separate host inspection confirms trusted hooks and a matching
+11:24UTC activation attestation; bundle and projection are different identities.
 New AR-413/#765 makes the unfinished
 inventory121 =49 mapped +72 legacy; it is a specific diagnostic gap, not121bugs.
 
@@ -91,15 +92,17 @@ The original owner launcher is retained privately; no secret file was backed up.
 ## Next bounded work package
 
 AR-413 code preserves bounded status through staffing/hiring and durable receipt
-projections. Focused80, fast spine1151/3skip, dashboard224, routing and decision
+projections. Focused83, fast spine1151/3skip, dashboard224, routing and decision
 conformance pass. Canonical build, Twine and independent verification pass in a
 clean same-source clone. The installed wheel proves real loopback401/408/429/502
 through workforce intoSQLite, without response bodies or gateway-log inference.
 Formal isolated acceptance and PR delivery remain. The native priority experiment
 failed plannerHTTP46910ms; order2 was restored at12:40:26UTC with exact readback.
 No priority change remains. A direct minimal structured call to the existing GLM
-deployment succeeds in2951ms; this does not prove staffing quality or native
-success. Compare the alias before another full native run. Worklog
+deployment succeeds in2951ms; alias2142ms. The production5337-character planner
+prompt and1967-character schema fail HTTP408 in45704/45137ms on alias/direct.
+The configured planner thinking_level is medium; a low-effort request-only
+comparison is pending. No persistent thinking change yet. Worklog
 2026-09-08-planner-reliability owns details. No new credentials or trust bypass.
 
 ## Verification
@@ -116,3 +119,4 @@ fallback, provider-route changes outside the approved bounded experiment,
 shared-service restart without approval, raw
 transcript publication, guessed headers or acceptance promotion. Use normal
 branch/PR/merge and exact ledgers for substantive repository work.
+The isolated acceptance reviewer requested non-HTTP/legacy tests; added three.

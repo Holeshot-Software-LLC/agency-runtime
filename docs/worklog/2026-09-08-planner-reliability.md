@@ -13,10 +13,10 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: ed26177f281fba0e4aea807d2092574ea0e47e3d
+short: ed26177f
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/768
 related_issues: [docs/roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md, docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md]
 ---
 
@@ -86,14 +86,25 @@ their trusted prior payload; this diagnostic installation did not refresh them.
 Deterministic routing gates pass. Decision-conformance's first baseline fails on
 private test-directory permissions under ambient umask; the077 rerun passes,
 source_unchanged true. A minimal structured call to the exact GLM deployment
-returns the correct object in2951ms. This isolates basic deployment reachability,
-not full staffing quality. Alias comparison remains pending.
+returns the correct object in2951ms; the alias returns it in2142ms. These prove
+basic request reachability, not full staffing quality. A production planner
+payload using the real293-worker snapshot (5337prompt characters,1967schema
+characters,4096reply tokens) fails on both alias and directGLM with HTTP408 in
+45704/45137ms. No native hook or worker execution is involved in this comparison.
 
 The requested Codex install refresh reports already_current/no_op, enabled and
 registered but activation required, hook trust unverified. Its published bundle
 is f838a7676e42ac9b336da1335f3b26ca73e32cdc4c4126ace68c5d2c28f6aa7f,
-plugin0.1.0+codex.7773634d503c. This differs from the earlier experiment's
-projection: do not claim that earlier trust attests this later installation.
+plugin0.1.0+codex.7773634d503c. Bundle digest and projection digest are distinct
+identities, not evidence of a changed installation. A separate current host
+status inspection reports trusted hooks, runtime-verified maturity and the
+matching11:24UTC activation attestation (digest7d808bc795bf). It still does not
+attest ordinary staffing reliability after the observed planner failures.
+
+The isolated Codex acceptance reviewer satisfied1/3/4 and marked2 absent for
+missing explicit non-HTTP/legacy evidence. Added those three cases;83focused
+tests now pass. The default Claude verifier returned no usable verdict. No
+builder-authored verdict or acceptance override was used. PR768 owns delivery.
 
 AR-413 installed failure proof and isolated acceptance; AR-404 native ordinary
 staffing/finalization with valid current binding and approved MCP-write mode.
