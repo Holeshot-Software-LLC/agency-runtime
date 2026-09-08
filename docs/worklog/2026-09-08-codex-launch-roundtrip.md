@@ -48,3 +48,5 @@ two launcher probes and native version. Live results are pending.
 Complete current-profile native roundtrip, then bounded ordinary MCP/finalization
 and latency checks. Stop at explicit operator prerequisites; no OpenClaw restart
 or wide backlog work.
+
+Pre-live checkpoint `2c07c6539a0acfcd943ac85256d07f9d3d204731` records the owner launch repair, fresh trusted hooks and independent MCP startup. Native execution remains pending; this clean recovery pair precedes live evaluation under the context protocol.
