@@ -37,3 +37,8 @@ This record cites observations; independent verification supplies verdicts.
 | 3 | file | Fresh installed native turn, all stages applied, exact card and final response | 2026-09-08 | docs/roadmap/evidence/AR-420-native-codex-20260908.json |
 | 3 | command-output | Installed wheel identity, exact byte check and validation | 2026-09-08 | docs/worklog/2026-09-08-reranker-membership-repair.md#verification |
 | 3 | file | Canonical scope, limitations and tracker mapping | 2026-09-08 | docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md |
+
+## Verification
+
+| Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
+|---|---|---|---|---|---|
