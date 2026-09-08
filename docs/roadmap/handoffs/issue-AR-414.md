@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [handoff, staffing, headers]
 related:
+  - docs/worklog/2026-09-08-native-staffing-receipts.md
   - docs/worklog/2026-09-08-recruiter-fallback-recovery.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/worklog/2026-09-08-negated-request-scope.md
@@ -16,9 +17,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-414
-branch: codex/ar414-recruiter-20260908
-evidence_commit: 9e6d05c001910e21928f60834d84199075757664
-minimum_ledger_commit: 39cfdfd9136bed94b7c7bf7ce292d60210dcd7b1
+branch: codex/ar414-native-receipts-20260908
+evidence_commit: 389be187013d143305810f898a7a09a477690bba
+minimum_ledger_commit: dcc48e7c9767955f08282243c85ddd968980d309
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ---
@@ -27,14 +28,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 
 ## Checkpoint
 
-Recruiter configuration recovery is live-demo complete at the installed provider
-boundary. Phase waiting_for_operator for fresh native evidence. Fresh normal
-staffing reproduced two malformed primary replies, reached the new content
-fallback, passed strict staffing and critic, and accepted in96.503s. No native
-session or latency improvement claim. No production Python/defaults changed.
-PR782 carries the recovery. Old/new generated hook timeouts remain595s on all
-four harnesses. Exact order-2 transport now returns200 but invalid nominations;
-retain that negative sample, not a staffing success claim.
+Scoped native demonstration complete. One ordinary installed native review has uncached accepted
+staffing and exact-response Stop-hook acceptance. The stale-process blocker is
+resolved for the current MCP process and all eight hook hashes are trusted.
+The exact historical handoff request reproduced a semantic critic veto in the
+fresh native session. Standalone instrumented handoff accepted a different team
+in19.557s, which cannot establish whether either veto was erroneous. Native
+handoff diagnosis remains in progress. No production/config edits.
+See the native-receipts worklog for exact trace IDs and response hash.
 
 ## Completed evidence
 
@@ -73,25 +74,36 @@ Embedding latency is recorded, not bundled into this recruiter repair.
 
 ## Exact blocker
 
-Current long-lived hook reports projection14852134f0aa but last published
-projectionf72f24a788ca. Normal operator reconnect/restart and a fresh session
-are required for native verification. That mismatch does not verify installed
-hook files. Reinstalling alone cannot refresh the current process. Do not
-reinterpret earlier trust/installation receipts as proof of this process.
+Historical failure receipt ba132c4d records successful recruiter and critic calls
+followed by wrong-neighbor-selection. Subject classification failure was nonfatal.
+Fresh native handoff trace01a0820a-fc29-74c0-8063-d53748450a7f repeats that veto.
+Neither failure receipt retains the proposed team, so the critic cannot yet be
+judged right or wrong. The one captured standalone call approved technical-writer
+and reality-checker; it is a different proposal without native preceding context.
+Do not call that acceptance a fix.
+No operator trust/restart gate remains for this demonstrated native process.
 
 ## Same-task continuity
 
-Read the recruiter recovery worklog for changes, negative probes and reversal
-limitations. Keep unrelated worktrees intact. Source baseline was maincea0020b;
-current delivery branch is named above. Continue from substantive/ledger pairs.
+Read the native-receipts worklog, then recruiter recovery for configuration and
+reversal limits. The resumed clean baseline was mained9d5aa9; current delivery
+branch is named above. Keep unrelated worktrees and Windows items untouched.
 
 ## Next bounded work package
 
-Delivery is recorded in PR782. After the owner refreshes the long-lived Agency
-integration, verify one ordinary native turn on the current installation.
-Keep AR-414/415 open until their actual isolated acceptance gates are satisfied.
+Capture a failing plan/proposal and its actual critic packet together in the
+same native context; identify whether the veto is warranted before fixing any
+proven defect. Existing failed receipts cannot reconstruct that packet. Keep
+AR-414/415 open until isolated acceptance gates have evidence. Never retry merely
+to obtain approval, manually select specialists, or weaken the critic.
 
 ## Verification
+
+Current focused189pass, production1151pass/3skip, UI224pass; Ruff/docs/routing
+and strict tracker pass. Current frozen-source conformance188/188pass,
+source_unchanged=true, after resolving runner interpreter/umask setup failures.
+The following paragraph describes the prior recovery checkpoint.
+
 
 Focused inference/configuration/installer336pass including12fallback regressions.
 Named fast production spine1151pass/3skip; dashboard224pass. Metadata/docs1325
