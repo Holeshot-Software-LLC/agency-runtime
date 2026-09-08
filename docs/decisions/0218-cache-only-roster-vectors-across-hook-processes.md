@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [performance, workforce, privacy]
 related:
+  - docs/roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md
   - docs/roadmap/issue-AR-403-reuse-roster-embeddings-across-hook-processes.md
   - docs/worklog/README.md
 supersedes: []

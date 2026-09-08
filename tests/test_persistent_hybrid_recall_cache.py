@@ -153,6 +153,89 @@ def test_failure_receipt_keeps_bounded_recall_work_counts_not_inputs():
     assert not {"input_count", "provider_call_count", "catalog_cache_hit"} & invalid.keys()
 
 
+def test_failure_receipt_retains_only_the_embedding_catalog_digest():
+    from agency_runtime.core.preflight_failure import (
+        default_preflight_failure_receipt,
+        project_preflight_failure_receipt,
+        project_preflight_provider_attempts,
+    )
+    from tests.test_preflight_failure_diagnosis import _attempt
+
+    identity = "sha256:" + "a1" * 32
+    projected = project_preflight_provider_attempts(
+        [
+            _attempt(
+                stage="recall_embedding",
+                catalog_identity=identity,
+                catalog_cache_hit=False,
+                input_count=294,
+                provider_call_count=1,
+                query="private-query",
+                catalog_path="/private/catalog",
+                vectors=[1, 0],
+            )
+        ]
+    )
+    assert projected is not None
+    [row] = projected
+    assert row["catalog_identity"] == identity
+    assert row["catalog_cache_hit"] is False
+    assert row["input_count"] == 294
+    assert row["provider_call_count"] == 1
+    assert not {"query", "catalog_path", "vectors"} & row.keys()
+    assert project_preflight_provider_attempts(projected) == projected
+    receipt = default_preflight_failure_receipt()
+    receipt["provider_attempts"] = projected
+    assert project_preflight_failure_receipt(receipt) == receipt
+
+
+@pytest.mark.parametrize(
+    "identity",
+    [
+        None,
+        True,
+        1,
+        [],
+        {},
+        "",
+        "/private/catalog",
+        "catalog-a",
+        "sha256:" + "a" * 63,
+        "sha256:" + "a" * 65,
+        "sha256:" + "A" * 64,
+        "sha256:" + "g" * 64,
+        "SHA256:" + "a" * 64,
+        " sha256:" + "a" * 64,
+        "sha256:" + "a" * 64 + "\n",
+    ],
+)
+def test_failure_receipt_omits_invalid_catalog_identity_without_losing_attempt(identity):
+    from agency_runtime.core.preflight_failure import project_preflight_provider_attempts
+    from tests.test_preflight_failure_diagnosis import _attempt
+
+    projected = project_preflight_provider_attempts(
+        [_attempt(stage="recall_embedding", catalog_identity=identity, input_count=294)]
+    )
+    assert projected is not None
+    [row] = projected
+    assert "catalog_identity" not in row
+    assert row["stage"] == "recall_embedding"
+    assert row["input_count"] == 294
+    assert row["reason_code"] == "provider_response_contract_invalid"
+
+
+@pytest.mark.parametrize("stage", ["recall_reranker", "planner", "recruiter", "unknown"])
+def test_failure_receipt_does_not_copy_catalog_digest_to_unrelated_stages(stage):
+    from agency_runtime.core.preflight_failure import project_preflight_provider_attempts
+    from tests.test_preflight_failure_diagnosis import _attempt
+
+    projected = project_preflight_provider_attempts(
+        [_attempt(stage=stage, catalog_identity="sha256:" + "a" * 64)]
+    )
+    assert projected is not None
+    assert "catalog_identity" not in projected[0]
+
+
 @pytest.mark.skipif(os.name == "nt", reason="POSIX permission/link boundary")
 @pytest.mark.parametrize("kind", ["directory-link", "file-link", "hard-link", "public"])
 def test_unsafe_cache_is_ignored_without_touching_target(tmp_path, kind):
