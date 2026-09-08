@@ -55,3 +55,5 @@ Fast spine, installed artifact and new live checks remain pending.
 AR-413 installed failure proof and isolated acceptance; AR-404 native ordinary
 staffing/finalization with valid current binding and approved MCP-write mode.
 Do not promote the old activation into current ordinary reliability evidence.
+
+Source checkpoint `ed26177f281fba0e4aea807d2092574ea0e47e3d` preserves HTTP status through the full staffing failure path;80focused tests pass. Clean substantive/ledger pair precedes the authorized gateway experiment.

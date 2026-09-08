@@ -460,7 +460,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
-| [AR-413](issue-AR-413-preserve-http-status-in-staffing-receipts.md) | `c1e17448`; filing only, downstream HTTP-status loss demonstrated in fresh ordinary Codex turns | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
+| [AR-413](issue-AR-413-preserve-http-status-in-staffing-receipts.md) | `c1e17448`, `ed26177f`; filing only, downstream HTTP-status loss demonstrated in fresh ordinary Codex turns | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
 | [AR-369](issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | Diagnostic correction pending source checkpoint, `a10e3117`, `5180c14f`, `ae763a0a`, `e85ce604` | Existing advisory-runtime boundary; no policy change |
 | [AR-412](issue-AR-412-refresh-vulnerable-tooling-lock.md) | Pending substantive checkpoint, `7e66ea84`, `362a6c1e`, `59b541b7`, `8869cb40`, `a27d2c1a`, `ca53e25e`, `f4264b54`; narrow two-package lock refresh, tests deferred | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md) |
 | [AR-01](issue-AR-01-selection-explain-receipts.md) | [`42f6580`](../worklog/README.md) | [ADR-0015](../decisions/0015-versioned-selection-explain-receipts.md) |
