@@ -73,6 +73,30 @@ def test_compact_intent_schema_binds_capabilities_to_current_ontology() -> None:
     assert capabilities["items"]["enum"] == ["analysis", "review"]
 
 
+@pytest.mark.parametrize(
+    "negative",
+    [
+        "not a request to change the repository or its records",
+        "not asking you to change the repository",
+        "not requesting changes to the repository",
+    ],
+)
+def test_negated_request_does_not_invent_code_mutation(negative: str) -> None:
+    request = (
+        "Review the supplied Python function. Follow the installed Agency runtime "
+        f"instructions. This is a bounded live execution check, {negative}."
+    )
+    plan = _compile(_intent(artifact="review-report", capabilities=["review"]), request=request)
+    assert plan_policy_violations(request, plan) == ()
+
+
+@pytest.mark.parametrize("boundary", [". ", "; ", "\n", ", ", ", but ", " but "])
+def test_negated_request_preserves_separate_positive_mutation(boundary: str) -> None:
+    request = f"This is not a request to change documentation{boundary}fix the Python function."
+    plan = _compile(_intent(artifact="review-report", capabilities=["review"]), request=request)
+    assert "plan_missing_implementation" in plan_policy_violations(request, plan)
+
+
 def _compile(
     value: dict[str, object],
     *,

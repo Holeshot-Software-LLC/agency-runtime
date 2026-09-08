@@ -6,6 +6,8 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [staffing, headers, codex, reliability]
 related:
+  - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
+  - docs/worklog/2026-09-08-negated-request-scope.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/decisions/0239-render-failed-turn-diagnostics-without-acceptance.md
   - docs/worklog/README.md
@@ -33,7 +35,7 @@ hashed resident-manager turn reference with the actual trace/session IDs.
 
 ## Current state
 
-Phase implementing. The header reader requires an active turn and rejects the
+Initial baseline before the repair: the header reader requires an active turn and rejects the
 persisted preflight_failed state before rendering its receipt. Even historical
 validation rejects the valid failure binding because no ready recipe exists.
 The planner's configured alias has two gateway deployments; recent actual
@@ -77,6 +79,15 @@ whole staffing failed48.626seconds at two recruiter validations, the repair
 reporting recruiter_response_shape_invalid. No native or overall staffing
 success is claimed. Trust approval and recruiter reliability remain separate
 unfinished gates; the earlier25.078second accepted probe is not a general guarantee.
+
+Resumed checkpoint: all eight hooks are now trusted. A normal native run on the
+installed artifact delivered all five truthful failure-header fields, proving
+that the restart/trust blocker is resolved. It revealed a deterministic plan
+scope bug, now tracked separately as AR-415: `not a request to change` incorrectly
+triggered mutation and release requirements. Two instrumented installed staffing
+calls accepted (32.141s and18.118s); one fresh input failed HTTP transport. The
+recruiter shape failure was not reproduced and is not declared repaired. Phase
+implementing; AR-415 owns the next bounded scope repair and installed test.
 
 ## Approach
 

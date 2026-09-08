@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-07
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/roadmap/issue-AR-251-cli-presentation-richness.md
   - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
   - docs/roadmap/issue-AR-407-scope-install-drift-to-requested-hosts.md
@@ -385,6 +386,10 @@ changes rather than duplicating every commit.
   cycle, and will not be removed before 0.3.0.
 
 ### Fixed
+
+- Plan completeness respects explicit `not a request to change` and `not asking
+  you to change` exclusions without hiding separate positive mutation clauses
+  (AR-415).
 
 - Preserve actual HTTP status codes through workforce and hiring failure
   attempts into durable/operator receipts, without retaining provider bodies or
