@@ -582,6 +582,7 @@ class HiringInferenceAttempt:
     # deliberately not part of ``receipt_id``: the digest identifies the call,
     # and the deadline is configuration around it.
     timeout_ms: int = 0
+    http_status: int = 0
     metadata_version: int | None = None
     provider_chain_index: int | None = None
     provider_call_attempted: bool | None = None
@@ -775,6 +776,7 @@ def _attempt(
         reason_code=_APPLIED_REASON,
         latency_ms=int(result.latency_ms),
         timeout_ms=max(0, int(provider.timeout * 1000)),
+        http_status=result.http_status,
         **dict(attempt_metadata or {}),
     )
 
@@ -786,6 +788,7 @@ def _failed_attempt(
     reason_code: str,
     status: str = "failed",
     latency_ms: int = 0,
+    http_status: int = 0,
     attempt_metadata: Mapping[str, Any] | None = None,
 ) -> HiringInferenceAttempt:
     """Record one try that produced no structured result (AR-378).
@@ -803,6 +806,8 @@ def _failed_attempt(
         "reason_code": reason_code,
         "latency_ms": latency_ms,
     }
+    if http_status:
+        evidence["http_status"] = http_status
     return HiringInferenceAttempt(
         stage=stage,
         provider=provider.name,
@@ -814,6 +819,7 @@ def _failed_attempt(
         reason_code=reason_code,
         latency_ms=latency_ms,
         timeout_ms=max(0, int(provider.timeout * 1000)),
+        http_status=http_status,
         **dict(attempt_metadata or {}),
     )
 
@@ -908,6 +914,7 @@ def _invoke(
                     provider,
                     reason_code=HIRING_DEADLINE_EXHAUSTED,
                     latency_ms=latency_ms,
+                    http_status=0 if result is None else result.http_status,
                     attempt_metadata=attempt_metadata,
                 )
             )
@@ -924,6 +931,7 @@ def _invoke(
                     stage,
                     provider,
                     reason_code=result.failure_reason,
+                    http_status=result.http_status,
                     latency_ms=latency_ms if result.call_attempted else 0,
                     status="failed" if result.call_attempted else "skipped",
                     attempt_metadata=attempt_metadata,

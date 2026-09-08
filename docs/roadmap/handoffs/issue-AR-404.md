@@ -15,7 +15,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-codex-roundtrip-20260908
+branch: codex/ar413-planner-reliability-20260908
 evidence_commit: c5516afe9e15a0abeb6676bdc5cb54a210756ab7
 minimum_ledger_commit: 28815df43ec421d79dd46e924b2ed83faeaa682c
 hard_checkpoint_percent: 50
@@ -29,11 +29,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner approved this bounded package after confirming trust: repair the launch,
 prove native staffing/injection/finalization, then measure a small cold/warm
 sample. No backlog wave or OpenClaw restart. No worker is active. Root owns this
-dedicated worktree; phase blocked on ordinary staffing, not activation trust.
+dedicated worktree; phase implementing. Owner subsequently approved bounded
+planner/gateway changes and AR-413 status propagation. Main floor4c98e8f7.
 
-Main floor is c5516afe. Installed source remains4cbebf73, projection4d2934ddb59e;
-no product or generated hook changed. New AR-413/#765 makes the unfinished
-inventory121 =49 mapped +72 legacy; it is a specific diagnostic gap, not121bugs.
+Installed source was4cbebf73 at the native priority experiment. A subsequent
+requested Codex refresh reports already_current/no_op with published bundle
+f838a7676e42. Separate host inspection confirms trusted hooks and a matching
+11:24UTC activation attestation; bundle and projection are different identities.
+AR-413/#765 is now verified complete, leaving unfinished
+inventory120 =48 mapped +72 legacy; this is not120confirmed bugs.
 
 ## Completed evidence
 
@@ -87,11 +91,24 @@ The original owner launcher is retained privately; no secret file was backed up.
 
 ## Next bounded work package
 
-Stop repeat model calls. Diagnose planner/gateway first; get explicit scope before
-changing providers/routes or gateway configuration. AR-413 preserves status end
-to end under ADR-0209 without policy changes. Then prove a valid-bound staffed
-ordinary turn in an approved MCP-write mode, and only then sample latency.
-Do not label samples cold/warm without cache evidence. No backlog wave.
+AR-413 code preserves bounded status through staffing/hiring and durable receipt
+projections. Focused83, fast spine1151/3skip, dashboard224, routing and decision
+conformance pass. Canonical build, Twine and independent verification pass in a
+clean same-source clone. The installed wheel proves real loopback401/408/429/502
+through workforce intoSQLite, without response bodies or gateway-log inference.
+Four isolated acceptance verdicts are satisfied after three explicit
+non-HTTP/legacy tests were added. PR768 delivery remains. The native priority experiment
+failed plannerHTTP46910ms; order2 was restored at12:40:26UTC with exact readback.
+No priority change remains. A direct minimal structured call to the existing GLM
+deployment succeeds in2951ms; alias2142ms. The production5337-character planner
+prompt and1967-character schema fail HTTP408 in45704/45137ms on alias/direct.
+The configured planner thinking_level is medium; a low-effort request-only
+comparison also fails HTTP408 in45111ms; JSON-object mode45284ms. Neither
+request-only experiment changed configuration. After PR delivery, upgrade the
+verified artifact and inspect Codex trust; do not bypass a new trust gate.
+Next diagnosis needs upstream full-payload evidence, not another native retry.
+Worklog
+2026-09-08-planner-reliability owns details. No new credentials or trust bypass.
 
 ## Verification
 
@@ -103,6 +120,7 @@ and use bounded owner-private captures.
 ## Constraints
 
 No self-staffing, trust bypass, new/substitute credentials, runtime secret-file
-fallback, provider-route changes, shared-service restart without approval, raw
+fallback, provider-route changes outside the approved bounded experiment,
+shared-service restart without approval, raw
 transcript publication, guessed headers or acceptance promotion. Use normal
 branch/PR/merge and exact ledgers for substantive repository work.

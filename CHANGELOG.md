@@ -380,6 +380,10 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Preserve actual HTTP status codes through workforce and hiring failure
+  attempts into durable/operator receipts, without retaining provider bodies or
+  coercing malformed metadata (AR-413).
+
 - Staffing reserves downstream mandatory calls within the existing owner
   budget and limits optional subject inference to one actual request across
   providers. Strict staffing still requires a real critic verdict; unfundable
