@@ -134,12 +134,13 @@ ledgers. At/below 50 percent finish a clean checkpoint, then continue.
 Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
 AR-180 remains one-card exec only; parent also contains the same card, so its
 child-only wording is not literally met. AR-181 Windows remains unverified.
-AR185/408/409 source and AR189/190/191 are published. AR192 holds the
-publication token; AR194 waits at its clean integrated checkpoint.
+AR185/408/409 source and AR189/190/191/192 are published. AR192/PR742 merged
+bad847ab at00:40:01Z; AR194 now holds the publication token, then returns it
+for the parent's final runtime-fix package. No next-oldest record tonight.
 
 ## Next bounded work package
 
-1. Publish AR192, then AR194 on the parent's serial handoff.
+1. Publish AR194, then return the token for the final runtime-fix package.
 2. Preserve accepted AR-185/AR-408 candidate hashes and verdicts unchanged.
 3. Parent owns AR409 installed upgrade/live checks; do not duplicate those calls.
 4. Stop cleanly by September 8 01:00 UTC.

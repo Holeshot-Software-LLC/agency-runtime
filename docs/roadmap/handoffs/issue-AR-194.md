@@ -27,8 +27,9 @@ tracker_url: null
 
 Substantive `cd62d658` and ledger `78ee74ba` freeze the branch-only
 reconciliation and its inspected source `f408b6f2`. Normal integration now
-includes AR191/PR741 main `a8c2ca54`; frozen acceptance files and all incoming
-product code remain unchanged. Parent owns publication after AR192.
+includes AR191/PR741 main `a8c2ca54` and AR192/PR742 merge `bad847ab` with
+immediate ledger `fde0d891`; frozen acceptance files and all incoming product
+code remain unchanged. Parent now authorizes AR194 publication.
 No runtime/test change, owner service mutation or acceptance verdict occurred.
 
 ## Completed evidence

@@ -1,0 +1,36 @@
+{
+  "host": "codex",
+  "started_at": "2026-09-08T00:30:45.752193+00:00",
+  "finished_at": "2026-09-08T00:30:49.240622+00:00",
+  "exit_code": 1,
+  "capture_error": null,
+  "installation_attempted": false,
+  "verification_only": true,
+  "report": {
+    "sampled_at": null,
+    "live_attempted": true,
+    "canary_passed": false,
+    "attestation_persisted": false,
+    "profile_scope": "current-profile",
+    "trust_bypass_used": null,
+    "unmet_prerequisites": [
+      "Codex does not report the settled Agency hook inventory as enabled and trusted",
+      "host invocation did not complete successfully",
+      "host invocation did not return a nonempty response",
+      "final response header was not proven",
+      "exact Codex activation evidence was not proven (route_not_found)"
+    ]
+  },
+  "invocation": {
+    "status": null,
+    "exit_code": null,
+    "failure_reason": "codex_hook_trust_not_ready",
+    "timed_out": null,
+    "header_valid": null,
+    "header_missing": null,
+    "host_child_collection_reason": null,
+    "stdout_truncated": null,
+    "stderr_truncated": null
+  },
+  "evidence": null
+}

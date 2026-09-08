@@ -2134,6 +2134,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `889926d5` | 2026-09-07 | chore(AR-191): integrate published upgrade and staffing reservations | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 | `a8c2ca54` | 2026-09-07 | Merge pull request #741 from Holeshot-Software-LLC/codex/ar191-v2-checklist-retirement | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 | `1acaf7b4` | 2026-09-07 | chore(AR-194): integrate published V2 checklist and current main | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
+| `6d8f6aae` | 2026-09-07 | docs(trust): retain AR-192 after installed fail-fast proof | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
+| `8a5861e6` | 2026-09-07 | docs(AR-192): integrate published V2 checklist retirement | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
+| `faae0baa` | 2026-09-07 | docs(AR-192): link retained publication and approval gate | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
+| `bad847ab` | 2026-09-07 | Merge pull request #742 from Holeshot-Software-LLC/codex/ar192-hook-trust-reconciliation | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
