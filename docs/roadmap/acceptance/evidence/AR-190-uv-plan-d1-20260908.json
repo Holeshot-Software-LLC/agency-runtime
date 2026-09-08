@@ -1,0 +1,166 @@
+{
+  "candidate_source_commit": "d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+  "container_default_home": "/root",
+  "container_initial_python": "3.11.2",
+  "container_uid": 0,
+  "default_directory_modes": {
+    "/root": "0o700",
+    "/root/.local/bin": "0o700",
+    "/root/.local/share/uv/tools": "0o700",
+    "/root/.local/share/uv/tools/agency-runtime": "0o700"
+  },
+  "entrypoint_resolved": "/root/.local/share/uv/tools/agency-runtime/bin/agency",
+  "entrypoint_sha256_after_plan": "0713dfe44c67da775470cd134fcc14f4c546f84798302b3cba39394418a89653",
+  "entrypoint_sha256_before_plan": "0713dfe44c67da775470cd134fcc14f4c546f84798302b3cba39394418a89653",
+  "entrypoint_symlink": true,
+  "exact_plan_target_commit": "d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+  "finished_at_utc": "2026-09-08T00:00:20.046362+00:00",
+  "input_uv_sha256": "646adf5cf12ba17d1a41fa77c8dd6496f73651dcfeeed6b5f4ec019b36bc7153",
+  "input_wheel_sha256": "98b87cf098bf0b35b4a266d8ee35288e1a366914b7e19f9c6a8579c2ce23e457",
+  "installed_product_sha256": {
+    "cli/upgrade_commands.py": "4bf96a05ff0fee2c26ee4c576e651dde47678fdf1c8a6da58bdc8fb4cdce1ae2",
+    "core/update_service.py": "e73df6c5c626041e3917b707cbd0a2cbc863bf6f5f6b1c27848515758959eddb"
+  },
+  "owner_home_mounted": false,
+  "plan_exit_code": 0,
+  "plan_payload": {
+    "cache_hit": false,
+    "checked": true,
+    "checked_at": "2026-09-08T00:00:19.594344+00:00",
+    "checking": false,
+    "command": "agency upgrade --ref d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+    "error": null,
+    "installed": {
+      "build_identity": "0.1.0",
+      "install_kind": "package",
+      "official_repository": false,
+      "package_version": "0.1.0",
+      "source_branch": null,
+      "source_dirty": null,
+      "source_revision": null
+    },
+    "plan": {
+      "commands": [
+        {
+          "argv": [
+            "/usr/local/bin/uv",
+            "tool",
+            "install",
+            "--force",
+            "--refresh",
+            "--no-config",
+            "agency-runtime @ git+https://github.com/Holeshot-Software-LLC/agency-runtime.git@d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f"
+          ],
+          "display": "/usr/local/bin/uv tool install --force --refresh --no-config 'agency-runtime @ git+https://github.com/Holeshot-Software-LLC/agency-runtime.git@d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f'"
+        },
+        {
+          "argv": [
+            "/root/.local/share/uv/tools/agency-runtime/bin/python",
+            "-I",
+            "-m",
+            "agency_runtime.cli",
+            "install",
+            "--agent",
+            "codex",
+            "--no-dashboard"
+          ],
+          "display": "/root/.local/share/uv/tools/agency-runtime/bin/python -I -m agency_runtime.cli install --agent codex --no-dashboard"
+        }
+      ],
+      "installer": "uv-tool",
+      "mode": "attended-external",
+      "mutation_performed": false,
+      "reason": "Agency resolved an immutable source target but did not execute package or host mutations; review and run each command from an owner-controlled terminal",
+      "requires_owner_execution": true,
+      "requires_post_install_activation_check": true
+    },
+    "schema_version": "agency.update.v1",
+    "selector": {
+      "key": "ref:d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+      "kind": "ref",
+      "ref": "d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+      "value": "d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f"
+    },
+    "stale": false,
+    "status": "unknown",
+    "target": {
+      "commit_sha": "d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+      "kind": "ref",
+      "label": "d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+      "published_at": null,
+      "ref": "d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+      "url": "https://github.com/Holeshot-Software-LLC/agency-runtime/commit/d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+      "version": null
+    },
+    "update_available": null
+  },
+  "prefix_compared_file_count": 669,
+  "prefix_non_bytecode_files_unchanged": true,
+  "scope": "disposable local container; legitimate default uv tool install; plan only",
+  "started_at_utc": "2026-09-08T00:00:17.944856+00:00",
+  "steps": [
+    {
+      "argv": [
+        "/usr/local/bin/uv",
+        "--version"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "uv 0.11.8 (x86_64-unknown-linux-gnu)\n"
+    },
+    {
+      "argv": [
+        "/usr/local/bin/uv",
+        "tool",
+        "install",
+        "--no-config",
+        "/ar190-input/agency_runtime-0.1.0-py3-none-any.whl"
+      ],
+      "exit_code": 0,
+      "stderr": "Resolved 2 packages in 138ms\nPrepared 2 packages in 91ms\nInstalled 2 packages in 7ms\n + agency-runtime==0.1.0 (from file:///ar190-input/agency_runtime-0.1.0-py3-none-any.whl)\n + pyyaml==6.0.3\nInstalled 1 executable: agency\nwarning: `/root/.local/bin` is not on your PATH. To use installed tools, add the directory to your PATH.\n",
+      "stdout": ""
+    },
+    {
+      "argv": [
+        "/root/.local/bin/agency",
+        "version",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"build_identity\": \"0.1.0\",\n  \"install_kind\": \"package\",\n  \"official_repository\": false,\n  \"package_version\": \"0.1.0\",\n  \"schema_version\": \"agency.version.v1\",\n  \"source_branch\": null,\n  \"source_dirty\": null,\n  \"source_revision\": null\n}\n"
+    },
+    {
+      "argv": [
+        "/root/.local/share/uv/tools/agency-runtime/bin/python",
+        "-I",
+        "-B",
+        "-c",
+        "import importlib.metadata,json,sys; print(json.dumps({'prefix':sys.prefix,'python':sys.version.split()[0],'distributions':sorted(d.metadata['Name']+'=='+d.version for d in importlib.metadata.distributions())},sort_keys=True))"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\"distributions\": [\"PyYAML==6.0.3\", \"agency-runtime==0.1.0\"], \"prefix\": \"/root/.local/share/uv/tools/agency-runtime\", \"python\": \"3.11.2\"}\n"
+    },
+    {
+      "argv": [
+        "/root/.local/bin/agency",
+        "upgrade",
+        "plan",
+        "--ref",
+        "d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f",
+        "--timeout",
+        "5",
+        "--json"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "stdout": "{\n  \"cache_hit\": false,\n  \"checked\": true,\n  \"checked_at\": \"2026-09-08T00:00:19.594344+00:00\",\n  \"checking\": false,\n  \"command\": \"agency upgrade --ref d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f\",\n  \"error\": null,\n  \"installed\": {\n    \"build_identity\": \"0.1.0\",\n    \"install_kind\": \"package\",\n    \"official_repository\": false,\n    \"package_version\": \"0.1.0\",\n    \"source_branch\": null,\n    \"source_dirty\": null,\n    \"source_revision\": null\n  },\n  \"plan\": {\n    \"commands\": [\n      {\n        \"argv\": [\n          \"/usr/local/bin/uv\",\n          \"tool\",\n          \"install\",\n          \"--force\",\n          \"--refresh\",\n          \"--no-config\",\n          \"agency-runtime @ git+https://github.com/Holeshot-Software-LLC/agency-runtime.git@d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f\"\n        ],\n        \"display\": \"/usr/local/bin/uv tool install --force --refresh --no-config 'agency-runtime @ git+https://github.com/Holeshot-Software-LLC/agency-runtime.git@d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f'\"\n      },\n      {\n        \"argv\": [\n          \"/root/.local/share/uv/tools/agency-runtime/bin/python\",\n          \"-I\",\n          \"-m\",\n          \"agency_runtime.cli\",\n          \"install\",\n          \"--agent\",\n          \"codex\",\n          \"--no-dashboard\"\n        ],\n        \"display\": \"/root/.local/share/uv/tools/agency-runtime/bin/python -I -m agency_runtime.cli install --agent codex --no-dashboard\"\n      }\n    ],\n    \"installer\": \"uv-tool\",\n    \"mode\": \"attended-external\",\n    \"mutation_performed\": false,\n    \"reason\": \"Agency resolved an immutable source target but did not execute package or host mutations; review and run each command from an owner-controlled terminal\",\n    \"requires_owner_execution\": true,\n    \"requires_post_install_activation_check\": true\n  },\n  \"schema_version\": \"agency.update.v1\",\n  \"selector\": {\n    \"key\": \"ref:d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f\",\n    \"kind\": \"ref\",\n    \"ref\": \"d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f\",\n    \"value\": \"d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f\"\n  },\n  \"stale\": false,\n  \"status\": \"unknown\",\n  \"target\": {\n    \"commit_sha\": \"d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f\",\n    \"kind\": \"ref\",\n    \"label\": \"d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f\",\n    \"published_at\": null,\n    \"ref\": \"d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f\",\n    \"url\": \"https://github.com/Holeshot-Software-LLC/agency-runtime/commit/d1a9260c08aad8eb871fd6bd1ab81c3aad5e524f\",\n    \"version\": null\n  },\n  \"update_available\": null\n}\n"
+    }
+  ],
+  "target_environment_overrides": [],
+  "upgrade_executed": false,
+  "uv_receipt": "[tool]\nrequirements = [{ name = \"agency-runtime\", path = \"/ar190-input/agency_runtime-0.1.0-py3-none-any.whl\" }]\nentrypoints = [\n    { name = \"agency\", install-path = \"/root/.local/bin/agency\", from = \"agency-runtime\" },\n]\n",
+  "uv_receipt_sha256": "e78058bdd433bac622c76854183fe38c0ad99cb3070f91ae2e5d00e5036ca251",
+  "uv_receipt_sha256_after_plan": "e78058bdd433bac622c76854183fe38c0ad99cb3070f91ae2e5d00e5036ca251"
+}

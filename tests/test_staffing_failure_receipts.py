@@ -90,28 +90,30 @@ def _persist_failure(tmp_path: Path, routing: dict[str, Any]):
     return receipt
 
 
-def test_five_calls_exhausted_before_critic_are_not_a_critic_veto(tmp_path: Path) -> None:
-    # Live Claude receipt 3615c4fb: two rejected subject attempts, one planner,
-    # and recruiter rejection/repair exhaust the strict five-call budget.
-    invalid_nomination = fixtures._nomination_document()
-    invalid_nomination["units"][0]["ranked_semantic"][0]["positive_evidence"] = []
+def test_five_calls_exhausted_before_critic_are_not_a_critic_veto(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # AR-408's committed candidate d9dde3cd retains the original live Claude
+    # 3615c4fb response sequence. AR-409 now prevents that current flow. Replay
+    # the actual exhausted critic boundary independently of the new policy.
+    real_critic = inference._strict_critic
+
+    def exhausted_critic(**kwargs):
+        kwargs["budget"].used = kwargs["budget"].maximum
+        return real_critic(**kwargs)
+
+    monkeypatch.setattr(inference, "_strict_critic", exhausted_critic)
     outcome, calls = _run(
         [
-            fixtures._result({}),
-            fixtures._result({}),
             fixtures._result(fixtures._compact_plan_document()),
-            fixtures._result(invalid_nomination),
             fixtures._result(fixtures._nomination_document()),
         ],
         config=fixtures._config("strict", strict_call_budget=5),
-        subject=True,
     )
-    assert len(calls) == outcome.calls_used == 5
+    assert len(calls) == 2
+    assert outcome.calls_used == 5
     assert [(item.stage, item.status) for item in outcome.attempts] == [
-        ("subject", "rejected"),
-        ("subject", "rejected"),
         ("planner", "applied"),
-        ("recruiter", "rejected"),
         ("recruiter", "applied"),
     ]
     assert not outcome.accepted
@@ -217,7 +219,7 @@ def test_effective_timeout_survives_workforce_projection_and_durable_failure(
 ) -> None:
     outcome, _calls = _run(
         [fixtures._result({}), fixtures._result({})],
-        config=fixtures._config("strict", strict_call_budget=2),
+        config=fixtures._config("strict", strict_call_budget=5),
     )
     timed = replace(
         outcome.attempts[0],

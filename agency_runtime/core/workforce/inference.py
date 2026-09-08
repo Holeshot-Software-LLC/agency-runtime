@@ -107,6 +107,7 @@ from agency_runtime.core.workforce.reranker_provider import (
 from agency_runtime.core.workforce.staffing_verifier import (
     REQUIREMENT_AXES,
     ROSTER_COVERAGE_GAP,
+    AbstentionReason,
     StaffingBudget,
     StaffingContext,
     StaffingDecision,
@@ -1257,6 +1258,10 @@ class _CallBudget:
         if self.used > 0:
             self.used -= 1
 
+    @property
+    def remaining(self) -> int:
+        return max(0, self.maximum - self.used)
+
 
 def _total_calls_used(
     budget: _CallBudget,
@@ -1744,6 +1749,15 @@ class _StageCallExhausted(RuntimeError):
     """The shared time or call budget refused a stage invocation."""
 
 
+def _stage_call_reserve(budget: _CallBudget, reserve: int, max_calls: int | None) -> int:
+    if reserve < 0 or (max_calls is not None and max_calls < 1):
+        raise ValueError("workforce call reservation and stage limit must be bounded")
+    # AR-409: a stage cap counts actual calls across the complete provider
+    # chain, not attempts per provider. Pre-request refusals release their
+    # spend and may still advance to a usable fallback.
+    return reserve if max_calls is None else max(reserve, budget.remaining - max_calls)
+
+
 def _invoke_stage_provider(
     stage: str,
     provider: ProviderEntry,
@@ -1753,6 +1767,7 @@ def _invoke_stage_provider(
     budget: _CallBudget,
     invoker: StructuredInvoker,
     attempts: list[WorkforceInferenceAttempt],
+    reserve: int = 0,
 ) -> tuple[ProviderEntry, StructuredProviderResult | None, int]:
     timeout = remaining_provider_timeout(provider.timeout)
     provider = replace(provider, timeout=timeout)
@@ -1761,7 +1776,7 @@ def _invoke_stage_provider(
             _attempt(stage, provider, status="failed", reason_code=PROVIDER_DEADLINE_EXHAUSTED)
         )
         raise _StageCallExhausted("workforce_inference_deadline_exhausted")
-    if not budget.consume():
+    if budget.remaining <= reserve or not budget.consume():
         raise _StageCallExhausted("workforce_call_budget_exhausted")
     started = time.monotonic()
     result = invoker(provider, prompt, schema, system_prompt=system_prompt, timeout=timeout)
@@ -1794,10 +1809,13 @@ def _invoke_stage(
     before_provider: Callable[[], None] | None = None,
     repair_system_prompt: str | None = None,
     max_semantic_attempts: int = 2,
+    reserve: int = 0,
+    max_calls: int | None = None,
 ) -> tuple[Any | None, list[WorkforceInferenceAttempt], str]:
     attempts: list[WorkforceInferenceAttempt] = []
     if max_semantic_attempts not in {1, 2}:
         raise ValueError("workforce semantic attempt bound must be one or two")
+    reserve = _stage_call_reserve(budget, reserve, max_calls)
     if not providers:
         return None, attempts, "workforce_provider_unavailable"
     called = False
@@ -1823,6 +1841,7 @@ def _invoke_stage(
                     budget,
                     invoker,
                     attempts,
+                    reserve=reserve,
                 )
             except _StageCallExhausted as exc:
                 return None, attempts, str(exc)
@@ -4136,6 +4155,7 @@ def _recruit_ambiguous_plan(
         parser=parse_verified_proposal,
         before_provider=nomination_parser.reset,
         repair_system_prompt=_RECRUITER_REPAIR_SYSTEM,
+        reserve=int(config.workforce.mode == "strict"),
     )
     attempts = [*hybrid_attempts, *recruiter_attempts]
     if isinstance(proposal, RecruiterProposal):
@@ -4206,17 +4226,31 @@ def _inference_failure(
     )
     failure = "inference_invalid" if configured and invalid else "inference_unavailable"
     details = tuple(dict.fromkeys(code for code in detail_codes if code and code != failure))
+    failure_staffing = staffing or _empty_staffing(
+        failure,
+        (WORKFORCE_CREDENTIAL_ENV_UNSET,) if credential_unset else (),
+    )
+    # AR-409: durable failure receipts project staffing causes, not the free-
+    # form routing error. Preserve an exact budget refusal beside any existing
+    # verifier causes, including when no provider call was admitted.
+    budget_reason = "workforce_call_budget_exhausted"
+    if budget_reason in details and all(
+        reason.code != budget_reason for reason in failure_staffing.abstention_reasons
+    ):
+        failure_staffing = replace(
+            failure_staffing,
+            abstention_reasons=(
+                *failure_staffing.abstention_reasons,
+                AbstentionReason(budget_reason),
+            ),
+        )
     return WorkforceRoutingOutcome(
         status=failure,
         mode=mode,
         inference_mode="invalid" if failure == "inference_invalid" else "unavailable",
         plan=plan,
         proposal=proposal,
-        staffing=staffing
-        or _empty_staffing(
-            failure,
-            (WORKFORCE_CREDENTIAL_ENV_UNSET,) if credential_unset else (),
-        ),
+        staffing=failure_staffing,
         attempts=tuple(attempts),
         abstention_codes=(failure, *details),
         calls_used=calls_used,
@@ -4603,6 +4637,8 @@ def infer_work_subject_hints(
         budget=budget,
         invoker=invoker,
         parser=_parse_subject_hints,
+        reserve=2 + int(config.workforce.mode == "strict"),
+        max_calls=1,
     )
     return (parsed if isinstance(parsed, dict) else {}), attempts
 
@@ -4796,6 +4832,9 @@ def plan_and_staff_workforce(
             system_prompt=COMPACT_INTENT_SYSTEM,
             budget=budget,
             invoker=invoker,
+            # AR-409: keep the initial recruiter call and, in strict mode,
+            # its required critic available. Cache hits above spend no call.
+            reserve=1 + int(mode == "strict"),
             parser=lambda value: _parse_compact_plan(
                 value,
                 request=ask,

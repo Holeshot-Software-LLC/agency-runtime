@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-194
 branch: codex/ar194-service-runtime-reconciliation
-evidence_commit: f408b6f2325ca86bc058364d0f688acff1dac45a
-minimum_ledger_commit: 297e8fc2ca15c409e7c0e8fbf355e3f57a31141b
+evidence_commit: cd62d6588d8660033bf309220b74dcc1dbdebef6
+minimum_ledger_commit: 78ee74bafacece87a16af9bf51fd07b3a4eafa17
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
@@ -25,10 +25,10 @@ tracker_url: null
 
 ## Checkpoint
 
-This is a branch-only documentation checkpoint based on main `f408b6f2`;
-metadata identifies the inspected source and its faithful merge ledger. The
-immediately following substantive/ledger pair freezes this receipt; its exact
-SHAs are in the worklog. Parent owns publication coordination.
+Substantive `cd62d658` and ledger `78ee74ba` freeze the branch-only
+reconciliation and its inspected source `f408b6f2`. Normal integration now
+includes AR191/PR741 main `a8c2ca54`; frozen acceptance files and all incoming
+product code remain unchanged. Parent owns publication after AR192.
 No runtime/test change, owner service mutation or acceptance verdict occurred.
 
 ## Completed evidence
