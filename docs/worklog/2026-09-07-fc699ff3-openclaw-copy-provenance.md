@@ -95,3 +95,5 @@ publication; it is not permission to ignore any AR-270 mismatch.
 Normal nonclosing PR [#752](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/752)
 publishes this source candidate for serial review/merge. The issue remains open;
 no accepted-completion or installed native behavior is implied by publication.
+
+PR #752 merged as `ff9f11cb` at 2026-09-08T01:25:22Z. This publishes reviewed complete installed-copy provenance binding and the corrected false-absence boundary. Tests, fresh native uninstall, installed delivery and acceptance remain deferred; #749 stays open.
