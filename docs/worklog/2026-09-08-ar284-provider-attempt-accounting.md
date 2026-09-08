@@ -17,7 +17,7 @@ type: worklog
 commit: 3fb97e7dc1ebcbf91e87036b033a1b9274f5c6e7
 short: 3fb97e7d
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/757
 related_issues:
   - docs/roadmap/issue-AR-284-disambiguate-provider-fallback-receipts.md
 ---
