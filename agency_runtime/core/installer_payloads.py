@@ -19,6 +19,7 @@ from agency_runtime.core.inference_profiles import (
     resolve as resolve_inference_route,
 )
 from agency_runtime.core.inference_profiles import (
+    resolve_content_fallback,
     resolve_explicit_capability_route,
 )
 from agency_runtime.core.installer_contracts import (
@@ -250,6 +251,19 @@ def _legacy_workforce_timeout_seconds(cfg: AgencyConfig) -> float:
     return max(timeouts, default=0.0)
 
 
+def _static_route_timeout_seconds(cfg: AgencyConfig, route_key: str, harness: str) -> float:
+    """Bound the primary and distinct content fallback without environment overrides."""
+
+    resolution = resolve_inference_route(cfg, route_key, harness=harness)
+    timeout = max(0.0, float(resolution.provider.timeout))
+    # Match configured_workforce_providers: no resolved primary means no
+    # content fallback, and a fallback naming that primary is not appended.
+    fallback = resolve_content_fallback(cfg, route_key)
+    if fallback is not None and fallback.profile.name != resolution.profile.name:
+        timeout = max(timeout, max(0.0, float(fallback.provider.timeout)))
+    return timeout
+
+
 def _host_inference_budget_seconds(cfg: AgencyConfig, harness: str) -> float:
     """Bound static host-scoped workforce and optional recall inference.
 
@@ -268,14 +282,10 @@ def _host_inference_budget_seconds(cfg: AgencyConfig, harness: str) -> float:
     )
     for route_key in route_keys:
         try:
-            resolution = resolve_inference_route(
-                cfg,
-                route_key,
-                harness=normalized_harness,
-            )
+            timeout = _static_route_timeout_seconds(cfg, route_key, normalized_harness)
         except ConfigValidationError:
             continue
-        profile_timeouts.append(max(0.0, float(resolution.provider.timeout)))
+        profile_timeouts.append(timeout)
 
     workforce_calls = {
         "fast": cfg.workforce.fast_call_budget,
@@ -286,17 +296,16 @@ def _host_inference_budget_seconds(cfg: AgencyConfig, harness: str) -> float:
 
     hiring_timeouts: list[float] = []
     hiring_fallback_reachable = False
-    for route_key in _HIRING_ROUTE_KEYS:
+    hiring_routes = _HIRING_ROUTE_KEYS + (
+        ("workforce.hiring.safety_repair",) if cfg.workforce.hiring_repair_budget > 0 else ()
+    )
+    for route_key in hiring_routes:
         try:
-            resolution = resolve_inference_route(
-                cfg,
-                route_key,
-                harness=normalized_harness,
-            )
+            timeout = _static_route_timeout_seconds(cfg, route_key, normalized_harness)
         except ConfigValidationError:
             hiring_fallback_reachable = True
             continue
-        hiring_timeouts.append(max(0.0, float(resolution.provider.timeout)))
+        hiring_timeouts.append(timeout)
     if hiring_fallback_reachable:
         fallback_timeout = _legacy_workforce_timeout_seconds(cfg)
         if fallback_timeout:
