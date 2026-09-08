@@ -13,8 +13,8 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: 8629e2ed8006b2e3f7450d144e52abc9f0a9d31c
+short: 8629e2ed
 date: 2026-09-08
 pr: null
 related_issues:
@@ -71,3 +71,5 @@ Finish the verified rebuild and installation for AR-416; preserve any native
 critic veto and stop at an actual operator-owned trust boundary if encountered.
 Record isolated acceptance per criterion. AR-414/415/416/417 remain open until
 their own evidence gates pass. No installed/native claim from source tests.
+
+Recorded checkpoint: `8629e2ed` — test(packaging): make qualified veto regression self-contained.
