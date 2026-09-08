@@ -11,10 +11,10 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: a10e31170825b363a291e4cb346095887c6c6409
+short: a10e3117
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/761
 related_issues: [docs/roadmap/issue-AR-369-stale-host-process-serves-a-superseded-kernel.md]
 ---
 
