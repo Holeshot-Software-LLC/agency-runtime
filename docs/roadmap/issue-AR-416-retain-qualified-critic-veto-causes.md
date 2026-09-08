@@ -6,6 +6,8 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [headers, critic, diagnostics]
 related:
+  - docs/roadmap/issue-AR-417-self-contained-qualified-veto-regression.md
+  - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
   - docs/decisions/0240-project-qualified-critic-veto-causes-with-an-omission-marker.md
   - docs/worklog/2026-09-08-captured-native-critic-veto.md
@@ -30,6 +32,10 @@ the 56-character projection limit. The projection silently drops the whole reaso
 so both the failure receipt and native header lose the standard veto cause.
 
 ## Current state
+
+Installed-verification package started from b0dfd631. Preliminary canonical
+artifacts pass integrity checks, but an extracted regression exposed AR-417.
+Its test-only refinement is verified locally; rebuild precedes live install.
 
 Phase fast_verification complete. Source fix and captured-response regressions
 pass in PR788; isolated acceptance verdicts remain pending. Two captured native turns reproduced the same packet and

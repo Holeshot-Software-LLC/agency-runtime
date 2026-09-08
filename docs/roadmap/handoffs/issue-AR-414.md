@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [handoff, staffing, headers]
 related:
+  - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/worklog/2026-09-08-captured-native-critic-veto.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/worklog/2026-09-08-native-staffing-receipts.md
@@ -19,7 +20,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-414
-branch: codex/ar414-capture-native-veto-20260908
+branch: codex/ar416-installed-verification-20260908
 evidence_commit: 6a0eb8506bde7d4436ce5c4e63cf2aba5ae33c33
 minimum_ledger_commit: d8c6fa2ca04150bcfb1035784543558a3c7634c4
 hard_checkpoint_percent: 50
@@ -29,6 +30,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 # AR-414 staffing and failure-header checkpoint
 
 ## Checkpoint
+
+Installed-verification package now in progress. Preliminary canonical b0dfd631
+artifacts pass integrity checks. Extracted regression failed because its JSON
+input is outside the archive allowlist; AR-417 makes that test self-contained.
+Focused124pass after refinement; no live runtime change yet. Rebuild and install
+next, followed by installed replay, native evidence and isolated acceptance.
 
 Native handoff capture complete; bounded source diagnostic fix verified in PR788.
 Two exact native packets expose experiment-tracker assigned to non-experiment

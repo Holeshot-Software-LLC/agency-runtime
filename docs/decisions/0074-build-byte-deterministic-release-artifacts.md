@@ -6,6 +6,8 @@ created: 2026-07-20
 updated: 2026-07-27
 tags: [release, packaging, reproducibility, git, archives, portability]
 related:
+  - docs/roadmap/issue-AR-417-self-contained-qualified-veto-regression.md
+  - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/roadmap/issue-AR-405-make-directory-identity-regressions-portable.md
   - docs/roadmap/issue-AR-107-build-release-artifacts-from-canonical-git-blobs.md
   - docs/roadmap/issue-AR-167-normalize-windows-release-source-modes.md

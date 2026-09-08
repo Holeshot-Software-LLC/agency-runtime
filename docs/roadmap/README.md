@@ -45,6 +45,7 @@ bounded package are in AR-404's
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
+| `AR-417` | [Keep qualified-veto regression self-contained in source archives](issue-AR-417-self-contained-qualified-veto-regression.md) | in_progress | p2 | host-integrations | [#790](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/790) |
 | `AR-416` | [Retain qualified critic veto causes in bounded receipts](issue-AR-416-retain-qualified-critic-veto-causes.md) | in_progress | p1 | host-integrations | [#787](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/787) |
 | `AR-415` | [Respect negated change requests in plan completeness](issue-AR-415-respect-negated-change-requests.md) | in_progress | p1 | host-integrations | [#778](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/778) |
 | `AR-414` | [Restore reliable staffing and truthful failed-turn headers](issue-AR-414-reliable-staffing-failure-headers.md) | in_progress | p1 | host-integrations | [#773](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773) |
@@ -464,6 +465,7 @@ not stable internal identifiers.
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
 | [AR-415](issue-AR-415-respect-negated-change-requests.md) | `c1ef8566`, `d0bb4127`, `85f55021`, `21a8a39e`; merged PR779/780, installed scope passes; new hook approval and native verification pending | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md) |
+| [AR-417](issue-AR-417-self-contained-qualified-veto-regression.md) | pending | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-416](issue-AR-416-retain-qualified-critic-veto-causes.md) | `6a0eb850`, `920aa013`, `6260d9d9` | [ADR-0240](../decisions/0240-project-qualified-critic-veto-causes-with-an-omission-marker.md) |
 | [AR-414](issue-AR-414-reliable-staffing-failure-headers.md) | `ae2220bb`, `992d148d`, `905d37b8`, `6786aaa2`, `975ce7b4`, `64670ecc`, `1b210542`, `6d9c91fc`, `9e6d05c0`, `369427db`, `7420ed57`, `389be187`, `0dd5f738`, `8d79ca31`, `6a0eb850`, `920aa013`, `6260d9d9`; merged PR785, ordinary native review accepted; native handoff veto captured, qualified cause repair PR788; isolated acceptance remains open | [ADR-0239](../decisions/0239-render-failed-turn-diagnostics-without-acceptance.md), [ADR-0192](../decisions/0192-route-content-invalid-completions-to-a-content-fallback-profile.md), [ADR-0240](../decisions/0240-project-qualified-critic-veto-causes-with-an-omission-marker.md) |
 | [AR-413](issue-AR-413-preserve-http-status-in-staffing-receipts.md) | `c1e17448`, `ed26177f`, `6debb9f2`, `ecd1d26b`, `b4899374`, `35cd6539`, `947dfaef`; downstream HTTP statuses retained, installed failure proof and four isolated acceptance verdicts | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
