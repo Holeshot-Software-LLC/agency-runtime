@@ -64,7 +64,10 @@ The full 188-mutation evaluation passed before a final receipt-only refinement.
 After that refinement, the five-mutation subset containing the four new
 reservation anchors and existing fast-budget control passed. The acceptance
 draft records exact commands, unsuccessful intermediate runs, source scope
-and remaining evidence. No isolated acceptance verdict has been requested.
+and remaining evidence. Isolated verification has satisfied criteria 1–4;
+criterion 5 remains unjudged after the Claude executable namespace again became
+group-writable during the run. No failed criterion or model-quality result is
+inferred from that local admission failure. Installed delivery remains pending.
 
 ## Approach
 

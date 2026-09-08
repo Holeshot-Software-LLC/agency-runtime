@@ -67,11 +67,15 @@ the parent owns final PR/merge and installed delivery. No provider requests ran.
 AR-408 is integrated. Its historical five-call current-flow test now exercises
 the isolated exhausted-critic boundary; the accepted original snapshot is
 unchanged. Acceptance is frozen to combined committed candidate `f670e6b5`.
-Final combined acceptance verdicts and live delivery evidence remain pending.
+Criteria 1–4 have isolated satisfied judgments; criterion 5 and installed live
+delivery evidence remain pending.
 The first all-five verifier invocation produced no judgments: the exact Claude
 package/bin directories were 0775 and the executable trust guard refused them.
 Authorized exact `chmod g-w` restored 0755 and local usable status. Actor unknown;
-no bytes/profiles/guards changed. One bounded all-five retry is next.
+no bytes/profiles/guards changed. The retry satisfied 1–4, then criterion 5 was
+unavailable; both directories had returned to 0775 with 00:08:07/08Z mtimes.
+Preserve the four judgments. Further criterion-5-only execution needs separate
+parent authorization beyond the original two passes; never relax the guard.
 
 ## Same-task continuity
 
@@ -99,8 +103,9 @@ docs/roadmap/acceptance/issue-AR-409.md. The final focused command is:
 env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_staffing_call_reservations.py tests/test_preflight_provider_deadline.py tests/test_preflight_failure_diagnosis.py tests/test_transport_failure_causes.py tests/test_workforce_inference.py tests/test_decision_conformance.py -q -W error -k 'not windows'
 ```
 
-No exhaustive workflow, coverage shard, compatibility matrix, new live model
-call or acceptance-verifier call was run in this worker package.
+No exhaustive workflow, coverage shard, compatibility matrix or staffing model
+call was run. Two isolated-verifier passes produced four satisfied judgments;
+the first pass and the second pass's fifth criterion were locally unavailable.
 
 ## Constraints
 
