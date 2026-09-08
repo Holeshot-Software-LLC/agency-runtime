@@ -69,7 +69,12 @@ this is not executed verification. Integration `14899a51` normally merges
 published main plus immediate ledger `6d209d6d`, preserving both worklog
 histories and leaving the reviewed runtime delta unchanged.
 
-Normal PR publication remains pending. Reconcile
-AR-287's canonical record and capsule without claiming a current installed
-repair, live Hermes acceptance, test pass or completed issue. Run focused
-regressions and live verification only when authorized.
+Documentation checkpoint `185db01a` records the canonical issue, new capsule,
+portable source receipt and reciprocal governing links. Owner-authorized
+tracker #756 maps the existing legacy record; original Acceptance wording and
+checkboxes remain unchanged. Markdown metadata checked 1293 documents and the
+worklog index was current at 2147 substantive commits before that checkpoint.
+
+Normal PR publication remains pending. No current installed repair, live Hermes
+acceptance, test pass or completed issue is claimed. Run focused regressions
+and live verification only when authorized.
