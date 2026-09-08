@@ -1,0 +1,26 @@
+{
+  "issue": "AR-404",
+  "host": "codex",
+  "scope": "fresh native process projection probe",
+  "native_thread_id": "01a082f1-0e89-7f51-b4e7-7fb28b69917e",
+  "invocation": {
+    "started_at": "2026-09-08T21:33:50.854554+00:00",
+    "ended_at": "2026-09-08T21:36:33.262878+00:00",
+    "elapsed_seconds": 162.408,
+    "exit_code": 0,
+    "scope": "freshness probe, not staffing benchmark"
+  },
+  "native_response": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: requested execution alias: gpt-6-astra\nRecruited via: failed; substantive_specialist_unavailable; recall_reranker:provider_response_contract_invalid; no_safe_sufficient_team; recruiter_abstained\n\n**Projection freshness cannot be proven from the available evidence.**\n\n- **Observed process context:** Agency injected epoch `6:1:2:1` and kernel `v5:62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6`. This establishes the received context, but not a verified runtime projection.\n- **Read-only status:** Codex is enabled, control generation `2`, with current launcher artifacts. However, `loaded=null`, canary attestation is absent, and hook trust is unverified.\n- **Published projection:** Not exposed by the successful status calls; cannot be proven or compared with this process.\n\n`agency evidence wiring --host codex --json` could not execute because the sandbox failed: `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`.\n\nNo changes were made and no agents were spawned.",
+  "response_sha256": "4289bdbbddbbb5577303a9c6985b3f6f5f60aaf3402e097ae95344557285eba8",
+  "runtime_projection_proven": false,
+  "published_projection_proven": false,
+  "wiring_command_gate": "bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted",
+  "sandbox": "read-only",
+  "trust_or_sandbox_bypass": false,
+  "inference_status": "failed; substantive_specialist_unavailable; recall_reranker:provider_response_contract_invalid; no_safe_sufficient_team; recruiter_abstained",
+  "limitations": [
+    "Observed kernel hash is not proof of runtime projection.",
+    "No old transport recurrence or erroneous critic veto is inferred.",
+    "Freshness probe is not a matched staffing latency trial."
+  ]
+}

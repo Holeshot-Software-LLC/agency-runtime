@@ -65,6 +65,16 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+The continuation now proves an accepted Hermes candidate-source turn with full
+card injection and matching terminal hash; native default adoption remains.
+OpenClaw accepted terminal and Claude full native turn are proven. Zcode's restored
+CLI reaches a missing answering-provider gate. Fresh Codex process status does
+not expose projection hashes, and its wiring command is blocked by native bwrap;
+no bypass was used. Current records are in the active handoff and
+`docs/worklog/2026-09-08-native-terminal-repair.md`. The package awaits the three
+owner choices recorded there; all-host and issue acceptance remain incomplete.
+
+
 September 8 native continuation: Claude now has exact rendered selected-card
 injection, truthful headers and an authoritative accepted matching response hash
 on trace16079749-cfc9-4d90-b4d4-6f6ce8104eec,63.879seconds. Evidence:

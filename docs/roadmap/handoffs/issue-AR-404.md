@@ -61,8 +61,9 @@ once. This is executable proof only.
 ## Exact blocker
 
 Hermes native candidate59e52e556a is preserved as a repository patch;34native
-tests and94adapter tests pass. It is not installed or upstream-merged; a bounded candidate-source trial uses
-the existing owner profile after normal Agency refresh. Original
+tests and94adapter tests pass. Candidate-source session20260908_172942_b70b9d passes exact card/headers/accept
+in194.347s. Normal native checkout is unchanged; upstream PR consent asked once.
+See evidence/AR-418-hermes-candidate-native-20260908.json. Original
 Hermes output-limit early returns bypass native finalizer/session-end callbacks;
 outer runner and CLI can misclassify printable partial output as success. No
 supported terminal-result hook covers those returns. AR-418 needs native-boundary
@@ -79,21 +80,23 @@ pair and continue. Preserve unrelated worktrees and operator files.
 
 ## Next bounded work package
 
-Run one ordinary Zcode trial against the repaired native entrypoint, preserving
-inference/critic/validators. Repair the native Hermes failure boundary and prove
-ordinary success. If owner consents, use the session-scoped OpenClaw observer
-for exact input evidence, then remove it and restore gateway RPC health. Close
-issues only after isolated acceptance. Merge PR799 with exact merge ledger.
+Waiting for owner choices: standalone Zcode answering provider, native OpenClaw
+observer consent, and permission to submit the tested Hermes patch upstream.
+Then finish the three remaining gates without retries or trust bypass. Hermes
+candidate-source success is proven; default native adoption remains. Close issues
+only after isolated acceptance. Merge PR799 with exact merge ledger.
 
 ## Verification
 
-Candidate focused153passed/1skipped; production1151passed/3skipped; UI224;
-Ruff/docs/metadata/routing pass. Candidate frozen conformance188/188 passes,
+Latest focused94passed; native Hermes34passed; production1151passed/3skipped; UI224;
+Ruff/docs/metadata/routing pass. Current8921c77e frozen conformance188/188 passes,
 source unchanged, after private umask077 correction. No exhaustive dispatch,
 Windows matrix or all-host certification. Prior Codex56.656s roundtrip is historical
 comparison evidence; current Codex preflight failed and is honestly unstaffed.
 Exact prior handoff receipt preserves critic_wrong_neighbor_selection; no transport
-recurrence or erroneous veto is inferred. Fresh Codex hook projection still unproven.
+recurrence or erroneous veto is inferred. Fresh native Codex process01a082f1-0e89-7f51-b4e7-7fb28b69917e
+remains unproven: status exposes no hash and bwrap prevents wiring command;
+no trust/sandbox bypass. See evidence/AR-404-codex-freshness-20260908.json.
 
 ## Constraints
 

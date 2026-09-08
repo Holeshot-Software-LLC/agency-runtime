@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [openclaw, cli, lifecycle, finalization]
 related:
+  - docs/worklog/2026-09-08-native-terminal-repair.md
   - docs/decisions/0016-central-finalization-and-session-correlation.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md

@@ -1,0 +1,26 @@
+{
+  "issue": "AR-404",
+  "host": "zcode",
+  "desktop_version": "3.10.2",
+  "native_cli_version": "0.16.5",
+  "native_bundle_sha256": "3597160465b67da248fa3fb919920ca30d4e093003a4d70cde2a2e33903cbabc",
+  "unchanged_native_bundle": true,
+  "path_launcher_installed": true,
+  "doctor": "passed",
+  "agency_refresh": "passed",
+  "invocation": {
+    "started_at": "2026-09-08T21:14:09.822885+00:00",
+    "ended_at": "2026-09-08T21:14:10.437716+00:00",
+    "elapsed_seconds": 0.615,
+    "exit_code": 1,
+    "permission_mode": "build",
+    "process_timeout_seconds": 420,
+    "previous_parser_rejection": "--max-turns advertised in help but rejected before execution"
+  },
+  "native_error": "Model config is missing; standalone CLI configuration contains only hooks.",
+  "desktop_provider_selection": "Z.AI coding-plan OAuth",
+  "staffing_attempted": false,
+  "accepted_native_turn": false,
+  "provider_configuration_changed": false,
+  "next_gate": "Owner choice for standalone CLI answering provider."
+}

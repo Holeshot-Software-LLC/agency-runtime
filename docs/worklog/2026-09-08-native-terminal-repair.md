@@ -23,7 +23,7 @@ Starting main and origin match97e269ec, clean. Owned branch
 `codex/ar418-ar419-native-terminal-20260908` replaces the merged historical
 capsule branch. Observable outcome: an ordinary accepted native turn with exact
 headers, injection evidence and central finalization, then Claude/Zcode proof.
-Phase: live_demo. The exact ordinary OpenClaw terminal handoff is proven;
+Phase: waiting_for_operator. The exact ordinary OpenClaw terminal handoff is proven;
 exact card injection remains unproven, so AR-419 stays open.
 
 The OpenClaw awaited `before_agent_finalize` hook exposes internal delivery as
@@ -62,9 +62,10 @@ A fresh CLI wiring read reports Codex not_measured; that is not fresh hook proof
 
 ## Next bounded package
 
-Complete fast checks, install the immutable OpenClaw candidate through normal
-gateway maintenance, and capture one fresh native result. Preserve all failed
-receipts and keep AR-404/418/419 open until isolated criteria have evidence.
+After the pending owner choices: capture exact OpenClaw input through its native
+consent surface, submit/adopt the native Hermes patch, and configure the chosen
+Zcode answering provider. Preserve all failed receipts; keep AR-404/418/419 open
+until isolated criteria have evidence. Same-repository PR799 is ready to merge.
 
 ## Installed native terminal evidence
 
@@ -157,3 +158,47 @@ Normal Hermes Agency refresh succeeds. UI224and tracker410pass. One bounded
 Hermes candidate trial is prepared using native59e52e556a and the existing owner
 profile/credential loader; the normal native checkout and launcher stay unchanged.
 This will be candidate-source evidence, not an upstream-installed completion claim.
+
+
+## Candidate native Hermes success and final validation
+
+Candidate native59e52e556a with installed Agency8921c77e completed an ordinary
+owner-profile turn in194.347s (staffing119.165s), exit0, completed=true/failed=false.
+Session20260908_172942_b70b9d; trace
+20260908_172942_b70b9d:e470edf4-fd92-4709-9d6c-69886a0465fd:5044c93c.
+Full selected card is in native api_content. Five truthful fields identify the
+observed glm-5.2 execution receipt. Authoritative accepta07064af-f8c2-4c38-a32a-27729151f5dc
+matches exact visible response SHA256
+fc52279e58cc8cb519a23bd63d5932bb4ed7554904afc9b22f5a9b4c3362a8c5.
+Native called its own finalizer; no old receipt was manually finalized. The normal
+native checkout/launcher remain unchanged. Upstream PR authorization requested
+once because that writes to a separate project. AR-418 remains open pending
+native adoption, installed evidence and isolated acceptance. See
+`docs/roadmap/evidence/AR-418-hermes-candidate-native-20260908.json`.
+
+Final production conformance on8921c77e passes188/188, source unchanged, zero
+invalid/surviving mutations. The earlier frozen-source verdict was not reused.
+UI224, routing, strict tracker410, docs1342, metadata, policy and Ruff pass;
+production1151/three skips and focused94pass. Native34tests pass.
+
+Latency comparison is observational, not a matched benchmark: OpenClaw195.996s
+with159.779s staffing versus prior Codex56.656s with39.866s staffing. Staffing
+accounts for119.913of139.340extra seconds, about86percent. OpenClaw's configured
+router route differs from Codex's dedicated stage routes; aliases do not prove
+underlying model identity or the cause of latency. No provider/model settings were
+changed. Claude63.879s/43.063s staffing and Hermes194.347s/119.165s staffing are
+separate native observations, not evidence of an intrinsic host speed penalty.
+
+
+## Fresh Codex process limitation
+
+Fresh native Codex process01a082f1-0e89-7f51-b4e7-7fb28b69917e ran with the
+normal configuration and read-only sandbox, exit0 in162.408s. It received the
+current kernel context and queried status, but runtime and published projection
+hashes could not be proven. Its wiring command was prevented by native bwrap
+loopback RTM_NEWADDR Operation not permitted. No sandbox or hook-trust bypass
+was attempted. Staffing failed with reranker contract rejection/recruiter
+abstention; this is not an accepted staffing demo or latency benchmark. The
+successful fresh MCP status probe likewise exposes no projection hash. The exact
+prior handoff receipt and original stale-projection report remain preserved.
+See `docs/roadmap/evidence/AR-404-codex-freshness-20260908.json`.

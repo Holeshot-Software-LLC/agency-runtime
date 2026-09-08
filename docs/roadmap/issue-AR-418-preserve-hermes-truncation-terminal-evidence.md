@@ -6,6 +6,7 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [hermes, lifecycle, failure, finalization]
 related:
+  - docs/worklog/2026-09-08-native-terminal-repair.md
   - docs/decisions/0016-central-finalization-and-session-correlation.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md
@@ -40,8 +41,11 @@ and printable partial results exit nonzero. Agency now consumes that optional
 hook, derives failure headers from exact current Store correlation, and closes
 failed runs without accepting partial output. Missing/cross-session traces retain
 pass-through diagnostics and cannot close another turn. Adapter94tests pass.
-The native candidate is not installed or merged upstream; installed ordinary
-Hermes success and exact original provider branch remain unproven. No old failed
+Fresh candidate-source Hermes turn20260908_172942_b70b9d succeeds with exact
+card injection, truthful headers and accepted matching hash in194.347s; see
+`evidence/AR-418-hermes-candidate-native-20260908.json`. The normal native
+installation is unchanged and the candidate is not merged upstream. Installed
+repair evidence and exact original provider branch remain unproven. No old failed
 receipt has been finalized. This is a candidate, not AR-418 acceptance.
 
 
