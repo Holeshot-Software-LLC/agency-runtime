@@ -183,7 +183,10 @@ def test_config_card_truncation_is_disclosed_and_bounded(capsys):
     output = capsys.readouterr().out
     assert "Display truncated; use --no-card for the complete value." in output
     assert "x" * 5000 not in output
-    assert len(output.encode()) < 5000
+    # The 4096-byte section budget excludes the card's UTF-8 dividers and
+    # labels. Assert the bounded value itself, not an invented whole-card cap.
+    assert output.count("x") == 4095
+    assert max(len(line.encode("utf-8")) for line in output.splitlines()) <= 4096
 
 
 def test_config_show_groups_every_projected_top_level_section(monkeypatch, capsys):

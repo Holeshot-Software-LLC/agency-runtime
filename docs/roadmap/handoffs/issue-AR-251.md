@@ -29,9 +29,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/260
 Source `54bdff1f` and immediate ledger `a6c34707` freeze five read-only card
 views with ADR-0154 automatic TTY defaults and explicit overrides. The initial
 `a1d0c965` explicit-only default was corrected during review. No new ADR or
-presentation-policy exception remains. Branch-only, verification pending; not accepted,
-installed, or done. Current main AR-410/411 source and faithful merge ledgers
-were fast-forwarded through `c050be37` before this checkpoint.
+presentation-policy exception remains. Published through PR #753. The owner
+ended test deferral for delivery; focused card tests now pass 61 cases after
+correcting one test-only whole-card byte-limit assumption. Not accepted or done.
 
 ## Completed evidence
 
@@ -44,15 +44,13 @@ explicit `--raw`; provider cards omit direct keys. Disabled roster filtering,
 policy validation/exit codes, and empty/error paths remain in place.
 
 Detail truncation points to `--no-card` or existing `--json` for complete output. New focused
-regressions are written but unrun. Parser golden artifact mechanically refreshed
+regressions now pass. Parser golden artifact was mechanically refreshed
 to `ca0221ef36d806dc4bf86dcf53136b7d5c3553e135c2eb284bac32b4a6ef9863`.
 
 ## Exact blocker
 
-Owner explicitly deferred tests and CI in favor of code implementation.
-No acceptance, installed CLI demonstration, or live harness proof exists for
-this candidate. AR-251 remains `in_progress`; do not infer satisfaction from
-the written tests, formatting, parser-golden regeneration, or source review.
+Installed CLI demonstration and isolated acceptance remain outstanding.
+AR-251 remains `in_progress`; source tests are not native staffing proof.
 
 ## Same-task continuity
 
@@ -64,17 +62,16 @@ do not touch concurrent source or rewrite incoming history.
 
 ## Next bounded work package
 
-Finish parent-coordinated source review and publication with verification
-explicitly deferred. Only after the owner resumes verification, run focused
-card/parser/config-redaction/policy regressions and demonstrate the exact
-installed candidate in isolated read-only fixtures. No broad suite or native
-staffing run is needed to implement these presentation flags.
+Parent publishes the test-only correction in the final delivery branch and
+demonstrates the exact installed candidate in isolated read-only fixtures.
 
 ## Verification
 
-Formatting, mechanical parser artifact regeneration, source inspection, and
-diff hygiene only. No tests, CI, acceptance models, native calls, providers,
-owner configuration reads, installation, or dashboard/service mutation.
+Focused card tests: 61 passed in 0.42 seconds after a test-only correction.
+The earlier combined run had 1 failed, 371 passed and 1 skipped; its failure
+compared UTF-8 card decoration plus content against a nonexistent whole-card
+limit. The corrected assertion proves the actual bounded value/line. Runtime
+renderer unchanged; no native or acceptance claim.
 
 ## Constraints
 
