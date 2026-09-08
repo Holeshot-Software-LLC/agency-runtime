@@ -2244,6 +2244,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8d79ca31` | 2026-09-08 | docs: merge PR785 native staffing evidence | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [Detail](2026-09-08-native-staffing-receipts.md) |
 | `6a0eb850` | 2026-09-08 | fix(staffing): retain qualified critic veto causes in bounded receipts | AR-414, AR-416 | [Detail](2026-09-08-captured-native-critic-veto.md) |
 | `920aa013` | 2026-09-08 | docs(staffing): record captured veto diagnosis and source verification | AR-414, AR-416 | [Detail](2026-09-08-captured-native-critic-veto.md) |
+| `6260d9d9` | 2026-09-08 | fix(staffing): merge PR788 qualified critic receipt recovery | AR-414, AR-416 | [Detail](2026-09-08-captured-native-critic-veto.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

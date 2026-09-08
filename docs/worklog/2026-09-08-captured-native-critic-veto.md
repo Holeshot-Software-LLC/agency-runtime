@@ -114,3 +114,9 @@ claiming installed behavior. Do not replace inference-owned staffing in response
 to the handoff veto or retry until approval.
 
 Checkpoint commit `920aa013` records the final verification and diagnosis.
+
+PR788 merged as `6260d9d9` with exact subject
+`fix(staffing): merge PR788 qualified critic receipt recovery`.
+This ledger records that substantive merge; AR-414/415/416 remain open.
+
+Ledger follow-up: [PR789](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/789).
