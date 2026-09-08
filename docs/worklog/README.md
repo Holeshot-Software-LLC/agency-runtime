@@ -2229,6 +2229,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6786aaa2` | 2026-09-08 | fix(staffing): state exact compact planner field requirements | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [detail](2026-09-08-failed-headers-and-planner.md) |
 | `975ce7b4` | 2026-09-08 | fix(staffing): merge explicit planner contract and live evidence (PR #775) | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [detail](2026-09-08-failed-headers-and-planner.md) |
 | `64670ecc` | 2026-09-08 | docs(runtime): checkpoint final installed header and staffing evidence | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [detail](2026-09-08-failed-headers-and-planner.md) |
+| `1b210542` | 2026-09-08 | docs(runtime): merge final AR-414 installed checkpoint (PR #776) | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [detail](2026-09-08-failed-headers-and-planner.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
