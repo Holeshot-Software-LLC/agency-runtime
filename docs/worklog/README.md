@@ -2215,6 +2215,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ed26177f` | 2026-09-08 | fix(receipts): preserve staffing HTTP statuses through durable evidence (AR-413) | [AR-413](../roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md) | [Detail](2026-09-08-planner-reliability.md) |
 | `0c240444` | 2026-09-08 | docs(delivery): checkpoint planner priority experiment before native proof (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-08-planner-reliability.md) |
 | `6debb9f2` | 2026-09-08 | docs(delivery): record installed HTTP proof and restore unsuccessful planner experiment (AR-413) | [AR-413](../roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md) | [Detail](2026-09-08-planner-reliability.md) |
+| `ecd1d26b` | 2026-09-08 | docs(receipts): bind installed HTTP evidence and planner isolation results (AR-413) | [AR-413](../roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md) | [Detail](2026-09-08-planner-reliability.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
