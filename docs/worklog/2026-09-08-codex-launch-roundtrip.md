@@ -41,7 +41,10 @@ add product secret-file fallback, replace routes or grant trust programmatically
 ## Verification
 
 The linked receipt records eight trusted hooks, fresh eight-tool MCP/status,
-two launcher probes and native version. Live results are pending.
+two launcher probes and native version. First current-profile activation passes
+without bypass: accepted staffing, completed native child, accepted finalization
+and persisted attestation. It takes129.6seconds, including97.454second staffing
+with one candidate-contract retry. Ordinary MCP-backed proof remains pending.
 
 ## Follow-ups
 

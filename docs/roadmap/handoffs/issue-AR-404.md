@@ -28,7 +28,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner approved this bounded package after confirming trust: repair the launch,
 prove native staffing/injection/finalization, then measure a small cold/warm
 sample. No backlog wave or OpenClaw restart. No worker is active. Root owns this
-dedicated worktree; phase implementing, pre-live checkpoint.
+dedicated worktree; phase live_demo, first activation passed.
 
 Main floor is c5516afe. Installed source remains4cbebf73, projection4d2934ddb59e;
 no product or generated hook changed. Inventory120 =48 mapped +72 legacy.
@@ -48,11 +48,18 @@ unset for subscription login. No copied secrets, product fallback or route chang
 Two actual-prefix environment probes and Bash syntax pass; native CLI is0.153.4.
 Wrapper hashes and exact scope are in the linked current receipt.
 
+First fresh native activation passed in129.6seconds, no bypass, attestation
+persisted. Exact trace01a080c1-3108-79f1-a099-a0ebbc2e96c1 has accepted staffing,
+completed code-reviewer native child and accepted finalization. Five headers
+parse. Staffing97454ms includes one rejected recruiter response then success.
+Requested install refresh preserved files/trust/attestation; default installer
+restarted its optional dashboard, not OpenClaw. Detailed hashes in receipt.
+
 ## Exact blocker
 
-Native roundtrip is pending. Trust and fresh startup do not prove staffing,
-exact injection, execution or accepted finalization. The old running parent
-remains unstaffed with closed MCP; a wrapper cannot mutate its environment.
+Ordinary public MCP-backed finalization and repeatability remain pending; the
+passing activation is tool-reduced. The old running parent remains unstaffed
+with closed MCP; a wrapper cannot mutate its environment or loaded hooks.
 
 Previous other-host failures remain: Claude unstaffed/no child delivery; Hermes
 invalid reranker/recruiter timeout; existing OpenClaw staffed without accepted
@@ -67,10 +74,9 @@ The original owner launcher is retained privately; no secret file was backed up.
 
 ## Next bounded work package
 
-Run one normal current-profile activation using the repaired launcher and
-installed runtime, without bypass. Inspect exact card delivery, initial child
-execution, five-field output and accepted finalization. On success, run a bounded
-ordinary MCP-backed session and small cold/warm sample. Fix only findings that
+Run a bounded ordinary MCP-backed session and small latency sample, without
+bypass or provider changes. Do not label samples cold/warm without cache evidence.
+Fix only findings that
 invalidate this outcome; stop at genuine operator prerequisites.
 
 ## Verification

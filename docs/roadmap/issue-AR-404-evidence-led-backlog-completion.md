@@ -68,7 +68,10 @@ inspection proves eight trusted hooks and a working newly launched MCP server;
 the current conversation connection remains closed. The owner Codex launcher
 now provisions the existing configured LiteLLM credential without changing
 subscription login, inherited keys or gateway routing. Product code is unchanged.
-Two metadata-only launch probes pass. Native roundtrip and latency remain pending;
+Two metadata-only launch probes and the fresh trusted activation pass: accepted
+staffing, native child completion, finalization and persisted attestation, no
+bypass. Total129.6seconds includes97.454second staffing and one recruiter retry.
+Ordinary public MCP-backed proof and repeatability remain pending;
 see the [current receipt](acceptance/evidence/AR-404-codex-roundtrip-20260908.md).
 The broader backlog and other-harness restart remain outside this package.
 
