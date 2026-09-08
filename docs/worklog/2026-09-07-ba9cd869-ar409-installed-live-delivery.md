@@ -68,3 +68,5 @@ Integration `4f1c1c83` retains the twenty-record triage at its exact source scop
 Integration `ae15183c` incorporates the published AR-411 source merge and its faithful immediate ledger. AR-411 remains in progress; its regressions and fresh installed delivery are deferred under the owner's code-first direction.
 
 Checkpoint `378102d7` links the completed next-twenty triage, published AR-411 diagnostic, latest count and retained native-purpose constraint. A required Codex installation refresh returned a no-op already-current result without changing the current process's unverified staffing status.
+
+PR #748 merged as `cb9e9a50` at 2026-09-08T01:12:39Z. Publication includes exact installed/native failure evidence, the twenty-record triage and the midnight code-first direction. Static checks, metadata, ledger, documentation and strict tracker parity passed before the subsequent AR-270 tracker filing; no new tests or native model runs were launched.
