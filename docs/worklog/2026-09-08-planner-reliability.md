@@ -106,6 +106,18 @@ missing explicit non-HTTP/legacy evidence. Added those three cases;83focused
 tests now pass. The default Claude verifier returned no usable verdict. No
 builder-authored verdict or acceptance override was used. PR768 owns delivery.
 
+The second isolated Codex run records four satisfied verdicts against65a387ed;
+AR-413 is complete on that exact diagnostic scope. A request-only low-effort
+comparison still fails HTTP408 in45111ms. No persistent reasoning change was
+made. The owner planner profile sends medium effort, but lowering it alone did
+not repair this failure; no performance improvement or causal diagnosis claimed.
+
+A final request-only comparison replaced strict JSON-schema response format with
+JSON-object mode, retaining the production prompt and schema instruction. It
+also fails HTTP408 in45284ms. No product/provider format setting was changed.
+These bounded probes isolate a full-payload provider failure but do not identify
+its upstream cause. No further full native retry is justified by these results.
+
 AR-413 installed failure proof and isolated acceptance; AR-404 native ordinary
 staffing/finalization with valid current binding and approved MCP-write mode.
 Do not promote the old activation into current ordinary reliability evidence.

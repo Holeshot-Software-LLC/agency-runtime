@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-08
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/worklog/2026-09-08-planner-reliability.md
+  - docs/roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md
   - docs/roadmap/acceptance/evidence/AR-404-codex-roundtrip-20260908.md
   - docs/roadmap/acceptance/evidence/AR-404-final-installed-evaluation-20260907.md
   - docs/roadmap/AR-404-next20-triage-20260907.md
@@ -60,6 +62,25 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+### HTTP-status delivery and planner isolation, September 8
+
+AR-413 has four satisfied isolated acceptance verdicts, 83 focused passing
+tests and verified installed loopback HTTP/SQLite evidence. PR768 delivers
+the diagnostic correction. The named fast spine (1151 pass, 3 skip), dashboard
+(224 pass), routing, conformance and record checks pass. This closes one issue,
+not ordinary staffing reliability; the unfinished inventory is120 records
+(48 mapped and72 legacy).
+
+The reversible planner priority experiment failed and was restored exactly.
+Tiny alias/direct GLM requests succeed in2142/2951ms, but the production planner
+payload fails HTTP408 on both in45704/45137ms. Request-only low-effort and
+JSON-object comparisons also fail in45111/45284ms; no configuration changes
+remain. Codex install is already current; separate host status proves trust
+and the earlier activation attestation, not subsequent ordinary success.
+The next bounded package is owner runtime delivery followed by upstream
+full-payload diagnosis. No repeated native run is justified without new evidence.
+See the linked planner-reliability worklog and active capsule for exact scope.
 
 ### Resumed Codex roundtrip package, September 8
 

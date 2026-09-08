@@ -1,6 +1,6 @@
 ---
 title: "AR-413: Preserve HTTP status in durable staffing failure receipts"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-08
 updated: 2026-09-08
@@ -13,6 +13,8 @@ related:
   - docs/roadmap/acceptance/evidence/AR-404-codex-roundtrip-20260908.md
   - docs/worklog/README.md
   - docs/worklog/2026-09-08-planner-reliability.md
+  - docs/roadmap/acceptance/issue-AR-413.md
+  - docs/roadmap/acceptance/evidence/AR-413-installed-http-status-20260908.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -35,9 +37,9 @@ separate gateway logs. This is not the previously fixed credential absence.
 
 ## Current state
 
-Installed/main structured_provider.py preserves HTTPError.code in
+Before this repair, installed/main structured_provider.py preserved HTTPError.code in
 StructuredProviderResult.http_status. WorkforceInferenceAttempt has no matching
-field, and _attempt does not transfer it. Thus the loss occurs before the
+field, and _attempt did not transfer it. Thus the loss occurred before the
 durable preflight_failure_receipts projection. AR-392's result-level tests and
 acceptance remain faithful historical evidence, not end-to-end status proof.
 
@@ -50,13 +52,16 @@ join. The linked AR-404 receipt contains the bounded native evidence.
 The downstream fields are now implemented in workforce/hiring attempts and both
 operator/routing and terminal-failure projections. Only exact integers100..599
 are retained; absent/zero stays absent and malformed values are omitted. Legacy
-receipt fixed points remain unchanged.80 focused tests pass, including actual
+receipt fixed points remain unchanged.83 focused tests pass, including actual
 failed workforce turns through SQLite for401/408/429/502, hiring failures and
 invalid/hostile metadata. A canonical independently verified wheel fromd08c5008
 passes isolated-installed real loopback401/408/429/502 requests through workforce
 and SQLite; every status is retained and response bodies excluded. This is a
-synthetic failure fixture, not external-provider success. Isolated acceptance
-verification and owner-host refresh are still pending; do not mark done yet.
+synthetic failure fixture, not external-provider success. All four isolated
+Codex acceptance verdicts are satisfied against65a387ed after explicit
+non-HTTP/legacy tests were added. PR768 delivers this diagnostic correction;
+owner runtime upgrade is separate from the isolated installed proof. The
+ordinary native planner failure remains open under AR-404.
 
 The owner separately authorized a bounded planner/gateway repair under AR-404.
 Its live route experiment does not alter this code's staffing or retry policy.
@@ -78,11 +83,11 @@ implement this newly demonstrated downstream gap.
 
 ## Acceptance
 
-- [ ] Injected HTTP401/408/429/502 results retain their exact integer status
+- [x] Injected HTTP401/408/429/502 results retain their exact integer status
       through a complete failed workforce turn and SQLite readback.
-- [ ] Routing/operator projections and relevant hiring evidence retain the same
+- [x] Routing/operator projections and relevant hiring evidence retain the same
       status; non-HTTP, unknown and legacy outcomes do not invent one.
-- [ ] Malformed/unbounded status values fail the projection safely, and raw
+- [x] Malformed/unbounded status values fail the projection safely, and raw
       provider bodies, endpoints, headers and secrets remain excluded.
-- [ ] One bounded installed failure demonstration records status without
+- [x] One bounded installed failure demonstration records status without
       relying on gateway logs; native/provider policy remains unchanged.

@@ -36,8 +36,8 @@ Installed source was4cbebf73 at the native priority experiment. A subsequent
 requested Codex refresh reports already_current/no_op with published bundle
 f838a7676e42. Separate host inspection confirms trusted hooks and a matching
 11:24UTC activation attestation; bundle and projection are different identities.
-New AR-413/#765 makes the unfinished
-inventory121 =49 mapped +72 legacy; it is a specific diagnostic gap, not121bugs.
+AR-413/#765 is now verified complete, leaving unfinished
+inventory120 =48 mapped +72 legacy; this is not120confirmed bugs.
 
 ## Completed evidence
 
@@ -96,13 +96,18 @@ projections. Focused83, fast spine1151/3skip, dashboard224, routing and decision
 conformance pass. Canonical build, Twine and independent verification pass in a
 clean same-source clone. The installed wheel proves real loopback401/408/429/502
 through workforce intoSQLite, without response bodies or gateway-log inference.
-Formal isolated acceptance and PR delivery remain. The native priority experiment
+Four isolated acceptance verdicts are satisfied after three explicit
+non-HTTP/legacy tests were added. PR768 delivery remains. The native priority experiment
 failed plannerHTTP46910ms; order2 was restored at12:40:26UTC with exact readback.
 No priority change remains. A direct minimal structured call to the existing GLM
 deployment succeeds in2951ms; alias2142ms. The production5337-character planner
 prompt and1967-character schema fail HTTP408 in45704/45137ms on alias/direct.
 The configured planner thinking_level is medium; a low-effort request-only
-comparison is pending. No persistent thinking change yet. Worklog
+comparison also fails HTTP408 in45111ms; JSON-object mode45284ms. Neither
+request-only experiment changed configuration. After PR delivery, upgrade the
+verified artifact and inspect Codex trust; do not bypass a new trust gate.
+Next diagnosis needs upstream full-payload evidence, not another native retry.
+Worklog
 2026-09-08-planner-reliability owns details. No new credentials or trust bypass.
 
 ## Verification
@@ -119,4 +124,3 @@ fallback, provider-route changes outside the approved bounded experiment,
 shared-service restart without approval, raw
 transcript publication, guessed headers or acceptance promotion. Use normal
 branch/PR/merge and exact ledgers for substantive repository work.
-The isolated acceptance reviewer requested non-HTTP/legacy tests; added three.
