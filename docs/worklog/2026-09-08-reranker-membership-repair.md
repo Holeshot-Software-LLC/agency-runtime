@@ -106,3 +106,12 @@ after isolated acceptance; AR-404/#672, AR-418/#796 and AR-419/#797 remain open.
 The merge and recovery records retain all unresolved gates and failed receipts.
 
 PR804 merged as `e36fc883` with exact subject `docs(staffing): merge PR804 AR420 recovery checkpoint`.
+
+Final recheck after PR805: Claude's executable gate is failing again. Package
+and executable ctimes advanced to22:38:08UTC, package/bin parents returned775.
+The earlier22:24:43UTC replacement has the same pattern. Two Claude processes
+from September1 use a deleted installation, which does not establish that they
+performed the replacements. No active terminal was stopped. Owner clarification
+on concurrent installers is pending; further chmod retries were not performed.
+AR-420's source/native evidence and isolated verdicts remain valid observations;
+current Claude availability is an explicit separate AR-404 blocker.
