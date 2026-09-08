@@ -47,7 +47,7 @@ callback behavior are unchanged. Store read paths return raw row dictionaries
 and preserve SQL NULL. No schema change, old-row update, provider order, retry
 limit, budget, model authority, profile or staffing policy is changed.
 
-## Regressions written, not run
+## Initial code-first checkpoint
 
 The focused cases cover three independent single-profile stages; repeated
 semantic repairs followed by a real fallback; dispatched failure versus
@@ -114,9 +114,21 @@ implemented/live-delivery records. That source check was not a new acceptance
 verdict or fresh live proof, and no manufactured implementation was added.
 AR-284 was selected because its ordinal writer defect is still explicit.
 
+## Wrap-up verification, 2026-09-08
+
+The owner subsequently requested a clean merge, all-harness installation and
+live evaluation, ending the test deferral. The second independent source pass
+on frozen `3fb97e7d` found no scoped correctness issue after reviewing ADR-0238,
+producer dispatch stamps, all three writers, NULL ingress, legacy projection
+fixed points and failed-preflight forwarding. No runtime delta was required.
+
+The first authorized focused execution on integrated `b14df7a9` ran
+`python -m pytest tests/test_provider_attempt_accounting.py tests/test_store_preflight_coverage_final.py tests/test_workforce_inference.py -q -W error`:
+**161 passed in 2.58 seconds**. This includes real isolated Store transactions
+and stubbed providers; it is not installed/native or acceptance proof.
+
 Tracker #754 was explicitly authorized and created; original pending-tracker
 acceptance wording remains historical provenance. All six original criteria
-remain unchecked. Next: scoped independent source review, then normal PR
-publication as in_progress. Run the written focused checks only when the owner
-authorizes test execution; do not generate a provider failure merely to obtain
-a fresh receipt.
+remain unchecked. Next: normal PR publication as in_progress and the parent's
+combined exact-main installed evaluation. Do not generate a provider failure
+merely to obtain a fresh receipt.
