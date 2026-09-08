@@ -112,3 +112,5 @@ bounded package: isolated acceptance verification for AR-416, with installation
 and native diagnostic evidence qualified under the release checklist before
 claiming installed behavior. Do not replace inference-owned staffing in response
 to the handoff veto or retry until approval.
+
+Checkpoint commit `920aa013` records the final verification and diagnosis.
