@@ -68,13 +68,22 @@ stopped new work. Exact main `4cbebf73` contains the completed source slices;
 the owner CLI now matches all 614 files in its independently verified wheel.
 Four host installations succeeded. OpenClaw staging occurred but its native
 transaction stopped at the live-gateway restart-consent boundary; no gateway
-restart or native registration success is claimed. Native checks are next.
+restart or native registration success is claimed. The final native verdict is
+not an all-harness pass: Codex requires normal trust; Claude produced a valid
+header but no staffing/injection/finalization proof; Hermes timed out after a
+reranker-contract failure and recruiter timeout. The existing OpenClaw gateway
+staffed and emitted a five-field header, but has no accepted finalization.
+ZCode has no native executable. All bounded checks and workers are terminal;
+the owner requested a pause, not another implementation or retry wave.
 
 The named production spine passed 1151/three skips and dashboard passed224;
 focused results and honest conformance limits are in the
 [final delivery receipt](acceptance/evidence/AR-404-final-installed-evaluation-20260907.md).
 Current count is120 unfinished =48 mapped +72 legacy. No new isolated
 acceptance or blanket issue closure follows from these source/install results.
+On explicit continuation, prioritize one fully evidenced native staffed turn
+before broad backlog cleanup. Record provider, header, exact injection and
+accepted finalization separately; preserve trust and shared-service boundaries.
 
 ### Historical midnight code-first checkpoint
 

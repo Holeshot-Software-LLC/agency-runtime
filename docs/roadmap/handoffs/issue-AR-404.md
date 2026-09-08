@@ -29,7 +29,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 The owner superseded the midnight code-first extension: stop new backlog work,
 merge completed slices, install all harnesses and evaluate. All three native
 workers finished and stopped; no new backlog implementation is active.
-Root owns final delivery records. Native evaluation is the remaining package.
+Root owns final delivery records. All bounded native checks are terminal.
+Stop after publishing the final evidence and exact merge ledger; no further
+backlog work or live retry is active or scheduled.
 
 Source is published on main at exact `4cbebf73` (PR762), including AR251/270/
 280/284/287/312/369/371/411/412 and prior AR409/410. Five wrap-up PRs are
@@ -59,11 +61,25 @@ Owner configuration and wrapper remain byte-identical; no service was restarted.
 
 ## Exact blocker
 
-Native evaluation is pending. Current parent lacks LITELLM_API_KEY and still
-runs old projection5059543ccea4; installing cannot retroactively staff it.
-Codex's newly installed hook hashes require normal native trust.
-ZCode has no native executable. OpenClaw gateway restart consent was requested
-asynchronously; preserve the running service unless the owner approves.
+All-harness readiness is NOT proved. Codex's eight enabled hooks are untrusted;
+activation returned codex_hook_trust_not_ready without invoking a model.
+Claude returned all five header fields but was unstaffed, with one preflight
+failure, no routing/specialist/finalization and delivery_marker_absent.
+Hermes timed out at420s: cold embedding79.833s, invalid reranker response,
+recruiter timeout120.180s, no header or specialist. Its own receipts prove
+working provider stages; do not blame the parent's missing key for that result.
+
+OpenClaw's existing gateway passed staffing-only: one accepted route/specialist,
+five model receipts, actual five-field output and7050 model-only prompt chars.
+It has no accepted finalization and its Agency run remains active; exact card
+injection is not attested. Routing took288.389s in this concurrent/session-warm
+check. This is not proof of candidate-native installation or a speedup.
+ZCode has no native executable. OpenClaw restart consent was requested once,
+with no answer; preserve the running service. No trust or credentials bypassed.
+
+Current parent lacks LITELLM_API_KEY and runs old projection5059543ccea4.
+A second normal Codex refresh returned already_current; disk reinstall cannot
+retroactively staff this parent or grant normal native hook trust.
 
 ## Same-task continuity
 
@@ -74,11 +90,11 @@ At/below50% context, reuse this clean recovery pair and continue the same task.
 
 ## Next bounded work package
 
-Run bounded current-profile Codex activation and a fresh Claude canary, plus
-ordinary Hermes/OpenClaw checks where safely available. Inspect actual output,
-five headers, injection, own-session Store receipts and finalization separately.
-Then record exact results, merge final evidence, make a narrow final merge ledger
-PR, and stop until the owner requests continuation. Do not start more backlog.
+Paused until the owner explicitly requests continuation. Then prioritize one
+fresh native staffed turn with exact injection and accepted finalization,
+using existing AR119/409/410 and AR353 evidence. Keep Codex attended trust,
+OpenClaw gateway restart consent and ZCode availability as separate prerequisites.
+Do not begin a broad backlog wave, rerun stable failures or dispatch CI.
 
 ## Verification
 
