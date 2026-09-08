@@ -16,7 +16,7 @@ type: worklog
 commit: fc699ff392f75c345064077b039d8fc15615dcf2
 short: fc699ff3
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/752
 related_issues:
   - docs/roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md
 ---
@@ -91,3 +91,7 @@ Normal merge `9aba5133` integrates AR-280 publication ledger `a574b56d`, retaini
 both worklog histories and unchanged AR-270 source/test bytes. The parent
 explicitly coordinates the sole parallel AR-412 tracker mismatch through serial
 publication; it is not permission to ignore any AR-270 mismatch.
+
+Normal nonclosing PR [#752](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/752)
+publishes this source candidate for serial review/merge. The issue remains open;
+no accepted-completion or installed native behavior is implied by publication.
