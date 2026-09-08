@@ -30,7 +30,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 Owner approved refreshing Hermes and OpenClaw and testing one ordinary native
 turn each. OpenClaw gateway stop/update/restart is included in that approval.
-Baseline clean main24b50cb8. Hermes installer succeeded; package is demo_ready.
+Baseline clean main24b50cb8. Hermes native attempt failed after accepted staffing/injection (AR-418/#796).
+OpenClaw refreshed, gateway restored RPC-green; its trial is demo_ready.
 No native success claim yet. AR-404 stays open; AR-414/415 are acceptance-closed.
 
 ## Completed evidence
@@ -45,8 +46,8 @@ unverified and absent attestation. Hermes refresh now succeeds with backup
 
 ## Exact blocker
 
-No external gate blocks the approved work. Fresh native staffing, injection,
-headers and finalization are still unproved for Hermes and OpenClaw. Their old
+No external gate blocks the approved work. Hermes returned an output-limit error after accepted staffing and full card
+injection; no finalization or five-line header. OpenClaw native turn is pending. Their old
 failure records are preserved, not treated as current-artifact results.
 
 ## Same-task continuity
@@ -57,9 +58,8 @@ and continue in the same task. Preserve unrelated worktrees and operator files.
 
 ## Next bounded work package
 
-Run Hermes from a fresh normal CLI process. Then stop the OpenClaw gateway,
-refresh through the normal installer, restore its service and test one ordinary
-turn. Correlate each host's own receipt and native output. Diagnose any failure
+Hermes evidence is recorded under AR-418. Run one ordinary fresh OpenClaw
+turn against the refreshed and restored gateway. Correlate each host's own receipt and native output. Diagnose any failure
 before a further attempt; preserve all validators and inference-owned staffing.
 
 ## Verification

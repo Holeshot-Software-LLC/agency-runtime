@@ -70,7 +70,10 @@ repeat work and risk reintroducing superseded behavior.
 After AR-414/415's verified Codex completion, owner authorized Hermes refresh
 and native proof, followed by OpenClaw's normal gateway stop/update/restart and
 native proof. Main baseline24b50cb8; verified installed source8629e2ed unchanged.
-Hermes refresh succeeds with retained backup; native evidence remains pending.
+Hermes refresh succeeds; fresh native staffing/injection pass, but output-limit
+return has no header or finalization (AR-418). OpenClaw refreshed through the
+approved stopped-gateway lifecycle; configuration unchanged and RPC restored.
+Its fresh native proof remains pending.
 Earlier Codex blockers below are historical. This bounded host package does not
 close the umbrella item or authorize unrelated backlog work.
 

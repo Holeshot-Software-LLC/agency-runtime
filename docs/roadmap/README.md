@@ -45,6 +45,7 @@ bounded package are in AR-404's
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
+| `AR-418` | [Preserve Hermes truncation failure and terminal evidence](issue-AR-418-preserve-hermes-truncation-terminal-evidence.md) | in_progress | p1 | host-integrations | [#796](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/796) |
 | `AR-417` | [Keep qualified-veto regression self-contained in source archives](issue-AR-417-self-contained-qualified-veto-regression.md) | done | p2 | host-integrations | [#790](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/790) |
 | `AR-416` | [Retain qualified critic veto causes in bounded receipts](issue-AR-416-retain-qualified-critic-veto-causes.md) | done | p1 | host-integrations | [#787](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/787) |
 | `AR-415` | [Respect negated change requests in plan completeness](issue-AR-415-respect-negated-change-requests.md) | done | p1 | host-integrations | [#778](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/778) |
@@ -464,6 +465,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
+| [AR-418](issue-AR-418-preserve-hermes-truncation-terminal-evidence.md) | Native failure evidence in PR795; repair pending | [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md) |
 | [AR-415](issue-AR-415-respect-negated-change-requests.md) | `c1ef8566`, `d0bb4127`, `85f55021`, `21a8a39e`, `39f5142a`; native proof PR793 and isolated acceptance satisfied, `86d3728a`, `1162702f` | [ADR-0118](../decisions/0118-require-inference-owned-staffing.md) |
 | [AR-417](issue-AR-417-self-contained-qualified-veto-regression.md) | `8629e2ed`, `0bc2f895`, `130631b8`, `f373d905`, `14459ffa`, `9d50063b` | [ADR-0074](../decisions/0074-build-byte-deterministic-release-artifacts.md) |
 | [AR-416](issue-AR-416-retain-qualified-critic-veto-causes.md) | `6a0eb850`, `920aa013`, `6260d9d9`, `8629e2ed`, `0bc2f895`, `130631b8`, `f373d905`, `14459ffa`, `9d50063b` | [ADR-0240](../decisions/0240-project-qualified-critic-veto-causes-with-an-omission-marker.md) |

@@ -1,0 +1,72 @@
+---
+title: "AR-418: Preserve Hermes truncation failure and terminal evidence"
+status: in_progress
+category: roadmap
+created: 2026-09-08
+updated: 2026-09-08
+tags: [hermes, lifecycle, failure, finalization]
+related:
+  - docs/decisions/0016-central-finalization-and-session-correlation.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md
+supersedes: []
+superseded_by: null
+type: issue
+epic: host-integrations
+issue_id: AR-418
+priority: p1
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/796
+depends_on: []
+blocks: []
+---
+
+# AR-418: Preserve Hermes truncation failure and terminal evidence
+
+## Problem
+
+A fresh normal Hermes turn accepts staffing and receives the selected specialist
+card, then prints `Response truncated due to output length limit`. The CLI exits0,
+without a truthful five-line header or accepted finalization; Agency remains active.
+Exit status and installation success therefore conceal an incomplete native turn.
+
+## Current state
+
+Session20260908_155517_dc98fe, trace
+20260908_155517_dc98fe:8671381b-3125-48ae-98a4-29c8f43c4209:1c4ea053.
+Installed source8629e2ed with refreshed Hermes projection6e7dc299c23e. Staffing
+accepted code-reviewer in146.452s. Full card is in native model-facing api_content.
+The first native model receipt identifies glm-5.2 via alias-hermes-chat. A terminal
+inline Python example and finalizer tool search completed; finalizer was not called.
+Total340.061s, exit0, native usage completed=false, no terminal Agency event.
+Exact bounded evidence is retained in evidence/AR-404-hermes-native-20260908.json.
+
+Installed Hermes source inspection finds output-limit early returns that bypass
+normal finalize_turn. The raw second provider response, exact return branch and
+actual token cap are not captured; the error literal alone does not prove them.
+This differs from AR-346's preflight-failure transform and AR-280's post-response
+internal call: this turn staffed successfully and never finalized a response.
+
+## Approach
+
+Trace the native output-limit return and lifecycle callback using supported,
+turn-bound evidence. Preserve terminal failure and truthful diagnostic delivery
+without accepting partial output or guessing response/correlation. Determine
+whether the native host must expose the failure callback before an adapter can
+safely consume it. Do not change staffing, critic policy or output budgets merely
+to obtain an accepted trial. Keep the original failed receipt immutable.
+
+## Dependencies
+
+Hermes native failure lifecycle and ADR-0016 central finalization/correlation.
+AR-404 records the current installed native observation.
+
+## Acceptance
+
+- [ ] The exact native truncation failure is reproduced and its provider/host
+      boundary is identified without inferring a token cap from the error text.
+- [ ] A failed native turn records truthful terminal failure and diagnostic
+      headers without accepting the truncated response or leaving false success.
+- [ ] Missing and cross-turn correlation remain rejected, and ordinary accepted
+      finalization still works with unchanged staffing and critic gates.
+- [ ] Focused checks and fresh installed native evidence establish the repair;
+      repository, tracker and exact worklog records agree.

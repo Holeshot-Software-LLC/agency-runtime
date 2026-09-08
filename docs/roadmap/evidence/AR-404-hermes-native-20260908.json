@@ -1,0 +1,141 @@
+{
+  "host": "hermes",
+  "session_id": "20260908_155517_dc98fe",
+  "trace_id": "20260908_155517_dc98fe:8671381b-3125-48ae-98a4-29c8f43c4209:1c4ea053",
+  "invocation": {
+    "started_at": "2026-09-08T19:55:07.459800+00:00",
+    "ended_at": "2026-09-08T20:00:47.520245+00:00",
+    "exit_code": 0,
+    "elapsed_seconds": 340.061
+  },
+  "request": "Review this Python function against these requirements: return the arithmetic mean, preserve fractional results, and raise ValueError for empty input. Explain what happens for [2, 7] and []. This is not a request to change the repository. Do not inspect repository files or modify anything.\n\ndef average(values):\n    return sum(values) // len(values)\n",
+  "routing": {
+    "status": "accepted",
+    "selected_ids": [
+      "code-reviewer"
+    ],
+    "latency_ms": 146452,
+    "cache_hit": false,
+    "session_reused": false,
+    "work_units": {
+      "confidence": "high",
+      "count": 1,
+      "delegate": false,
+      "source": "verified-workforce-plan"
+    },
+    "workforce_unit_descriptors": [
+      {
+        "artifact_kind": "review-report",
+        "authority": "review",
+        "lifecycle_phase": "review",
+        "mutation_scope": "read_only",
+        "ordinal": 1
+      }
+    ]
+  },
+  "provider_attempts": [
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-router",
+      "ordinal": 1,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "linux-task-agency-router",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-router",
+      "stage": "planner",
+      "status": "applied"
+    },
+    {
+      "model_group": "",
+      "ordinal": 2,
+      "provider_name": "local-workforce-embedding",
+      "provider_type": "ollama",
+      "reason_code": "dense_recall_applied",
+      "requested_model": "qwen3-embedding:latest",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "",
+      "ordinal": 3,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "local-workforce-reranker",
+      "provider_type": "ollama",
+      "reason_code": "structured_response_applied",
+      "requested_model": "qwen3-14b-abliterated:latest",
+      "stage": "recall_reranker",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-router",
+      "ordinal": 4,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "linux-task-agency-router",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-router",
+      "stage": "recruiter",
+      "status": "applied"
+    },
+    {
+      "metadata_version": 1,
+      "model_group": "task-agency-router",
+      "ordinal": 5,
+      "provider_call_attempted": true,
+      "provider_chain_index": 0,
+      "provider_fallback_count": 0,
+      "provider_name": "linux-task-agency-router",
+      "provider_type": "litellm",
+      "reason_code": "structured_response_applied",
+      "requested_model": "task-agency-router",
+      "stage": "critic",
+      "status": "applied"
+    }
+  ],
+  "injection": {
+    "full_code_reviewer_contract_present": true,
+    "agency_loaded_marker_present": true,
+    "native_api_content_chars": 12629,
+    "native_api_content_sha256": "f9e8834e0d6a5071fbfaee12222b5226a16430ada9c2fde6454099b162de8259"
+  },
+  "tool_names": [
+    "terminal",
+    "tool_search"
+  ],
+  "native_response": "Response truncated due to output length limit",
+  "native_response_sha256": "7cdb5619c1fb44fbd11dcff067d885242abd12a7fad3cc1762c8ca4081a31c57",
+  "stdout": "Response truncated due to output length limit\n",
+  "native_usage": {
+    "estimated_cost_usd": null,
+    "cost_status": null,
+    "cost_source": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "cache_read_tokens": null,
+    "cache_write_tokens": null,
+    "reasoning_tokens": null,
+    "total_tokens": null,
+    "api_calls": 2,
+    "model": null,
+    "provider": null,
+    "session_id": null,
+    "completed": false,
+    "failed": false,
+    "service_tier": null
+  },
+  "agency_run_status": "active",
+  "terminal_finalization_id": null,
+  "finalization_event_count": 0,
+  "limitations": [
+    "Native error literal does not prove the exact provider token cap or raw finish_reason.",
+    "Process exit0 is not a successful response or accepted finalization."
+  ]
+}
