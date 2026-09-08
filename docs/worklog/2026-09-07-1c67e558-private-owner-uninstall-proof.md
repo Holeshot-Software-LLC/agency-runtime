@@ -95,3 +95,22 @@ merge current main normally and publish one PR. Keep `pr: null` until a PR
 exists. AR-189 still needs its meaningful native Windows companion-binding,
 handle-rename and PowerShell evidence before all-criteria acceptance. AR-190
 and AR-191 are separate next packages; no backlog count is reduced here.
+
+## Publication integration
+
+Parent authorized serial AR-189 publication after AR-185/PR736 merged
+`00fc1aef` and AR-408/PR737 merged `bfe21d66`. Both PR states and #732 CLOSED
+were read back. Merge `de00886131f56529d44f06b34d2d660f8456bb8a`, exact subject
+`chore(AR-189): integrate accepted activation and staffing receipts`, resolves
+only overlapping documentary histories while preserving all incoming runtime
+changes and both frozen acceptance files. The uninstall transaction modules
+are byte-identical to `d28ccc23`; the integrated focused package passes 127
+with two native-Windows skips in 5.50s. Prior named-spine/UI proof is reused at
+that explicit scope rather than claiming AR-408 changed no inference bytes.
+
+The merge's first-parent whitespace check reported existing trailing blank
+lines in incoming AR-408 acceptance/capsule files. They were preserved rather
+than changing the frozen packet; this branch's actual diff against origin/main
+passes whitespace checks. The immediate ledger records both upstream
+`bfe21d66` and integration `de008861`. No acceptance candidate is re-frozen,
+reviewed again or silently edited.
