@@ -15,9 +15,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar413-planner-reliability-20260908
-evidence_commit: c5516afe9e15a0abeb6676bdc5cb54a210756ab7
-minimum_ledger_commit: 28815df43ec421d79dd46e924b2ed83faeaa682c
+branch: codex/ar413-installed-delivery-20260908
+evidence_commit: 947dfaef34d07303ed23c4e9b909de2edea21ac2
+minimum_ledger_commit: 36a7f3039e6b0b7b86487d025fa72af6100cb1a3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -29,13 +29,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner approved this bounded package after confirming trust: repair the launch,
 prove native staffing/injection/finalization, then measure a small cold/warm
 sample. No backlog wave or OpenClaw restart. No worker is active. Root owns this
-dedicated worktree; phase implementing. Owner subsequently approved bounded
-planner/gateway changes and AR-413 status propagation. Main floor4c98e8f7.
+dedicated worktree; phase waiting_for_operator after the installed refresh.
+Owner approved bounded planner/gateway changes and AR-413 status propagation.
+Main947dfaef contains PR768; AR-413/#765 is closed with four satisfied verdicts.
 
-Installed source was4cbebf73 at the native priority experiment. A subsequent
-requested Codex refresh reports already_current/no_op with published bundle
-f838a7676e42. Separate host inspection confirms trusted hooks and a matching
-11:24UTC activation attestation; bundle and projection are different identities.
+Owner runtime now uses the independently verified d08c5008 wheel, whose
+production code matches PR768. All614installed package files match the wheel.
+Codex published bundle0fe533927f56, projectionab77dcb13e8e and plugin
+0.1.0+codex.fa16f6ec90e5. Registered/enabled but fresh trust required; the earlier
+activation is stale by bundle/install ID.
 AR-413/#765 is now verified complete, leaving unfinished
 inventory120 =48 mapped +72 legacy; this is not120confirmed bugs.
 
@@ -97,15 +99,18 @@ conformance pass. Canonical build, Twine and independent verification pass in a
 clean same-source clone. The installed wheel proves real loopback401/408/429/502
 through workforce intoSQLite, without response bodies or gateway-log inference.
 Four isolated acceptance verdicts are satisfied after three explicit
-non-HTTP/legacy tests were added. PR768 delivery remains. The native priority experiment
+non-HTTP/legacy tests were added. PR768 merged and tracker765 closed. The native priority experiment
 failed plannerHTTP46910ms; order2 was restored at12:40:26UTC with exact readback.
 No priority change remains. A direct minimal structured call to the existing GLM
 deployment succeeds in2951ms; alias2142ms. The production5337-character planner
 prompt and1967-character schema fail HTTP408 in45704/45137ms on alias/direct.
 The configured planner thinking_level is medium; a low-effort request-only
 comparison also fails HTTP408 in45111ms; JSON-object mode45284ms. Neither
-request-only experiment changed configuration. After PR delivery, upgrade the
-verified artifact and inspect Codex trust; do not bypass a new trust gate.
+request-only experiment changed configuration. Owner runtime and Codex bundle
+are updated; close old terminal TUIs, open a fresh `codex` terminal and trust
+the eight Agency hook events (`/hooks` in the terminal if needed), then run
+`agency install --agent codex --verify-activation`. This human gate was reported
+once; do not retry or bypass it. Other harness bundles were not refreshed here.
 Next diagnosis needs upstream full-payload evidence, not another native retry.
 Worklog
 2026-09-08-planner-reliability owns details. No new credentials or trust bypass.
