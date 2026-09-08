@@ -49,10 +49,10 @@ neither decision specified how those attempts share the earlier envelope.
 
 The reviewed implementation is checkpointed on
 `codex/ar409-reserve-required-staffing`, integrated through accepted AR-408
-checkpoint `ae916dd1`. It is not on main
-or installed. Package phase: fast_verification; source review and the bounded
-receipt recheck and combined-candidate integration are complete, but acceptance
-and delivery remain pending. Tracker #735 and the filing records are published separately
+checkpoint `ae916dd1` and main `f408b6f2`. It is not yet on main or activated in
+the owner's harnesses. Package phase: demo_ready; source review, bounded receipt
+recheck, combined-candidate integration and all five isolated source criteria
+are complete. Installed live delivery remains pending. Tracker #735 and the filing records are published separately
 from the reviewed implementation so tracker parity does not depend on its merge.
 
 Fixed-response tests now run subject1 + planner1 + recruiter2 + critic1 within
@@ -63,11 +63,12 @@ four calls instead of spending the last call on an uncriticizable team.
 The full 188-mutation evaluation passed before a final receipt-only refinement.
 After that refinement, the five-mutation subset containing the four new
 reservation anchors and existing fast-budget control passed. The acceptance
-draft records exact commands, unsuccessful intermediate runs, source scope
-and remaining evidence. Isolated verification has satisfied criteria 1–4;
-criterion 5 remains unjudged after the Claude executable namespace again became
-group-writable during the run. No failed criterion or model-quality result is
-inferred from that local admission failure. Installed delivery remains pending.
+record preserves exact commands, unsuccessful intermediate runs and source scope.
+Claude satisfied criteria 1–4, then its executable namespace again became
+group-writable. A separately authorized supported Codex-verifier invocation
+satisfied only the missing fifth criterion against the same `f670e6b5` candidate;
+no completed check was rerun. All five are satisfied; status remains in_progress
+until the required installed combined-candidate live checkpoint is recorded.
 
 ## Approach
 

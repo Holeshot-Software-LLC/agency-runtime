@@ -68,6 +68,7 @@ combined source/evidence candidate is `f670e6b5`; ledger `2236d996` indexes it.
 | 2 | satisfied | `AR-409.2-20260907-bfcc395f` | `fcf3725431745e58b4d25f3ac452973529e7d4d1a44fdc0c7b473ae8db0167fe` | 2026-09-07 | Snapshot confirms inference.py:4667 prior-hint reuse, max_calls=1 via _stage_call_reserve:1752-1758 refunding only pre-request refusals, pipeline.py:2182 zero-signal gate, empty-hint no-op at 4677, and passing-shaped tests in test_staffing_call_reservations.py:179-255. |
 | 3 | satisfied | `AR-409.3-20260907-ef71ebe8` | `1c06058b28b45dac87f7e1b7c909f9cfacf5ce62a222be6eb1b65a0f1cb6783b` | 2026-09-07 | Snapshot tests/test_staffing_call_reservations.py:116-145,163-176,206-216,258-265 match the excerpts, covering the 5-call approving critic, defaults 4/4/5 (config_defaults.yaml:73-75), veto vs one critic repair, and budget-exhausted refusal; inference.py:4509-4524,4962-4994 keeps criticism required. |
 | 4 | satisfied | `AR-409.4-20260907-55e78da7` | `121d183cb138edccc3b37525e8ea20e7f1bff35906fc715d9dffaec9889f618b` | 2026-09-07 | Snapshot confirms cache lookups at inference.py:4820 and :4101 precede the reserve-enforcing _invoke_stage calls with recruiter re-verification, no cache identity exists for _strict_critic, the AR-409 block at :4236-4246 appends the budget cause only when absent, and the cited tests match verbatim. |
+| 5 | satisfied | `AR-409.5-20260907-e951a965` | `b14db1a5cbeb9ed02ba3c56dbd9782edbe47b2e849c0c5658b669187348be4b8` | 2026-09-07 | issue-AR-409.md records passing focused and broad regressions, five killed mutations including default-repair, and passing routing gates, explicitly distinguishing tested source stages and disclaiming live model-quality equivalence. |
 
 ## Evidence scope
 
@@ -368,8 +369,8 @@ the same final related command above passed again: `201 passed in 3.05s`.
 Focused Ruff check and format check passed for the two runtime files and new
 test file; metadata checked 1242 Markdown documents; `git diff --check` passed.
 
-Criteria 1–4 have isolated satisfied judgments below; criterion 5 has no judgment
-because verifier admission failed. Parent must complete source/record publication and the
+All five criteria have isolated satisfied judgments in the Verification table.
+Parent must complete source/record publication and the
 exact combined-candidate installed live checkpoint.
 Subject plus both repairs and critic needs six calls, not five. Conservative future
 cache/gap reservations may abstain sooner, and no paired live quality,
@@ -410,3 +411,22 @@ directories at 0775, with mtimes 2026-09-08T00:08:07Z and 00:08:08Z; local
 status again named the untrusted parent namespace. No third pass was started
 under the original two-pass authorization. A criterion-5-only retry requires
 separate parent authorization; completed judgments will not be rerun.
+
+The parent then authorized one supported Codex-verifier attempt for only the
+missing criterion, not another review of an adverse judgment. Local
+`inspect_cli_transport("codex")` reported installed/authenticated/usable and
+empty reason. With no further Claude repairs or external process changes:
+
+```bash
+umask 077
+env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -u scripts/verify_acceptance.py --issue AR-409 --criterion 5 --provider codex
+```
+
+Exit 0: `AR-409 criterion 5: satisfied (AR-409.5-20260907-e951a965)`.
+The supported Codex route judged the same frozen candidate's bounded excerpts;
+unlike the Claude route, it has no additional snapshot-investigation tools.
+All 26 cited rows were present in the prior excerpt audit; criterion 5 carried
+all five of its rows in 26547 characters, below the 32KiB total limit.
+Criteria 1–4 and their original run IDs/digests remain unchanged. Source
+identity remains `f670e6b5`; the runtime tree is identical to artifact source
+`51909ae8` after normal main integration. Installed live delivery is still pending.

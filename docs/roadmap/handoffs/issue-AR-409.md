@@ -67,30 +67,30 @@ the parent owns final PR/merge and installed delivery. No provider requests ran.
 AR-408 is integrated. Its historical five-call current-flow test now exercises
 the isolated exhausted-critic boundary; the accepted original snapshot is
 unchanged. Acceptance is frozen to combined committed candidate `f670e6b5`.
-Criteria 1–4 have isolated satisfied judgments; criterion 5 and installed live
-delivery evidence remain pending.
+All five criteria have isolated satisfied judgments; installed owner-harness
+live delivery evidence remains pending. Keep AR-409 in_progress and #735 open.
 The first all-five verifier invocation produced no judgments: the exact Claude
 package/bin directories were 0775 and the executable trust guard refused them.
 Authorized exact `chmod g-w` restored 0755 and local usable status. Actor unknown;
 no bytes/profiles/guards changed. The retry satisfied 1–4, then criterion 5 was
 unavailable; both directories had returned to 0775 with 00:08:07/08Z mtimes.
-Preserve the four judgments. Further criterion-5-only execution needs separate
-parent authorization beyond the original two passes; never relax the guard.
+The parent authorized one supported Codex-verifier attempt for only missing
+criterion 5; it satisfied the same frozen candidate's excerpts. Preserve all
+five judgments. No additional Claude repairs or guard changes occurred.
 
 ## Same-task continuity
 
 Preserve the three reviewed runtime/test paths and their record paths.
-Normal-merge the exact published AR-408 checkpoint; if dirty, use a recoverable
-stash scoped only to owned files. Never discard another worker's changes.
-Integrate both AR-408 failure/timeout corrections and AR-409 reservations.
+AR-408 and main `f408b6f2` are integrated. Runtime bytes remain identical to
+artifact source `51909ae8`. Never discard another worker's changes.
 Telemetry reached 40.8% remaining at 2026-09-07T23:31:11Z. The filing has a clean
 substantive/ledger pair; checkpoint this implementation before live work.
 
 ## Next bounded work package
 
-1. Audit bounded excerpts and the frozen combined candidate.
-2. Run isolated single-criterion verification for all five criteria.
-3. Preserve the resulting judgments and checkpoint their evidence.
+1. Publish the accepted-source PR without closing #735 or marking done.
+2. Run normal PR gates and merge, preserving the exact runtime identity.
+3. Notify the parent immediately so owner installation/live checks can start.
 4. Parent installs/live-checks that exact combined candidate under existing
    configured authority, then records PR/merge and native evidence honestly.
 
@@ -104,8 +104,9 @@ env PYTHONPATH=. /tmp/agency-ar404-venv.AUBJlC/bin/python -m pytest tests/test_s
 ```
 
 No exhaustive workflow, coverage shard, compatibility matrix or staffing model
-call was run. Two isolated-verifier passes produced four satisfied judgments;
-the first pass and the second pass's fifth criterion were locally unavailable.
+call was run. Two Claude passes produced four satisfied judgments; the first
+pass and second pass's fifth criterion were locally unavailable. One supported
+Codex-only missing-criterion invocation then satisfied criterion 5.
 
 ## Constraints
 
