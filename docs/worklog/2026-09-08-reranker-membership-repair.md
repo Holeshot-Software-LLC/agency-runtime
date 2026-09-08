@@ -15,7 +15,7 @@ type: worklog
 commit: 5ff8e85c725ea669ba935970bc07511abbefc57b
 short: 5ff8e85c
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/803
 related_issues:
   - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -64,7 +64,15 @@ failed recall attempt and the test observes that status.
 
 Focused 112 passed, including all permitted two-candidate permutations and
 negative membership cases. Original-source integration regression failed as
-expected. Full fast verification and installed native evidence are pending.
+expected. Named fast spine: 1151 passed, three skipped (72.81s); UI224 passed.
+Focused expanded suite164 passed; Ruff781 files, docs1344, metadata, policy
+availability, routing and tracker411 pass. Canonical private-clone build,
+independent distribution verification and strict Twine pass. Immutable installed
+source3fe3d7ba has all614package files equal to its verified wheel, SHA256
+1b1e8cb40fd0bbc5af4cb60ceb9dd82ab27fb53084d0ed1ce9e0927cf09535b1.
+Native evidence and frozen-source conformance are pending. The first conformance
+launcher selected a Python lacking pytest; rerun uses the existing test venv.
+The first policy-availability invocation lacked PYTHONPATH; corrected check passes.
 The repository evidence contains offered sets and observed responses, no headers,
 credentials or raw owner configuration. Timing is a single replay, not a benchmark.
 

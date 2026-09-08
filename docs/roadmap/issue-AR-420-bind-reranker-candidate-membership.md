@@ -34,7 +34,7 @@ of every recruiter abstention or critic veto.
 
 ## Current state
 
-Phase implementing. Main baseline b69c4926 was clean and synchronized. Current
+Phase demo_ready. Main baseline b69c4926 was clean and synchronized. Current
 native trace 01a0830f-8143-7542-ac77-5ace98ceb5d4 failed with a subject rejection,
 a reranker rejection and critic_wrong_neighbor_selection. Its proposal was not
 persisted; the veto remains unadjudicated. The earlier long-task receipt
@@ -46,8 +46,10 @@ optional reranker. Its exact reranker request replayed once with per-unit enums
 and exact counts passes the unchanged validator in 15.280 seconds. Model,
 prompt, credentials and configuration were unchanged. Evidence is
 [evidence/AR-420-reranker-membership-20260908.json](evidence/AR-420-reranker-membership-20260908.json).
-Focused 112 tests pass; the transport-integration regression fails on original
-source. Installed behavior and isolated acceptance remain pending.
+Focused164 and production1151/three skips pass; UI224 passes. The integration
+regression fails on original source. Canonical artifacts verified; installed
+source3fe3d7ba matches all614wheel files. Native behavior and isolated acceptance
+remain pending. PR803 carries the repair and exact evidence.
 
 ## Approach
 
