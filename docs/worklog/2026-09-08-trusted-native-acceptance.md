@@ -64,6 +64,18 @@ the committed evidence candidate; builder records contain no verdicts.
 
 ## Follow-ups
 
-AR-414 and AR-415 remain open pending their independent acceptance gates.
+AR-414 four criteria and AR-415 three criteria are independently satisfied.
+Their scoped completion is carried by PR793; tracker closure follows merge.
 The accepted ordinary turn is bounded functional evidence, not universal
 staffing reliability or performance certification.
+
+## Isolated acceptance checkpoint
+
+Unchanged verifier runner and owner-private Claude2.1.263 transport judged each
+criterion once from candidate5b5a36c87e729b271353bd81986d6ea59983a34c. AR-414:
+4/4satisfied; AR-415:3/3satisfied. Exact run IDs, reasons and evidence digests
+are preserved in their acceptance records. No verdict was supplied by the builder
+or retried. Installed614file byte comparison and owner-config baseline comparison
+were repeated after the native turn and still match. The baseline file contains
+a bare digest, so `sha256sum --check` rejected its format; a direct SHA256
+comparison then proved equality without changing the file.

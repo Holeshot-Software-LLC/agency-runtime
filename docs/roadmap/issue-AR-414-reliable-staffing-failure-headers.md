@@ -1,6 +1,6 @@
 ---
 title: "AR-414: Restore reliable staffing and truthful failed-turn headers"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-08
 updated: 2026-09-08
@@ -44,7 +44,14 @@ hashed resident-manager turn reference with the actual trace/session IDs.
 
 ## Current state
 
-Current package reached live_demo: after actual8/8hook trust, one fresh ordinary
+Completed scoped outcome: all 4 isolated acceptance criteria are satisfied
+against candidate5b5a36c87e729b271353bd81986d6ea59983a34c. The fresh native
+turn proved current installed staffing, injection, truthful headers and exact
+Stop-hook acceptance; AR-415's explicit negative clause preserved read-only
+scope. PR793 carries the evidence and closure. This does not promise universal
+staffing success or improved latency. Earlier checkpoints below are historical.
+
+Pre-verdict native checkpoint reached live_demo: after actual8/8hook trust, one fresh ordinary
 native turn accepted inference-owned staffing and exact-response Stop-hook
 finalization. All five headers and the injected code-reviewer contract agree
 with Store; read-only scope is preserved. Wall56.656s, staffing39.866s; one
@@ -183,11 +190,11 @@ trust is approved; no credential replacement or trust bypass is in scope.
 
 ## Acceptance
 
-- [ ] Failed-turn snapshots and finalizer output show the exact bounded cause,
+- [x] Failed-turn snapshots and finalizer output show the exact bounded cause,
       without claiming staffing success or reopening/accepting a failed run.
-- [ ] Missing, malformed, cross-session and other-terminal evidence retain
+- [x] Missing, malformed, cross-session and other-terminal evidence retain
       their rejection boundaries; ordinary accepted finalization is unchanged.
-- [ ] Real planner/staffing calls demonstrate a repair with the original
+- [x] Real planner/staffing calls demonstrate a repair with the original
       acceptance contract intact; record timings and limitations.
-- [ ] An installed native turn shows the corresponding truthful header and
+- [x] An installed native turn shows the corresponding truthful header and
       staffing outcome; repository, tracker and worklog evidence agree.

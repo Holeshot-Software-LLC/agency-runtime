@@ -1,6 +1,6 @@
 ---
 title: "AR-415: Respect negated change requests in plan completeness"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-08
 updated: 2026-09-08
@@ -33,7 +33,14 @@ then demanded release verification because the request mentioned installed hooks
 
 ## Current state
 
-Current package reached live_demo: actual8/8hook trust and one fresh normal
+Completed scoped outcome: all 3 isolated acceptance criteria are satisfied
+against candidate5b5a36c87e729b271353bd81986d6ea59983a34c. The fresh native
+turn proved current installed staffing, injection, truthful headers and exact
+Stop-hook acceptance; AR-415's explicit negative clause preserved read-only
+scope. PR793 carries the evidence and closure. This does not promise universal
+staffing success or improved latency. Earlier checkpoints below are historical.
+
+Pre-verdict native checkpoint reached live_demo: actual8/8hook trust and one fresh normal
 native invocation preserve read_only scope for `not a request to change the
 repository`. Inference-owned staffing, injected contract, truthful headers and
 Stop finalization all pass. Source and installed regression evidence remain
@@ -63,10 +70,10 @@ failure. No provider reconfiguration or new credential is needed.
 
 ## Acceptance
 
-- [ ] A read-only plan is not rejected for mutation requirements solely because
+- [x] A read-only plan is not rejected for mutation requirements solely because
       the request explicitly says `not a request to change` or `not asking you
       to change`; regression evidence includes the prior failure.
-- [ ] Separate positive mutation clauses still require implementation and
+- [x] Separate positive mutation clauses still require implementation and
       assurance, and other planning and staffing validators remain intact.
-- [ ] The installed repair and a normal native invocation show the corrected
+- [x] The installed repair and a normal native invocation show the corrected
       scope behavior; exact evidence, limitations and repository records agree.
