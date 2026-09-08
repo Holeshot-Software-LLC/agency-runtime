@@ -6,6 +6,8 @@ created: 2026-09-07
 updated: 2026-09-07
 tags: [workforce, inference, budgets, reliability, performance]
 related:
+  - docs/roadmap/acceptance/issue-AR-409.md
+  - docs/roadmap/handoffs/issue-AR-409.md
   - docs/decisions/0132-fund-one-repair-per-workforce-inference-stage.md
   - docs/decisions/0197-form-the-retrieval-subject-before-the-turn-that-needs-it.md
   - docs/decisions/0216-enforce-one-preflight-inference-deadline.md
@@ -45,11 +47,12 @@ neither decision specified how those attempts share the earlier envelope.
 
 ## Current state
 
-The reviewed implementation is uncommitted on
-`codex/ar409-reserve-required-staffing`, integrated through `d28ccc23`. It is not on main
-or installed. Package phase: focused_review; source review and the bounded
-receipt recheck are complete, but combined-candidate integration and delivery
-remain pending. Tracker #735 and the filing records are published separately
+The reviewed implementation is checkpointed on
+`codex/ar409-reserve-required-staffing`, integrated through accepted AR-408
+checkpoint `ae916dd1` and main `f408b6f2`. It is not yet on main or activated in
+the owner's harnesses. Package phase: demo_ready; source review, bounded receipt
+recheck, combined-candidate integration and all five isolated source criteria
+are complete. Installed live delivery remains pending. Tracker #735 and the filing records are published separately
 from the reviewed implementation so tracker parity does not depend on its merge.
 
 Fixed-response tests now run subject1 + planner1 + recruiter2 + critic1 within
@@ -60,8 +63,16 @@ four calls instead of spending the last call on an uncriticizable team.
 The full 188-mutation evaluation passed before a final receipt-only refinement.
 After that refinement, the five-mutation subset containing the four new
 reservation anchors and existing fast-budget control passed. The acceptance
-draft records exact commands, unsuccessful intermediate runs, source scope
-and remaining evidence. No isolated acceptance verdict has been requested.
+record preserves exact commands, unsuccessful intermediate runs and source scope.
+Claude satisfied criteria 1–4, then its executable namespace again became
+group-writable. A separately authorized supported Codex-verifier invocation
+satisfied only the missing fifth criterion against the same `f670e6b5` candidate;
+no completed check was rerun. All five are satisfied; status remains in_progress
+until the required installed combined-candidate live checkpoint is recorded.
+
+Source publication: [PR #739](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/739).
+This PR references #735 without closing it. All five source criteria are
+satisfied; installed owner-harness delivery remains a separate required gate.
 
 ## Approach
 
@@ -95,9 +106,9 @@ end-to-end latency-equivalence claim.
 
 ## Dependencies
 
-Integrate AR-408's truthful failure/timeout projection before freezing the
-combined candidate. Adapt its exhausted-critic test to replay the real exhausted
-critic boundary while preserving its committed pre-fix live provenance.
+AR-408's truthful failure/timeout projection is integrated. Its exhausted-critic
+test now replays the actual exhausted critic boundary while preserving its
+committed pre-fix live provenance; its projection fixture funds a real attempt.
 ADR-0235 reconciles ADR-0132 and ADR-0197 without retiring their unchanged rules.
 AR-401's shared deadline and AR-383's subject/context projection remain intact.
 
