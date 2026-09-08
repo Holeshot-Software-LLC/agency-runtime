@@ -13,8 +13,8 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: 6d9c91fc481602df148ae61364dba47e833b6626
+short: 6d9c91fc
 date: 2026-09-08
 pr: null
 related_issues:
@@ -115,7 +115,9 @@ It does not establish latency improvement: embeddings dominated this sample.
 
 Named production spine1151passed/3skipped in94.39s; dashboard224passed;
 metadata/docs validation1325documents; Ruff check/format778files passed.
-Routing, decision-conformance and tracker checks remain to be recorded.
+Routing gates and strict tracker parity406items pass. Policy availability,
+worklog, metadata, strict docs and diff checks pass. Decision-conformance is
+still running at this checkpoint.
 The current long-lived hook process reports stale projection
 14852134f0aa versus publishedf72f24a788ca; direct installed-provider checks do
 not establish fresh native integration. No host restart or trust bypass occurs.
