@@ -2162,6 +2162,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7e66ea84` | 2026-09-07 | fix(deps): refresh vulnerable optional-tooling lock entries (AR-412) | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `9b15107a` | 2026-09-07 | Merge pull request #751 from Holeshot-Software-LLC/codex/ar280-authenticated-internal-purpose | [AR-280](../roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md) | [Detail](2026-09-08-ar280-native-purpose-boundary.md) |
 | `362a6c1e` | 2026-09-07 | chore(AR-412): integrate published delivery and Hermes boundary records | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `59b541b7` | 2026-09-07 | docs(AR-412): cite maintainer releases within repository link boundary | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
