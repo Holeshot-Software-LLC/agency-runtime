@@ -16,7 +16,7 @@ type: worklog
 commit: 389be187013d143305810f898a7a09a477690bba
 short: 389be187
 date: 2026-09-08
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/785
 related_issues:
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
 ---
