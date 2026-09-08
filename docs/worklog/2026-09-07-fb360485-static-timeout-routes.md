@@ -85,3 +85,5 @@ acceptance, test pass or completed issue is claimed. Run focused regressions
 and live verification only when authorized.
 
 Wrap-up checkpoint `5e0e7168` supersedes the test deferral above: the owner requested installed evaluation and the two focused files passed 186 cases with one skip in 29.28 seconds. Source fb360485 remains unchanged; native evidence and acceptance remain separate.
+
+Integration `63fa77fe` includes published fallback-accounting PR757 and its exact ledger. Only independent worklog rows conflicted; preserved both. Runtime files from both packages remain intact.
