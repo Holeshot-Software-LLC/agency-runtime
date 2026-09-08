@@ -118,3 +118,5 @@ The live CLI reports package0.1.0 and source_revision=null. Exact artifact
 provenance is established by expected-commit build/verification plus all614
 installed byte comparisons, not by a self-reported CLI source revision. All eight
 new hook timeouts remain595s; owner configuration still matches its prior bytes.
+
+Recorded checkpoint: `14459ffa` — docs(acceptance): complete verified AR-416 and AR-417 scopes.
