@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-08
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md
   - docs/worklog/2026-09-08-fresh-codex-activation.md
   - docs/worklog/2026-09-08-planner-reliability.md
   - docs/roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md
@@ -63,6 +64,15 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+### Hermes and OpenClaw native package, September 8
+
+After AR-414/415's verified Codex completion, owner authorized Hermes refresh
+and native proof, followed by OpenClaw's normal gateway stop/update/restart and
+native proof. Main baseline24b50cb8; verified installed source8629e2ed unchanged.
+Hermes refresh succeeds with retained backup; native evidence remains pending.
+Earlier Codex blockers below are historical. This bounded host package does not
+close the umbrella item or authorize unrelated backlog work.
 
 ### Fresh resumed-session verification, September 8
 
