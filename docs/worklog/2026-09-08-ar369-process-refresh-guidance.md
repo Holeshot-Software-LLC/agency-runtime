@@ -57,3 +57,5 @@ Original named-kernel and doctor/latest-binding requirements remain open.
 Source checkpoint `a10e31170825b363a291e4cb346095887c6c6409` contains the bounded diagnostic correction and seven new regressions. Focused warning-strict execution passed 39 cases; no installed/native success is inferred.
 
 Integration `5180c14f` retains completed fallback, timeout and reviewed resident recovery source plus their records. Independent capsule links and worklog rows were united; diagnostic source remains unchanged.
+
+Integration `ae763a0a` includes resident recovery main merge760 and its exact ledger, preserving both historical branches. The warning/tests remain byte-identical to their 39-pass source checkpoint.
