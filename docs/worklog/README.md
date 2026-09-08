@@ -2241,6 +2241,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3355b515` | 2026-09-08 | Merge pull request #783 from Holeshot-Software-LLC/codex/ar414-recruiter-merge-ledger-20260908 | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [Recruiter recovery](2026-09-08-recruiter-fallback-recovery.md) |
 | `389be187` | 2026-09-08 | docs: record AR-414 native acceptance and handoff veto | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [Detail](2026-09-08-native-staffing-receipts.md) |
 | `0dd5f738` | 2026-09-08 | docs: bound AR-414 native proof and unresolved critic diagnosis | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [Detail](2026-09-08-native-staffing-receipts.md) |
+| `8d79ca31` | 2026-09-08 | docs: merge PR785 native staffing evidence | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | [Detail](2026-09-08-native-staffing-receipts.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
