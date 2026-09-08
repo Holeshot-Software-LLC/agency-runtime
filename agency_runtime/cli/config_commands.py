@@ -33,6 +33,7 @@ from agency_runtime.core.detect import generate_config_from_detection
 from agency_runtime.core.display import safe_display_token
 from agency_runtime.core.doctor import format_report_human, run_doctor
 
+from . import _render
 from ._common import (
     config_display_value as _config_display_value,
 )
@@ -217,13 +218,42 @@ def cmd_doctor(
 # ── Config subcommands ───────────────────────────────────────
 
 
+def _config_card(title: str, body: str, *, raw: bool = False) -> _render.Card:
+    """Frame an already-redacted display value without reading config again."""
+    detail = _render.section("Value", body)
+    notes = (
+        ("Display truncated; use --no-card for the complete value.",) if detail.truncated else ()
+    )
+    return _render.Card(
+        title=title,
+        subtitle="raw requested" if raw else "secrets redacted",
+        sections=(detail,),
+        notes=notes,
+    )
+
+
 def cmd_config_show(
     args: argparse.Namespace,
     *,
     dependencies: ConfigurationDependencies = DEFAULT_DEPENDENCIES,
 ) -> int:
     cfg = dependencies.load_config()
-    print(config_to_yaml(cfg, redact=not args.raw))
+    rendered = config_to_yaml(cfg, redact=not args.raw)
+    if _render.use_card_default(args):
+        # Split only the existing display projection: never serialize the raw
+        # config object into a new presentation path with different redaction.
+        projection = safe_load_bounded(rendered)
+        cards = [
+            _config_card(
+                str(key),
+                yaml.safe_dump({key: value}, sort_keys=False),
+                raw=args.raw,
+            )
+            for key, value in projection.items()
+        ]
+        print(_render.render_cards(cards))
+    else:
+        print(rendered)
     return 0
 
 
@@ -266,7 +296,11 @@ def cmd_config_get(
         path=tuple(parts),
         raw=bool(getattr(args, "raw", False)),
     )
-    print(_format_config_value(display))
+    rendered = _format_config_value(display)
+    if _render.use_card_default(args):
+        print(_config_card(args.key, rendered, raw=bool(getattr(args, "raw", False))).render())
+    else:
+        print(rendered)
     return 0
 
 
@@ -433,6 +467,25 @@ def cmd_config_provider_list(args: argparse.Namespace) -> int:
         return 0
     if not providers:
         print("No inference providers configured.")
+        return 0
+    if _render.use_card_default(args):
+        cards = [
+            _render.from_mapping(
+                title=f"{index}. {provider.get('name')}",
+                subtitle=str(provider.get("type") or ""),
+                fields=(
+                    ("Model/router", provider.get("model") or "default"),
+                    ("Reasoning", provider.get("reasoning_effort") or "default"),
+                    (
+                        "Endpoint",
+                        provider.get("transport") or provider.get("base_url") or "not set",
+                    ),
+                ),
+                notes=("Use --json for complete provider details; direct API keys stay omitted.",),
+            )
+            for index, provider in enumerate(providers, start=1)
+        ]
+        print(_render.render_cards(cards))
         return 0
     for index, provider in enumerate(providers, start=1):
         model = str(provider.get("model") or "default")

@@ -68,6 +68,7 @@ from agency_runtime.core.selector.policy import (
     validate_policy,
 )
 
+from . import _render
 from ._common import print_json, store
 
 
@@ -488,8 +489,20 @@ def cmd_source_list(args: argparse.Namespace) -> int:
 
 
 def cmd_roster_list(args: argparse.Namespace) -> int:
-    del args
     _path, roster = _activation_rows()
+    if _render.use_card_default(args):
+        cards = [
+            _render.from_mapping(
+                title=agent["slug"],
+                fields=(("Name", agent.get("name", "")), ("Division", agent.get("division", ""))),
+                notes=("Use --no-card for complete tab-separated values.",),
+            )
+            for agent in roster
+            if agent["enabled"]
+        ]
+        if cards:
+            print(_render.render_cards(cards))
+        return 0
     for agent in roster:
         if not agent["enabled"]:
             continue
@@ -1478,6 +1491,44 @@ def _policy_json_summary(
     return summary
 
 
+def _print_policy_cards(summary: dict[str, Any]) -> None:
+    """Render the existing policy projection, preserving its validation result."""
+    errors = _render.section("Validation errors", {"errors": summary["errors"]})
+    cards = [
+        _render.Card(
+            title="Companion policy",
+            subtitle="VALID" if summary["valid"] else "INVALID",
+            fields=tuple(
+                _render.field(label, summary[key])
+                for label, key in (
+                    ("Actions", "action_count"),
+                    ("Divisions", "division_count"),
+                    ("Active roster", "roster_count"),
+                    ("Routes", "route_count"),
+                    ("Availability", "availability_mode"),
+                    ("Enabled but missing", "missing_enabled"),
+                    ("Disabled routes", "disabled_count"),
+                )
+            ),
+            sections=(errors,) if summary["errors"] else (),
+            notes=("Validation errors truncated; use --json for complete details.",)
+            if errors.truncated
+            else ("Use --json for complete policy details.",),
+        )
+    ]
+    for group, label in (("actions", "Action"), ("division_anchors", "Division")):
+        cards.extend(
+            _render.from_mapping(
+                title=name,
+                subtitle=label,
+                fields=tuple(details.items()),
+                notes=("Use --json for complete route lists.",),
+            )
+            for name, details in sorted(summary[group].items())
+        )
+    print(_render.render_cards(cards))
+
+
 def _print_policy_action(action: str, summary: _PolicyActionSummary) -> None:
     """Render one action's human-readable availability breakdown."""
     action_missing = summary["always_missing"] + summary["conditional_missing"]
@@ -1635,6 +1686,17 @@ def cmd_policy(
 
     if args.json:
         dependencies.emit_json(
+            _policy_json_summary(
+                actions=actions,
+                divisions=divisions,
+                active_slugs=active_slugs,
+                validation=validation,
+                action_summary=action_summary,
+                division_summary=division_summary,
+            )
+        )
+    elif _render.use_card_default(args):
+        _print_policy_cards(
             _policy_json_summary(
                 actions=actions,
                 divisions=divisions,
