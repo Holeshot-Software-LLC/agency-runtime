@@ -2147,6 +2147,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c514fb70` | 2026-09-07 | fix(observability): retain validated recall catalog digest (AR-411) | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
 | `e790c4d4` | 2026-09-07 | Merge pull request #747 from Holeshot-Software-LLC/codex/ar411-retain-catalog-failure-identity | [AR-411](../roadmap/issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | [Detail](2026-09-07-c514fb70-recall-failure-identity.md) |
 | `a1d0c965` | 2026-09-07 | feat(cli): add explicit cards to read-only roster policy and config | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-a1d0c965-readonly-cli-cards.md) |
+| `19c5ecff` | 2026-09-07 | docs(AR-251): record read-only cards and deferred verification | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-19c5ecff-readonly-card-checkpoint.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
