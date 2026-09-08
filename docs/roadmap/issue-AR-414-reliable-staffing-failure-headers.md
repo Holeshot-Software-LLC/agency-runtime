@@ -89,6 +89,12 @@ calls accepted (32.141s and18.118s); one fresh input failed HTTP transport. The
 recruiter shape failure was not reproduced and is not declared repaired. Phase
 implementing; AR-415 owns the next bounded scope repair and installed test.
 
+AR-415 is now merged and installed, with deterministic installed checks passing.
+Its new bundle changes the eight hook hashes again; the next native run is
+waiting_for_operator for approval of plugin0.1.0+codex.07ad50ea4f52. No claim that
+the earlier native diagnostic proves this new artifact. Staffing reliability
+and current-artifact native scope verification remain unfinished.
+
 ## Approach
 
 Render validated failure diagnostics separately from accepted finalization.

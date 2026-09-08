@@ -41,6 +41,10 @@ deciders: [maintainers]
 
 ## Context
 
+AR-415 implementation `c1ef8566` and merge `d0bb4127` preserve this authority:
+bounded scope exclusions remove falsely inferred mutation requirements without
+authoring plans or nominating workers. See its roadmap and worklog records.
+
 ADR-0088 added deterministic typed staffing as an offline convenience after
 ADR-0067 had already required inference whenever configured. That compromise
 made the README easier to demo without a provider, but it permits code that

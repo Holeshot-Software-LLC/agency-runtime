@@ -31,9 +31,15 @@ then demanded release verification because the request mentioned installed hooks
 
 ## Current state
 
-Phase fast_verification. Two regression cases fail before the repair. Bounded
+Phase waiting_for_operator. Two regression cases fail before the repair. Bounded
 nominal exclusions now leave a read-only plan intact. Separate positive clauses
-retain the original completeness requirements. Installed verification pending.
+retain the original completeness requirements. Implementation c1ef8566 is merged
+through PR779/d0bb4127 and installed. All614package files match the independently
+verified wheel. Installed exclusions pass; all six positive clause boundaries
+still require implementation. Focused185, production1151/3skip and UI224pass.
+The refreshed Codex plugin has8modified hooks and needs fresh approval before
+native verification; the earlier artifact's native diagnostic is not reused as
+this repair's native proof. Acceptance remains unchecked and the issue stays open.
 
 ## Approach
 
