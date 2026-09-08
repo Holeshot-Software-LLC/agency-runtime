@@ -461,7 +461,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
-| [AR-414](issue-AR-414-reliable-staffing-failure-headers.md) | `ae2220bb`; failed-header implementation, live planner verification pending | [ADR-0239](../decisions/0239-render-failed-turn-diagnostics-without-acceptance.md) |
+| [AR-414](issue-AR-414-reliable-staffing-failure-headers.md) | `ae2220bb`, `992d148d`; failed-header and exact correlation implementation, live planner verification pending | [ADR-0239](../decisions/0239-render-failed-turn-diagnostics-without-acceptance.md) |
 | [AR-413](issue-AR-413-preserve-http-status-in-staffing-receipts.md) | `c1e17448`, `ed26177f`, `6debb9f2`, `ecd1d26b`, `b4899374`, `35cd6539`, `947dfaef`; downstream HTTP statuses retained, installed failure proof and four isolated acceptance verdicts | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
 | [AR-369](issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | Diagnostic correction pending source checkpoint, `a10e3117`, `5180c14f`, `ae763a0a`, `e85ce604` | Existing advisory-runtime boundary; no policy change |
 | [AR-412](issue-AR-412-refresh-vulnerable-tooling-lock.md) | Pending substantive checkpoint, `7e66ea84`, `362a6c1e`, `59b541b7`, `8869cb40`, `a27d2c1a`, `ca53e25e`, `f4264b54`; narrow two-package lock refresh, tests deferred | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md) |

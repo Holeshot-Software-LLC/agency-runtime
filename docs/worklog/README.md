@@ -2224,6 +2224,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `681b6eab` | 2026-09-08 | docs(activation): prove hook trust and record staffing-stage failure (AR-404) | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Fresh activation](2026-09-08-fresh-codex-activation.md) |
 | `1101b4ee` | 2026-09-08 | Merge pull request #771 from Holeshot-Software-LLC/codex/ar404-fresh-activation-20260908 | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Fresh activation](2026-09-08-fresh-codex-activation.md) |
 | `ae2220bb` | 2026-09-08 | fix(headers): render failed staffing evidence without accepting the turn | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | null |
+| `992d148d` | 2026-09-08 | fix(codex): supply exact finalizer correlation with initial header | [AR-414](../roadmap/issue-AR-414-reliable-staffing-failure-headers.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
