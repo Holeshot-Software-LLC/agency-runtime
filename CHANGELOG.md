@@ -81,6 +81,8 @@ changes rather than duplicating every commit.
 - Failed staffing headers now display validated failure reasons without claiming
   successful finalization. Failed request-scoped turns retain their exact
   steward binding; initial hook snapshots include usable finalizer correlation.
+- Planner and repair instructions explicitly require empty-string novelty when
+  no capability gap exists, keeping schema and semantic validators unchanged.
 
 ### September 7 wrap-up source delivery
 

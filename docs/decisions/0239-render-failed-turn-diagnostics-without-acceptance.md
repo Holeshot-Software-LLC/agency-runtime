@@ -39,6 +39,9 @@ are not backfilled or inferred from today's controls.
 
 ## Consequences
 
+Implementation ae2220bb and correlation follow-up992d148d are merged through
+905d37b8/PR774; the worklog and reciprocal AR414 traceability retain these SHAs.
+
 Operators can see what failed without a new staffing call or guessed headers.
 This does not certify a native response, establish activation, or repair the
 provider. Missing/corrupt evidence still cannot produce authoritative values.

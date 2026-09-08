@@ -103,6 +103,12 @@ The original owner launcher is retained privately; no secret file was backed up.
 
 ## Next bounded work package
 
+Current repair is [AR-414](issue-AR-414.md): PR774 fixes failed-header evidence
+and exact IDs; provider correction plus explicit planner field instructions
+accept a warm staffing probe. After installing the changed bundle, actual
+inspection reports8modified hooks,0trusted. Native work now awaits fresh owner
+approval, not another retry of the old generic trust-status diagnosis.
+
 AR-413 code preserves bounded status through staffing/hiring and durable receipt
 projections. Focused83, fast spine1151/3skip, dashboard224, routing and decision
 conformance pass. Canonical build, Twine and independent verification pass in a

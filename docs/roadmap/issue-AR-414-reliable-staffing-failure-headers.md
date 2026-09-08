@@ -9,6 +9,8 @@ related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/decisions/0239-render-failed-turn-diagnostics-without-acceptance.md
   - docs/worklog/README.md
+  - docs/worklog/2026-09-08-failed-headers-and-planner.md
+  - docs/roadmap/handoffs/issue-AR-414.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -55,6 +57,13 @@ GLM5.3 documentation supports low/high/max, not medium. A reversible experiment
 sets only this planner deployment's order2to0 and extra_body.reasoning_effort
 to low; unchanged fields are checked exactly. End-to-end validation is pending;
 the experiment must be restored unless it proves useful in ordinary staffing.
+
+The corrected instruction probe now accepts staffing in25.078seconds with
+planner, recall, recruiter and critic all applied; see the linked worklog for
+warm-cache limitations. The gateway correction is retained. Native verification
+is waiting_for_operator: the newly installed bundle's eight hook hashes are
+actually modified, unlike the prior trusted bundle. No trust bypass or repeated
+native activation attempt is authorized by that state.
 
 ## Approach
 

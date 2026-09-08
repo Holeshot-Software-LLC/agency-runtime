@@ -106,3 +106,21 @@ def test_other_terminal_states_never_enter_failure_path(tmp_path, status):
     snapshot["status"] = snapshot["run"]["status"] = status
     fake = SimpleNamespace(get_completion_evidence_snapshot=lambda *_: snapshot)
     assert failed_preflight_header(fake, "session", "trace") is None
+
+
+def test_planner_and_repair_explain_required_empty_novelty_without_relaxing_validation():
+    from agency_runtime.core.workforce.intent import (
+        COMPACT_INTENT_FIELD_CONTRACT,
+        COMPACT_INTENT_REPAIR_SYSTEM,
+        COMPACT_INTENT_SYSTEM,
+        _declared_novel_capability,
+    )
+
+    for prompt in (COMPACT_INTENT_SYSTEM, COMPACT_INTENT_REPAIR_SYSTEM):
+        assert COMPACT_INTENT_FIELD_CONTRACT in prompt
+        assert 'empty string ""' in prompt
+        assert "exact supplied identifier strings" in prompt
+    assert _declared_novel_capability("") == ""
+    for invalid in (None, False, [], {}, "N/A"):
+        with pytest.raises((ValueError, TypeError)):
+            _declared_novel_capability(invalid)

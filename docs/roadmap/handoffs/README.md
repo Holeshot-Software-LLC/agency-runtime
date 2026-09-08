@@ -74,6 +74,8 @@ behavior.
 
 ## Active capsules
 
+- [AR-414 staffing and failure-header repair](issue-AR-414.md)
+
 - [AR-312 explicit configuration document validation](issue-AR-312.md)
 - [AR-369 process-versus-installed runtime guidance](issue-AR-369.md)
 - [AR-287 complete static timeout route budgets](issue-AR-287.md)
