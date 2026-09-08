@@ -117,3 +117,5 @@ Pre-live checkpoint `0c240444ce167c0ca34054b38b65a31d7950913c` records the rever
 Installed checkpoint `6debb9f2ae7f0ae43ab1486b0cbd48f7c9e85897` proves all four HTTP statuses through the verified wheel and SQLite, and records the unsuccessful native planner experiment plus exact rollback. No gateway order change remains.
 
 Evidence checkpoint `ecd1d26be53341d6f0e6f142c9879e34c33c23bb` binds the installed status demonstration, successful conformance rerun and direct deployment probe. Native ordinary staffing remains unverified.
+
+Review checkpoint `b4899374bac82266e5d4000a43836d84cb9fbe18` adds explicit non-HTTP and legacy absence tests;83focused tests pass. Alias and direct deployment both fail the real planner payload with HTTP408.
