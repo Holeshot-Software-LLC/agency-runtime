@@ -69,3 +69,5 @@ package. No CI dispatch, provider/model call, native operation or owner Store
 read/write was performed by this task.
 
 Integration `bc778daf` includes published fallback receipt and static timeout repairs with exact merge ledgers. Frozen resident recovery and retirement-guard source remains unchanged; independent rows were preserved in the worklog.
+
+PR #760 merged as `5987be2f78ccda5a7921d93d62e10c56628f6199` at 2026-09-08T01:58:07Z. Later-current-turn recovery including retention ordering is published with 46 focused passing tests and independent source review. Tracker521 remains open for installed/acceptance evidence.

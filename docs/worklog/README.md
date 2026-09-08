@@ -2194,6 +2194,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `63fa77fe` | 2026-09-07 | merge: integrate published fallback accounting into timeout delivery (AR-287) | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `884500a9` | 2026-09-07 | Merge pull request #759 from Holeshot-Software-LLC/codex/ar287-complete-static-timeout-routes | [AR-287](../roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md) | [Detail](2026-09-07-fb360485-static-timeout-routes.md) |
 | `bc778daf` | 2026-09-07 | merge: integrate published receipt and timeout fixes into resident recovery (AR-371) | [AR-371](../roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md) | [Detail](2026-09-07-c905dd0b-resident-recovery-retention.md) |
+| `5987be2f` | 2026-09-07 | Merge pull request #760 from Holeshot-Software-LLC/codex/ar371-recover-closed-resident-claims | [AR-371](../roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md) | [Detail](2026-09-07-c905dd0b-resident-recovery-retention.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
