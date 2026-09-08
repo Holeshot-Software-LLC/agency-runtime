@@ -73,7 +73,9 @@ native proof. Main baseline24b50cb8; verified installed source8629e2ed unchanged
 Hermes refresh succeeds; fresh native staffing/injection pass, but output-limit
 return has no header or finalization (AR-418). OpenClaw refreshed through the
 approved stopped-gateway lifecycle; configuration unchanged and RPC restored.
-Its fresh native proof remains pending.
+Its fresh native turn has accepted staffing and truthful headers but zero
+finalization; exact card bytes are unproved (AR-419). Both hosts remain below
+complete native acceptance. See PR795 and its exact host evidence.
 Earlier Codex blockers below are historical. This bounded host package does not
 close the umbrella item or authorize unrelated backlog work.
 

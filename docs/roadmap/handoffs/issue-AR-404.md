@@ -4,8 +4,10 @@ status: active
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-08
-tags: [handoff, codex, launch, live-evaluation]
+tags: [handoff, hermes, openclaw, live-evaluation]
 related:
+  - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
+  - docs/roadmap/issue-AR-419-finalize-openclaw-cli-responses.md
   - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/acceptance/evidence/AR-404-codex-roundtrip-20260908.md
@@ -18,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-hermes-openclaw-20260908
-evidence_commit: 013ab75f66c5c3ce1e147e9fd8794c2ea32aa168
-minimum_ledger_commit: df45b6cb19b4b3dd4221d9892cd40d32d194b2df
+evidence_commit: 1dd69c3ad1e1c86db386dff69cd8a96ee8dc41ac
+minimum_ledger_commit: 70ba71d8f92a3f5bb536d5ec32ab34232d803b4c
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -31,7 +33,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner approved refreshing Hermes and OpenClaw and testing one ordinary native
 turn each. OpenClaw gateway stop/update/restart is included in that approval.
 Baseline clean main24b50cb8. Hermes native attempt failed after accepted staffing/injection (AR-418/#796).
-OpenClaw refreshed, gateway restored RPC-green; its trial is demo_ready.
+OpenClaw refreshed, gateway restored RPC-green; native turn returned correct
+headers but left Agency active with zero finalization (AR-419/#797).
+Bounded verification is complete with negative full-roundtrip verdicts.
 No native success claim yet. AR-404 stays open; AR-414/415 are acceptance-closed.
 
 ## Completed evidence
@@ -47,7 +51,7 @@ unverified and absent attestation. Hermes refresh now succeeds with backup
 ## Exact blocker
 
 No external gate blocks the approved work. Hermes returned an output-limit error after accepted staffing and full card
-injection; no finalization or five-line header. OpenClaw native turn is pending. Their old
+injection; no finalization or five-line header. OpenClaw has truthful headers but no finalization or exact card proof. Their old
 failure records are preserved, not treated as current-artifact results.
 
 ## Same-task continuity
@@ -58,13 +62,14 @@ and continue in the same task. Preserve unrelated worktrees and operator files.
 
 ## Next bounded work package
 
-Hermes evidence is recorded under AR-418. Run one ordinary fresh OpenClaw
-turn against the refreshed and restored gateway. Correlate each host's own receipt and native output. Diagnose any failure
-before a further attempt; preserve all validators and inference-owned staffing.
+Repair the exact Hermes output-limit lifecycle under AR-418 and OpenClaw
+ordinary CLI terminal handoff under AR-419. Capture supported native context
+evidence before claiming exact OpenClaw card delivery. Do not repeat either
+trial merely for approval; preserve validators and inference-owned staffing.
 
 ## Verification
 
-Unchanged source has focused108pass, production1151pass/3skip, UI224pass,
+Fresh host-focused254pass/1skip, production1151pass/3skip, UI224pass,
 Ruff/routing/docs/tracker pass and frozen conformance188/188 with source unchanged.
 No exhaustive suite, Windows matrix or all-host release certification.
 

@@ -7,6 +7,7 @@ updated: 2026-09-08
 tags: [hermes, openclaw, native, verification]
 pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/795
 related:
+  - docs/roadmap/issue-AR-419-finalize-openclaw-cli-responses.md
   - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/handoffs/issue-AR-404.md
@@ -86,3 +87,46 @@ Native gateway start succeeded. Immediate status showed running before RPC was
 ready; a subsequent bounded read proved rpc.ok=true. Service restored before the
 native trial. Installer loaded/runtime-verified status is not a completed-turn
 claim. No dashboard, credential or provider configuration was changed.
+
+## OpenClaw native result
+
+One normal CLI turn used the configured OpenClaw owner agent and a fresh session
+key, with no specialist/model override and no --deliver external message.
+20:06:06.231368Z to20:08:02.755003Z,116.524s, exit0. Trace
+bfbdfdc5-59b8-481d-b0d6-8e4f4abc872a, native session
+ccce9bc3-4818-4454-b5bd-6ade5ded98fb. Native key and own-task response are retained
+in docs/roadmap/evidence/AR-404-openclaw-native-20260908.json.
+
+Staffing accepted code-reviewer in91.052s. All five response fields match the
+installed Store header reader. Native actual answering metadata identifies
+litellm/task-general; the header truthfully identifies the workforce wrapper.
+Response, native final-visible and native final-raw text share SHA256
+f504298853514c59178dfe43af577b6b814a201ad6a903b72ad65deba5103052.
+Native statusok/summarycompleted/stopReasonstop does not prove Agency completion:
+Store remainsactive/ready, terminal IDnull, zero finalization events. No native
+tool call or manual finalization occurred. AR-419/#797 records the missing
+ordinary terminal handoff and exact injection evidence.
+
+Native trajectory prompt/system prompt are redacted; finalPromptText contains
+only the350-character caller prompt. Exact card injection is therefore unproved.
+Native installed index.js, openclaw.plugin.json and package.json match staged
+bytes; index.js SHA256eccc1eb668c671d1b2ba8b0de6de09d6a88cc8874e4a37afabc6a857242bef38.
+No further native retry was used to seek approval.
+
+## Final verification scope
+
+Fresh focused Hermes/OpenClaw/installer254passed/1skipped in6.28s. Named fast
+production1151passed/3skipped in77.73s; UI224passed. Production/test/script
+sources remain identical to verified8629e2ed, so prior frozen-source
+conformance188/188 with source_unchanged=true remains applicable. Docs1341files, metadata, Ruff779files and routing pass; strict tracker parity
+is checked before merge. No exhaustive
+corpus, Windows or compatibility matrix, hosted dispatch, external message or
+performance certification. Both native attempts are terminal as processes; their
+unfinalized Agency runs are preserved as evidence, not manually repaired.
+
+Both integrations are refreshed; the OpenClaw gateway is restored RPC-green.
+The bounded verification outcome is negative for complete native acceptance:
+Hermes has staffing/injection but truncation failure; OpenClaw has staffing and
+truthful headers but no finalization or exact card proof. AR-418/419 and umbrella
+AR-404 remain open. Next repair those exact lifecycle failures before another
+success claim. The package does not undo the separately accepted Codex proof.
