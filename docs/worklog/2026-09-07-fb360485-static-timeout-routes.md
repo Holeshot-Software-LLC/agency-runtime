@@ -69,6 +69,11 @@ this is not executed verification. Integration `14899a51` normally merges
 published main plus immediate ledger `6d209d6d`, preserving both worklog
 histories and leaving the reviewed runtime delta unchanged.
 
+Integration `c0c42ce2` normally merges published AR-412 plus immediate ledger
+`1048a120`, preserving its security lock and all prior AR-251/AR-270 delivery
+records. Only the worklog append region conflicted; both sets of exact rows
+were retained and the index was mechanically reordered from Git.
+
 Documentation checkpoint `185db01a` records the canonical issue, new capsule,
 portable source receipt and reciprocal governing links. Owner-authorized
 tracker #756 maps the existing legacy record; original Acceptance wording and
