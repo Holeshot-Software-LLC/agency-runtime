@@ -5,7 +5,7 @@ category: worklog
 created: 2026-09-08
 updated: 2026-09-08
 tags: [native, staffing, acceptance]
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/793
 related:
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md

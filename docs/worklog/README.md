@@ -2251,6 +2251,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f373d905` | 2026-09-08 | docs(acceptance): record trusted isolated verifier environment | AR-414, AR-416, AR-417 | [Detail](2026-09-08-installed-qualified-veto-verification.md) |
 | `14459ffa` | 2026-09-08 | docs(acceptance): complete verified AR-416 and AR-417 scopes | AR-414, AR-416, AR-417 | [Detail](2026-09-08-installed-qualified-veto-verification.md) |
 | `9d50063b` | 2026-09-08 | fix(staffing): merge PR791 installed veto verification | AR-414, AR-416, AR-417 | [Detail](2026-09-08-installed-qualified-veto-verification.md) |
+| `39f5142a` | 2026-09-08 | docs(native): record trusted staffing and exact-response acceptance | AR-414, AR-415 | [Detail](2026-09-08-trusted-native-acceptance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
