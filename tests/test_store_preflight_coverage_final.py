@@ -633,7 +633,7 @@ def test_mark_preflight_ready_atomically_commits_projected_provider_receipts(
         rows = conn.execute(
             "SELECT requested_model, model_group, resolved_provider, resolved_model, "
             "attempted_fallbacks, source, status FROM model_receipts "
-            "WHERE trace_id = ? ORDER BY attempted_fallbacks",
+            "WHERE trace_id = ? ORDER BY rowid",
             ("provider-receipts",),
         ).fetchall()
     finally:
@@ -644,7 +644,9 @@ def test_mark_preflight_ready_atomically_commits_projected_provider_receipts(
             "model_group": "planning",
             "resolved_provider": "codex-subscription",
             "resolved_model": "gpt-5.6-luna",
-            "attempted_fallbacks": 0,
+            # Legacy input has no stamped provider-chain accounting. Neither
+            # flattened ordinal nor provider identity proves a fallback count.
+            "attempted_fallbacks": None,
             "source": "wrapper",
             "status": "success",
         },
@@ -653,11 +655,108 @@ def test_mark_preflight_ready_atomically_commits_projected_provider_receipts(
             "model_group": "planning",
             "resolved_provider": "fallback-provider",
             "resolved_model": "unavailable",
-            "attempted_fallbacks": 1,
+            "attempted_fallbacks": None,
             "source": "wrapper",
             "status": "failed",
         },
     ]
+
+
+def test_atomic_stage_receipts_keep_order_separate_from_zero_provider_fallbacks(
+    tmp_path: Path,
+) -> None:
+    from agency_runtime.core.preflight_recipe import _content_free_routing_recipe
+    from agency_runtime.core.receipts.attempt_accounting import ProviderChainAccounting
+
+    store = Store(tmp_path / "agency.db")
+    started = store.begin_preflight_attempt(
+        session_id="session",
+        trace_id="stage-receipts",
+        host="codex",
+        request_fingerprint=_DIGEST_A,
+        request_kind="nontrivial",
+    )
+    recipe, routing, refs = _ready_payload("stage-receipts")
+    routing["provider_attempts"] = [
+        {
+            "stage": stage,
+            "provider_name": "same-profile",
+            "provider_type": "litellm",
+            "requested_model": "same-model",
+            "actual_model": "actual-model",
+            "status": "applied",
+            **ProviderChainAccounting().observe(0, call_attempted=True),
+        }
+        for stage in ("planner", "recruiter", "critic")
+    ]
+    projected = _content_free_routing_recipe(routing, trace_id="stage-receipts")
+    assert [item["ordinal"] for item in projected["model_receipt_attempts"]] == [1, 2, 3]
+    kwargs = {
+        "session_id": "session",
+        "trace_id": "stage-receipts",
+        "attempt_token": started["attempt_token"],
+        "recipe": {**recipe, "routing": projected},
+        "host": "codex",
+        "routing_evidence": projected,
+        "specialist_refs": refs,
+    }
+    assert store.mark_preflight_ready(**kwargs) == {"outcome": "committed"}
+    assert store.mark_preflight_ready(**kwargs) == {"outcome": "replay"}
+    conn = store._connect()
+    try:
+        counts = conn.execute(
+            "SELECT attempted_fallbacks FROM model_receipts WHERE trace_id = ? ORDER BY rowid",
+            ("stage-receipts",),
+        ).fetchall()
+    finally:
+        conn.close()
+    assert [row["attempted_fallbacks"] for row in counts] == [0, 0, 0]
+
+
+def test_wrapper_unknown_is_null_and_historical_receipts_are_not_reinterpreted(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "agency.db"
+    store = Store(path)
+    store.record_model_receipt(trace_id="historical", source="wrapper", attempted_fallbacks=2)
+    store.record_model_receipt(trace_id="unaccounted", source="wrapper", attempted_fallbacks=None)
+    reopened = Store(path)
+    assert reopened.get_model_receipt("historical")["attempted_fallbacks"] == 2
+    assert reopened.get_model_receipt("unaccounted")["attempted_fallbacks"] is None
+
+
+def test_committed_hiring_receipts_use_stamped_counts_not_success_list_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agency_runtime.core.receipts.attempt_accounting import ProviderChainAccounting
+    from agency_runtime.core.workforce import hiring
+
+    rows: list[dict[str, Any]] = []
+    bound_store = SimpleNamespace(record_model_receipt=lambda **values: rows.append(values))
+    monkeypatch.setattr(
+        store_preflight,
+        "_ready_transaction_store",
+        lambda *_args: (bound_store, SimpleNamespace(rollback_requested=False)),
+    )
+    monkeypatch.setattr(hiring, "commit_pending_contractor_hiring", lambda *_args, **_kwargs: None)
+    fallback_chain = ProviderChainAccounting()
+    fallback_chain.observe(0, call_attempted=True)
+    receipts = [
+        {"stage": "hiring", **ProviderChainAccounting().observe(0, call_attempted=True)},
+        {"stage": "hiring-critic", **ProviderChainAccounting().observe(0, call_attempted=True)},
+        {"stage": "security_review", **fallback_chain.observe(1, call_attempted=True)},
+        {"stage": "hiring-repair"},
+    ]
+    evidence = SimpleNamespace(
+        pending_hiring_commits=[
+            SimpleNamespace(case_arguments={"model_evidence": {"receipts": receipts}})
+        ],
+        trace_id="trace",
+        session_id="session",
+        host="hermes",
+    )
+    store_preflight._commit_pending_hiring_evidence(object(), object(), evidence)
+    assert [row["attempted_fallbacks"] for row in rows] == [0, 0, 1, None]
 
 
 class _QueryResult:

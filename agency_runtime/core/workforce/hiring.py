@@ -21,6 +21,10 @@ from agency_runtime.core.provider_deadline import (
     inference_deadline,
     remaining_provider_timeout,
 )
+from agency_runtime.core.receipts.attempt_accounting import (
+    ProviderChainAccounting,
+    project_provider_attempt_metadata,
+)
 from agency_runtime.core.reply_budget import PROVIDER_RESPONSE_TRUNCATED, provider_for_stage
 from agency_runtime.core.structured_provider import (
     MAX_STRUCTURED_PROMPT_BYTES,
@@ -578,6 +582,10 @@ class HiringInferenceAttempt:
     # deliberately not part of ``receipt_id``: the digest identifies the call,
     # and the deadline is configuration around it.
     timeout_ms: int = 0
+    metadata_version: int | None = None
+    provider_chain_index: int | None = None
+    provider_call_attempted: bool | None = None
+    provider_fallback_count: int | None = None
 
     def as_receipt(self) -> dict[str, Any]:
         return asdict(self)
@@ -739,7 +747,11 @@ _TRUNCATED_REASON = PROVIDER_RESPONSE_TRUNCATED
 
 
 def _attempt(
-    stage: str, provider: ProviderEntry, result: StructuredProviderResult
+    stage: str,
+    provider: ProviderEntry,
+    result: StructuredProviderResult,
+    *,
+    attempt_metadata: Mapping[str, Any] | None = None,
 ) -> HiringInferenceAttempt:
     source = result.model_receipt_source
     if provider.type.casefold() == "cli" and not result.actual_model and provider.model:
@@ -763,6 +775,7 @@ def _attempt(
         reason_code=_APPLIED_REASON,
         latency_ms=int(result.latency_ms),
         timeout_ms=max(0, int(provider.timeout * 1000)),
+        **dict(attempt_metadata or {}),
     )
 
 
@@ -773,6 +786,7 @@ def _failed_attempt(
     reason_code: str,
     status: str = "failed",
     latency_ms: int = 0,
+    attempt_metadata: Mapping[str, Any] | None = None,
 ) -> HiringInferenceAttempt:
     """Record one try that produced no structured result (AR-378).
 
@@ -800,6 +814,7 @@ def _failed_attempt(
         reason_code=reason_code,
         latency_ms=latency_ms,
         timeout_ms=max(0, int(provider.timeout * 1000)),
+        **dict(attempt_metadata or {}),
     )
 
 
@@ -827,6 +842,7 @@ def _invoke(
     outcome's attempts.
     """
 
+    accounting = ProviderChainAccounting()
     # The prompt is identical for every provider in the chain, so a prompt
     # the transport will refuse fails all of them without spending budget.
     if providers and len(prompt.encode("utf-8")) > MAX_STRUCTURED_PROMPT_BYTES:
@@ -835,10 +851,11 @@ def _invoke(
             providers[0],
             reason_code=_PROMPT_TOO_LARGE_REASON,
             status="skipped",
+            attempt_metadata=accounting.observe(0, call_attempted=False),
         )
         return None, None, (refused,)
     failures: list[HiringInferenceAttempt] = []
-    for provider in providers:
+    for provider_chain_index, provider in enumerate(providers):
         # AR-385: the hiring stages own their reply budgets; a compiled
         # employment contract never fit the old transport constant.
         provider = provider_for_stage(provider, stage)
@@ -846,7 +863,11 @@ def _invoke(
         if timeout <= 0:
             failures.append(
                 _failed_attempt(
-                    stage, provider, reason_code=HIRING_DEADLINE_EXHAUSTED, status="skipped"
+                    stage,
+                    provider,
+                    reason_code=HIRING_DEADLINE_EXHAUSTED,
+                    status="skipped",
+                    attempt_metadata=accounting.observe(provider_chain_index, call_attempted=False),
                 )
             )
             break
@@ -858,6 +879,7 @@ def _invoke(
                     provider,
                     reason_code=_BUDGET_EXHAUSTED_REASON,
                     status="skipped",
+                    attempt_metadata=accounting.observe(provider_chain_index, call_attempted=False),
                 )
             )
             break
@@ -871,6 +893,14 @@ def _invoke(
                 timeout=provider.timeout,
             )
         latency_ms = int((time.monotonic() - started) * 1000)
+        attempt_metadata = accounting.observe(
+            provider_chain_index,
+            call_attempted=(
+                None
+                if result is None
+                else (bool(result.call_attempted) if result.carries_no_answer else True)
+            ),
+        )
         if remaining_provider_timeout(provider.timeout, deadline=budget.deadline_monotonic) <= 0:
             failures.append(
                 _failed_attempt(
@@ -878,6 +908,7 @@ def _invoke(
                     provider,
                     reason_code=HIRING_DEADLINE_EXHAUSTED,
                     latency_ms=latency_ms,
+                    attempt_metadata=attempt_metadata,
                 )
             )
             break
@@ -895,6 +926,7 @@ def _invoke(
                     reason_code=result.failure_reason,
                     latency_ms=latency_ms if result.call_attempted else 0,
                     status="failed" if result.call_attempted else "skipped",
+                    attempt_metadata=attempt_metadata,
                 )
             )
             continue
@@ -905,11 +937,16 @@ def _invoke(
                     provider,
                     reason_code=_TRUNCATED_REASON,
                     latency_ms=latency_ms,
+                    attempt_metadata=attempt_metadata,
                 )
             )
             continue
         if result is not None:
-            return result, _attempt(stage, provider, result), tuple(failures)
+            return (
+                result,
+                _attempt(stage, provider, result, attempt_metadata=attempt_metadata),
+                tuple(failures),
+            )
         # The deadline handed to the transport is never raised above
         # ``provider.timeout``, so reaching it is a fact, not a guess.
         failures.append(
@@ -922,6 +959,7 @@ def _invoke(
                     else _CALL_FAILED_REASON
                 ),
                 latency_ms=latency_ms,
+                attempt_metadata=attempt_metadata,
             )
         )
     return None, None, tuple(failures)
@@ -2583,6 +2621,7 @@ def hire_contractor_for_gap(
             "actual_model": item.actual_model,
             "model_receipt_source": item.model_receipt_source,
             "receipt_id": item.receipt_id,
+            **project_provider_attempt_metadata(item),
         }
         # Durable model evidence is replayed into ``record_model_receipt``
         # with status "success", so only tries that actually produced a
