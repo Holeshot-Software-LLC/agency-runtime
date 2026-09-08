@@ -353,8 +353,11 @@ def test_projected_codes_are_bounded_and_carry_no_prose() -> None:
     projected = _critic_receipt_codes(many)
     assert len(projected) == 16
     assert projected[0] == "critic_defect_0" and projected[-1] == "critic_defect_15"
-    # A code that would not fit the receipt bound is dropped, not cut.
-    assert _critic_receipt_codes(("x" * 60, "fits")) == ("critic_fits",)
+    # An oversized valid code is explicitly omitted, never silently cut.
+    assert _critic_receipt_codes(("x" * 60, "fits")) == (
+        "critic_reason_detail_omitted",
+        "critic_fits",
+    )
     # Anything outside the closed charset is dropped too.
     assert _critic_receipt_codes(("has space", "has.dot", "", "ok-code")) == ("critic_ok_code",)
     # Four codes at the bound still fit the disclosure line.

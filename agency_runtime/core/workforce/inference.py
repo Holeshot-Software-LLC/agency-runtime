@@ -4333,11 +4333,25 @@ def _critic_receipt_codes(critic_codes: Sequence[str]) -> tuple[str, ...]:
         if _CRITIC_REASON_CODE.fullmatch(normalized) is None:
             continue
         candidate = _CRITIC_RECEIPT_CODE_PREFIX + normalized.replace("-", "_")
-        if _CRITIC_RECEIPT_CODE.fullmatch(candidate) is None or candidate in projected:
-            continue
-        projected.append(candidate)
-        if len(projected) >= _MAX_CRITIC_RECEIPT_CODES:
-            break
+        candidates = (candidate,)
+        if _CRITIC_RECEIPT_CODE.fullmatch(candidate) is None:
+            # AR-416: preserve a qualified standard cause without truncating a
+            # named neighbor into a misleading identity or widening any bound.
+            ground = next(
+                (item for item in _CRITIC_VETO_GROUNDS if normalized.startswith(item + "-")),
+                None,
+            )
+            candidates = (
+                (_CRITIC_RECEIPT_CODE_PREFIX + ground.replace("-", "_"),)
+                if ground is not None
+                else ()
+            ) + ("critic_reason_detail_omitted",)
+        for candidate in candidates:
+            if candidate in projected:
+                continue
+            projected.append(candidate)
+            if len(projected) >= _MAX_CRITIC_RECEIPT_CODES:
+                return tuple(projected)
     return tuple(projected)
 
 

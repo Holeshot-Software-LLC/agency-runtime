@@ -6,6 +6,8 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [handoff, staffing, headers]
 related:
+  - docs/worklog/2026-09-08-captured-native-critic-veto.md
+  - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/worklog/2026-09-08-native-staffing-receipts.md
   - docs/worklog/2026-09-08-recruiter-fallback-recovery.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
@@ -17,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-414
-branch: codex/ar414-native-receipts-20260908
-evidence_commit: 389be187013d143305810f898a7a09a477690bba
-minimum_ledger_commit: dcc48e7c9767955f08282243c85ddd968980d309
+branch: codex/ar414-capture-native-veto-20260908
+evidence_commit: 8d79ca3123b7130849a40612322617759cd62278
+minimum_ledger_commit: de30705164a226cc9968a8d74e380b6cacdfaa58
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ---
@@ -28,14 +30,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 
 ## Checkpoint
 
-Scoped native demonstration complete. One ordinary installed native review has uncached accepted
-staffing and exact-response Stop-hook acceptance. The stale-process blocker is
-resolved for the current MCP process and all eight hook hashes are trusted.
-The exact historical handoff request reproduced a semantic critic veto in the
-fresh native session. Standalone instrumented handoff accepted a different team
-in19.557s, which cannot establish whether either veto was erroneous. Native
-handoff diagnosis remains in progress. No production/config edits.
-See the native-receipts worklog for exact trace IDs and response hash.
+Native handoff capture complete; bounded source diagnostic fix implemented.
+Two exact native packets expose experiment-tracker assigned to non-experiment
+handoff review. The critic veto is supported by that mismatch; its named
+alternative is not verified as suitable. AR-416 retains a qualified veto's
+standard cause plus an explicit omitted-detail marker. Owner config restored
+byte-for-byte. Installed runtime and hook trust unchanged. Earlier ordinary
+native review has accepted staffing and exact-response Stop-hook acceptance.
 
 ## Completed evidence
 
@@ -74,14 +75,15 @@ Embedding latency is recorded, not bundled into this recruiter repair.
 
 ## Exact blocker
 
-Historical failure receipt ba132c4d records successful recruiter and critic calls
-followed by wrong-neighbor-selection. Subject classification failure was nonfatal.
-Fresh native handoff trace01a0820a-fc29-74c0-8063-d53748450a7f repeats that veto.
-Neither failure receipt retains the proposed team, so the critic cannot yet be
-judged right or wrong. The one captured standalone call approved technical-writer
-and reality-checker; it is a different proposal without native preceding context.
-Do not call that acceptance a fix.
-No operator trust/restart gate remains for this demonstrated native process.
+Historical receipt ba132c4d and fresh trace01a0820a still lack their proposals.
+New traces01a0821b-af73-70b0-b3bd-4ffd84b98bc9 and
+01a0821d-2379-7dc2-a360-eb3bedbac25b capture an identical handoff packet and valid
+wrong-neighbor-selection-documentation-evidence-researcher veto. Both failed;
+only staffing_critic_rejected survived receipt projection. AR-416 fixes this
+loss without changing staffing or critic approval. Critic named an alternative
+whose full contract it did not see; that alternative has narrow API-verification
+scope and is not endorsed. Details and hashes live in the captured-veto worklog.
+No operator trust/restart gate remains for the previously demonstrated process.
 
 ## Same-task continuity
 
@@ -91,13 +93,18 @@ branch is named above. Keep unrelated worktrees and Windows items untouched.
 
 ## Next bounded work package
 
-Capture a failing plan/proposal and its actual critic packet together in the
-same native context; identify whether the veto is warranted before fixing any
-proven defect. Existing failed receipts cannot reconstruct that packet. Keep
-AR-414/415 open until isolated acceptance gates have evidence. Never retry merely
-to obtain approval, manually select specialists, or weaken the critic.
+Finish focused source verification and PR integration for AR-416. Then qualify
+installation/native diagnostic behavior under the release checklist before
+claiming this source change is installed. Keep AR-414/415/416 open until their
+isolated acceptance gates have evidence. Never retry merely for approval or
+manually select specialists. No broad staffing-policy repair is justified here.
 
 ## Verification
+
+Current captured-response/critic/receipt/inference124pass; fast production
+1151pass/3skip; Ruff779files pass. Final checks pending at the clean checkpoint.
+Source replay preserves terminal failure and renders the retained cause.
+The remaining evidence below predates this source change.
 
 Current focused189pass, production1151pass/3skip, UI224pass; Ruff/docs/routing
 and strict tracker pass. Current frozen-source conformance188/188pass,

@@ -6,6 +6,9 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [staffing, headers, codex, reliability]
 related:
+  - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
+  - docs/decisions/0240-project-qualified-critic-veto-causes-with-an-omission-marker.md
+  - docs/worklog/2026-09-08-captured-native-critic-veto.md
   - docs/worklog/2026-09-08-native-staffing-receipts.md
   - docs/worklog/2026-09-08-recruiter-fallback-recovery.md
   - docs/decisions/0192-route-content-invalid-completions-to-a-content-fallback-profile.md
@@ -37,6 +40,19 @@ though the exact failure receipt is readable. Earlier calls also confused a
 hashed resident-manager turn reference with the actual trace/session IDs.
 
 ## Current state
+
+Latest bounded checkpoint: two native handoff critic packets are captured in
+[the evidence record](evidence/AR-414-native-critic-packet.json). Both selected
+experiment-tracker for a handoff review lacking any experiment; that mismatch
+supports rejection. The critic-named alternative has narrower framework API
+verification scope and was visible only as an identity, so it is not endorsed.
+The valid qualified reason was silently lost by the56character receipt bound.
+AR-416 repairs that diagnostic projection while retaining the veto and all bounds.
+Focused124pass and production1151pass/3skip; final checks pending. Owner critic
+configuration restored byte-for-byte. No new installed artifact or handoff
+acceptance claim; the earlier ordinary accepted native review remains evidence.
+See the captured-veto worklog for exact traces, packet hashes and limitations.
+
 
 Initial baseline before the repair: the header reader requires an active turn and rejects the
 persisted preflight_failed state before rendering its receipt. Even historical
