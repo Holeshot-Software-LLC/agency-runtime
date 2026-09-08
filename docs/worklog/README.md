@@ -2102,10 +2102,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `01ebcb7f` | 2026-09-07 | docs(AR-185): complete exact installed activation verification | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 | `7674aca9` | 2026-09-07 | fix(AR-408): complete truthful staffing failure receipts | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
 | `96a048d6` | 2026-09-07 | docs(roadmap): file required staffing call reservations (AR-409) | AR-409 | [Detail](2026-09-07-96a048d6-ar409-reservation-filing.md) |
-| `9946461a` | 2026-09-07 | fix(workforce): reserve mandatory stages within owner budgets (AR-409) | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `c095616a` | 2026-09-07 | docs(AR-409): integrate parallel reservation filing for tracker parity | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-96a048d6-ar409-reservation-filing.md) |
+| `9946461a` | 2026-09-07 | fix(workforce): reserve mandatory stages within owner budgets (AR-409) | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `00fc1aef` | 2026-09-07 | Merge pull request #736 from Holeshot-Software-LLC/codex/ar185-activation-proof | [AR-185](../roadmap/issue-AR-185-bind-codex-activation-verification.md) | [Detail](2026-09-07-500de085-exact-activation-verification.md) |
 | `8c1845e5` | 2026-09-07 | chore(AR-408): integrate accepted activation and reservation filing | [AR-408](../roadmap/issue-AR-408-preserve-staffing-failure-receipts.md) | [Detail](2026-09-07-1adacdde-truthful-staffing-receipts.md) |
+| `f670e6b5` | 2026-09-07 | fix(AR-409): integrate truthful receipts with reserved staffing calls | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

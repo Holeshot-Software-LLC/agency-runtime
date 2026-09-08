@@ -68,3 +68,10 @@ Integrate AR-408, adapt its now-obsolete current-flow reproduction to the actual
 exhausted-critic boundary, freeze the combined acceptance candidate, obtain
 isolated verdicts, and let the parent install/live-check and publish it.
 This checkpoint is branch-only and not accepted or installed.
+
+Normal integration `f670e6b5` incorporates accepted AR-408 checkpoint `ae916dd1`,
+preserves both runtime corrections and adapts two receipt fixtures without
+rewriting the accepted historical snapshot. Combined verification: 210 focused
+passes in 3.89s, named production spine 1085 passes/3 skips in 69.50s, five
+targeted mutation kills with unchanged source, routing passed, Ruff/format
+passed. Acceptance freeze and installed delivery remain pending.
