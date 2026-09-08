@@ -2143,11 +2143,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a005076c` | 2026-09-07 | docs(AR-409): record actual native failures and staffing latency | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `cbba0fd9` | 2026-09-07 | Merge pull request #743 from Holeshot-Software-LLC/codex/ar194-service-runtime-reconciliation | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
 | `ba2d0579` | 2026-09-07 | chore(delivery): integrate published oldest-first dispositions | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
-| `f158865a` | 2026-09-07 | docs(delivery): checkpoint warm-up fix installation and test deferral | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `0e8e9307` | 2026-09-07 | fix(canary): suppress hooks only during Claude bootstrap (AR-410) | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `fe608bc1` | 2026-09-07 | chore(AR-410): integrate published oldest-record checkpoint | null | null |
 | `9d615325` | 2026-09-07 | docs(AR-410): record native bootstrap isolation and deferred live proof | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 | `7c0c1221` | 2026-09-07 | Merge pull request #745 from Holeshot-Software-LLC/codex/ar410-disable-claude-warmup-staffing | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
+| `f158865a` | 2026-09-07 | docs(delivery): checkpoint warm-up fix installation and test deferral | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `ba58ad79` | 2026-09-07 | chore(delivery): integrate published Claude warm-up fix | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -58,3 +58,5 @@ Native checkpoint `a005076c` records all current host outcomes and exact fingerp
 Integration `ba2d0579` preserves all published AR-190/191/192/194 records and unions independent worklog histories; product bytes remain unchanged.
 
 Checkpoint `f158865a` records exact AR-410 source installation and the owner's code-first test deferral/midnight extension. Native rerun was not launched; no live success is inferred.
+
+Integration `ba58ad79` includes published AR-410 source PR #745 and its exact merge ledger while preserving separate installed/native scopes.
