@@ -86,3 +86,8 @@ scoped Ruff lint/format and diff checks passed. Strict tracker parity reported
 only parallel AR-412 missing locally, pending that separately authorized filing's
 integration. This is a temporary publication coordination boundary, not an
 AR-270 runtime test result.
+
+Normal merge `9aba5133` integrates AR-280 publication ledger `a574b56d`, retaining
+both worklog histories and unchanged AR-270 source/test bytes. The parent
+explicitly coordinates the sole parallel AR-412 tracker mismatch through serial
+publication; it is not permission to ignore any AR-270 mismatch.
