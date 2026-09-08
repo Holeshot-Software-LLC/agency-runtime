@@ -48,7 +48,20 @@ increase. Verify readback and ordinary staffing before retaining the change.
 80 focused tests pass across HTTP-status, staffing-failure, transport-cause and
 preflight-diagnosis modules. The new tests cross actual failed workforce turns,
 SQLite, routing/operator projection fixed points, hiring and malformed metadata.
-Fast spine, installed artifact and new live checks remain pending.
+Fast Python spine1151passed/3skipped in70.63seconds; dashboard224passed. Ruff
+lint passes. Canonical artifact build at716fb04f failed before publication with
+release Git output limit; diagnosis pending, no installed proof claimed.
+
+At12:36:01UTC the authorized live gateway PATCH changed only existing GLM planner
+deployment ed1b5bbc-bbb7-533a-b3d8-5873a004e4c1 order2 to0. Exact-ID/alias/model
+preconditions pass; readback confirms0 and all other deployment parameters
+unchanged. The original2 is retained for a scoped inverse PATCH. No service
+restart, new key/provider, increased timeout or other alias change.
+
+The next native check uses the existing trusted installed source4cbebf73 (not
+the uninstalled status patch) and Codex's built-in approve-for-me reviewer for
+the bounded MCP write. This is reviewed approval in workspace-write mode, not
+hook-trust bypass or persistent approval reconfiguration. No empty IDs allowed.
 
 ## Follow-ups
 
