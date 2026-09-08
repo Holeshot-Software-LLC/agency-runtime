@@ -1,167 +1,115 @@
 ---
-title: "AR-404 oldest-first backlog completion handoff"
+title: "AR-404 evidence-led backlog continuation"
 status: active
 category: roadmap
 created: 2026-09-05
 updated: 2026-09-07
-tags: [handoff, backlog, acceptance, delivery]
+tags: [handoff, backlog, implementation, delivery]
 related:
-  - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
-  - docs/roadmap/acceptance/evidence/AR-194-service-runtime-reconciliation-20260907.md
-  - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
-  - docs/roadmap/acceptance/evidence/AR-191-v2-checklist-retirement-20260907.md
-  - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
-  - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
-  - docs/roadmap/acceptance/evidence/AR-404-live-header-audit-20260907.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
-  - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
-  - docs/roadmap/acceptance/evidence/AR-176-fixture-contracts-20260907.md
-  - docs/roadmap/issue-AR-177-make-exhaustive-python-ci-manual.md
-  - docs/roadmap/acceptance/evidence/AR-177-manual-ci-reconciliation-20260907.md
-  - docs/roadmap/issue-AR-178-evaluate-one-shot-applications-post-production.md
   - docs/roadmap/AR-404-oldest-first-reconciliation-20260905.md
+  - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
+  - docs/roadmap/issue-AR-410-disable-claude-warmup-staffing.md
+  - docs/roadmap/acceptance/evidence/AR-409-installed-live-delivery-20260907.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar194-service-runtime-reconciliation
-evidence_commit: cd62d6588d8660033bf309220b74dcc1dbdebef6
-minimum_ledger_commit: 78ee74bafacece87a16af9bf51fd07b3a4eafa17
+branch: codex/evening-live-delivery-20260907
+evidence_commit: ba58ad79a40b59b5b972eeb649a7a7a670452da5
+minimum_ledger_commit: 2f6d436dc439c8b3d873315a60d15898223a000b
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
 
-# AR-404 oldest-first backlog completion handoff
+# AR-404 evidence-led backlog continuation
 
 ## Checkpoint
 
-Owner resumed September 7 at 20:14 UTC until 21:00 America/New_York,
-September 8 at 01:00 UTC. Finish clean by that cutoff. At 22:26 UTC the owner
-explicitly requested fanout. Parallel bounded investigations are allowed;
-publication remains one normal PR/merge/readback at a time. Windows excluded.
-Three completions published: AR-173 PR #722/7ad0d33e, AR-174 PR #723/57a70139,
-AR-175 PR #724/891f0c32. AR-176 repairs merged PR #725/d2125438 but remain open.
-AR-177 retired through PR #726/cbe82aaf, reducing the old queue to 118.
-AR-178 stays open/deferred. New actual defect AR-407/#727 adds one mapped
-record: current branch 119 (41 mapped/78 legacy); no legacy rollback.
-AR-178 merged PR #728/08fab1c4. AR-407 allthree criteria satisfy at dcd58720;
-merged PR #729/fdb010ff at23:01:56Z; #727 CLOSED. Queue118 (40 mapped/78 legacy).
-AR-180 exact v6/card/parent-finalization correlation is recorded; remains open
-for TUI/Desktop/multi-card and literal child-only context requirements.
-AR-180 merged PR #730/24eede12. AR-181 remains in_progress for Windows timing;
-its contradictory home criterion is explicitly corrected under ADR-0026.
-New AR-408/#732 records truthful staffing-failure/timeout receipt defects;
-queue119 (41 mapped/78 legacy) until its reviewed repair is accepted.
-AR181 merged PR #731/2274823c. AR183 detached Linux producer evidence now
-passes at08fab1c4; same-SHA Windows equality/merged release set remain held.
-AR183 merged PR #733/30214408. AR184 reuses that exact producer receipt;
-both retain only their meaningful cross-platform proof obligations.
-AR-184 merged PR #734/c64ce3ce; its exact merge ledger is d28ccc23.
-AR-185's nine isolated criteria satisfy at500de085; PR736 merged00fc1aef at
-23:55:01Z, including AR409/#735 filing for parity. AR408's three criteria satisfy
-atd9dde3cd; PR737 mergedbfe21d66 at23:59:35Z and #732 is CLOSED, read back.
-AR-189/PR738 merged f408b6f2 at00:06:15Z; native Windows clauses remain open.
-AR409 source merged PR739/4db6be16; installed/live delivery remains parent-owned.
-AR190/PR740 merged d39ec14d; four criteria pass, criterion3 retains its evidence
-gap and two-review limit. AR191/PR741 merged a8c2ca54 at00:33:11Z September8;
-no original criterion is accepted. Main is now merged normally into AR194.
+The owner extended work from9p.m. to **midnight America/New_York**:
+2026-09-08T04:00Z. Latest direction is code-first: do not wait for CI/tests,
+defer further test execution, keep relevant implementation moving. Preserve
+verification gaps; this does not turn untested work into accepted completion.
+Windows-only and owner-held actions remain excluded.
+
+Native session capacity is four total processes (parent plus three workers),
+not twenty concurrent agents. The owner requested broader fanout; three workers
+are active and one has triaged the next20 unfinished non-Windows records.
+
+Main includes AR194 PR743/`cbba0fd9` and AR410 PR745/`7c0c1221`.
+Before the next AR411 filing, unfinished count is118 =42mapped+76legacy.
+These are two different populations, not118 open GitHub issues. Recompute
+after new filings; historical counts remain in the canonical chronology.
 
 ## Completed evidence
 
-AR191: obsolete grant checklist retires under ADR0236, successorAR255; all
-nine original states remain. Aliases/arguments/exit codes/Store guards stay.
-Fresh23 offline cases pass; no restored grants or invalid-turn fallback.
+Evening sequential dispositions32–47 cover AR173 through194:
+AR173/174/175/185 accepted; AR177/191 explicitly retired; AR176/178/180/181/
+183/184/189/190/192/194 retained with exact remaining proof or owner gates.
+New source fixes AR407(scoped warning) and408(actual failure causes/timeouts)
+are accepted and merged. AR409(call reservations) is merged/source-accepted,
+but successful installed staffing remains unproven. AR410(warm-up-only native
+hook suppression) is merged/reviewed, acceptance/native proof deferred.
 
-AR-194:116 focused/42 deselections; installed read-only Linux status healthy,
-four inspection modules source-identical. Original Windows repair hold remains;
-only retired AR-196 presence dependency is removed under ADR-0117.
-
-AR-189: real private ZCode install, write-free plan, wrong-digest refusal, exact
-apply and repeat no-op; seven owned handlers removed, bundle retained unchanged,
-configuration/history/logical Store preserved. Authority, locks, replanning and
-retirement are unpatched. Updated-source focused 127/two Windows skips, fresh
-spine 1,085/three skips, UI 224 and repository Ruff/format pass. No owner-host
-mutation or native process unload claim; existing ADR-0117 authority applies.
-
-AR-407: actual scoped-warning repair, 158 focused/one Windows deselection,
-independent review no findings/35 pass, fresh spine1085/three skips and UI224.
-Exact helper/live mixed-pointer probe passes; allfive pointer bytes and
-metadata unchanged. Clean ef6523b3 portable build under umask077 passes
-independent verification/Twine; fresh installed MCP/dashboard smoke passes,
-all-host generated smoke8/0/0 in5.09s. No current-owner host replacement.
-
-AR-175: six accepted criteria and installed-wheel browser proof across
-21 views/36 faults, exact request-ID echoes and zero legacy calls.
-
-AR-176: seven reproduced stale cases repaired and two namespace doubles
-strengthened. Final 15-module package 525/one skip/64 Windows deselections;
-fresh spine 1085/three skips; UI 224/current floors; Node 36; namespace/authority
-60. No Python product or coverage-control change.
-
-AR-177: existing manual-only gates pass 222 focused cases/five Windows-named
-deselections. ADR-0234 applies AR-186/ADR-0105 to retire the mandatory checklist,
-not accept the original seven criteria. Full original states and failed manual
-run 31988612867 retained; no exhaustive dispatch or billing changes.
+Owner CLI now installs exact source
+`0e8e9307071bd25260d17fb623ebc7d88c56aef0`, all613 wheel payload files matched.
+Four normal host refreshes succeeded at00:50; Codex/Claude/Hermes/ZCode pointers
+are `d542bee67724d5793cc439ab7d0e5a3f7a0b34624767eea6e96cb8ded1c7f5d9`.
+OpenClaw's separate `1d617ca589a2` install and dashboard service were preserved;
+configuration and wrapper bytes/metadata unchanged.
 
 ## Exact blocker
 
-AR-176 criteria 2/5 retain their two review verdicts; no third acceptance pass.
-Fanout recovered the seven-module map and four surviving exact doubles; the
-fifth legacy backend/test was deleted together at fb34191f. No runtime gap
-established; the original eleven failing node IDs remain unrecovered.
+The latest completed native set used earlier exact4db6be16 source/runtime1b6:
+Codex refused modified hook hashes before a model call; Claude timed out after
+a staffed bootstrap warm-up; Hermes returned exit0 without staffing or any
+Agency header; ZCode executable unavailable. No all-host pass.
+Fresh410 native canary was prepared but **not launched** after test deferral.
 
-Codex installed current-profile activation PASSES at 22:04:41Z using the
-existing client variable; v4 attestation, no trust bypass. OpenClaw ordinary
-battery PASSES with own trace/routing/specialist/five-field header and reported
-model-only augmentation. This does not prove child-card identity or accepted
-finalization; its run remained active on readback.
-Hermes times out at 420s with slow inference/reranker/recruiter failure.
-Claude configured-client isolated canary times out at 180s with contract/HTTP
-failures, not missing credentials. ZCode executable unavailable.
-
-Fresh required Codex refresh exits zero/runtime-verified. Fanout establishes
-its residual mismatch is OpenClaw-only; current Codex disk/cache pins 4329d760.
-AR-407 fixes that misleading unfiltered warning, not current-parent staffing.
-Parent hook still executes old 5059543c and its launch process lacks the client
-variable. No current-turn header snapshot; do not reinstall OpenClaw.
+Current Codex parent still runs an older projection and lacks its client
+credential environment; disk refresh does not restaff an existing process.
+Do not copy historical successful canary headers into this parent.
+Owner approval is needed for newly modified Codex hook hashes; no bypass/retry.
+Claude executable directory modes repeatedly return to0775; actor unknown.
+Do not stop other project jobs or alter provider/credential/trust settings.
 
 ## Same-task continuity
 
-Owned tree: codex/ar194-service-runtime-reconciliation. Do not commit main or touch
-another worker's dirty tree. Substantive commits get immediate narrow worklog
-ledgers. At/below 50 percent finish a clean checkpoint, then continue.
-Fanout recovered exact AR-180 native card/header/finalization and AR-181 smoke.
-AR-180 remains one-card exec only; parent also contains the same card, so its
-child-only wording is not literally met. AR-181 Windows remains unverified.
-AR185/408/409 source and AR189/190/191/192 are published. AR192/PR742 merged
-bad847ab at00:40:01Z; AR194 now holds the publication token, then returns it
-for the parent's final runtime-fix package. No next-oldest record tonight.
+Root owns `/tmp/agency-runtime-evening-live-delivery` and serial publication.
+Workers own independent source branches: AR411 retained recall-cache identity
+diagnostics; AR270 closed OpenClaw installed-copy binding; AR251 remaining
+plain-text CLI cards after the twenty-record triage checkpoint.
+These are implementation packages, not twenty independent acceptance judgments.
+
+Never commit main, erase another tree's dirty files, or conflate unit/generated
+contracts with native loading. Every substantive commit gets its immediate
+narrow worklog ledger. At/below50% telemetry, checkpoint then continue the same
+task; no artificial pause or context-transfer ceremony.
 
 ## Next bounded work package
 
-1. Publish AR194, then return the token for the final runtime-fix package.
-2. Preserve accepted AR-185/AR-408 candidate hashes and verdicts unchanged.
-3. Parent owns AR409 installed upgrade/live checks; do not duplicate those calls.
-4. Stop cleanly by September 8 01:00 UTC.
+1. Publish exact installation/native/owner-direction receipts and twenty-record
+   triage through a normal PR, preserving all source and review histories.
+2. Implement the evidenced source gaps in AR411/270/251 in parallel; serialize
+   normal PR merges and preserve their independent ownership.
+3. Continue the oldest relevant remaining work from the triage, not new code
+   for already implemented or superseded requirements.
+4. Keep tests written where appropriate but record execution/acceptance as
+   deferred under the latest owner instruction. Stop clean by04:00Z.
 
 ## Verification
 
-AR-177 focused tests and hosted job readback are fresh. Source equality to
-d2125438 explicitly supports reuse of AR-176 spine/UI evidence, not fresh runs.
+Before deferral, exact410 source passed focused7, independent28, named spine
+1085/three skips70.05s, UI224, artifact/portable/Twine and fresh installed
+CLI/MCP/dashboard/generated smoke8/0/0 in5.20s. These checks are already complete,
+not a reason to launch more. Native/failure evidence is in the delivery receipt.
+Record-consistency/static/diff checks do not establish runtime success.
 No exhaustive corpus, coverage shards, compatibility matrix or native Windows.
-No aggregate coverage or all-host quality claim. Live audit retains native
-hashes, fields, trace IDs, attestation and failures, including launch mistakes.
 
 ## Constraints
 
-No persistent credentials/provider/billing/trust policy changes. Existing
-AR-388 owner-private client variable is read only into test child environments;
-never print it, provision a key or substitute a gateway master key.
-Remove diagnostic PYTHONPATH overlays for installed CLI tests. Earlier checkout
-projection failure did not prove untrusted hooks. No gateway restart.
-Child canary success does not repair the current parent/MCP connection.
-
-Retained holds: AR-176 inventory; AR-170 review limit; AR-168/160 producer
-comparison; AR-159 hosted enforcement; AR-156 Windows/profile; AR-135 ZCode;
-AR-140 supported runner; AR-129/130/147 Windows; AR-119/125 five-host value proof.
+No new provider spend, trust bypass, persistent credentials, gateway/dashboard
+restart, owner OpenClaw uninstall, private transcript publication, or guessed
+staffing/model/header evidence. Keep budgets, strict critic and hiring gates.
+Do not close issues whose required acceptance/native verification is deferred.

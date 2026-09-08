@@ -15,7 +15,7 @@ commit: ba9cd8690d239d4ad161d6e3c76c4754b14dda60
 short: ba9cd869
 date: 2026-09-07
 pr: null
-related_issues: [docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md]
+related_issues: [docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md, docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md]
 ---
 
 # AR-409 installed live delivery checkpoint
