@@ -66,3 +66,5 @@ Midnight extension checkpoint `ddcce039` replaces the bounded current capsule, p
 Integration `4f1c1c83` retains the twenty-record triage at its exact source scope: eleven proof-held, six reconciliation, and two concrete code targets plus one umbrella. No closures or acceptance judgments are inferred.
 
 Integration `ae15183c` incorporates the published AR-411 source merge and its faithful immediate ledger. AR-411 remains in progress; its regressions and fresh installed delivery are deferred under the owner's code-first direction.
+
+Checkpoint `378102d7` links the completed next-twenty triage, published AR-411 diagnostic, latest count and retained native-purpose constraint. A required Codex installation refresh returned a no-op already-current result without changing the current process's unverified staffing status.
