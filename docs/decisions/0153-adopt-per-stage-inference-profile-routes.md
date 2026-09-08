@@ -3,9 +3,10 @@ title: "Adopt per-stage inference profile routes"
 status: accepted
 category: decisions
 created: 2026-08-04
-updated: 2026-08-25
+updated: 2026-09-07
 tags: [routing, inference, workforce, configuration, security]
 related:
+  - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
   - docs/decisions/0221-enforce-hiring-independence-on-resolved-provider-chains.md
   - docs/roadmap/issue-AR-348-enforce-strict-independence-in-production.md
   - docs/decisions/0118-require-inference-owned-staffing.md

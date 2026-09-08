@@ -82,3 +82,5 @@ counts remain ambiguous and uninstrumented producers remain unknown.
 Integration `8705a545` incorporates the published OpenClaw, card, security-lock and delivery records. Reviewed AR-284 runtime/test blobs remain unchanged; preserved concurrent capsule links and all faithful ledger rows.
 
 Wrap-up record `3540b790` preserves the second independent source pass (no scoped finding) and the newly authorized focused run: 161 passed in 2.58 seconds. Original code-first UNRUN statements above describe the earlier checkpoint, not the current test result. Native/installed and isolated acceptance remain separate.
+
+PR #757 merged as `34ea605b6d81aabfe9a56fb615c91a90d1a3fc5a` at 2026-09-08T01:50:39Z. Runtime repair, two source passes and focused 161-pass receipt are now on main. Tracker754 remains open; combined installed evaluation follows.
