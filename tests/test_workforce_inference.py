@@ -16,6 +16,10 @@ from agency_runtime.core.config import (
     WorkforceConfig,
 )
 from agency_runtime.core.preflight_failure import preflight_staffing_reason_codes
+from agency_runtime.core.reply_budget import (
+    PROVIDER_HTTP_STATUS_ERROR,
+    PROVIDER_MODEL_TEXT_NOT_JSON,
+)
 from agency_runtime.core.roster.workforce import WorkforceIndexSnapshot
 from agency_runtime.core.selector.pipeline import _record_workforce_model_receipts
 from agency_runtime.core.selector.receipt_projection import project_nomination_failures
@@ -3453,6 +3457,100 @@ def test_invalid_primary_content_advances_to_the_content_fallback_provider() -> 
         ("planner", "agency-planner", "provider_call_failed"),
         ("planner", "agency-planner-content-fallback", "structured_response_applied"),
     ]
+
+
+@pytest.mark.parametrize("failure_kind", ["shape", "not_json", "http_404"])
+@pytest.mark.parametrize("fallback_valid", [True, False])
+@pytest.mark.parametrize("call_limit", [5, 8])
+def test_recruiter_fallback_is_funded_and_still_requires_valid_staffing_and_critic(
+    failure_kind: str, fallback_valid: bool, call_limit: int
+) -> None:
+    """AR-414: wiring a fallback is insufficient if repairs exhaust its budget."""
+    names = ("planner", "recruiter", "recruiter-fallback", "critic")
+    profiles = {
+        name: InferenceProfile(
+            name=name,
+            adapter="litellm",
+            model=f"task-{name}",
+            base_url="https://router.example.test/v1",
+            api_key="fixture-key",
+        )
+        for name in names
+    }
+    config = replace(
+        _config("strict", strict_call_budget=call_limit),
+        providers=(),
+        inference=InferenceConfig(
+            profiles=profiles,
+            routes={
+                "workforce.planner": "planner",
+                "workforce.recruiter": "recruiter",
+                "workforce.recruiter.critic": "critic",
+            },
+            content_fallback_routes={"workforce.recruiter": "recruiter-fallback"},
+        ),
+    )
+    calls: list[str] = []
+    primary_attempts = 1 if failure_kind == "http_404" else 2
+
+    def invoke(provider, prompt, _schema, **_kwargs):
+        calls.append(provider.name)
+        if provider.name == "planner":
+            if calls.count("planner") == 1:
+                return _result({"domains": ["software"], "languages": ["python"]})
+            # Spend the existing planner repair, never fabricate an accepted plan.
+            return _result({} if calls.count("planner") == 2 else _compact_plan_document())
+        if provider.name == "recruiter":
+            if failure_kind == "shape":
+                return _result({})
+            return replace(
+                _result({}),
+                failure_reason=(
+                    PROVIDER_HTTP_STATUS_ERROR
+                    if failure_kind == "http_404"
+                    else PROVIDER_MODEL_TEXT_NOT_JSON
+                ),
+                http_status=404 if failure_kind == "http_404" else 0,
+                call_attempted=True,
+            )
+        if provider.name == "recruiter-fallback":
+            # Its first request is the original packet, not another model's repair.
+            if calls.count("recruiter-fallback") == 1:
+                assert "[RUNTIME VALIDATION FEEDBACK]" not in prompt
+            return _result(_nomination_document() if fallback_valid else {})
+        assert provider.name == "critic"
+        assert json.loads(prompt)["critic_contract"]["verified_staffing_hard_checks_passed"]
+        return _result({"approved": True, "reason_codes": []})
+
+    outcome = plan_and_staff_workforce(
+        "Analyze this implementation safely.",
+        _snapshot(_contract("technical-analyst")),
+        config=config,
+        context=_context(),
+        invoker=invoke,
+        subject_inference_required=True,
+    )
+
+    assert outcome.accepted is (fallback_valid and call_limit == 8)
+    assert outcome.calls_used <= call_limit
+    assert calls.count("recruiter") <= primary_attempts
+    assert calls.count("recruiter-fallback") <= 2
+    if failure_kind == "http_404":
+        assert outcome.attempts[3].reason_code == PROVIDER_HTTP_STATUS_ERROR
+        assert outcome.attempts[3].http_status == 404
+    if call_limit == 5:
+        assert "recruiter-fallback" not in calls
+        assert "critic" not in calls
+    else:
+        assert calls[:3] == ["planner"] * 3
+        assert calls.count("recruiter") == primary_attempts
+        assert calls.count("critic") == int(fallback_valid)
+        assert calls.count("recruiter-fallback") == (1 if fallback_valid else 2)
+        if fallback_valid:
+            assert outcome.attempts[-1].stage == "critic"
+            assert outcome.staffing.units[0].selected == ("technical-analyst",)
+        if failure_kind == "shape":
+            assert "recruiter_response_shape_invalid" in outcome.attempts[3].validation_reason_codes
 
 
 def test_no_provider_declines_without_selecting_or_calling_the_model() -> None:
