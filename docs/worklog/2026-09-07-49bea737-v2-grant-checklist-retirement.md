@@ -18,7 +18,7 @@ type: worklog
 commit: 49bea737318f05667ab72a9c267fda05a31250c6
 short: 49bea737
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/741
 related_issues:
   - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
@@ -105,7 +105,9 @@ immediate ledger records this integration, preserving every historical subject
 and annotation. Metadata/docs/strict tracker parity are checked again before
 the PR. No new live canary or installed-artifact claim arises from this merge.
 
-Publish one normal PR with exact-head merge, then release the serial token to
-AR-192. Keep `pr: null` until a PR exists.
+PR #741 carries the retirement through the normal exact-head merge path;
+release the serial token to AR-192 after merge/readback. Final metadata/docs
+require-tracker pass 1,261 files, worklog indexes 2,104 substantive commits,
+and strict tracker parity passes 400 items/two historical PR exclusions.
 Current native-child work remains in AR-255 and broader live proof in AR-180;
 retiring AR-191 does not close either. Continue with AR-192 after publication.
