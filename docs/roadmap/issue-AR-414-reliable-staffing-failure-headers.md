@@ -6,6 +6,8 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [staffing, headers, codex, reliability]
 related:
+  - docs/worklog/2026-09-08-trusted-native-acceptance.md
+  - docs/roadmap/acceptance/evidence/AR-414-trusted-native-20260908.md
   - docs/worklog/2026-09-08-installed-qualified-veto-verification.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/decisions/0240-project-qualified-critic-veto-causes-with-an-omission-marker.md
@@ -42,7 +44,15 @@ hashed resident-manager turn reference with the actual trace/session IDs.
 
 ## Current state
 
-Latest checkpoint: AR-416 qualified-cause repair is installed from verified
+Current package reached live_demo: after actual8/8hook trust, one fresh ordinary
+native turn accepted inference-owned staffing and exact-response Stop-hook
+finalization. All five headers and the injected code-reviewer contract agree
+with Store; read-only scope is preserved. Wall56.656s, staffing39.866s; one
+nonfatal reranker rejection remains in the receipt. Parent stale-projection and
+abstention evidence are separate. No source/configuration change. Isolated
+acceptance is pending; see the trusted-native evidence and worklog.
+
+Previous installed checkpoint: AR-416 qualified-cause repair is installed from verified
 8629e2ed artifacts; all614package files match. Installed replay preserves the
 cause, omitted-detail marker and terminal failure. AR-416’s four and AR-417’s
 three isolated acceptance criteria are satisfied. Codex plugin

@@ -6,6 +6,8 @@ created: 2026-09-08
 updated: 2026-09-08
 tags: [planning, scope, reliability]
 related:
+  - docs/worklog/2026-09-08-trusted-native-acceptance.md
+  - docs/roadmap/acceptance/evidence/AR-414-trusted-native-20260908.md
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/worklog/2026-09-08-negated-request-scope.md
@@ -31,7 +33,13 @@ then demanded release verification because the request mentioned installed hooks
 
 ## Current state
 
-Phase waiting_for_operator. Two regression cases fail before the repair. Bounded
+Current package reached live_demo: actual8/8hook trust and one fresh normal
+native invocation preserve read_only scope for `not a request to change the
+repository`. Inference-owned staffing, injected contract, truthful headers and
+Stop finalization all pass. Source and installed regression evidence remain
+unchanged; independent acceptance is pending. See the trusted-native evidence.
+
+Previous installed checkpoint: two regression cases fail before the repair. Bounded
 nominal exclusions now leave a read-only plan intact. Separate positive clauses
 retain the original completeness requirements. Implementation c1ef8566 is merged
 through PR779/d0bb4127 and installed. All614package files match the independently
