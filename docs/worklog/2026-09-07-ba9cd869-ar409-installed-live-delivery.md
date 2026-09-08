@@ -54,3 +54,5 @@ cutoff. AR-409 remains open until the installed live checkpoint is reconciled.
 Installed checkpoint `ba9cd869` records exact main `4db6be16` before native provider calls. Source PR #739 is already merged; this delivery record awaits its own PR.
 
 Native checkpoint `a005076c` records all current host outcomes and exact fingerprint attribution: no current all-host pass. Codex trust and provider failures remain visible; separate AR-410 targets wasteful warm-up staffing. No acceptance judgments were changed.
+
+Integration `ba2d0579` preserves all published AR-190/191/192/194 records and unions independent worklog histories; product bytes remain unchanged.

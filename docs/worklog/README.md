@@ -2127,12 +2127,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6f997877` | 2026-09-07 | docs(AR-409): link source publication and retain installed delivery gate | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
 | `4d5f1528` | 2026-09-07 | docs(acceptance): retain AR-190 second-review evidence gap | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `4db6be16` | 2026-09-07 | Merge pull request #739 from Holeshot-Software-LLC/codex/ar409-reserve-required-staffing | AR-409 | [Detail](2026-09-07-9946461a-ar409-reservation-checkpoint.md) |
-| `ba9cd869` | 2026-09-07 | docs(AR-409): checkpoint exact-main installation before native delivery | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
-| `a005076c` | 2026-09-07 | docs(AR-409): record actual native failures and staffing latency | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `7e718c15` | 2026-09-07 | chore(AR-190): integrate accepted main and retain bounded evidence gap | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `cd62d658` | 2026-09-07 | docs(backlog): reconcile service inspection and retain Windows repair proof | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
 | `27715362` | 2026-09-07 | docs(AR-190): link retained publication and exact review limits | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
 | `d39ec14d` | 2026-09-07 | Merge pull request #740 from Holeshot-Software-LLC/codex/ar190-uv-plan-reconciliation | [AR-190](../roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md) | [Detail](2026-09-07-d1a9260c-installed-uv-plan-evidence.md) |
+| `ba9cd869` | 2026-09-07 | docs(AR-409): checkpoint exact-main installation before native delivery | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 | `889926d5` | 2026-09-07 | chore(AR-191): integrate published upgrade and staffing reservations | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 | `a8c2ca54` | 2026-09-07 | Merge pull request #741 from Holeshot-Software-LLC/codex/ar191-v2-checklist-retirement | [AR-191](../roadmap/issue-AR-191-support-codex-v2-hook-identity.md) | [Detail](2026-09-07-49bea737-v2-grant-checklist-retirement.md) |
 | `6d8f6aae` | 2026-09-07 | docs(trust): retain AR-192 after installed fail-fast proof | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
@@ -2141,6 +2140,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `faae0baa` | 2026-09-07 | docs(AR-192): link retained publication and approval gate | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 | `bad847ab` | 2026-09-07 | Merge pull request #742 from Holeshot-Software-LLC/codex/ar192-hook-trust-reconciliation | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 | `0799b3df` | 2026-09-07 | chore(AR-194): integrate retained hook trust publication | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
+| `a005076c` | 2026-09-07 | docs(AR-409): record actual native failures and staffing latency | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
+| `cbba0fd9` | 2026-09-07 | Merge pull request #743 from Holeshot-Software-LLC/codex/ar194-service-runtime-reconciliation | null | null |
+| `ba2d0579` | 2026-09-07 | chore(delivery): integrate published oldest-first dispositions | [AR-409](../roadmap/issue-AR-409-reserve-required-staffing-calls.md) | [Detail](2026-09-07-ba9cd869-ar409-installed-live-delivery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
