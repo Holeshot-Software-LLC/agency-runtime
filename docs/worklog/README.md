@@ -2139,6 +2139,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `faae0baa` | 2026-09-07 | docs(AR-192): link retained publication and approval gate | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 | `bad847ab` | 2026-09-07 | Merge pull request #742 from Holeshot-Software-LLC/codex/ar192-hook-trust-reconciliation | [AR-192](../roadmap/issue-AR-192-fail-fast-on-codex-hook-trust-drift.md) | [Detail](2026-09-07-6d8f6aae-hook-trust-refusal.md) |
 | `0799b3df` | 2026-09-07 | chore(AR-194): integrate retained hook trust publication | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
+| `cbba0fd9` | 2026-09-07 | Merge pull request #743 from Holeshot-Software-LLC/codex/ar194-service-runtime-reconciliation | [AR-194](../roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md) | [Detail](2026-09-07-cd62d658-service-inspection-reconciliation.md) |
+| `0e8e9307` | 2026-09-07 | fix(canary): suppress hooks only during Claude bootstrap (AR-410) | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
+| `fe608bc1` | 2026-09-07 | chore(AR-410): integrate published oldest-record checkpoint | null | null |
+| `9d615325` | 2026-09-07 | docs(AR-410): record native bootstrap isolation and deferred live proof | AR-410 | [detail](2026-09-07-0e8e9307-claude-warmup-hooks.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

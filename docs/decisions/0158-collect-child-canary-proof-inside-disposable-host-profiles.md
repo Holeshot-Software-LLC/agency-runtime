@@ -6,6 +6,8 @@ created: 2026-08-12
 updated: 2026-08-12
 tags: [hosts, canary, evidence, native-child, security]
 related:
+  - docs/roadmap/issue-AR-410-disable-claude-warmup-staffing.md
+  - docs/decisions/0237-isolate-claude-bootstrap-from-agency-evaluation.md
   - docs/decisions/0036-capability-bound-host-canary-attestations.md
   - docs/decisions/0118-require-inference-owned-staffing.md
   - docs/decisions/0156-host-artifacts-prove-native-child-delivery.md
