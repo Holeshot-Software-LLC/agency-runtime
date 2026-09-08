@@ -128,3 +128,5 @@ PR791 merged as `9d50063b` with exact subject
 Trackers AR-416/#787 and AR-417/#790 are closed after their recorded isolated
 acceptance gates; AR-414/#773 and AR-415/#778 remain open. Current native proof
 continues to wait for the owner’s review of the refreshed eight hooks.
+
+Merge-ledger follow-up: [PR792](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/792).
