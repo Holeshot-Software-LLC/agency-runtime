@@ -3,9 +3,10 @@ title: "AR-404: Complete the backlog through evidence-led delivery packages"
 status: in_progress
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-07
+updated: 2026-09-08
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/acceptance/evidence/AR-404-final-installed-evaluation-20260907.md
   - docs/roadmap/AR-404-next20-triage-20260907.md
   - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
   - docs/roadmap/acceptance/evidence/AR-194-service-runtime-reconciliation-20260907.md
@@ -59,7 +60,23 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
-### Midnight extension: current operating checkpoint
+### Final delivery checkpoint, September 8
+
+The owner superseded the midnight extension with a stopping-point request:
+merge completed changes, install all harnesses and evaluate. All workers have
+stopped new work. Exact main `4cbebf73` contains the completed source slices;
+the owner CLI now matches all 614 files in its independently verified wheel.
+Four host installations succeeded. OpenClaw staging occurred but its native
+transaction stopped at the live-gateway restart-consent boundary; no gateway
+restart or native registration success is claimed. Native checks are next.
+
+The named production spine passed 1151/three skips and dashboard passed224;
+focused results and honest conformance limits are in the
+[final delivery receipt](acceptance/evidence/AR-404-final-installed-evaluation-20260907.md).
+Current count is120 unfinished =48 mapped +72 legacy. No new isolated
+acceptance or blanket issue closure follows from these source/install results.
+
+### Historical midnight code-first checkpoint
 
 The owner extended the September7 session through midnight Eastern
 (September8 04:00UTC) and explicitly prioritized code over waiting for CI/tests.
