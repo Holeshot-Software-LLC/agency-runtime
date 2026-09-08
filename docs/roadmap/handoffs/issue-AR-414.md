@@ -16,8 +16,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-414
 branch: codex/ar414-resumed-verification-20260908
-evidence_commit: 6786aaa242c69810b25baaa12b4090e24c0cd2a5
-minimum_ledger_commit: 51851f640fd4f23c9695a7e23c39cc6d9da93a25
+evidence_commit: c1ef85662b01da7e8bbfa93917d6afdda1534aca
+minimum_ledger_commit: 6291746a3916f6c2ee08be94197c9d2470b2597d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ---
@@ -27,9 +27,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/773
 ## Checkpoint
 
 Header repair merged PR774/905d37b8; planner instructions merged PR775/975ce7b4.
-Both are installed. The owner restarted and approved the eight hooks; current
-inspection reports8trusted,0modified. Phase implementing AR-415's proven scope
-parser repair. No worker or native child is active.
+Both are installed. Owner approval enabled a native diagnostic on that artifact.
+AR-415's scope repair is now merged PR779/d0bb4127 and installed fromc1ef8566.
+Phase waiting_for_operator: the new refresh changes8hook hashes again. No native
+child is active; no bypass or retry before approval for this exact new bundle.
 
 ## Completed evidence
 
@@ -81,10 +82,13 @@ worktrees intact. Continue from a clean substantive/ledger pair at the50% gate.
 
 ## Next bounded work package
 
-Checkpoint AR-415's bounded exclusion parser and regressions, verify the fast
-spine, build/install the exact artifact, then repeat the unchanged native review.
+Await approval for plugin0.1.0+codex.07ad50ea4f52, bundle
+7385d3a795c5bf7dcca4ced6c6e1ebf81f92159e27479a0c11e15b34b53531a2.
+Then repeat the unchanged native review and run normal activation. Installed
+scope check passes;614files match wheel74988840e7f2e01aebd1db45ccef56372cfe07a1c87b7ce515b6df19577590bc.
+Production1151/3skip, focused185, UI224, routing and artifact gates pass.
 Keep recruiter shape/transport reliability open in AR-414; no weaker validators
-or hand-picked specialist. Never close AR414 or AR404 on diagnostic delivery alone.
+or hand-picked specialist. Never close AR414/415 on predecessor native evidence.
 
 ## Verification
 

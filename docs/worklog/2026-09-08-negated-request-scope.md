@@ -5,6 +5,7 @@ category: worklog
 created: 2026-09-08
 updated: 2026-09-08
 tags: [planning, native, verification]
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/779
 related:
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/roadmap/issue-AR-414-reliable-staffing-failure-headers.md
@@ -74,6 +75,34 @@ Before repair, focused exclusion regressions:2failed,6passed. After the initial
 repair, planner/inference/header suite184passed. An additional comma-boundary
 case brings the final focused run to185passed. Native fixed-artifact
 evidence follows after the source checkpoint and installation.
+
+## Installed repair checkpoint
+
+Implementation c1ef85662b01da7e8bbfa93917d6afdda1534aca, ledger6291746a,
+merged PR779/d0bb4127 with merge ledgerbe65ddc8. Canonical clean-clone build,
+strict Twine and independent distribution verification pass. Portable wheel
+SHA25674988840e7f2e01aebd1db45ccef56372cfe07a1c87b7ce515b6df19577590bc.
+All614installed package files match; installed `pip check` passes.
+The isolated-import installed scope check returns zero violations for the
+negative request and preserves implementation requirements across six positive
+clause boundaries. This is deterministic installed evidence with zero provider
+calls, not a native canary.
+
+Named fast spine1151passed,3skipped in70.18seconds; focused185passed;
+dashboard224passed; Ruff check and format778files; docs metadata1324files,
+policy availability, worklog and release hygiene2499inputs pass. Routing eval
+passes all thresholds. Bandit is unavailable in the verification environment;
+no scan claim. No exhaustive corpus, cross-OS matrix, Windows test, hosted CI
+dispatch or all-harness native claim.
+
+Codex refresh completes at2026-09-08T15:42:44Z with dashboard opted out,
+registered/enabled true, activation_complete false and restart_required true.
+Plugin0.1.0+codex.07ad50ea4f52; bundle
+7385d3a795c5bf7dcca4ced6c6e1ebf81f92159e27479a0c11e15b34b53531a2;
+bindingd6a7490b19aeb99616f91c1f3d51d36dd038f789418792886fa4bba98d94ff4d.
+Fresh native trust inspection reports8modified,0trusted. Unlike the prior
+artifact's proven native diagnostic, this new artifact has no native run yet.
+No bypass or further native retry follows that operator-owned gate.
 
 ## Follow-ups
 
