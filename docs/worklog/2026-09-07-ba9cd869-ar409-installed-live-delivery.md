@@ -56,3 +56,5 @@ Installed checkpoint `ba9cd869` records exact main `4db6be16` before native prov
 Native checkpoint `a005076c` records all current host outcomes and exact fingerprint attribution: no current all-host pass. Codex trust and provider failures remain visible; separate AR-410 targets wasteful warm-up staffing. No acceptance judgments were changed.
 
 Integration `ba2d0579` preserves all published AR-190/191/192/194 records and unions independent worklog histories; product bytes remain unchanged.
+
+Checkpoint `f158865a` records exact AR-410 source installation and the owner's code-first test deferral/midnight extension. Native rerun was not launched; no live success is inferred.
