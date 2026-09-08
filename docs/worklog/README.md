@@ -2171,6 +2171,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `9aba5133` | 2026-09-07 | chore(AR-270): integrate published AR-280 rendering fix | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 | `ff9f11cb` | 2026-09-07 | Merge pull request #752 from Holeshot-Software-LLC/codex/ar270-openclaw-installed-copy-provenance | [AR-270](../roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md) | [Detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 | `5f20cac1` | 2026-09-07 | chore(delivery): integrate published OpenClaw provenance repair | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
+| `e348d713` | 2026-09-07 | Merge pull request #753 from Holeshot-Software-LLC/codex/ar251-readonly-cards | [AR-251](../roadmap/issue-AR-251-cli-presentation-richness.md) | [Detail](2026-09-07-54bdff1f-governed-card-defaults.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
