@@ -133,3 +133,5 @@ Evidence checkpoint `ecd1d26be53341d6f0e6f142c9879e34c33c23bb` binds the install
 Review checkpoint `b4899374bac82266e5d4000a43836d84cb9fbe18` adds explicit non-HTTP and legacy absence tests;83focused tests pass. Alias and direct deployment both fail the real planner payload with HTTP408.
 
 Acceptance checkpoint `35cd65392adcaef9e78dc5f046f6dcb99e2c8270` records four isolated satisfied verdicts and closes only the HTTP-status scope; the full planner payload remains HTTP408 on every bounded comparison.
+
+PR768 merged as `947dfaef34d07303ed23c4e9b909de2edea21ac2`; tracker765 is CLOSED. The verified d08c5008 wheel has identical production code to this merge and is installed in the owner runtime; Codex hook refresh follows.
