@@ -1,0 +1,17 @@
+{
+  "label": "codex-fresh-trust",
+  "started_at": "2026-09-08T00:30:44.246566+00:00",
+  "finished_at": "2026-09-08T00:30:44.789038+00:00",
+  "argv": [
+    "/home/holeshot/.local/share/agency-runtime/venvs/ar348-20260905.qq1DjJ/bin/python3",
+    "-I",
+    "-c",
+    "import json; from pathlib import Path; from agency_runtime.core.codex_hook_trust import inspect_codex_hook_trust; print(json.dumps(inspect_codex_hook_trust(Path(\"/home/holeshot/code/agency-runtime\"), timeout=10.0)))"
+  ],
+  "exit_code": 0,
+  "timed_out": false,
+  "stdout_bytes": 1493,
+  "stdout_sha256": "40d4bf57218f645a9523b3eaa33584d0db0cdab9319f97bc4233f6067fd880b1",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}
