@@ -88,6 +88,27 @@ stock installed/native-host proof. No cold-latency or percentile claim is made.
 
 ## Native boundary and next action
 
+Final instruction PR775 merged975ce7b4. Canonical artifact from
+6786aaa242c69810b25baaa12b4090e24c0cd2a5 passed build/Twine/independent verification;
+wheelSHA256843b117756bb6991b24f2c9a2551468c2c44785ebea52a2b4aa09d1f9cdca190.
+Installed all614package files match. Final install --agent codex --no-dashboard
+completed, plugin0.1.0+codex.6c3ad021798c, bundle
+dc60673491f287f7eae05e2602fae25c02bbbaee4a24b9b1df5d14d9e1527fac.
+Fresh inspection still reports8modified/0trusted; no second native run attempted.
+The final installed SQLite/MCP diagnostic demonstration also passes.
+Final focused176pass; final named spine1151pass/3skip; static/doc gates pass.
+Bandit was not available in the verification environments; no scan pass is claimed.
+
+One final stock installed real-provider call (no invoker override or parser
+monkeypatch) used a fresh request adding fractional-mean example[1.0,2.0]. It
+took48.626seconds and did NOT accept staffing: subject3818ms, planner10925ms,
+embedding2859ms, reranker6213ms applied; recruiter13178ms rejected the response,
+repair11456ms also rejected with recruiter_response_shape_invalid. Both carry
+provider_response_contract_invalid. The absence of planner timeout/shape failure
+is useful bounded evidence for the retained correction, not proof that the
+entire workforce is reliable. The next code investigation is the exact recruiter
+response contract; do not reinterpret a prior warm accepted probe as this result.
+
 The992d148d package was installed and agency install --agent codex --no-dashboard
 completed. New bundle7994faf6c2458bd3af84e8bbe6b15a4791b652bec8d0ca4ecdbc7227a29db750
 has plugin0.1.0+codex.b035c27ba32f. Unlike the previously trusted bundle, actual
@@ -96,8 +117,7 @@ A fresh ordinary Codex run15:04:48UTC completed in16.213seconds with MCP tools
 but0Agency runs and0header fields, session01a0818c-e121-74e1-8b86-7958f7f786fa.
 It proves no native activation. Further native attempts stop until owner trust.
 
-Finish the instruction follow-up, reinstall that final artifact, preserve exact
-new hashes, and ask once for fresh /hooks approval. Then perform one normal
+The final artifact is installed. Await fresh /hooks approval, then perform one normal
 activation and ordinary turn with no override, verify headers/injection/receipts,
 and collect a small cold/warm sample. AR414/AR404 remain open. Windows and other
 harness native claims are untouched; no OpenClaw or dashboard restart occurred.

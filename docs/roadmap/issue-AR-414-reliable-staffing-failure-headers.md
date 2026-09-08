@@ -65,6 +65,19 @@ is waiting_for_operator: the newly installed bundle's eight hook hashes are
 actually modified, unlike the prior trusted bundle. No trust bypass or repeated
 native activation attempt is authorized by that state.
 
+PR775/975ce7b4 merges the explicit planner instructions. Final6786aaa2 wheel
+is installed, all614package files match, and final installed MCP failure
+diagnostics pass. The final plugin is0.1.0+codex.6c3ad021798c. Canonical build,
+independent artifact verification, focused176 and final fast spine1151/3skip
+pass. The bounded package is waiting_for_operator for fresh native hook trust;
+this issue remains in_progress and is not acceptance-closed.
+
+Final stock installed fresh-input call: planner accepted10925ms without repair;
+whole staffing failed48.626seconds at two recruiter validations, the repair
+reporting recruiter_response_shape_invalid. No native or overall staffing
+success is claimed. Trust approval and recruiter reliability remain separate
+unfinished gates; the earlier25.078second accepted probe is not a general guarantee.
+
 ## Approach
 
 Render validated failure diagnostics separately from accepted finalization.
