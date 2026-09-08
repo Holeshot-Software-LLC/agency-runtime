@@ -17,7 +17,7 @@ type: worklog
 commit: c3b217f1bca39968f19f9935fe7c44a1c236ed9e
 short: c3b217f1
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/760
 related_issues:
   - docs/roadmap/issue-AR-371-stalled-binding-makes-the-header-claim-none.md
 ---
