@@ -15,7 +15,7 @@ type: worklog
 commit: 596a774d7a087b520ce912a90937484e8d4ad30a
 short: 596a774d
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/748
 related_issues:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
 ---
@@ -56,7 +56,6 @@ ran for this package. Owner requested code-first work and deferred tests/CI.
 
 ## Follow-ups
 
-The final delivery owner adds the reciprocal AR-404 link and publishes this
-report. AR-251 and AR-270 implementation remain separately scoped; every other
-record keeps its explicit proof or policy-reconciliation obligation. PR remains
-null until the coordinated publication exists.
+The final delivery owner added the reciprocal AR-404 links and included this
+report in PR #748. AR-251 and AR-270 implementation remain separately scoped;
+every other record keeps its explicit proof or policy-reconciliation obligation.
