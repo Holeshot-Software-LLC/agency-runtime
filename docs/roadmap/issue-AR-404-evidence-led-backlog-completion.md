@@ -71,7 +71,11 @@ subscription login, inherited keys or gateway routing. Product code is unchanged
 Two metadata-only launch probes and the fresh trusted activation pass: accepted
 staffing, native child completion, finalization and persisted attestation, no
 bypass. Total129.6seconds includes97.454second staffing and one recruiter retry.
-Ordinary public MCP-backed proof and repeatability remain pending;
+Two ordinary turns fail at the planner after45774/45791ms HTTP errors. Actual
+public MCP status/host-status reads pass; the read-only native test's finalizer
+requires unavailable approval and lacks a failed-preflight binding. No ordinary
+accepted finalization, reliable staffing or speedup is claimed. AR-413/#765
+tracks the newly demonstrated HTTP-status loss in staffing receipts;
 see the [current receipt](acceptance/evidence/AR-404-codex-roundtrip-20260908.md).
 The broader backlog and other-harness restart remain outside this package.
 

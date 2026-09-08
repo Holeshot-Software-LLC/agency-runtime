@@ -6,6 +6,7 @@ created: 2026-09-04
 updated: 2026-09-04
 tags: [workforce, inference, transport, timeouts, receipts, doctor, observability]
 related:
+  - docs/roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md
   - docs/roadmap/issue-AR-408-preserve-staffing-failure-receipts.md
   - docs/roadmap/issue-AR-392-transport-failures-collapse-to-one-code.md
   - docs/roadmap/issue-AR-378-hiring-failure-records-no-attempt.md

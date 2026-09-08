@@ -10,6 +10,7 @@ related:
   - docs/roadmap/acceptance/evidence/AR-404-codex-roundtrip-20260908.md
   - docs/roadmap/acceptance/evidence/AR-404-final-installed-evaluation-20260907.md
   - docs/worklog/2026-09-08-codex-launch-roundtrip.md
+  - docs/roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md
 supersedes: []
 superseded_by: null
 type: handoff
@@ -28,10 +29,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 Owner approved this bounded package after confirming trust: repair the launch,
 prove native staffing/injection/finalization, then measure a small cold/warm
 sample. No backlog wave or OpenClaw restart. No worker is active. Root owns this
-dedicated worktree; phase live_demo, first activation passed.
+dedicated worktree; phase blocked on ordinary staffing, not activation trust.
 
 Main floor is c5516afe. Installed source remains4cbebf73, projection4d2934ddb59e;
-no product or generated hook changed. Inventory120 =48 mapped +72 legacy.
+no product or generated hook changed. New AR-413/#765 makes the unfinished
+inventory121 =49 mapped +72 legacy; it is a specific diagnostic gap, not121bugs.
 
 ## Completed evidence
 
@@ -57,9 +59,20 @@ restarted its optional dashboard, not OpenClaw. Detailed hashes in receipt.
 
 ## Exact blocker
 
-Ordinary public MCP-backed finalization and repeatability remain pending; the
-passing activation is tool-reduced. The old running parent remains unstaffed
-with closed MCP; a wrapper cannot mutate its environment or loaded hooks.
+Two ordinary trusted native runs fail planner preflight:45774/45791ms HTTP
+errors against60000ms deadlines; no credential-unset failure. The first gateway
+timestamp shows APITimeoutError/HTTP408, not a request-ID join. Native wall
+61.718/92.215seconds. Correct inline review answers are not staffing proof.
+
+Ordinary2 public MCP status and host-status actually pass. Its finalizer attempt
+has empty IDs after failed preflight and is rejected by read-only native mode's
+never approval policy. No accepted finalization exists. No approval bypass or
+route change. Ordinary staffing/finalization reliability remains NO-GO.
+
+AR-413 tracks HTTP status lost between StructuredProviderResult and workforce
+attempt/durable receipt. The four-hour idle expiry's role in this old parent's
+closed MCP remains unproven; do not remove the process-leak bound. This parent
+is still unstaffed/disconnected; fresh launch repairs cannot mutate it.
 
 Previous other-host failures remain: Claude unstaffed/no child delivery; Hermes
 invalid reranker/recruiter timeout; existing OpenClaw staffed without accepted
@@ -74,10 +87,11 @@ The original owner launcher is retained privately; no secret file was backed up.
 
 ## Next bounded work package
 
-Run a bounded ordinary MCP-backed session and small latency sample, without
-bypass or provider changes. Do not label samples cold/warm without cache evidence.
-Fix only findings that
-invalidate this outcome; stop at genuine operator prerequisites.
+Stop repeat model calls. Diagnose planner/gateway first; get explicit scope before
+changing providers/routes or gateway configuration. AR-413 preserves status end
+to end under ADR-0209 without policy changes. Then prove a valid-bound staffed
+ordinary turn in an approved MCP-write mode, and only then sample latency.
+Do not label samples cold/warm without cache evidence. No backlog wave.
 
 ## Verification
 

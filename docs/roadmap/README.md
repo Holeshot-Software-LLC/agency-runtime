@@ -450,6 +450,7 @@ bounded package are in AR-404's
 | `AR-410` | [Keep Claude transport warm-up outside Agency staffing](issue-AR-410-disable-claude-warmup-staffing.md) | in_progress | p1 | host-integrations | [#744](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/744) |
 | `AR-411` | [Retain recall catalog identity in failure receipts](issue-AR-411-retain-recall-catalog-identity-in-failure-receipts.md) | in_progress | p2 | observability | [#746](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/746) |
 | `AR-412` | [Refresh vulnerable optional-tooling lock entries](issue-AR-412-refresh-vulnerable-tooling-lock.md) | in_progress | p1 | security | [#750](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/750) |
+| `AR-413` | [Preserve HTTP status in durable staffing failure receipts](issue-AR-413-preserve-http-status-in-staffing-receipts.md) | open | p1 | observability | [#765](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/765) |
 
 ## Traceability
 
@@ -459,6 +460,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
+| [AR-413](issue-AR-413-preserve-http-status-in-staffing-receipts.md) | Filing only; downstream HTTP-status loss demonstrated in fresh ordinary Codex turns | [ADR-0209](../decisions/0209-name-the-transport-cause-instead-of-one-code.md) |
 | [AR-369](issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | Diagnostic correction pending source checkpoint, `a10e3117`, `5180c14f`, `ae763a0a`, `e85ce604` | Existing advisory-runtime boundary; no policy change |
 | [AR-412](issue-AR-412-refresh-vulnerable-tooling-lock.md) | Pending substantive checkpoint, `7e66ea84`, `362a6c1e`, `59b541b7`, `8869cb40`, `a27d2c1a`, `ca53e25e`, `f4264b54`; narrow two-package lock refresh, tests deferred | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md) |
 | [AR-01](issue-AR-01-selection-explain-receipts.md) | [`42f6580`](../worklog/README.md) | [ADR-0015](../decisions/0015-versioned-selection-explain-receipts.md) |

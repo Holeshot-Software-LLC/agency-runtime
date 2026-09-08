@@ -12,6 +12,7 @@ related:
   - docs/decisions/0204-name-the-credential-the-launching-environment-never-carried.md
   - docs/roadmap/issue-AR-307-project-canary-inference-credentials.md
   - docs/worklog/2026-09-08-codex-launch-roundtrip.md
+  - docs/roadmap/issue-AR-413-preserve-http-status-in-staffing-receipts.md
 supersedes: []
 superseded_by: null
 ---
@@ -26,7 +27,7 @@ exact injection and accepted finalization, then measure a small cold/warm sample
 No OpenClaw restart, new credential, changed provider route, weaker staffing or
 broad backlog wave is in scope. Main floor is c5516afe; installed runtime remains
 4cbebf73. No product code or generated hook changed. First activation passes;
-ordinary MCP-backed execution and repeatability remain pending.
+ordinary MCP connectivity passes, but both ordinary staffing attempts fail.
 
 ## Fresh diagnosis, September 8 UTC
 
@@ -110,8 +111,75 @@ optional dashboard integration ran daemon-reload and restarted that dashboard;
 OpenClaw and other host installations were untouched. Refresh cannot replace
 the hooks or closed MCP connection already loaded into this running parent.
 
-## Next checkpoint
+## Ordinary native execution: connectivity passes, staffing fails
 
-Proceed to bounded ordinary MCP-backed native execution and a small latency
-sample without changing trust, model routes or staffing authority. The current
-parent remains unstaffed with a closed connection; no speedup is claimed.
+Two normal `codex exec --json --sandbox read-only` invocations used the existing
+owner profile, native subscription login and repaired launcher. No model, MCP
+configuration or trust override was supplied. The second explicitly requested
+Agency MCP status and finalization, so these are not identical-task timing
+samples. A private opt-in hook log was enabled only on the second launch.
+
+| Observation | Ordinary1 | Ordinary2 |
+|---|---|---|
+| UTC interval | 11:32:19–11:33:21 | 11:36:29–11:38:02 |
+| Native wall seconds | 61.718 | 92.215 |
+| Planner milliseconds / deadline | 45774 / 60000 | 45791 / 60000 |
+| Native exit / timeout | 0 / false | 0 / false |
+| Staffing | preflight_failed | preflight_failed |
+| Delegations / accepted finalizations | 0 / 0 | 0 / 0 |
+
+Ordinary1 session01a080ca-55f2-7030-a984-aa52c8f2826e, trace
+01a080ca-564e-7d41-81c9-b0e13b958a30. Ordinary2 session
+01a080ce-2753-7a63-9224-a778f6da9eb6, trace
+01a080ce-27ba-7871-96ec-0ac3eb662014. Each has one attempted planner call,
+provider_http_status_error, workforce_provider_unavailable, inference_unavailable.
+There are no credential-unset failures. No new hiring occurred.
+
+Both correctly identify the supplied helper's floor-division and empty-input
+defects and show a minimal arithmetic-mean replacement plus two example checks.
+The native answers explicitly say those checks were not executed. This is useful
+answer evidence, not an Agency staffing/finalization success.
+
+Ordinary2 actually calls public agency.status and agency.host_status successfully:
+verified Store, current launcher artifacts, trusted hooks, and the earlier
+activation attestation. Its public agency.finalize attempt fails in the native
+host with “MCP tool call requires approval, but approval policy is never.”
+This read-only test therefore does not prove an accepted MCP write. It also
+submitted empty identifiers because its failed-preflight instructions lacked a
+current finalization binding. No approval was bypassed or identifier invented;
+no finalization row exists. Do not attribute this approval restriction to the
+repaired MCP transport or generalize it to all owner launch modes.
+
+Final output hashes: Ordinary1
+e9dd56e1ee2b03c8232c4e93e5d90c30aa48a22454246360a51d8a396ea64347;
+Ordinary2 bd57f2a8bc688eeccc468053117955db45145ffcaae3c8e8e376e37f79737f92.
+Both outputs have five parseable labels but disclose unavailable staffing;
+header syntax alone is not correctness. Native raw captures remain private.
+
+## Root-cause boundary and next package
+
+Read-only gateway journal metadata at11:33:08.27UTC shows an upstream
+APITimeoutError and HTTP408, coincident with Ordinary1's planner failure. This
+supports an upstream timeout, not a missing credential or our60second deadline;
+there is no request-ID join, so retain that correlation limitation. No service
+configuration, route, timeout, credentials or gateway process was changed.
+
+The transport captures HTTP status but WorkforceInferenceAttempt drops it before
+durable failure projection. AR-413 tracks that concrete downstream gap under
+ADR-0209; no status is guessed from latency. Separately, the four-hour MCP idle
+expiry can end a paused live host; its role in the old parent's disconnect is
+unproven. Do not remove the AR-372 process-leak bound based on this hypothesis.
+
+Stop repeated model calls after these two ordinary failures. The next bounded
+package is source-preserving planner/gateway diagnosis, then an explicitly
+authorized provider change only if required; carry AR-413 status metadata through
+the full receipt path. A successful ordinary staffed turn must precede any
+cold/warm performance or reliability claim. Re-run public finalization with valid
+current-turn binding and an approved native MCP-write mode, not a trust bypass.
+
+## Verdict
+
+Owner launch provisioning repaired; fresh trusted activation and ordinary MCP
+reads pass. Ordinary staffed/finalized reliability is NO-GO; no latency speedup,
+warm-cache benefit, general hiring quality or all-harness success is claimed.
+The current parent remains unstaffed with a closed connection.

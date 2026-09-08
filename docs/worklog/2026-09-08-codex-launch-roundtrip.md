@@ -44,13 +44,20 @@ The linked receipt records eight trusted hooks, fresh eight-tool MCP/status,
 two launcher probes and native version. First current-profile activation passes
 without bypass: accepted staffing, completed native child, accepted finalization
 and persisted attestation. It takes129.6seconds, including97.454second staffing
-with one candidate-contract retry. Ordinary MCP-backed proof remains pending.
+with one candidate-contract retry. Two ordinary native turns fail at the planner
+after45.8seconds HTTP errors; public MCP status and host-status pass, finalizer
+is not accepted. Native read-only/never approval is an explicit limitation.
+AR-413/#765 tracks the status that the workforce attempt discards after the
+transport captured it. Gateway timestamp-correlated evidence supports an upstream
+timeout; no route or gateway service was changed.
 
 ## Follow-ups
 
-Complete current-profile native roundtrip, then bounded ordinary MCP/finalization
-and latency checks. Stop at explicit operator prerequisites; no OpenClaw restart
-or wide backlog work.
+Diagnose the existing planner route without altering it; obtain explicit scope
+before provider/gateway changes. Preserve HTTP status through AR-413's complete
+receipt path. Only then retry a valid-bound ordinary staffed/finalized turn in an
+approved native MCP-write mode and measure repeatability. No OpenClaw restart or
+wide backlog work. The install refresh did restart its default optional dashboard.
 
 Pre-live checkpoint `2c07c6539a0acfcd943ac85256d07f9d3d204731` records the owner launch repair, fresh trusted hooks and independent MCP startup. Native execution remains pending; this clean recovery pair precedes live evaluation under the context protocol.
 
