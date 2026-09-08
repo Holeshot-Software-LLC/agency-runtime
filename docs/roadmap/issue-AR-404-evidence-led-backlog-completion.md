@@ -66,7 +66,7 @@ repeat work and risk reintroducing superseded behavior.
 ### HTTP-status delivery and planner isolation, September 8
 
 AR-413 has four satisfied isolated acceptance verdicts, 83 focused passing
-tests and verified installed loopback HTTP/SQLite evidence. PR768 delivers
+tests and verified installed loopback HTTP/SQLite evidence. PR768 merged as947dfaef and delivers
 the diagnostic correction. The named fast spine (1151 pass, 3 skip), dashboard
 (224 pass), routing, conformance and record checks pass. This closes one issue,
 not ordinary staffing reliability; the unfinished inventory is120 records
@@ -76,10 +76,13 @@ The reversible planner priority experiment failed and was restored exactly.
 Tiny alias/direct GLM requests succeed in2142/2951ms, but the production planner
 payload fails HTTP408 on both in45704/45137ms. Request-only low-effort and
 JSON-object comparisons also fail in45111/45284ms; no configuration changes
-remain. Codex install is already current; separate host status proves trust
-and the earlier activation attestation, not subsequent ordinary success.
-The next bounded package is owner runtime delivery followed by upstream
-full-payload diagnosis. No repeated native run is justified without new evidence.
+remain. The owner runtime now uses the verified d08c5008 artifact (same production
+code as PR768); all614package files match. Codex refresh published bundle
+0fe533927f56, projectionab77dcb13e8e. Registered/enabled but fresh hook trust
+required, earlier attestation stale. Phase waiting_for_operator: fresh terminal
+hook trust, then activation verification. Upstream full-payload diagnosis remains
+the next investigation; no repeated native run is justified without new evidence.
+Other harness bundles were not refreshed in this Codex-scoped package.
 See the linked planner-reliability worklog and active capsule for exact scope.
 
 ### Resumed Codex roundtrip package, September 8

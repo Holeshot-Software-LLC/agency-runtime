@@ -65,6 +65,18 @@ hook-trust bypass or persistent approval reconfiguration. No empty IDs allowed.
 
 ## Follow-ups
 
+Final owner delivery at13:02UTC: installed the independently verified d08c5008
+wheel with no dependency changes. Its production files equal PR768/main; all614
+installed package files compare byte-for-byte with that wheel. Codex install
+completed native remove/add refresh, preserving a retained native backup, with
+no optional dashboard restart. New bundle0fe533927f560ef672e1d97147802eced939e890dc5990aebb71f8a02b63700d,
+projectionab77dcb13e8eb56928de9ec1fc87977dc78ef78b74355fa29d5aab9fb274b23f,
+plugin0.1.0+codex.fa16f6ec90e5. Registered/enabled, no configuration drift;
+fresh hook trust required and old activation stale by bundle/install ID. Stopped
+at waiting_for_operator, without bypass or repeated native attempts. Other host
+bundles remain on the prior projection and were not refreshed in this package.
+The active capsule contains the exact terminal trust and activation steps.
+
 The order experiment failed: native session01a08106-8cc4-7930-8a16-8544d1bd0db4,
 trace01a08106-8d31-7d41-ace6-f019e6fc1295,73.764secondwall, planner HTTP failure
 46910ms, no staffing/delegation/finalization. At12:40:26UTC restored order0 to2;
