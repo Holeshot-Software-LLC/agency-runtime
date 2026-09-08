@@ -70,6 +70,10 @@ satisfied only the missing fifth criterion against the same `f670e6b5` candidate
 no completed check was rerun. All five are satisfied; status remains in_progress
 until the required installed combined-candidate live checkpoint is recorded.
 
+Source publication: [PR #739](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/739).
+This PR references #735 without closing it. All five source criteria are
+satisfied; installed owner-harness delivery remains a separate required gate.
+
 ## Approach
 
 Keep one owner-configured workforce ledger. With `R = maximum - used` and

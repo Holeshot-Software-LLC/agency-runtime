@@ -32,6 +32,8 @@ The metadata SHAs identify the combined implementation/evidence and ledger;
 the normal merge integrates AR-408's accepted `ae916dd1` checkpoint.
 Worktree: `/tmp/agency-runtime-ar409-reserve-required-staffing`.
 Tracker #735 and all filing reciprocals are present.
+Source PR: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/739.
+It deliberately leaves #735 open pending the required installed live checkpoint.
 
 The reviewed code reserves required downstream calls and caps subject inference
 at one actual call. Its final receipt refinement appends only the exact budget
