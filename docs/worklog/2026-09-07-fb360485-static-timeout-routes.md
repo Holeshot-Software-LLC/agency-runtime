@@ -17,7 +17,7 @@ type: worklog
 commit: fb36048537277833a41a5189bd29621514a6d0d5
 short: fb360485
 date: 2026-09-07
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/759
 related_issues:
   - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
 ---
