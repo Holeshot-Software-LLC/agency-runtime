@@ -6,6 +6,7 @@ created: 2026-07-28
 updated: 2026-07-28
 tags: [installation, host-integrations, security, cli, operations]
 related:
+  - docs/roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md
   - docs/roadmap/issue-AR-271-accept-stopped-openclaw-uninstall-status.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/handoffs/issue-AR-189.md
@@ -187,6 +188,16 @@ issue and worklog retain the contract tests, limits and exact delivery.
   restarts them; filesystem and inventory postconditions do not prove process
   unload.
 - Dashboard users retain observability but gain no adjacent mutation authority.
+
+### Installed-copy implementation checkpoint
+
+AR-270 source `fc699ff3` implements this existing contract for complete OpenClaw
+installed-copy provenance and its single-plugin inspect envelope. The full
+managed-tree proof remains independent; joined native source/copy/entry and
+identity fields stay plan-digest bound. Ambiguous identity extraction refuses
+before absence or fallback handling. This is reviewed source with written,
+unrun regressions under the owner code-first instruction, not a new native
+uninstall or acceptance claim. See the reciprocal AR-270 issue and worklog.
 
 ## Alternatives
 

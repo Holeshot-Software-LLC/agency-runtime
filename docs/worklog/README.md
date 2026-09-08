@@ -2164,6 +2164,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `362a6c1e` | 2026-09-07 | chore(AR-412): integrate published delivery and Hermes boundary records | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `59b541b7` | 2026-09-07 | docs(AR-412): cite maintainer releases within repository link boundary | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
 | `8869cb40` | 2026-09-07 | docs(AR-412): record independent lock scope review | [AR-412](../roadmap/issue-AR-412-refresh-vulnerable-tooling-lock.md) | [Detail](2026-09-08-ar412-security-lock.md) |
+| `fc699ff3` | 2026-09-07 | fix(openclaw): bind complete installed-copy provenance for AR-270 | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `a9073fe6` | 2026-09-07 | chore(AR-270): integrate published live-delivery checkpoint | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `6e701219` | 2026-09-07 | docs(AR-270): retain closed-provenance review and deferred runtime gates | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `9aba5133` | 2026-09-07 | chore(AR-270): integrate published AR-280 rendering fix | AR-270 | [detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
+| `ff9f11cb` | 2026-09-07 | Merge pull request #752 from Holeshot-Software-LLC/codex/ar270-openclaw-installed-copy-provenance | [AR-270](../roadmap/issue-AR-270-bind-openclaw-installed-copy-provenance.md) | [Detail](2026-09-07-fc699ff3-openclaw-copy-provenance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
