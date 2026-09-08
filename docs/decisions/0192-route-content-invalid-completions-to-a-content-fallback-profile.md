@@ -3,9 +3,10 @@ title: "Route content-invalid completions to a content-fallback profile"
 status: accepted
 category: decisions
 created: 2026-08-29
-updated: 2026-08-29
+updated: 2026-09-07
 tags: [reliability, workforce, inference, litellm, fallback]
 related:
+  - docs/roadmap/issue-AR-287-bind-host-hook-timeouts-to-inference-budgets.md
   - docs/decisions/0181-use-litellm-aliases-as-host-inference-control-plane.md
   - docs/decisions/0185-enforce-child-judge-schema-at-litellm-alias.md
   - docs/roadmap/issue-AR-335-make-content-invalid-completions-reach-fallback.md

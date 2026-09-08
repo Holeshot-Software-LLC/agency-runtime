@@ -1,13 +1,13 @@
-"""Report a stale installed hook runtime instead of failing silently.
+"""Report a running hook's drift from the last published runtime.
 
 Host hooks execute one immutable, content-addressed runtime projection whose
 absolute path is frozen into the installed bundle's argv at install time (see
 ``launcher_bootstrap``).  That pin is deliberate: it is what stops a mutable
 tree from redirecting code that runs with operator authority on every tool
-call.  The cost is that shipping new source changes nothing a hook executes
-until the operator reinstalls -- and that drift used to be silent, so hooks
-kept enforcing old code paths and rejected work with no hint that a reinstall
-was required.
+call. Shipping new source therefore requires an install to publish a new
+projection. An already-running host may still retain the previous launcher
+after that install; refreshing files cannot reload its in-memory integration.
+Process drift alone does not establish that the installed files are stale.
 
 This module records which projection the last install published and lets any
 process compare itself against it.  The pointer is *advisory only*: it is read
@@ -82,8 +82,12 @@ class RuntimeStaleness:
         return (
             "Agency Runtime is executing a stale hook runtime: this process runs "
             f"projection {self.running_digest[:12]} but the last install published "
-            f"{self.installed_digest[:12]}. Your installed hooks are stale; run "
-            f"`agency install{agent}` to refresh them."
+            f"{self.installed_digest[:12]}. This comparison does not verify installed "
+            "hook files. Reload or reconnect the Agency integration, or restart its "
+            "long-lived host process using the normal operator-controlled workflow, "
+            "then start a fresh session. Reinstalling alone cannot refresh an "
+            "already-running process. If a fresh process still reports this mismatch, "
+            f"inspect the installed hooks and refresh them with `agency install{agent}`."
         )
 
 

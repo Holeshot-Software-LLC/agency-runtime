@@ -34,6 +34,7 @@ from agency_runtime.core.provider_deadline import (
     remaining_provider_timeout,
     require_provider_time,
 )
+from agency_runtime.core.receipts.attempt_accounting import ProviderChainAccounting
 from agency_runtime.core.reply_budget import (
     PROVIDER_CALL_FAILED,
     PROVIDER_CALL_TIMED_OUT,
@@ -828,6 +829,12 @@ class WorkforceInferenceAttempt:
     completion_cap_tokens: int = 0
     completion_tokens: int | None = None
     reply_truncated: bool = False
+    # AR-284: absent on legacy/unaccounted observations, never inferred from
+    # the flattened planner/recruiter/critic attempt list.
+    metadata_version: int | None = None
+    provider_chain_index: int | None = None
+    provider_call_attempted: bool | None = None
+    provider_fallback_count: int | None = None
 
 
 MAX_RECORDED_RANKED_CANDIDATES: Final[int] = 8
@@ -1534,6 +1541,7 @@ def _attempt(
     validation_detail: str = "",
     validation_reason_codes: Sequence[str] = (),
     latency_ms: int | None = None,
+    attempt_metadata: Mapping[str, Any] | None = None,
 ) -> WorkforceInferenceAttempt:
     return WorkforceInferenceAttempt(
         stage=stage,
@@ -1566,6 +1574,7 @@ def _attempt(
         completion_cap_tokens=0 if result is None else result.completion_cap_tokens,
         completion_tokens=None if result is None else result.completion_tokens,
         reply_truncated=False if result is None else bool(result.reply_truncated),
+        **dict(attempt_metadata or {}),
     )
 
 
@@ -1768,12 +1777,21 @@ def _invoke_stage_provider(
     invoker: StructuredInvoker,
     attempts: list[WorkforceInferenceAttempt],
     reserve: int = 0,
-) -> tuple[ProviderEntry, StructuredProviderResult | None, int]:
+    *,
+    accounting: ProviderChainAccounting,
+    provider_chain_index: int,
+) -> tuple[ProviderEntry, StructuredProviderResult | None, int, dict[str, Any]]:
     timeout = remaining_provider_timeout(provider.timeout)
     provider = replace(provider, timeout=timeout)
     if timeout <= 0:
         attempts.append(
-            _attempt(stage, provider, status="failed", reason_code=PROVIDER_DEADLINE_EXHAUSTED)
+            _attempt(
+                stage,
+                provider,
+                status="failed",
+                reason_code=PROVIDER_DEADLINE_EXHAUSTED,
+                attempt_metadata=accounting.observe(provider_chain_index, call_attempted=False),
+            )
         )
         raise _StageCallExhausted("workforce_inference_deadline_exhausted")
     if budget.remaining <= reserve or not budget.consume():
@@ -1781,6 +1799,17 @@ def _invoke_stage_provider(
     started = time.monotonic()
     result = invoker(provider, prompt, schema, system_prompt=system_prompt, timeout=timeout)
     latency_ms = int((time.monotonic() - started) * 1000)
+    # A named transport failure carries the dispatch fact. A normal answer
+    # proves dispatch even if semantic validation later rejects it. Legacy
+    # None has no dispatch evidence; spending budget cannot make it known.
+    attempt_metadata = accounting.observe(
+        provider_chain_index,
+        call_attempted=(
+            None
+            if result is None
+            else (bool(result.call_attempted) if result.carries_no_answer else True)
+        ),
+    )
     if remaining_provider_timeout(timeout) <= 0:
         attempts.append(
             _attempt(
@@ -1790,10 +1819,11 @@ def _invoke_stage_provider(
                 reason_code=PROVIDER_DEADLINE_EXHAUSTED,
                 result=result,
                 latency_ms=latency_ms,
+                attempt_metadata=attempt_metadata,
             )
         )
         raise _StageCallExhausted("workforce_inference_deadline_exhausted")
-    return provider, result, latency_ms
+    return provider, result, latency_ms, attempt_metadata
 
 
 def _invoke_stage(
@@ -1819,7 +1849,8 @@ def _invoke_stage(
     if not providers:
         return None, attempts, "workforce_provider_unavailable"
     called = False
-    for provider in providers:
+    accounting = ProviderChainAccounting()
+    for provider_chain_index, provider in enumerate(providers):
         # AR-385: the stage owns its reply budget. Stamp it on the entry the
         # invoker sees unless the operator stated one on the profile.
         provider = provider_for_stage(provider, stage)
@@ -1832,7 +1863,7 @@ def _invoke_stage(
             # stage loop has all along (``hiring.py``), so an identical
             # transport failure classifies identically in both places.
             try:
-                provider, result, latency_ms = _invoke_stage_provider(
+                provider, result, latency_ms, attempt_metadata = _invoke_stage_provider(
                     stage,
                     provider,
                     current_prompt,
@@ -1842,6 +1873,8 @@ def _invoke_stage(
                     invoker,
                     attempts,
                     reserve=reserve,
+                    accounting=accounting,
+                    provider_chain_index=provider_chain_index,
                 )
             except _StageCallExhausted as exc:
                 return None, attempts, str(exc)
@@ -1863,6 +1896,7 @@ def _invoke_stage(
                         reason_code=result.failure_reason,
                         result=result,
                         latency_ms=latency_ms if attempted else None,
+                        attempt_metadata=attempt_metadata,
                     )
                 )
                 # AR-396: one of these is not a transport give-up. A complete
@@ -1907,6 +1941,7 @@ def _invoke_stage(
                             else PROVIDER_CALL_FAILED
                         ),
                         latency_ms=latency_ms,
+                        attempt_metadata=attempt_metadata,
                     )
                 )
                 break
@@ -1923,6 +1958,7 @@ def _invoke_stage(
                         reason_code=PROVIDER_RESPONSE_TRUNCATED,
                         result=result,
                         validation_detail=_TRUNCATED_REPLY_DETAIL,
+                        attempt_metadata=attempt_metadata,
                     )
                 )
                 if semantic_attempt + 1 < max_semantic_attempts:
@@ -1953,6 +1989,7 @@ def _invoke_stage(
                         result=result,
                         validation_detail=detail,
                         validation_reason_codes=validation_reason_codes,
+                        attempt_metadata=attempt_metadata,
                     )
                 )
                 if semantic_attempt + 1 < max_semantic_attempts:
@@ -1980,6 +2017,7 @@ def _invoke_stage(
                     validation_reason_codes=(
                         (result.model_text_repair,) if result.model_text_repair else ()
                     ),
+                    attempt_metadata=attempt_metadata,
                 )
             )
             return parsed, attempts, ""
