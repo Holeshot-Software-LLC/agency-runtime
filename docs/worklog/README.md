@@ -2273,6 +2273,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `331d789b` | 2026-09-08 | docs(staffing): cite AR420 isolated acceptance evidence | [AR-420](../roadmap/issue-AR-420-bind-reranker-candidate-membership.md) | [Detail](2026-09-08-reranker-membership-repair.md) |
 | `08cba8a6` | 2026-09-08 | docs(staffing): initialize AR420 verifier result table | [AR-420](../roadmap/issue-AR-420-bind-reranker-candidate-membership.md) | [Detail](2026-09-08-reranker-membership-repair.md) |
 | `4cf917fb` | 2026-09-08 | docs(staffing): bind AR420 verifier citations to exact lines | [AR-420](../roadmap/issue-AR-420-bind-reranker-candidate-membership.md) | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `03692b46` | 2026-09-08 | docs(staffing): accept AR-420 without claiming general reliability | AR-404, AR-420 | [Detail](2026-09-08-reranker-membership-repair.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
