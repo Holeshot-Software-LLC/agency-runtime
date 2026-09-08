@@ -137,6 +137,26 @@ unchanged. Fresh source tests pass 67 cases in 0.83 seconds; Ruff checks pass.
 The new receipt candidate requires a fresh all-five digest-bound review;
 the first four verdicts cannot be transplanted across a candidate change.
 
+### September 8 verifier admission failure
+
+The second-review candidate is frozen at `eac2d6a2`, with clean checkpoint
+`14f332ec`. At 00:08:38 UTC the default Claude launch refused the executable:
+its exact package directory was `0775` while the npm bin directory was `0755`.
+Claude Code itself reported version 2.1.263, but the production resolver
+returned `executable_prepared=false` and the precise reason
+`executable refused as untrusted: its parent namespace permits substitution`.
+
+The all-five runner returned exit 2 and printed `verifier unavailable or
+outside the vocabulary; nothing recorded` for every criterion. No second-review
+verdict rows were produced, so this was failed admission, not five judgments.
+The worker did not chmod owner paths or retry unchanged. The actor changing
+the directory mode is unproved.
+
+The owner requested the supported `--provider codex` alternative for the second
+actual all-five review, after verifying its executable and authentication
+status. The candidate and criterion evidence remain unchanged; no trust rule,
+owner configuration or credential is modified to admit an untrusted binary.
+
 ### September 7 exact installed-candidate proof
 
 The final proof used a fresh canonical wheel from clean detached source

@@ -40,6 +40,7 @@ already exists at `8c7d8df44aa35d4bb7ab7698abaf0f7b2a93e47b`.
 The new exact d1a9260c live proof and explicit product-source clarification are
 committed at `eac2d6a2`, ledger `e4941a75`. The second-review receipt candidate
 is frozen at `eac2d6a2`; the runtime under test remains exact d1a9260c.
+Freeze `d5e36996` and ledger `14f332ec` form its clean pre-review checkpoint.
 
 ## Completed evidence
 
@@ -84,6 +85,13 @@ all 669 compared files/receipt/entrypoint remain unchanged. Fresh focused tests
 pass 67 cases and Ruff is clean. The original criterion is retained verbatim
 beside the explicit final-product-source versus later receipt-commit wording.
 
+At 00:08:38 UTC, Claude admission failed for all five checks with exit 2 and
+no verdict rows: package directory `0775`, bin directory `0755`, production
+resolver explicitly refusing namespace substitution risk. Actor unknown;
+the worker made no chmod repair or unchanged retry. The owner chose supported
+Codex verification against the unchanged candidate after safe version/auth
+inspection; this is the second actual review, not a third judgment pass.
+
 Normal ledger reconciliation resolved the inherited c64ce3ce merge-row failure.
 Documentation validation passes for 1,241 Markdown files with the new pending
 builder and clarified criterion, alongside metadata, policy, worklog and diff.
@@ -106,9 +114,9 @@ was reused before the isolated proof; worker checkpoints the completed slice.
 
 ## Next bounded work package
 
-1. Checkpoint this frozen second-review candidate with its faithful ledger.
-2. Audit all bounded excerpts and recheck telemetry/executable safety. Run the
-   second/final default all-five isolated review under `umask 077`.
+1. Checkpoint the failed Claude admission and its faithful ledger.
+2. Check Codex executable/auth readiness, then telemetry. Run the second/final
+   all-five isolated review with `--provider codex` under `umask 077`.
 3. Preserve every result; stop for analysis if not accepted. No third review,
    unchanged retry or authority weakening. Parent serializes the PR after
    earlier packages; the branch is pushed only to expose d1a9260c to lookup.
