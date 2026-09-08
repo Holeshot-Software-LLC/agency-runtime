@@ -6,6 +6,7 @@ created: 2026-08-25
 updated: 2026-08-25
 tags: [workforce, reranking, retrieval, inference, providers]
 related:
+  - docs/worklog/2026-09-08-reranker-membership-repair.md
   - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
   - docs/roadmap/issue-AR-289-native-reranker-transports.md
   - docs/roadmap/issue-AR-293-safe-inference-profile-config-operations.md
@@ -26,6 +27,11 @@ deciders: [maintainers]
 # ADR-0171: Separate native and structured reranker transports
 
 ## Context
+
+AR-420 implementation `5ff8e85c`, merged in PR803 as `263a0ec3`, binds the
+structured reranker schema to supplied candidate membership while preserving
+inference-owned order, the independent critic and exact membership validation.
+Its roadmap and worklog record the narrow repair and remaining reliability limits.
 
 Agency's dense-recall reranker currently uses the same structured text seam as
 planning and recruitment. That is a useful compatibility contract for local

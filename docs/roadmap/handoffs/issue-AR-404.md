@@ -32,7 +32,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 PR799 merged at58247849. Repair/evidence branch is historical. This recovery
 branch records the merged checkpoint; if merged, create a new owned worktree.
-PR803 carries the AR-420 repair and isolated acceptance; recheck merge state.
+PR803 merged as263a0ec3 with the AR-420 repair and isolated acceptance.
+Its branch is historical; create a new owned worktree for new changes.
 Installed immutable source3fe3d7ba contains OpenClaw repair94b9eb28 and
 Hermes adapteref7a0466; all614
 package files match its verified wheel. OpenClaw and Claude now have fresh
