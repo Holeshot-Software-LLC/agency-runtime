@@ -147,3 +147,5 @@ Review checkpoint `b4899374bac82266e5d4000a43836d84cb9fbe18` adds explicit non-H
 Acceptance checkpoint `35cd65392adcaef9e78dc5f046f6dcb99e2c8270` records four isolated satisfied verdicts and closes only the HTTP-status scope; the full planner payload remains HTTP408 on every bounded comparison.
 
 PR768 merged as `947dfaef34d07303ed23c4e9b909de2edea21ac2`; tracker765 is CLOSED. The verified d08c5008 wheel has identical production code to this merge and is installed in the owner runtime; Codex hook refresh follows.
+
+Owner-install checkpoint `013ab75f66c5c3ce1e147e9fd8794c2ea32aa168` records614matching installed files, a completed Codex refresh and the fresh trust requirement. No live activation is claimed; the planner payload failure remains open.
