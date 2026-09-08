@@ -6,6 +6,8 @@ created: 2026-08-12
 updated: 2026-08-25
 tags: [routing, inference, native-child, codex, evidence, critical-path]
 related:
+  - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
+  - docs/decisions/0236-retire-obsolete-codex-v2-grant-checklist.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/AR-180-codex-0149-compatibility-evidence.md

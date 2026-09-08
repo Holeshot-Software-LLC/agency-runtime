@@ -6,6 +6,10 @@ created: 2026-09-05
 updated: 2026-09-07
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-194-inspect-owned-service-runtimes-across-python-versions.md
+  - docs/roadmap/acceptance/evidence/AR-194-service-runtime-reconciliation-20260907.md
+  - docs/roadmap/issue-AR-191-support-codex-v2-hook-identity.md
+  - docs/roadmap/acceptance/evidence/AR-191-v2-checklist-retirement-20260907.md
   - docs/roadmap/issue-AR-189-add-owned-host-integration-uninstall.md
   - docs/roadmap/acceptance/evidence/AR-189-owner-cli-reconciliation-20260907.md
   - docs/roadmap/issue-AR-409-reserve-required-staffing-calls.md
@@ -372,8 +376,30 @@ focused 127/two Windows skips, named spine 1,085/three skips, UI 224 and
 repository lint/format pass. No production code or owner integration changes,
 acceptance verdict or backlog-count reduction. AR-185/PR736 merged00fc1aef
 at23:55:01Z; AR-408/PR737 mergedbfe21d66 at23:59:35Z and #732 is CLOSED,
-all read back. Parent has authorized serial AR-189 publication; AR-190 and
-AR-191 remain separate packages. Integrated focused rerun:127/two skips5.50s.
+all read back. AR189/PR738 merged f408b6f2 at00:06:15Z September 8;
+AR190/PR740 merged d39ec14d with criterion3's remaining evidence gap preserved.
+AR409 source merged PR739/4db6be16; installed/live delivery is separate.
+Integrated AR189 focused rerun:127/two skips5.50s.
+
+AR-191's records-only checkpoint retires the obsolete July V2 activation-grant
+checklist under ADR-0236, superseded by current AR-255 staffing authority.
+Its exact aliases, arguments, exit-code reporting and existing-Store guards
+remain implemented; 23 fresh offline checks pass. All original checkbox states
+are preserved. AR-180's restricted one-card exec proof is not the removed grant
+graph or its broader TUI/Desktop/multi-card/child-only acceptance. Parent
+published order45 in PR741, merged a8c2ca54 at00:33:11Z September8; normal main
+integration preserves all frozen acceptance candidates. No tracker action or
+fresh global count is claimed.
+
+AR-194's source-only cross-version inspection fix remains implemented. Fresh
+launcher/service-core/service tests pass116 with42 name-filtered deselections
+in2.75s. Installed owner CLI status is read-only and reports a current, owned,
+active, reachable Linux systemd service with no repair needed; four inspection
+modules match source. ADR-0117 removes only the obsolete AR-196 ceremony
+dependency, with reciprocity; all original five criterion states remain.
+Native Windows stale-task/runtime repair and post-repair reachability stay
+open. Queue order47 is reserved after AR-190/191/192; this is a branch-only
+checkpoint, not another completion or a claim of native Windows proof.
 
 The owner requires oldest-first sequential delivery: one record, one PR,
 merge, then the next, without routine approval stops. Windows stays excluded.
@@ -602,8 +628,9 @@ No exhaustive workflow dispatch or unattended restart is implied.
 
 ## Next bounded package
 
-Publish the authorized AR-189 private owner-CLI proof with its Windows hold,
-then release the serial token for parent-coordinated AR-190 and AR-191.
+AR189/190/191 are published. Continue parent-coordinated serial AR192 and
+AR194 packages; merge current main normally, preserving frozen acceptance
+candidates and live identities. Root final delivery begins publication by00:52Z.
 The September 7 continuation ends at 9 p.m. Eastern (September 8, 01:00 UTC);
 leave a clean durable checkpoint. Windows-only work stays with the owner.
 The older AR-152/298/348-first ordering above is historical and does not override

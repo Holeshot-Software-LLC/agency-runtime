@@ -1,121 +1,157 @@
 ---
-title: "AR-190 active recovery capsule"
+title: "AR-190 exact installed uv-plan evidence handoff"
 status: active
 category: roadmap
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-09-08
 tags: [handoff, updates, uv, security, recovery]
 related:
   - docs/roadmap/issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md
+  - docs/roadmap/acceptance/issue-AR-190.md
+  - docs/roadmap/acceptance/evidence/AR-190-installed-uv-plan-20260907.md
+  - docs/roadmap/acceptance/evidence/AR-190-product-source-candidate-20260908.md
   - docs/decisions/0107-resolve-updates-immutably-and-keep-application-attended.md
   - docs/worklog/README.md
-  - README.md
 supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-190
-branch: main
-evidence_commit: 1011a89c61ab7cb1230336b790930f74be85782a
-minimum_ledger_commit: 68206003d4d9fbb3b738ec75f89b6dc6ef7eef91
+branch: codex/ar190-uv-plan-reconciliation
+evidence_commit: eac2d6a20c43d6296741074ff93470470a178bae
+minimum_ledger_commit: 90ec6919fa711bde27f1915dca006f8e76650886
 hard_checkpoint_percent: 50
 tracker_url: null
 ---
 
-# AR-190 active recovery capsule
+# AR-190 exact installed uv-plan evidence handoff
 
-Bounded current-state projection for runnable attended upgrade plans. The
-[canonical issue](../issue-AR-190-make-upgrade-plans-runnable-in-uv-tools.md)
-owns the complete problem, approach, acceptance, and implementation evidence.
+## Checkpoint
 
-## checkpoint
+Evidence branch begins at exact main
+`c64ce3ce54c6e51280292298b5e3600611cb72fc`, then fast-forwarded to its
+existing clean ledger `d28ccc23`. Evidence is now committed at `d1a9260c`,
+with faithful ledger `ae1fe0fc`; the acceptance candidate is frozen at
+`d1a9260c`. Freeze commit `12bce920` and ledger `45716bd5` preceded the first
+isolated acceptance run. The worker owns this worktree's substantive/
+ledger checkpoints and acceptance runs; parent serializes PR publication and
+merge. This evidence-only package is not a done issue. Product implementation
+already exists at `8c7d8df44aa35d4bb7ab7698abaf0f7b2a93e47b`.
 
-- Branch `main` began this package at clean substantive/ledger checkpoint
-  `1011a89`/`6820600`; this capsule ships with the reviewed AR-190 recovery
-  candidate that follows it.
-- End-of-package telemetry reported 41.2 percent remaining and required a clean
-  durable checkpoint before live evaluation.
-- The user-owned untracked files
-  `docs/analysis/2026-07-25-deep-audit-findings.md` and `uv.lock` remain
-  unchanged and excluded.
+The new exact d1a9260c live proof and explicit product-source clarification are
+committed at `eac2d6a2`, ledger `e4941a75`. The second-review receipt candidate
+is frozen at `eac2d6a2`; the runtime under test remains exact d1a9260c.
+Freeze `d5e36996` and ledger `14f332ec` form its clean pre-review checkpoint.
+Second results are preserved at `4d5f1528`, ledger `d7b719bd`. Normal merge
+`7e718c15` plus ledger `90ec6919` integrate accepted main without changing
+the frozen candidate. Retained publication is
+[PR #740](https://github.com/Holeshot-Software-LLC/agency-runtime/pull/740).
 
-## completed-evidence
+## Completed evidence
 
-- The planner recognizes a uv-owned Agency environment only after validating a
-  bounded exact receipt, private prefix, package and interpreter binding,
-  canonical Agency entry point, non-repository uv launcher, and exact default
-  tool/bin targets. Target-changing uv/XDG overrides fail closed.
-- POSIX uv symlinks require stable owner/root-owned executable identity whose
-  resolved target is inside the exact tool prefix. Windows copied entry points
-  remain non-link executables.
-- Pip is used only outside uv ownership after its package entry point is bound
-  to the exact non-repository interpreter and a bounded `pip --isolated
-  --disable-pip-version-check --version` probe succeeds. Both displayed Python
-  commands use `-I`; refresh cannot import a dirty caller checkout.
-- Windows copy/paste output uses the PowerShell call operator and inert
-  single-quoted arguments. An unavailable plan exits nonzero. The dashboard
-  remains a copy-only fixed CLI selector and never receives installer argv.
-- The focused update/CLI package passes 65 tests in 2.68 seconds on Windows,
-  with one POSIX-only symlink test intentionally skipped. Targeted Ruff, format,
-  and diff checks pass. Metadata, policy, and documentation validation pass for
-  487 Markdown files.
-- Independent security and operational rereviews report no remaining scoped
-  blocker. A bounded read-only candidate probe against the actual uv 0.10.9
-  installation selects the expected tool, prefix, bin directory, entry point,
-  and isolated Codex refresh interpreter.
+A clean detached c64ce3ce producer under `umask 077` built the canonical
+portable wheel and sdist. Strict Twine and independent portable verification
+exit zero. Wheel SHA-256:
+`cbf2ce558636cc160c6f0656d6fb0760e0d368ca5d1619fc988596e306c91c7d`.
 
-## exact-blocker
+An existing exact local Docker image ran an isolated default-root uv 0.11.8
+installation. Its real tool environment contains only Agency Runtime 0.1.0 and
+PyYAML 6.0.3, no pip. No UV/XDG or HOME target override was supplied. The
+actual installed CLI plan to the SAME c64ce3ce SHA exits zero at 23:31:01 UTC,
+selects `uv-tool`, emits an immutable install command and a separate isolated
+Codex refresh command, and reports no package/host mutation.
 
-- The reviewed candidate has not yet been committed, installed from its exact
-  final SHA, or used for the attended Codex refresh. Those are the next bounded
-  package, not evidence supplied by this recovery checkpoint.
-- Fresh Codex hook trust and a successful native specialist activation canary
-  remain required before claiming the installed header path works.
-- Tracker creation is an outward-facing write pending explicit authorization.
-- No exhaustive workflow, hosted compatibility matrix, or signed public
-  release gate ran. None is authorized or required for this checkpoint.
+All 669 compared non-bytecode prefix files, the uv receipt and the Agency
+entrypoint hash remain unchanged after planning. No displayed command ran.
+Owner wrappers/input artifacts remained unchanged and both disposable
+containers were removed. The earlier 08fab1c4-to-c64ce3ce success and the
+bubblewrap uid-map failure are preserved separately, not silently upgraded.
 
-## same-task-continuity
+Fresh focused update/CLI tests: 67 passed in 0.83 seconds. Targeted Ruff lint
+and formatting pass. The portable receipt and two raw JSON receipts preserve
+commands, actual output, source/artifact identities, bounds and limitations.
 
-The telemetry threshold requires this clean durable checkpoint, then continued
-work in the same task. It does not pause, transfer, or authorize a new task, an
-exhaustive workflow, or unattended simulation of human presence.
+## Exact blocker
 
-## next-bounded-work-package
+The first default isolated run accepted criteria 1–4 but returned `absent` for
+criterion 5 (`AR-190.5-20260907-42c2bd69`). It found the tests, lint, docs and
+live plan were at c64ce3ce/d28ccc23 rather than documentation candidate
+d1a9260c, and that source equivalence was unverifiable in its snapshot.
+All five actual verdicts are preserved at `a6efa01b`, ledger `0199f8d3`.
+The owner authorized one changed-evidence response and a second/final all-five
+review because changing the receipt candidate invalidates every digest.
+Status remains `in_progress`; no verdict is transplanted or handwritten.
 
-1. Commit this candidate and its exact worklog ledger, then push `main` without
-   dispatching the exhaustive workflow.
-2. Reinstall Agency from that exact SHA and verify `agency version --json` plus
-   a live `agency upgrade` plan from outside the repository.
-3. Run one attended `agency install --agent codex --no-dashboard --json`, then
-   establish fresh terminal hook trust and run one bounded activation canary.
-4. Record exact success or failure evidence and issue a scoped GO/NO-GO.
+A fresh detached d1a9260c wheel (SHA-256
+`98b87cf098bf0b35b4a266d8ee35288e1a366914b7e19f9c6a8579c2ce23e457`)
+passed the canonical build/independent verifier and generated a same-SHA live
+uv plan at 2026-09-08T00:00:19Z. Installed planner hashes equal source hashes;
+all 669 compared files/receipt/entrypoint remain unchanged. Fresh focused tests
+pass 67 cases and Ruff is clean. The original criterion is retained verbatim
+beside the explicit final-product-source versus later receipt-commit wording.
 
-## verification
+At 00:08:38 UTC, Claude admission failed for all five checks with exit 2 and
+no verdict rows: package directory `0775`, bin directory `0755`, production
+resolver explicitly refusing namespace substitution risk. Actor unknown;
+the worker made no chmod repair or unchanged retry. The owner chose supported
+Codex verification against the unchanged candidate after safe version/auth
+inspection; this is the second actual review, not a third judgment pass.
 
-~~~text
-python -m pytest tests/test_update_service.py tests/test_cli_upgrade.py -q -W error
-ruff check agency_runtime/core/update_service.py agency_runtime/cli/upgrade_commands.py tests/test_update_service.py tests/test_cli_upgrade.py
-ruff format --check agency_runtime/core/update_service.py agency_runtime/cli/upgrade_commands.py tests/test_update_service.py tests/test_cli_upgrade.py
-python scripts/docs_metadata.py --check
-python scripts/update_policy_availability.py --check
-python scripts/update_worklog.py --check
-python scripts/verify_docs.py
-node --test tests/dashboard_ui.test.mjs
-agency eval routing --json --no-details
-git diff --check
-~~~
+The second actual Codex review returned satisfied for 1, 2, 4 and 5, and
+`absent` for 3 (`AR-190.3-20260907-67a91336`). Its bounded excerpts include
+rejection-helper tests but omit the already-frozen production caller chain
+at `update_service.py:1220-1263` and `:1285-1318` that maps refusal to no
+commands. The first Claude review could inspect those in its snapshot;
+Codex receives only excerpts. Preserve this evidence omission without
+claiming a new runtime defect. No third review has run; status is in_progress.
 
-## constraints
+Normal ledger reconciliation resolved the inherited c64ce3ce merge-row failure.
+Documentation validation passes for 1,241 Markdown files with the new pending
+builder and clarified criterion, alongside metadata, policy, worklog and diff.
 
-- Use the named fast production spine and focused behavior checks only. Do not
-  run or dispatch the exhaustive corpus, coverage shards, compatibility matrix,
-  or exact-SHA release workflow unless the owner explicitly requests it.
-- Do not execute a displayed upgrade plan automatically. It is valid only
-  unchanged in the same owner-controlled environment that generated it.
-- Do not simulate hook trust, native child activation, or Agency evidence.
-  Owner CLI execution needs no Agency presence ceremony; stop only at genuine
-  external credentials, signing, publication, or harness trust that lacks a
-  supported autonomous mode.
-- Do not stage or alter the user-owned analysis draft or `uv.lock`.
-- No tracker creation, package publication, tag, release, signing action, or
-  exhaustive workflow dispatch without explicit authorization.
+The wheel's self-reported source revision is null, truthfully; its full source
+SHA is bound by the clean detached canonical build and independent verifier.
+No upgrade, Codex refresh, native activation or owner installation change is
+claimed or required by this plan-only proof. The ordinary owner AR-348 venv
+is not uv-owned and was not used as a false uv receipt.
+
+## Same-task continuity
+
+Parent serializes PR publication and merge. Worker now owns AR-190 records,
+ledger/registry reconciliation, builder freeze and isolated verdict execution
+in this exclusive worktree. Preserve unrelated changes.
+
+The telemetry checkpoint applies to durable records, not permission to retry
+failed namespaces or execute a displayed upgrade. The clean source checkpoint
+was reused before the isolated proof; worker checkpoints the completed slice.
+
+## Next bounded work package
+
+1. Preserve the published second results: 1, 2, 4, 5 satisfied and 3 absent,
+   with both actual review histories and exact digests retained.
+2. A targeted criterion-3 caller-excerpt addition
+   could preserve the same candidate and four valid verdicts, but an extra
+   review requires explicit authorization; the default two-pass bound is met.
+3. No unchanged retry, automatic closure or authority weakening. PR #740
+   retains the evidence; the next review is a separate authorized package.
+
+## Verification
+
+Real canonical builder, strict Twine, explicit portable verifier and the
+default-directory installed uv plan all exit zero. The update/CLI package
+passes 67 tests. Exact commands and raw stdout are in the portable receipt.
+The first acceptance run returned four satisfied and one absent; exit zero
+means all verdicts were recorded, not completion. Its full stdout and reasons
+are in the canonical issue and acceptance record.
+Post-integration tests: 67 passed in 0.49 seconds; targeted Ruff and metadata/
+strict docs for 1,257 files pass. Tracker parity passes for 400 roadmap items.
+
+## Constraints
+
+The live uv proof used an existing local Unix-socket Docker engine/image. No image
+pull, remote Docker host, privileged container, owner-home mount, credential,
+service/admin change, host uv install, or provider call occurred in that probe.
+Acceptance separately used the explicitly recorded isolated verifiers. Public dependency and
+official GitHub lookup traffic was bounded. No native Windows execution,
+exhaustive corpus, coverage shards, compatibility matrix or release signing.
+The container setup installs a disposable package; the subsequent plan does
+not execute either displayed package-upgrade or host-refresh command.

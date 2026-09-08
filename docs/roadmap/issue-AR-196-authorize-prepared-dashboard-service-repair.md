@@ -3,7 +3,7 @@ title: "AR-196: Authorize prepared dashboard-service install and repair"
 status: wont_do
 category: roadmap
 created: 2026-07-28
-updated: 2026-07-30
+updated: 2026-09-07
 tags: [windows, dashboard, service, security, operator-presence]
 related:
   - docs/roadmap/issue-AR-204-reconcile-readme-story-contract.md
@@ -31,7 +31,7 @@ issue_id: AR-196
 priority: p0
 tracker_url: null
 depends_on: [AR-143, AR-161, AR-197]
-blocks: [AR-194]
+blocks: []
 ---
 
 # AR-196: Authorize prepared dashboard-service install and repair
@@ -41,6 +41,8 @@ blocks: [AR-194]
 > dashboard service remains ownership-, identity-, lock-, and postcondition-
 > checked, but it no longer requires a separate human-presence ceremony.
 > `dashboard service open` may repair or start the owned service.
+> September 7 reconciliation removes the obsolete AR-194 dependency on this
+> retired ceremony; AR-194 retains its native Windows repair/reachability hold.
 
 ## Problem
 

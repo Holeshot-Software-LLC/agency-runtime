@@ -1,11 +1,15 @@
 ---
 title: "AR-191: Support the Codex V2 native-spawn hook identity"
-status: in_progress
+status: wont_do
 category: roadmap
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-09-07
 tags: [codex, hooks, activation, canary, observability]
 related:
+  - docs/decisions/0236-retire-obsolete-codex-v2-grant-checklist.md
+  - docs/roadmap/acceptance/evidence/AR-191-v2-checklist-retirement-20260907.md
+  - docs/roadmap/handoffs/issue-AR-191.md
+  - docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
   - docs/roadmap/issue-AR-180-prove-codex-specialist-activation-canary.md
   - docs/roadmap/issue-AR-185-bind-codex-activation-verification.md
@@ -23,17 +27,24 @@ related:
   - tests/test_host_hooks.py
   - tests/test_host_canary.py
 supersedes: []
-superseded_by: null
+superseded_by: docs/roadmap/issue-AR-255-inference-owned-host-proven-child-staffing.md
 type: issue
 epic: host-integrations
 issue_id: AR-191
 priority: p0
 tracker_url: null
 depends_on: []
-blocks: [AR-180]
+blocks: []
 ---
 
 # AR-191: Support the Codex V2 native-spawn hook identity
+
+> Retired September 7 under ADR-0236, not accepted against the original nine
+> criteria. AR-255 owns the current inference-owned, host-proven native-child
+> contract. Exact aliases, non-message arguments, truthful exit codes and the
+> existing-Store boundary remain implemented. The July one-use activation-grant
+> checklist and invalid-explicit-turn fallback are obsolete; neither is restored.
+> All original checkbox states below remain historical and unchanged.
 
 ## Problem
 
@@ -50,6 +61,31 @@ process whose bounded output projection is unavailable was reported with a
 synthetic exit code instead of its real process result.
 
 ## Current state
+
+Current source retains the compatibility and diagnostic repairs, with 23 fresh
+focused offline checks passing in 3.47 seconds at `c64ce3ce`. The portable
+receipt maps each original criterion to current source or its explicit
+retirement. A previously executed 64-check package is retained only as a result
+summary, not invented raw output or a new run.
+
+Commit `b222414b` removed the one-use activation-grant API. Commit `7e1b3603`
+requires inference-owned, host-proven delivery and rejects an invalid explicit
+parent turn rather than substituting another open trace. Only an omitted turn
+may use the unambiguous-open-trace fallback. Current native-child matching also
+explicitly supports follow-up names; it is not restricted to spawn events.
+
+The September 7 AR-180 receipt proves one restricted no-bypass Linux Codex
+0.153.4 exec-depth-one canary: one host-written pre-speech v6 card, completed
+child, accepted parent finalization and installation-bound v4 attestation.
+That does not satisfy the obsolete grant graph, prove ordinary encrypted
+spawns, TUI/Desktop, multi-card or child-only placement, or certify this review
+session. AR-180 keeps its broader live requirements; AR-185 and AR-192 keep
+their exact verification and trust obligations.
+
+### Historical July checkpoint
+
+The following original account is retained as historical provenance, not as
+the current delivery algorithm, installation state or next-run instruction.
 
 The candidate enumerates both exact hook identities behind one anchored
 matcher and maps both to the existing canonical `spawn_agent` evidence name.
@@ -94,6 +130,12 @@ one fresh approval and canary.
 
 ## Approach
 
+Retire this superseded checklist under ADR-0236 without runtime changes or an
+acceptance verdict. Keep its implemented compatibility and diagnostic behavior
+covered by current contracts; use AR-255 for native-child staffing and AR-180
+for the remaining live evidence. The original repair approach follows as
+historical provenance:
+
 Keep the compatibility surface explicit and shared between installation and
 runtime handling. Exercise the exact current Codex V2 envelope through
 `PreToolUse`, `SubagentStart`, `PostToolUse`, `SubagentStop`, and `Stop`, reject
@@ -103,12 +145,16 @@ native scheduler.
 
 ## Dependencies
 
-AR-180 owns the live activation proof, AR-185 owns exact current-profile
-verification, and AR-192 owns the trust preflight exposed by the post-install
-attempts. Tracker creation remains pending explicit authorization for the
-outward-facing write.
+AR-255 owns the successor staffing contract. AR-180 owns the broader live
+activation proof, AR-185 owns exact current-profile verification, and AR-192
+owns the trust preflight exposed by the historical post-install attempts.
+This is an exempt pre-tracker legacy record; no duplicate tracker is created
+for its retirement. Current local/tracker parity checks still apply.
 
 ## Acceptance
+
+These are the original nine criteria and their original states, preserved
+verbatim. Retirement is not a claim that all nine are satisfied today.
 
 - [x] Generated Codex hooks match only the exact V1 and V2 native-spawn names.
 - [x] Runtime canonicalization accepts both identities and rejects lookalikes.

@@ -1,0 +1,139 @@
+{
+  "allowed_effects": [
+    "one bounded Codex canary invocation",
+    "nonce-correlated runtime evidence",
+    "activation-attestation replacement"
+  ],
+  "complete": false,
+  "contractors_existing": 0,
+  "contractors_installed": 0,
+  "dashboard": {
+    "attempted": false,
+    "changed": false,
+    "exit_code": null,
+    "ok": null,
+    "status": "not_applicable_activation_verification"
+  },
+  "hosts": [
+    {
+      "activation": {
+        "action": "Close any Codex terminal TUI opened before this install or upgrade, then open a fresh terminal and run `codex`. In that fresh Codex terminal TUI, choose `Trust all and continue` when the startup review lists all 8 Agency Runtime hook events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStart`, `SubagentStop`, `PostCompact`, `Stop`); if it does not appear, run `/hooks` inside that fresh terminal TUI. Codex Desktop's `/hooks` screen manages connector setup and is not the local command-hook trust screen. Then start a new session and run `agency install --agent codex --verify-activation`.",
+        "approval_launch_command": "codex",
+        "approval_surface": "codex-terminal-tui",
+        "complete": false,
+        "desktop_slash_hooks_is_trust_ui": false,
+        "state": "verification_failed",
+        "trust_bypass_used": false,
+        "trust_mode": "attended",
+        "verification": {
+          "attestation_persisted": false,
+          "canary_passed": false,
+          "host": "codex",
+          "invocation": {
+            "failure_reason": "codex_hook_trust_not_ready",
+            "hook_trust": {
+              "disabled_count": 0,
+              "duplicate_count": 0,
+              "error_count": 0,
+              "events": {
+                "postCompact": {
+                  "currentHash": "sha256:5a4a2f44149abb49d10bbf890948414ce8c397725240c9055a937992def8227f",
+                  "enabled": true,
+                  "trustStatus": "modified"
+                },
+                "postToolUse": {
+                  "currentHash": "sha256:481aa53aa285d8f7ed1da246665d753965f0b2a7bfc87698bf257e3a2fa99f55",
+                  "enabled": true,
+                  "trustStatus": "modified"
+                },
+                "preToolUse": {
+                  "currentHash": "sha256:b2d06853883c4ca252aa767309a5e795f454be5c030c05c70a1da6108c911c28",
+                  "enabled": true,
+                  "trustStatus": "modified"
+                },
+                "sessionStart": {
+                  "currentHash": "sha256:3f2e1e7d4ffab4e99b67980dcacf324a92163b8135c71b6ee58c380bb77faa8d",
+                  "enabled": true,
+                  "trustStatus": "modified"
+                },
+                "stop": {
+                  "currentHash": "sha256:a47de1a548833d9e31cf94c76621d10830e399931aaba8155627dc63a7291bfe",
+                  "enabled": true,
+                  "trustStatus": "modified"
+                },
+                "subagentStart": {
+                  "currentHash": "sha256:56976339e70caf02cff3cdb1fae8d15632d35ca42aea2964150915ab9bce2e93",
+                  "enabled": true,
+                  "trustStatus": "modified"
+                },
+                "subagentStop": {
+                  "currentHash": "sha256:08c6c19959a1cb7903b4ed07e5b6b1b0022bdff11a81a0d04f3547358f911a43",
+                  "enabled": true,
+                  "trustStatus": "modified"
+                },
+                "userPromptSubmit": {
+                  "currentHash": "sha256:fd5a12137074c1f2a93e4d970fd2285f8f2c1210b63bf2907f892c69f2a897c4",
+                  "enabled": true,
+                  "trustStatus": "modified"
+                }
+              },
+              "expected_count": 8,
+              "managed_count": 0,
+              "missing_count": 0,
+              "modified_count": 8,
+              "observed_count": 8,
+              "status": "modified",
+              "trusted_count": 0,
+              "unexpected_count": 0,
+              "untrusted_count": 0,
+              "warning_count": 0
+            },
+            "model_invocation_attempted": false
+          },
+          "live_attempted": true,
+          "mode": "agency",
+          "profile_scope": "current-profile",
+          "schema_version": "agency.host_canary.v1",
+          "unmet_prerequisites": [
+            "Codex does not report the settled Agency hook inventory as enabled and trusted",
+            "host invocation did not complete successfully",
+            "host invocation did not return a nonempty response",
+            "final response header was not proven",
+            "exact Codex activation evidence was not proven (route_not_found)"
+          ]
+        },
+        "verification_command": "agency install --agent codex --verify-activation"
+      },
+      "complete": false,
+      "error": "the fresh current-profile canary did not produce a complete bound attestation",
+      "hook_trust_action": "Close any Codex terminal TUI opened before this install or upgrade, then open a fresh terminal and run `codex`. In that fresh Codex terminal TUI, choose `Trust all and continue` when the startup review lists all 8 Agency Runtime hook events (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `SubagentStart`, `SubagentStop`, `PostCompact`, `Stop`); if it does not appear, run `/hooks` inside that fresh terminal TUI. Codex Desktop's `/hooks` screen manages connector setup and is not the local command-hook trust screen. Then start a new session and run `agency install --agent codex --verify-activation`.",
+      "host": "codex",
+      "installation_attempted": false,
+      "installation_changed": false,
+      "installation_identity": {
+        "bundle_digest": "de0ad33410b550feae573076f40e04498902327d17f851dca5177f0e04cc9f2f",
+        "host_version": "codex-cli 0.153.4",
+        "install_id": "0bcd48c2-374a-48b9-8327-80c46c9fa158",
+        "managed_plugin_version": "0.1.0"
+      },
+      "maturity": "activation-required",
+      "ok": false,
+      "status": "activation_verification_failed",
+      "verification_only": true
+    }
+  ],
+  "installation_attempted": false,
+  "ok": false,
+  "profile_scope": "current-profile",
+  "roster_action": "unchanged_activation_verification",
+  "roster_added": 0,
+  "roster_upgraded": 0,
+  "untouched": [
+    "configuration",
+    "runtime and host controls",
+    "roster and workforce governance",
+    "dashboard service",
+    "Codex adapter and trust store"
+  ],
+  "verification_only": true
+}
