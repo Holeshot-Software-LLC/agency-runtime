@@ -62,3 +62,5 @@ wide backlog work. The install refresh did restart its default optional dashboar
 Pre-live checkpoint `2c07c6539a0acfcd943ac85256d07f9d3d204731` records the owner launch repair, fresh trusted hooks and independent MCP startup. Native execution remains pending; this clean recovery pair precedes live evaluation under the context protocol.
 
 Activation checkpoint `60ccac3128d2746281c01989cd7260b6a4dae4e5` records the first normal trusted Codex activation, accepted native execution/finalization and exact latency. Ordinary MCP proof remains pending.
+
+Ordinary-run checkpoint `c1e17448f7107ae94a6c35276e42e965a921b3cb` records working native MCP reads, two planner HTTP failures and the finalizer test's approval/binding limitations. AR-413/#765 preserves the downstream diagnostic follow-up. No ordinary reliability pass or latency improvement is claimed.
