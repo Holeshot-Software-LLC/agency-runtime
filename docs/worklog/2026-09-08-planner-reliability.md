@@ -131,3 +131,5 @@ Installed checkpoint `6debb9f2ae7f0ae43ab1486b0cbd48f7c9e85897` proves all four 
 Evidence checkpoint `ecd1d26be53341d6f0e6f142c9879e34c33c23bb` binds the installed status demonstration, successful conformance rerun and direct deployment probe. Native ordinary staffing remains unverified.
 
 Review checkpoint `b4899374bac82266e5d4000a43836d84cb9fbe18` adds explicit non-HTTP and legacy absence tests;83focused tests pass. Alias and direct deployment both fail the real planner payload with HTTP408.
+
+Acceptance checkpoint `35cd65392adcaef9e78dc5f046f6dcb99e2c8270` records four isolated satisfied verdicts and closes only the HTTP-status scope; the full planner payload remains HTTP408 on every bounded comparison.
