@@ -459,6 +459,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
+| [AR-369](issue-AR-369-stale-host-process-serves-a-superseded-kernel.md) | Diagnostic correction pending source checkpoint | Existing advisory-runtime boundary; no policy change |
 | [AR-412](issue-AR-412-refresh-vulnerable-tooling-lock.md) | Pending substantive checkpoint, `7e66ea84`, `362a6c1e`, `59b541b7`, `8869cb40`, `a27d2c1a`, `ca53e25e`, `f4264b54`; narrow two-package lock refresh, tests deferred | [ADR-0037](../decisions/0037-layered-pinned-supply-chain-gates.md) |
 | [AR-01](issue-AR-01-selection-explain-receipts.md) | [`42f6580`](../worklog/README.md) | [ADR-0015](../decisions/0015-versioned-selection-explain-receipts.md) |
 | [AR-02](issue-AR-02-specialist-coverage-gaps.md) | [`2515bfc`](../worklog/README.md) | [ADR-0013](../decisions/0013-approval-gated-roster-activation.md), [ADR-0021](../decisions/0021-full-companion-policy-with-precedence.md), [ADR-0033](../decisions/0033-explicit-companion-route-availability.md) |

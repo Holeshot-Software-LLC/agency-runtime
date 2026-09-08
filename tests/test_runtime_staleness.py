@@ -72,7 +72,7 @@ def test_non_projection_install_records_no_pointer(pointer_root: Path) -> None:
     assert runtime_staleness.installed_runtime_pointer() == ("", "")
 
 
-def test_drift_is_reported_when_the_running_projection_is_older(
+def test_drift_is_reported_when_the_running_projection_differs(
     monkeypatch: pytest.MonkeyPatch,
     pointer_root: Path,
 ) -> None:
@@ -85,6 +85,42 @@ def test_drift_is_reported_when_the_running_projection_is_older(
     assert drift.running_digest == _DIGEST_A
     assert drift.installed_digest == _DIGEST_B
     assert "agency install --agent claude" in drift.message
+
+
+@pytest.mark.parametrize("host", ["claude", "codex", "hermes", "openclaw", "zcode", ""])
+def test_process_drift_guidance_does_not_claim_installed_files_are_stale(host: str) -> None:
+    drift = runtime_staleness.RuntimeStaleness(_DIGEST_A, _DIGEST_B, host)
+
+    message = drift.message
+
+    assert f"this process runs projection {_DIGEST_A[:12]}" in message
+    assert f"last install published {_DIGEST_B[:12]}" in message
+    assert "does not verify installed hook files" in message
+    assert "Reload or reconnect the Agency integration" in message
+    assert "operator-controlled workflow" in message
+    assert "then start a fresh session" in message
+    assert "Reinstalling alone cannot refresh an already-running process" in message
+    condition = "If a fresh process still reports this mismatch"
+    command = f"`agency install{' --agent ' + host if host else ''}`"
+    assert message.index(condition) < message.index(command)
+    assert "Your installed hooks are stale" not in message
+
+
+def test_republishing_current_files_does_not_reload_a_running_process(
+    monkeypatch: pytest.MonkeyPatch,
+    pointer_root: Path,
+) -> None:
+    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: _DIGEST_A)
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_B), host="codex")
+    before = runtime_staleness.runtime_staleness(host="codex")
+
+    runtime_staleness.record_installed_runtime(_projection_bootstrap(_DIGEST_B), host="codex")
+
+    assert before is not None
+    assert runtime_staleness.runtime_staleness(host="codex") == before
+    assert "Reinstalling alone cannot refresh" in before.message
+    monkeypatch.setattr(runtime_staleness, "running_runtime_digest", lambda: _DIGEST_B)
+    assert runtime_staleness.runtime_staleness(host="codex") is None
 
 
 def test_matching_projection_reports_no_drift(
