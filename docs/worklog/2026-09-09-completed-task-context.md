@@ -253,3 +253,7 @@ regression and fresh native evidence; AGENTS.md still requires all isolated
 verdicts before closure. The same self-reference is removed from AR-422 before its
 first verification. Only AR-421's changed criterion3 will rerun; candidate/source
 and the satisfied criteria1/2 stay unchanged.
+
+AR-421 refined criterion3 is satisfied by isolated runAR-421.3-20260909-fa88f927.
+All three current criteria now have satisfied isolated verdicts. The original
+absent verdict remains preserved; AR-422 initial isolated checks follow.
