@@ -45,3 +45,5 @@ The complete source and packets are in the frozen snapshot, beyond excerpt limit
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-428.1-20260909-48f6c439` | `6e916f411ec40a765fcfff901c66c6c4aa595e05980c1e96c2524d1a5a600b79` | 2026-09-09 | AR-428-original-plan-20260909.json:1-9 preserves the exact request, plan (hash c204826, 5 units) and verbatim rejection approved:false/wrong-neighbor-selection; AR-428-original-contracts-20260909.json:1-7 keeps all 5 selected contracts; both trace to the present captured packet. |
+| 2 | satisfied | `AR-428.2-20260909-aaffa373` | `842a4fb529ccd98ce1fbd39cd42026a431aac39c5bf4c9138fcb759ac8d6d80c` | 2026-09-09 | intent.py:299-397 keeps _TEST_EVIDENCE_BOUNDARY separating static review from test-evidence in both planner and repair prompts; plan_policy.py still requires distinct test-code/test-evidence units; observed plan and binding JSONs keep independent static review with test-results-analyzer forbidden. |

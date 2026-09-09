@@ -1,0 +1,8 @@
+{
+  "published_codex_digest": "37c1bf7d5eb0625b32c0966845c5f4038b768febf535f7d9256b6339d6394ede",
+  "manifest_sha256": "37c1bf7d5eb0625b32c0966845c5f4038b768febf535f7d9256b6339d6394ede",
+  "manifest_matches_digest": true,
+  "verified_projection_files": 651,
+  "mismatches": [],
+  "scope": "Read-only bytes check of existing published recipe19 Codex projection; not recipe20 adoption or running-parent refresh."
+}

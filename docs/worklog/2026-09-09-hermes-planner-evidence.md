@@ -85,3 +85,9 @@ four units, no test-evidence, and downstream independent static review. Type-des
 and silent-failure nominations remain; no sole veto cause is established. The
 owner configuration restored byte-for-byte, with one captured packet and no errors.
 First isolated acceptance assesses the original planning criteria, not host reliability.
+
+## First isolated result
+
+Criteria1 and2 satisfied (`48f6c439`, `aaffa373`). Criterion3 returned no usable
+verifier result; no verdict was recorded. Use the second default pass for criterion3
+only, with unchanged isolated validator and pass-through transport result capture.
