@@ -2300,6 +2300,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c3c47600` | 2026-09-09 | docs(reliability): record verified Claude artifact and retained native failures | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
 | `2a8dc40f` | 2026-09-09 | docs(reliability): preserve Claude permission denials and exact whitespace proof | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
 | `a665c067` | 2026-09-09 | docs(reliability): close isolated card-byte scope and preserve operator gates | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
+| `0cc40aba` | 2026-09-09 | Merge pull request #814 from Holeshot-Software-LLC/codex/ar423-native-context-20260909 | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
