@@ -2362,6 +2362,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `817e6722` | 2026-09-09 | docs(reliability): freeze AR-428 isolated acceptance candidate | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 | `0969646d` | 2026-09-09 | docs(reliability): retain AR-428 partial isolated verification | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 | `5b1632e6` | 2026-09-09 | docs(reliability): accept AR-428 planning boundary with isolated evidence | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `0839e158` | 2026-09-09 | fix(planner): merge PR831 observed test evidence boundary | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
