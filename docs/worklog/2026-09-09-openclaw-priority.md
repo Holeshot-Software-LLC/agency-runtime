@@ -10,10 +10,10 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: 24ddd4a0cca3859fdcefa8db34489843e93fb904
+short: 24ddd4a0
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/830
 related_issues:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
 ---
@@ -58,3 +58,20 @@ Claude; Zcode remains documented and deferred. AR-423 isolated closure is queued
 Observer smoke passed request/response byte preservation, credential forwarding
 without capture, exact synthetic review/follow-up filtering and unrelated request
 exclusion. The script and smoke result are retained under AR-404 evidence.
+
+## Native diagnostic result
+
+Fresh OpenClaw session `agent:openclaw:ar404-20260909-priority-review-followup`
+passed review trace `1b4de6af` in 82.956s and follow-up trace `97af70ee` in
+58.928s, each with five Store-matching headers and authoritative response hashes.
+Exact recorded hashes are `7d6aeb6fb4bcfa8c3714246242d6a1a2f6d575ae319f06362722ee3b72d89028`
+and `45ef9fd59367f5fbac671bca162396914acf1cf200ccd33274f7759307db02b5`.
+The original veto did not recur. No product repair is inferred from this sample.
+
+The observer captured the review's accepted proposal/critic response. Its narrow
+follow-up filter required literal average in the plan and therefore missed that
+packet. This limitation is retained, not described as full critic capture. No
+llm_input observer ran, so Store loads do not establish fresh full native card
+injection. These are header/terminal diagnostic passes, not full-host certification.
+Owner configuration restored byte-for-byte, observer errors zero, gateway RPC
+healthy. Next active host is Hermes; AR-428 has an exact retained planning defect.

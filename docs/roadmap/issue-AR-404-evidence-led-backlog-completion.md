@@ -70,6 +70,13 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+OpenClaw priority diagnostic completed: one fresh review/follow-up pair passed
+five headers and authoritative terminal hashes in 82.956s/58.928s. Original critic
+veto did not recur; only the review packet was captured. Full native card injection
+was not observed in this diagnostic. Owner config restored exactly and gateway RPC
+healthy. Next active host is Hermes (AR-428), then Codex and Claude; Zcode deferred.
+
+
 Owner priority update: OpenClaw, Hermes, Codex, Claude; defer Zcode changes.
 The next bounded package starts with OpenClaw trace
 `bdf2e524-1b4e-4214-8db0-b58733e83b08`: planner/recruiter applied, critic vetoed

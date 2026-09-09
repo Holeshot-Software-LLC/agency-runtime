@@ -88,11 +88,12 @@ No empty recovery pair, forced transfer or failed-receipt reopening.
 
 ## Next bounded work package
 
-Inspect the exact OpenClaw follow-up proposal, selected contracts and critic
-response from one fresh observed sequence. Repair only the demonstrated cause;
-keep shared staffing and critic authority. Restore observer configuration in
-finally and verify normal gateway RPC. Then proceed Hermes, Codex and Claude.
-Zcode remains documented but deferred by the owner.
+OpenClaw's one observed review/follow-up sequence passed headers and authoritative
+completion (82.956s/58.928s). The earlier critic veto did not recur; no repair is
+inferred. Only the review critic packet was captured, and no llm_input observer
+proved fresh full cards. Config restored exactly and gateway RPC healthy.
+Proceed to Hermes's AR-428 captured static-test-evidence planning defect in a new
+owned package, then Codex and Claude. Zcode remains deferred by the owner.
 
 ## Verification
 

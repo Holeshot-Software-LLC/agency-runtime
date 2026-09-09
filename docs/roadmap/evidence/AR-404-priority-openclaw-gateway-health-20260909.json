@@ -1,0 +1,40 @@
+{
+  "rpc": {
+    "ok": true,
+    "kind": "read",
+    "capability": "read_only",
+    "auth": {
+      "role": "operator",
+      "scopes": [
+        "operator.read"
+      ],
+      "capability": "read_only"
+    },
+    "server": {
+      "version": "2026.8.2",
+      "buildId": "2026.8.2-0965053fe6b9-2026-09-01T09-44-31.342Z",
+      "bootId": "66da0420-6b40-4532-9329-14dea2b06e3e",
+      "controlUiBuildSource": "bundled",
+      "connId": "6205f8c6-5595-4986-b79f-c29bb539079e"
+    },
+    "version": "2026.8.2",
+    "url": "ws://127.0.0.1:18789"
+  },
+  "runtime": {
+    "status": "running",
+    "state": "active",
+    "subState": "running",
+    "pid": 2680971,
+    "lastExitStatus": 0,
+    "lastExitReason": "0",
+    "systemd": {
+      "unit": "openclaw-gateway.service",
+      "killMode": "control-group",
+      "tasksCurrent": 12,
+      "memoryCurrent": 473915392,
+      "result": "success",
+      "nRestarts": 0,
+      "startLimitBurst": 5
+    }
+  }
+}
