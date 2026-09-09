@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-427
-candidate_commit: pending
+candidate_commit: 1c0e3c16921b38974b02280cf8334834a90ec0a3
 evidence_cutoff: 2026-09-09
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825
 ---
@@ -29,10 +29,12 @@ are present in the candidate snapshot when excerpts end.
 
 | Criterion | Kind | Artifact | Observed | Source |
 |---|---|---|---|---|
-| 1 | file | Exact prior native selected team and missing fifth independent reviewer with session/trace | 2026-09-09 | docs/roadmap/evidence/AR-427-original-selected-team-omission-20260909.json:1-156 |
+| 1 | file | Exact prior native selected team and missing fifth independent reviewer with session/trace | 2026-09-09 | docs/roadmap/evidence/AR-427-original-selected-team-omission-20260909.json:1-120 |
+| 1 | file | Retained binding tail, delivered identities and omitted fifth assurance worker | 2026-09-09 | docs/roadmap/evidence/AR-427-original-selected-team-omission-20260909.json:121-156 |
 | 2 | file | Complete-team hydration enforces selected-set equality before any load | 2026-09-09 | agency_runtime/core/specialist_context.py:344-397 |
 | 2 | file | Shared preflight invokes complete-team delivery with existing context budget | 2026-09-09 | agency_runtime/core/preflight.py:1180-1230 |
 | 2 | test | Five-host, native retrieval and missing/oversize regressions; final eight lines remain in snapshot | 2026-09-09 | tests/test_complete_selected_team.py:1-120 |
+| 2 | test | Final no-load assertion for incomplete-team failures | 2026-09-09 | tests/test_complete_selected_team.py:121-128 |
 | 2 | command-output | Corrected baseline and candidate test logs | 2026-09-09 | docs/roadmap/evidence/AR-427-causal-baseline-summary-20260909.json:1-26 |
 | 3 | file | Full native card text with exact selected immutable reference, native message and context offsets | 2026-09-09 | docs/roadmap/evidence/AR-427-hermes-full-card-application-security-engineer-20260909.json:1-22 |
 | 3 | file | Full native card text with exact selected immutable reference, native message and context offsets | 2026-09-09 | docs/roadmap/evidence/AR-427-hermes-full-card-code-reviewer-20260909.json:1-22 |
