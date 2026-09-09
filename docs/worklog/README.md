@@ -2309,6 +2309,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `907c894e` | 2026-09-09 | docs(acceptance): add exact terminal rejection regression evidence | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 | `3a9e127b` | 2026-09-09 | docs(acceptance): freeze supplemented OpenClaw verification candidate | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 | `b5beaabf` | 2026-09-09 | docs(acceptance): complete isolated OpenClaw CLI finalization scope | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `271480fe` | 2026-09-09 | Merge pull request #816 from Holeshot-Software-LLC/codex/ar404-shared-staffing-20260909 | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
