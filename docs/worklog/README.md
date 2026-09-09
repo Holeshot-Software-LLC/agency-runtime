@@ -2307,6 +2307,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c823608c` | 2026-09-09 | docs(acceptance): freeze bounded OpenClaw evidence references | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 | `b62c31c7` | 2026-09-09 | docs(evidence): verify fresh trusted Codex native continuation | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 | `907c894e` | 2026-09-09 | docs(acceptance): add exact terminal rejection regression evidence | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `3a9e127b` | 2026-09-09 | docs(acceptance): freeze supplemented OpenClaw verification candidate | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
