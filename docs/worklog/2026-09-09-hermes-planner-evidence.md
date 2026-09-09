@@ -12,10 +12,10 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: 0ac9d78e2b632343dc6785f6a13e65c76af5e91c
+short: 0ac9d78e
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/831
 related_issues:
   - docs/roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md
 ---
@@ -55,7 +55,9 @@ contract under ADR-0200; it does not redefine test results or grant execution.
 Final recipe20 focused checks: 164 passed / 1 skipped in 33.93s. Named fast
 production spine: 1151 passed / 3 skipped in 68.89s. UI224, routing, Ruff788,
 metadata, policy, documentation1379 and strict tracker419 pass. Frozen conformance,
-canonical artifact, installed native evidence and isolated acceptance remain pending.
+installed native evidence and isolated acceptance remain pending. Canonical artifact
+`ecf8a584` passes strict Twine, independent verification, portable installed smoke
+and all616 installed file comparisons; Hermes refreshed on recipe20.
 No exhaustive or Windows workflow ran. The exact original packet remains in
 AR-428-captured-native-critic-packet-20260909.json.
 
