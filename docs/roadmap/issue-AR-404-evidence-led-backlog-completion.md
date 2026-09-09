@@ -66,6 +66,15 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+Fixed baseline continues: Codex review and multi-step now have exact selected-card
+proof as well as accepted matching response hashes. Hermes normal review187.194s
+also passes exact card/hash; its follow-up and multi-step both hit the360second
+limit. Follow-up records120second recruiter and critic timeouts. Preserve these
+failed cases. OpenClaw observer now installed for exactly four suite sessions;
+normal confirmed stop/install/start succeeded, only plugins configuration changed,
+and RPC is healthy. Next: OpenClaw baseline before candidate installation.
+
+
 September9 implementation checkpoint: AR-421/#808 preserves completed-task
 follow-up context with fresh staffing. Focused152pass; original-source negative
 control7fail/12pass. Production1151pass/3skip, UI224pass, Ruff pass. Candidate

@@ -67,8 +67,7 @@ AR-421/#808 candidate fixes completed-task context loss with fresh inference.
 Focused152pass; original version5 negative control7fail/12pass, including actual
 preflight handoff. Production1151pass/3skip, UI224, Ruff pass. Not installed yet.
 Codex frozen baseline: review73.147s and multi-step114.055s completed with exact
-accepted hashes; same-session "go for it"84.122s staffing failed. Native card
-inspection pending. See evidence/AR-404-codex-suite-baseline-20260909.json.
+accepted hashes; same-session "go for it"84.122s staffing failed. Full exact selected cards match native context. See evidence/AR-404-codex-suite-baseline-20260909.json.
 
 AR-422/#809: latest Claude npm update receipt2.1.261to2.1.266 matches directory
 replacement. Process umask002/npmadditionalmask0 explains775parents. Offline
@@ -76,6 +75,8 @@ fixture proves npm configmask022 alone leaves writable root/executable; no npm
 config changed. Supported native install2.1.266 under077 now owns native PATH
 launcher,700parents; normal executable gate and Agencyrefresh pass. Existing
 user terminals untouched. Native turn/update-survival gates pending.
+Hermes baseline review187.194s proves exact card/accepted hash; follow-up and
+multi-step both hit360s timeout. Keep failures; next is OpenClaw baseline.
 
 Hermes native candidate59e52e556a remains unpublished/default unadopted;
 34native/94adapter tests and one source-candidate success are historical. Baseline

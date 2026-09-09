@@ -315,9 +315,59 @@
         "authoritative": true
       },
       "exact_finalization_match": true,
-      "exact_card_injection": "pending inspection of native session record",
+      "exact_card_injection": true,
       "answer_gate": "satisfied by supplied-code inspection; no executed-test claim",
-      "verdict": "native card gate pending"
+      "verdict": "accepted scoped native turn",
+      "native_card_proofs": [
+        {
+          "slug": "code-reviewer",
+          "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+          "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "prompt_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "prompt_chars": 2379,
+          "full_body_in_native_context": true
+        }
+      ],
+      "store_header_evidence": {
+        "model_receipt": {
+          "id": "6afe1c88-4dd3-4ebf-bc99-c9c41b09fc98",
+          "trace_id": "01a0859e-40b9-72f3-bda0-e483d1357d04",
+          "session_id": "01a0859e-404a-7ac1-ac37-3b3ce550235e",
+          "host": "codex",
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "wrapper",
+          "recorded_at": "2026-09-09T10:03:17.965000+00:00",
+          "started_at": "2026-09-09T10:03:17.962000+00:00",
+          "ended_at": "2026-09-09T10:03:17.962000+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "code-reviewer"
+        ],
+        "resident_managers": [
+          "agency-steward"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "code-reviewer",
+            "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+            "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+            "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance \u2014 not style preferences.",
+            "capabilities": [
+              "review diffs for correctness and regressions",
+              "identify security and maintainability defects",
+              "rank findings by impact and evidence"
+            ]
+          }
+        ],
+        "delegations": []
+      }
     },
     {
       "case": "short_followup",
@@ -828,9 +878,121 @@
         "authoritative": true
       },
       "exact_finalization_match": true,
-      "exact_card_injection": "pending inspection of native session record",
+      "exact_card_injection": true,
       "answer_gate": "satisfied by supplied-code inspection; no executed-test claim",
-      "verdict": "native card gate pending"
+      "verdict": "accepted scoped native turn",
+      "native_card_proofs": [
+        {
+          "slug": "python-application-engineer",
+          "version": "contractor-4-7fc606fc0e5dda5b",
+          "hash": "sha256:7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+          "prompt_sha256": "7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+          "prompt_chars": 3072,
+          "full_body_in_native_context": true
+        },
+        {
+          "slug": "code-reviewer",
+          "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+          "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "prompt_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "prompt_chars": 2379,
+          "full_body_in_native_context": true
+        },
+        {
+          "slug": "software-test-engineer",
+          "version": "contractor-4-336f7dccc2212825",
+          "hash": "sha256:336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+          "prompt_sha256": "336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+          "prompt_chars": 3193,
+          "full_body_in_native_context": true
+        },
+        {
+          "slug": "test-results-analyzer",
+          "version": "sha256:ba8951463f614c9ab8a56ced77f0fc755dc1bce1a73256981a2fe22c9c6f62e5",
+          "hash": "2071972c9c0d3fe534ddf69d80c65c2417c4df425917c6ea17946bc6a1d63897",
+          "prompt_sha256": "2071972c9c0d3fe534ddf69d80c65c2417c4df425917c6ea17946bc6a1d63897",
+          "prompt_chars": 2603,
+          "full_body_in_native_context": true
+        }
+      ],
+      "store_header_evidence": {
+        "model_receipt": {
+          "id": "50ff81d8-0056-40c9-b66c-05ed41482558",
+          "trace_id": "01a085a0-a6eb-76e1-b1d2-1c09b6201a06",
+          "session_id": "01a085a0-a68b-7da3-ba25-30cc736e0e75",
+          "host": "codex",
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "wrapper",
+          "recorded_at": "2026-09-09T10:06:31.628000+00:00",
+          "started_at": "2026-09-09T10:06:31.625000+00:00",
+          "ended_at": "2026-09-09T10:06:31.625000+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "python-application-engineer",
+          "code-reviewer",
+          "software-test-engineer",
+          "test-results-analyzer"
+        ],
+        "resident_managers": [
+          "agency-steward"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "python-application-engineer",
+            "version": "contractor-4-7fc606fc0e5dda5b",
+            "hash": "sha256:7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+            "description": "Production Python applications, services, and CLIs",
+            "capabilities": [
+              "Maintainable production Python behavior",
+              "Portable Python packaging",
+              "Async Python design",
+              "Typing and tests"
+            ]
+          },
+          {
+            "slug": "code-reviewer",
+            "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+            "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+            "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance \u2014 not style preferences.",
+            "capabilities": [
+              "review diffs for correctness and regressions",
+              "identify security and maintainability defects",
+              "rank findings by impact and evidence"
+            ]
+          },
+          {
+            "slug": "software-test-engineer",
+            "version": "contractor-4-336f7dccc2212825",
+            "hash": "sha256:336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+            "description": "Implementation of software test suites and failure-path harnesses",
+            "capabilities": [
+              "Meaningful executable test coverage",
+              "Reproducible failure detection",
+              "Unit tests",
+              "Integration tests"
+            ]
+          },
+          {
+            "slug": "test-results-analyzer",
+            "version": "sha256:ba8951463f614c9ab8a56ced77f0fc755dc1bce1a73256981a2fe22c9c6f62e5",
+            "hash": "2071972c9c0d3fe534ddf69d80c65c2417c4df425917c6ea17946bc6a1d63897",
+            "description": "Expert test analysis specialist focused on comprehensive test result evaluation, quality metrics analysis, and actionable insight generation from testing activities",
+            "capabilities": [
+              "analyze supplied test results",
+              "identify failure patterns",
+              "review quality-risk evidence"
+            ]
+          }
+        ],
+        "delegations": []
+      }
     }
   ]
 }

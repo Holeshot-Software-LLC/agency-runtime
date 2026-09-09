@@ -73,3 +73,26 @@ hosts are pending. No exhaustive or Windows dispatch.
 Install a verified candidate artifact, repeat the same fixed requests and obtain
 isolated acceptance forAR-421/422. Complete Hermes default adoption, OpenClaw
 injection and Zcode answering gates underAR-404. Preserve every baseline outcome.
+
+## Baseline continuation
+
+Codex full cards match every exact selected Store version on the review and
+multi-step turns, and their accepted terminal hashes match stdout. The failed
+short follow-up is retained. Hermes normal native review187.194s has exact card
+in native API context and matching accepted response; short follow-up times out
+at360s (363.486s including termination), with recruiter and critic each timing
+out after120s. Multi-step times out at360s (368.628s including termination), Store
+interrupted. Both failed cases remain in evidence.
+
+OpenClaw's bounded four-session observer was installed using native capability
+consent and approved normal gateway maintenance. Stop initially refused without
+the explicit operator-service flag; confirmed stop/install/start all exit0 and
+RPC is healthy. Only plugins configuration changed. No delivery was requested.
+
+Candidate artifactdb1c642f built and independently verified; wheel SHA256
+9592253ba3d90d362d1ed05daaf641243f2cf598b6d87d5a0a9df28e96c7face.
+Initial conformance baseline failed because inherited umask002 creates unsafe
+test paths. Corrected invocation sets process077, preserves the failed report,
+and is still running. Additional selector/context43tests pass. One earlier
+command named a nonexistent test file and ran no tests; corrected selection
+is the43pass result. Candidate installation waits for the frozen baseline.
