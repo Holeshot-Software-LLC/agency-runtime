@@ -33,6 +33,11 @@ safely be worked around by reading that file automatically.
 
 ## Current state
 
+September9 owner-approved Claude grant: the two exact native MCP Allow rules
+are now saved and read-back verified; every other setting is preserved. A fresh
+one-attempt large-context probe is pending. See AR-423-approved-tool-grant-20260909.json.
+
+
 Claude2.1.266 session3997acd8-f882-47ac-b4d2-e7a591193b10, follow-up trace
 f725587c-7478-4fdb-8f8b-ba1c58e57b73: classifier6 preserves completed-task context,
 fresh inference selects four specialists and the response finalizes. Native

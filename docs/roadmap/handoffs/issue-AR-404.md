@@ -19,7 +19,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-shared-staffing-20260909
+branch: codex/ar423-claude-tool-grant-20260909
 evidence_commit: b62c31c7ea6fecae5bd407e9bd2e2730d055d4f4
 minimum_ledger_commit: 6a3dc1541da56d94426046b9a628a00c9187d130
 hard_checkpoint_percent: 50
@@ -35,7 +35,7 @@ closed with isolated evidence; AR-404/418/423 open; AR-419 now isolated-complete
 codex/ar404-shared-staffing-20260909 applies the approved shared staffing config.
 Only Hermes/OpenClaw overrides removed; other settings/answering models unchanged.
 Fresh Codex inspection: all8hooks enabled/trusted, no modified/missing entries.
-Claude per-tool grant is pending; /permissions instructions are now documented.
+Claude per-tool grant is approved, applied and read-back verified; native probe pending.
 Installed production cd86e40a/artifact0cd4f289 unchanged,615files match. Claude/Zcode
 projection07d88875a9e6; Codex/Hermes/OpenClaw1825059191a2. This parent has a stale
 long-lived integration and previously failed finalizer transport. Fresh processes
@@ -119,7 +119,7 @@ the separate multi-step still fails critic selection.
 The owner now authorizes shared staffing. Hermes/OpenClaw override removal is
 applied; all five hosts resolve identical requested per-stage profiles. This is
 not proof of identical actual backend selection, speed or reliable responses.
-Claude's two native MCP Allow rules remain pending a normal owner grant.
+Claude's two native MCP Allow rules are now owner-approved and saved.
 
 Hermes upstream port30f421ecce onbf53ff00a7 is ready nativePR106490. Repository
 stores the complete AR-418-hermes-upstream-terminal-20260909.patch. Five red
@@ -141,7 +141,7 @@ Investigate the exact retained recruiter/critic and missing-header failures unde
 AR-404 before another bounded phase; no unchanged-condition retry.
 The shared-staffing phase is complete with every failed case retained.
 No observer remains; normal gateway RPC is healthy.
-Wait for Claude's exact per-tool grant before repeating its card surface probe.
+Run the approved Claude after_tool_permission surface probe once.
 Zcode review/follow-up passed but multi-step failed; retain that scope and evidence.
 No manual specialists, altered critic decisions or unchanged-condition retries.
 

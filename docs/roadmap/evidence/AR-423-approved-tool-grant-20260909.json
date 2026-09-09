@@ -1,0 +1,15 @@
+{
+  "observed": "2026-09-09T14:45:41.159157+00:00",
+  "authorization": "Owner replied yes to adding the two exact Claude Allow rules",
+  "added_rules": [
+    "mcp__plugin_agency-preflight_agency-runtime__agency_load_specialist",
+    "mcp__plugin_agency-preflight_agency-runtime__agency_finalize"
+  ],
+  "settings_scope": "Claude user permissions.allow",
+  "other_settings_unchanged": true,
+  "native_permission_mode": "default",
+  "before_sha256": "4600742bbb3926381e345ab88917c9a8d559be94a78b501a41bfa7bd818f94a2",
+  "after_sha256": "85d20b9c911ef51c64cf4c01c6e62c451ce08e6d0f630146967f9cd57a432cc4",
+  "private_backup_preserved": true,
+  "native_verification": "pending"
+}

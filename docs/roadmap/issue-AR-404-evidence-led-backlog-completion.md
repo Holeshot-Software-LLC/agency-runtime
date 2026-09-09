@@ -68,6 +68,11 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+September9 owner-approved Claude grant: the two exact native MCP Allow rules
+are now saved and read-back verified; every other setting is preserved. A fresh
+one-attempt large-context probe is pending. See AR-423-approved-tool-grant-20260909.json.
+
+
 PR816 scoped result: shared staffing is applied, Codex8/8trusted and fresh
 review/follow-up pass; AR-419 now has four satisfied isolated native-CLI criteria.
 The nine-case sample passes4/9, with every failure retained. AR-404 remains open.
