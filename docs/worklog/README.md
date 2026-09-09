@@ -27,9 +27,6 @@ This registry connects repository history to the roadmap and to optional detail 
 <!-- worklog:start -->
 | Short SHA | Date | Subject | Related issue | Detail |
 |---|---|---|---|---|
-| `38fa9e43` | 2026-09-09 | docs: prepare authorized AR-423 native acceptance packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
-| `b91225d7` | 2026-09-09 | docs: freeze authorized AR-423 isolated packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
-| `20cf3c64` | 2026-09-09 | docs: retain AR-423 third verdicts and complete-team blocker | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
 | `5eb4de18` | 2026-07-08 | Add complexity tier to model header + fix post_api_request race condition | null | null |
 | `cfc7d381` | 2026-07-08 | Fix dynamic model resolution: capture actual model from response, not SpendLogs | null | null |
 | `886d6cfa` | 2026-07-08 | Fix: post_tool_call hook captures specialist loads, not just skills | null | null |
@@ -2341,8 +2338,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a5b5caac` | 2026-09-09 | docs: freeze corrected AR-426 pointer evidence | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `abdb69aa` | 2026-09-09 | docs: record blocked AR-426 isolated verdicts and recovery | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `73ab49d2` | 2026-09-09 | docs: seal AR-426 blocked delivery checkpoint | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `38fa9e43` | 2026-09-09 | docs: prepare authorized AR-423 native acceptance packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
+| `b91225d7` | 2026-09-09 | docs: freeze authorized AR-423 isolated packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
 | `d8b7b418` | 2026-09-09 | docs: scope authorized Hermes critic capture | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `176adc19` | 2026-09-09 | fix(preflight): preserve every inferred specialist in the delivered team | [AR-427](../roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `20cf3c64` | 2026-09-09 | docs: retain AR-423 third verdicts and complete-team blocker | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
+| `5848f315` | 2026-09-09 | docs: integrate current reliability records into AR-423 audit | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
