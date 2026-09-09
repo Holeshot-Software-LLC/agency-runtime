@@ -1,11 +1,13 @@
 ---
 title: "AR-424: Preserve the final specialist card bytes in native hook context"
-status: open
+status: done
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
 tags: [native, context, exact-delivery]
 related:
+  - docs/decisions/0241-deliver-large-claude-card-sets-through-versioned-mcp.md
+  - docs/worklog/2026-09-09-claude-native-context-delivery.md
   - docs/roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
@@ -32,8 +34,14 @@ card, breaking exact immutable prompt delivery.
 
 A four-card regression through the real Zcode hook bridge reproduces the issue:
 the first three complete bodies match; the last matches only after stripping.
-The adjacent AR-423 owned candidate removes this trim. That candidate is not
-part of PR810's production change and is not installed or accepted yet.
+The AR-423 owned candidate removes this trim and tests full leading/trailing
+whitespace through the shared native bridge. PR810 is merged; this separate
+source cd86e40a is installed from artifact 0cd4f289 with all 615 package files
+matching. Focused 166 passed/6 skipped, production 1151 passed/3 skipped, UI224
+and source conformance188/188. Its isolated builder cites only the byte-preservation
+scope; all three second-pass verdicts are satisfied (04121983, 6dbff237, 5b3a847c).
+The first provenance-related absent verdict remains in the evidence record.
+AR-423 native large-card delivery stays open.
 
 ## Approach
 
@@ -50,7 +58,7 @@ all-host evidence and requires the owned-worktree, PR and merge workflow.
 
 Repository-required isolated verdicts govern closure after these criteria are judged.
 
-- [ ] Reproduce the final-card byte mismatch through the real hook bridge.
-- [ ] Preserve every selected full card exactly, including trailing whitespace,
+- [x] Reproduce the final-card byte mismatch through the real hook bridge.
+- [x] Preserve every selected full card exactly, including trailing whitespace,
       without changing inference, critic or finalization policy.
-- [ ] Verify the focused shared-host regression and required production checks.
+- [x] Verify the focused shared-host regression and required production checks.

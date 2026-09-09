@@ -2186,6 +2186,11 @@ class Store(
                 ),
                 "delivery_mode": str(recipe["delivery_mode"]) if recipe is not None else "",
                 "selected_specialists": selected_specialists,
+                **(
+                    {"specialist_context_via_mcp": True}
+                    if recipe is not None and recipe.get("specialist_context_via_mcp") is True
+                    else {}
+                ),
                 "specialist_activations": specialist_activations,
                 "delegations": delegations,
             }

@@ -3,7 +3,7 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-09-07
+updated: 2026-09-09
 tags: [release, changelog]
 related:
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
@@ -393,6 +393,10 @@ changes rather than duplicating every commit.
   cycle, and will not be removed before 0.3.0.
 
 ### Fixed
+
+- Preserve full Claude specialist cards across native hook context limits using
+  exact selected-version MCP retrieval, with loaded headers based on actual calls.
+- Preserve the final inline specialist card's trailing whitespace across hosts.
 
 - Plan completeness respects explicit `not a request to change` and `not asking
   you to change` exclusions without hiding separate positive mutation clauses

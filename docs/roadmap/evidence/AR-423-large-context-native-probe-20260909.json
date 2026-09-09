@@ -1,0 +1,10 @@
+{
+  "issue": "AR-423",
+  "phase": "large_context_surface",
+  "observed": "2026-09-09",
+  "purpose": "One distinct native task exercising the new large selected-card delivery surface; never replaces the failed fixed sample.",
+  "attempts": 1,
+  "deadline_seconds": 360,
+  "manual_specialist_selection": false,
+  "request": "Review this supplied Python download-path helper for correctness and input security:\n\nfrom pathlib import Path\n\ndef download_path(root, name):\n    return Path(root) / name\n\nRequirements: return a resolved path strictly inside the configured root; reject absolute names, parent-directory traversal and symlink escapes with ValueError. Explain the defects, provide a corrected function, and give focused pytest cases for valid nested paths, absolute names, traversal and symlink escapes. State filesystem assumptions and remaining race limitations. Work only from this supplied snippet; do not read or modify files or execute tests, and do not claim execution."
+}

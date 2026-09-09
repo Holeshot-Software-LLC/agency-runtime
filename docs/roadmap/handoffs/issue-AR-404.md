@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-reliability-suite-20260909
-evidence_commit: 12138e8b622c81b696f661198266b1d91d1271fd
-minimum_ledger_commit: 638dc4bc68657ebb98834c7c22661ca00465aa18
+branch: codex/ar423-native-context-20260909
+evidence_commit: cd86e40a994bd7d6fad8699047140a8e369718a0
+minimum_ledger_commit: 0cd4f2897b12f9a3de1f277303ba381dd6aa61d5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -30,13 +30,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Main was clean/synchronized77f6773f. Owned worktree branch
-codex/ar404-reliability-suite-20260909; draftPR810. Production repaircf4ed77f,
-artifact source db1c642f. Wheel SHA256
-9592253ba3d90d362d1ed05daaf641243f2cf598b6d87d5a0a9df28e96c7face:
-all614package files match; fresh isolated interpreter classifier6. Native refresh
-publishes1825059191a2; Codex plugin64c34689b8a1. No all-host completion.
-AR-404/418/419/423/424 open; AR-421/422 have all3isolated verdicts satisfied; AR-414/415/420 closed only against isolated scopes.
+Main last checked clean/synchronized b801c08f after PR810 and merge ledger PR813.
+PR810 merged at 3a921c61; AR-421/422 closed with all isolated criteria satisfied.
+Delivery PR814 uses owned branch codex/ar423-native-context-20260909, source
+cd86e40a and artifact0cd4f289. All615 installed package files match wheel SHA256
+3cea5770b896f788b790675db8dda8ea1321638e899bb57633198ab7266c211e.
+Claude/Zcode normal installs publish07d88875a9e6; their fresh recipe is16.
+Codex/Hermes/OpenClaw installed pointers remain1825059191a2; this long-lived
+Codex conversation still executes6e7dc299c23e. Installation is not fresh-process proof.
+AR-404/418/419/423 open; AR-424 all three isolated verdicts satisfied; closure travels with PR814. No all-host
+completion. After PR814 merges, its named branch is historical: create a new owned
+worktree for the next changes. The worklog records exact merge commits.
 
 ## Completed evidence
 
@@ -88,9 +92,10 @@ binds CLI session/native trace and Agency trace; their trace IDs differ.
 
 ## Exact blocker
 
-AR-421 fixes completed-task context loss with fresh staffing; scoped isolated
-builder prepared, now also cites Zcode full native follow-up. AR-422 native
-executable builder prepared. No builder-authored verdicts; verify before closure.
+AR-423/424 source cd86e40a / artifact 0cd4f289 is installed, draft PR814. Recipe 16 supplies a bounded
+Claude hook and exact selected-version MCP retrieval; pending cards are not
+reported loaded. Shared bridge preserves trailing card bytes. Native delivery
+and isolated acceptance remain pending. See the AR-423 capsule and worklog.
 
 Codex native trust requires the owner's fresh terminal startup review or /hooks;
 8modified/0trusted. This long-lived conversation itself still reports the old
@@ -110,35 +115,34 @@ truncation cause/token cap unproven. OpenClaw exact input remains to be observed
 
 ## Same-task continuity
 
-Read2026-09-09-completed-task-context.md and frozen evidence. Continue this owned
-branch; capsule's older branches are historical/merged. At/below50percent,
+Read2026-09-09-completed-task-context.md and frozen evidence. Continue the current AR-423 owned
+branch; PR810 and PR813 branches are historical/merged. At/below50percent,
 checkpoint smallest safe substantive/ledger pair and continue the same task.
 Never pause, create a new task or transfer for telemetry. Preserve Windows work.
 
 ## Next bounded work package
 
-AR-421 criteria1/2 satisfied; first criterion3 absent due self-referential request
-for existing isolated verdicts. Original verdict retained; changed criterion3
-now judges observable regression/native evidence, isolated closure gate unchanged.
-Refined AR-421 criterion3 now satisfied (fa88f927); all3current verdicts pass.
-AR-422 all3initial verdicts also satisfied. Deliver PR810 with exact merge ledger
-and close only AR-421/422. AR-423/424 candidate worktree is
-branch codex/ar423-native-context-20260909 (not installed); source repairs native
-large-card retrieval and final-card whitespace, initial104focused tests pass.
-The observer probe is retained as failed staffing, not AR-419 acceptance; the
-observer is removed and gateway healthy. Further H/O trials await the model choice.
-Continue remaining host repair: AR-423 delivery and Hermes normal upstream adoption;
-Codex trust and staffing-model choice remain pending owner actions. No all-host
-claim from ordinary successes while multi-step samples fail.
+AR-423/424 fast checks and artifact verification pass; conformance passes 188/188.
+Claude fixed sample: review accepted; follow-up response_invalid; multi-step staffing
+failed. Separate four-card MCP probe: hook4741units versus cards11604, no pointer; all
+loads denied by native permissions. Truthful loaded:none, accepted Stop response.
+AR-423 waits for attended agency_load_specialist permission; no full-card proof. No unchanged-condition staffing retries.
+Keep AR-418/419/404 open; Hermes upstream default adoption, OpenClaw exact accepted
+input, Codex trust and the owner staffing-model decision remain unresolved.
+Zcode review/follow-up passed but multi-step staffing failed; keep it in scope.
 
 ## Verification
 
-Focused152pass plus selector/context43pass. Original classifier5 negative control
-7fail/12pass. Production spine1151pass/3skip; UI224; Ruff782files; docs1352,
-tracker414; routing pass. Frozen conformance188/188 under process077; initial002
-baseline failure retained, no mutation ran then. Source unchanged sincecf4ed77f.
-Worklog generated index2260commits current after moving our five rows inside its
-marker. No exhaustive corpus, coverage gate or Windows matrix dispatched.
+Current production cd86e40a: expanded focused166pass/6skip, spine1151pass/3skip,
+UI224, Ruff784files, routing, docs1357 and tracker415 pass. Original native-hook
+negative control emits15076UTF-16 units; original shared-host card-byte test fails.
+The repaired shared-host case passes separately. Fresh-source conformance188/188,
+no survivors or invalid mutations, source unchanged. Packaged smoke and canonical
+build/distribution verification pass; installed615files exactly match the wheel.
+AR-424 initial criteria1/2 satisfied; criterion3 absent on provenance, retained.
+Second packet includes exact production/test tree identities and the named check;
+all three second-pass verdicts are satisfied (04121983, 6dbff237, 5b3a847c).
+No exhaustive corpus, coverage gate, compatibility or Windows matrix dispatched.
 
 ## Constraints
 

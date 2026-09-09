@@ -204,6 +204,26 @@ def _explain_selection(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     )
 
 
+def _selected_or_active_prompt(
+    store: Any, session_id: str, trace_id: str, slug: str
+) -> dict[str, Any] | None:
+    run_getter = getattr(store, "get_run", None)
+    run = run_getter(trace_id) if callable(run_getter) else {}
+    if not isinstance(run, Mapping) or run.get("host") != "claude":
+        return store.get_specialist_prompt(slug)
+    getter = getattr(store, "get_completion_evidence_snapshot", None)
+    snapshot = getter(session_id, trace_id) if callable(getter) else {}
+    if snapshot.get("specialist_context_via_mcp") is not True:
+        return store.get_specialist_prompt(slug)
+    matches = [row for row in snapshot["selected_specialists"] if row["slug"] == slug]
+    if len(matches) != 1:
+        return {"error": "specialist was not selected for this exact turn"}
+    reference = matches[0]
+    return store.get_versioned_specialist_prompt(
+        slug, reference["version"], reference["hash"], max_chars=MAX_SPECIALIST_PROMPT_CHARS
+    )
+
+
 def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
     correlation = _correlation(arguments)
     if correlation is None:
@@ -221,7 +241,9 @@ def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         return {"error": error}
     # The specialist goes to whoever is already doing the work. There is no
     # token to redeem and no receipt to file: loading a card is the product.
-    row = store.get_specialist_prompt(slug)
+    row = _selected_or_active_prompt(store, session_id, trace_id, slug)
+    if row and row.get("error"):
+        return row
     if not row or not row.get("prompt_body"):
         return {"error": f"active agent prompt '{slug}' not found"}
     prompt = str(row["prompt_body"])

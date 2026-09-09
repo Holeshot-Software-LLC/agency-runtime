@@ -1,0 +1,144 @@
+{
+  "observed": "2026-09-09",
+  "production_commit": "cd86e40a994bd7d6fad8699047140a8e369718a0",
+  "artifact_source_commit": "0cd4f2897b12f9a3de1f277303ba381dd6aa61d5",
+  "original_source_commit": "1346c51f99728e403fa9a66fd579ca6125525dec",
+  "original_source_control": {
+    "asserted_recipe_version": 15,
+    "asserted_modules": [
+      "agency_runtime.adapters.hooks",
+      "agency_runtime.core.preflight",
+      "agency_runtime.server.mcp"
+    ],
+    "new_code_imported": "Only UTF-16 measurement helper/test imports; routing, hook and MCP implementation are original source.",
+    "actual_context_utf16_units": 15076,
+    "native_limit_utf16_units": 10000
+  },
+  "logs": {
+    "new_regressions": {
+      "sha256": "8824f561219b0fead216a70910f89faf9ec2a699a0e660886017110da7f0e4cd",
+      "summary": "............                                                             [100%]\n12 passed in 8.43s"
+    },
+    "expanded_focused": {
+      "sha256": "73ab50ffe67338aead7bf3c971bbec3c5ca24e310271759de751e2c38355ded6",
+      "summary": "........................................................................ [ 41%]\n....................................................s................... [ 83%]\n..........s.....sss....s....                                             [100%]\n166 passed, 6 skipped in 70.05s (0:01:10)"
+    },
+    "targeted_mcp": {
+      "sha256": "c88a49f6ad5408bf433c6602d79724706ce8d6983126ceaa1bd9fad6ab151919",
+      "summary": "........................................................................ [100%]\n72 passed in 8.67s"
+    },
+    "spine_initial": {
+      "sha256": "a9a889b2923e8cc212751ae2a25c1ff4d23b583d534d3d9dc0a345caaff1f05a",
+      "summary": "\nagency_runtime/core/store/sqlite.py:2054: RuntimeError\n=========================== short test summary info ============================\nFAILED tests/test_mcp_protocol_hardening.py::test_direct_tool_handlers_cover_status_search_record_and_errors\n1 failed, 1150 passed, 3 skipped in 69.90s (0:01:09)"
+    },
+    "spine_final": {
+      "sha256": "8f3104e58053c6b821ea8ed2ab92df11beb2b74fa7aa3c620cfb211f39650790",
+      "summary": "........................................................................ [ 87%]\n........................................................................ [ 93%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n1151 passed, 3 skipped in 70.30s (0:01:10)"
+    },
+    "ui": {
+      "sha256": "5644bed0546d7f8deaf214909f44565c4b78bcb6d19fe18313a37bd03e14656f",
+      "summary": "# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 239.631274"
+    },
+    "original_native_limit": {
+      "sha256": "36d80ea1eed225182c6eac141085b24e134ba17d961e547ddd3554c6475098c4",
+      "summary": "\nagency-ar423-native-context-20260909/tests/test_claude_context_delivery.py:68: AssertionError\n=========================== short test summary info ============================\nFAILED agency-ar423-native-context-20260909/tests/test_claude_context_delivery.py::test_four_full_cards_cross_the_native_hook_boundary_without_file_reads\n1 failed in 1.57s"
+    },
+    "original_final_card": {
+      "sha256": "f5af6656ded01985cf6980e65e54391637027822b04a5868fb3f3d0d521b9f32",
+      "summary": "monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7570b68c8470>\n\n    def test_other_hosts_keep_inline_delivery(tmp_path, monkeypatch):\n        store, trace, bodies, context = _turn(tmp_path, monkeypatch, host=\"zcode\")\n>       assert all(body in context for body in bodies.values())\nE       assert False\nE        +  where False = all(<generator object test_other_hosts_keep_inline_delivery.<locals>.<genexpr> at 0x7570b63d3d30>)\n\nagency-ar423-native-context-20260909/tests/test_claude_context_delivery.py:141: AssertionError\n=========================== short test summary info ============================\nFAILED agency-ar423-native-context-20260909/tests/test_claude_context_delivery.py::test_other_hosts_keep_inline_delivery\n1 failed in 1.67s"
+    }
+  },
+  "artifact": {
+    "artifact_source_commit": "0cd4f289",
+    "wheel_sha256": "3cea5770b896f788b790675db8dda8ea1321638e899bb57633198ab7266c211e",
+    "installed_package_files": 615,
+    "mismatches": [],
+    "fresh_isolated_recipe_version": 16
+  },
+  "distribution_build": "Canonical distribution build passed",
+  "distribution_verification": "Artifact contents match release policy",
+  "installed_smoke": {
+    "artifact_set": "portable",
+    "assets": 10,
+    "config": "passed",
+    "dashboard": {
+      "bind": "127.0.0.1",
+      "health": "passed"
+    },
+    "mcp": {
+      "status_call": "passed",
+      "tool_count": 8
+    },
+    "roster": {
+      "approved": 265,
+      "quarantined": 0,
+      "retired": 0,
+      "total": 265
+    },
+    "selection": {
+      "cases": {
+        "agency-runtime-dashboard": [],
+        "ambiguous-help": []
+      },
+      "forbidden_specialists": [
+        "clinical-evidence-agent",
+        "geographer",
+        "language-translator"
+      ],
+      "status": "passed"
+    },
+    "version": "0.1.0"
+  },
+  "native_refresh": {
+    "claude": {
+      "complete": true,
+      "hosts": [
+        {
+          "host": "claude",
+          "enabled": true,
+          "registered": true,
+          "loaded": null,
+          "maturity": "enabled-runtime-unverified",
+          "exit_code": 0
+        }
+      ]
+    },
+    "zcode": {
+      "complete": true,
+      "hosts": [
+        {
+          "host": "zcode",
+          "enabled": true,
+          "registered": true,
+          "loaded": null,
+          "maturity": "enabled-runtime-unverified",
+          "exit_code": 0
+        }
+      ]
+    }
+  },
+  "gateway": {
+    "running": true,
+    "rpc_ok": true
+  },
+  "limits": [
+    "Fixed native sample: review accepted; follow-up response_invalid; multi-step staffing failed. No large-card MCP path was exercised.",
+    "Fresh-source decision conformance passed 188/188; this is curated sensitivity evidence only.",
+    "No staffing model/provider configuration or trust hash changed.",
+    "No exhaustive corpus, coverage gate, Windows matrix or public release dispatched."
+  ],
+  "conformance": {
+    "schema": "agency-runtime.decision-conformance",
+    "status": "passed",
+    "passed": true,
+    "counts": {
+      "invalid": 0,
+      "killed": 188,
+      "mutations": 188,
+      "survived": 0
+    },
+    "source_unchanged": true,
+    "source_scope": "pyproject.toml, agency_runtime regular files, and selected test inputs",
+    "evidence_boundary": "Curated decision sensitivity only; no coverage, superiority, or exhaustive mutation claim."
+  }
+}
