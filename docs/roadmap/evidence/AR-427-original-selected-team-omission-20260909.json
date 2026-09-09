@@ -1,0 +1,156 @@
+{
+  "session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+  "trace_id": "df374667-2599-4798-a852-1e6f972aed25",
+  "routing_selected_ids": [
+    "application-security-engineer",
+    "backend-service-engineer",
+    "technical-writer",
+    "code-reviewer",
+    "ai-generated-code-security-auditor"
+  ],
+  "unit_bindings": [
+    {
+      "artifact_kind": "analysis",
+      "confidence": 1.0,
+      "delivery": "load",
+      "depends_on": [],
+      "mutation_scope": "read_only",
+      "parallelization": "unspecified",
+      "required_evidence": [
+        "Evidence proves the requested analysis outcome."
+      ],
+      "required_tools": [
+        "repository-read"
+      ],
+      "selected": [
+        "application-security-engineer"
+      ],
+      "timing": "immediate",
+      "work_unit_id": "unit-2bc8933a61"
+    },
+    {
+      "artifact_kind": "documentation",
+      "confidence": 0.9,
+      "delivery": "load",
+      "depends_on": [
+        "unit-2bc8933a61"
+      ],
+      "mutation_scope": "workspace_write",
+      "parallelization": "sequential",
+      "required_evidence": [
+        "Evidence proves the requested documentation outcome."
+      ],
+      "required_tools": [
+        "repository-read",
+        "repository-write"
+      ],
+      "selected": [
+        "backend-service-engineer",
+        "technical-writer"
+      ],
+      "timing": "immediate",
+      "work_unit_id": "unit-bb17b5f37b"
+    },
+    {
+      "artifact_kind": "review-report",
+      "confidence": 1.0,
+      "delivery": "load",
+      "depends_on": [
+        "unit-bb17b5f37b"
+      ],
+      "mutation_scope": "read_only",
+      "parallelization": "sequential",
+      "required_evidence": [
+        "Evidence proves the requested review report outcome."
+      ],
+      "required_tools": [
+        "repository-read"
+      ],
+      "selected": [
+        "code-reviewer"
+      ],
+      "timing": "after_artifact",
+      "work_unit_id": "unit-e41f57d5be"
+    },
+    {
+      "artifact_kind": "review-report",
+      "confidence": 1.0,
+      "delivery": "load",
+      "depends_on": [
+        "unit-bb17b5f37b",
+        "unit-e41f57d5be"
+      ],
+      "mutation_scope": "read_only",
+      "parallelization": "sequential",
+      "required_evidence": [
+        "Evidence proves the requested review report outcome."
+      ],
+      "required_tools": [
+        "repository-read"
+      ],
+      "selected": [
+        "ai-generated-code-security-auditor"
+      ],
+      "timing": "after_artifact",
+      "work_unit_id": "unit-7e792365ac"
+    }
+  ],
+  "persisted_specialist_refs": [
+    {
+      "slug": "application-security-engineer",
+      "version": "sha256:4d89d87f6a0d11e91984e4b3e29be8247b51fe214ac046428d4a85f0e2b11e77",
+      "hash": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+      "description": "AppSec specialist who secures the software development lifecycle through threat modeling, secure code review, SAST/DAST integration, and developer security education that makes secure code the default.",
+      "capabilities": [
+        "review application attack surfaces",
+        "design secure implementation and test changes",
+        "produce evidence-backed threat models"
+      ]
+    },
+    {
+      "slug": "backend-service-engineer",
+      "version": "contractor-4-38fbaa01835e2843",
+      "hash": "sha256:38fbaa01835e2843853192cf9599e099b7dce2bf9a731e9b3cae75e059c12a9e",
+      "description": "Language-independent backend service implementation concerns",
+      "capabilities": [
+        "Reliable service boundaries",
+        "Operable request and persistence behavior",
+        "API execution paths",
+        "Persistence integration"
+      ]
+    },
+    {
+      "slug": "technical-writer",
+      "version": "sha256:ef659e8829fa22ea20bce996b658510b7673c1fac4aafaea5a11231258d02b68",
+      "hash": "80647cf2eb79e1d41db5d8cdc77c69f3ad4096aaa6e6827881931901951b08ad",
+      "description": "Expert technical writer specializing in developer documentation, API references, README files, and tutorials. Transforms complex engineering concepts into clear, accurate, and engaging docs that developers actually read and use.",
+      "capabilities": [
+        "create repository-grounded technical documentation",
+        "structure tutorials, references, and operational guides",
+        "review docs for accuracy and discoverability"
+      ]
+    },
+    {
+      "slug": "code-reviewer",
+      "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+      "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+      "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance \u2014 not style preferences.",
+      "capabilities": [
+        "review diffs for correctness and regressions",
+        "identify security and maintainability defects",
+        "rank findings by impact and evidence"
+      ]
+    }
+  ],
+  "observed_loaded": [
+    "application-security-engineer",
+    "backend-service-engineer",
+    "technical-writer",
+    "code-reviewer"
+  ],
+  "omitted_selected_ids": [
+    "ai-generated-code-security-auditor"
+  ],
+  "source_cause": "_selected_prompts defaults to MAX_SELECTED_SPECIALISTS=4; preflight does not override it. The verified routing selected five.",
+  "scope": "Read-only existing receipt; the accepted native four-card proof did not cover the complete inferred team."
+}

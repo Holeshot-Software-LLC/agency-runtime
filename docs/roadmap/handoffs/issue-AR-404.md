@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-planner-contract-20260909
-evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
-minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
+branch: codex/ar404-terminal-reliability-20260909
+evidence_commit: abdb69aa45e1235d810decaf202d8df82d65d18e
+minimum_ledger_commit: 0ee5f9052bd24184488452c21508ed4e2cf230ba
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -30,14 +30,26 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Owned PR821 package starts from synchronized clean maine3090882. Source03a82c3b
-repairs missing rejected-plan context and preserves five known semantic codes;
-artifact2b19cce6 is normally installed on all five hosts,615files match.
-Wheelcba264c1bdbd57730f7ba748af2b75a5971cd0c71e425ca6d9826c463fad2fcd.
-PR821 and its exact worklog/merge ledger own this package. After merge this
-branch is historical; create a new owned worktree for new changes.
-AR-425 is isolated-complete. AR-419 was already closed through PR816.
-AR-404/418/423 remain open. No all-host completion claim.
+2026-09-09 owner continuation authorizes the next bounded repair and one extra
+isolated pass per corrected issue packet. One fresh Hermes multi-step diagnostic
+will capture the actual critic proposal/response through a byte-preserving
+loopback observer. It changes observability, not selection or verdicts. Cap360s,
+no retry; restore the original owner configuration in finally.
+
+AR-426 / PR 824 callback source faf5645a, artifact 22f24edd, is installed with
+616 exact file matches. Focused 131, production 1151 / 3 skipped, UI 224 and
+conformance 188/188 pass. Both Hermes three-case phases failed full acceptance.
+The callback phase stopped before delivery: review coverage/confidence failure,
+follow-up critic veto, multi-step planner timeout. The single post-timeout attempt also failed a critic veto; no further native
+attempt is scheduled. AR-426 remains open and its
+PR remains draft until native delivery and isolated acceptance are evidenced.
+
+The owned branch starts at clean synchronized c6c3e7b5. Only Hermes's native
+projection changed. No validator, critic, trust or native spill limit changed.
+Exact baseline: AR-426-exact-native-spill-and-terminal-audit-20260909.json.
+Fresh Codex8/8trusted; process2200222 runs published6db15efbecbe, MCP responds,
+classifier6,615installed files match prior wheel. Handoff trace01a086f4 is failed
+staffing/classifier5 and has no finalization event; transport failure is separate.
 
 ## Completed evidence
 
@@ -60,9 +72,9 @@ semantic cause unknown. A new planner-only diagnostic reproduced the first
 missing correctness review but its repair succeeded before the source change.
 
 Fresh Codex hooks/list after owner review:8/8trusted,0modified/missing/duplicate.
-Parent process still runs stale projection6e7dc299c23e; its MCP transport failed
-on prior turns. Reinstall does not refresh a running process. Fresh native Codex
-cases supply evidence, not the parent. Prior session01a08200-6530-79a3-a19c-4fb24b1983ae,
+The previous parent ran stale projection 6e7dc299c23e and its MCP transport
+failed. This turn verified process 2200222 at published projection 6db15efbecbe
+and a successful MCP call. Reinstall alone does not refresh a running process. Prior session01a08200-6530-79a3-a19c-4fb24b1983ae,
 trace01a082b9-e7df-70e2-b76c-b8be7e01ad5a remains a separate failed staffing receipt.
 
 ## Exact blocker
@@ -94,15 +106,23 @@ records belong to this package, not a later optional cleanup.
 
 ## Next bounded work package
 
-Use the corrected AR-423 packet when an additional isolated pass is explicitly
-authorized. Investigate the exact Hermes and Zcode invalid first-finalization
-receipts plus retained recruiter/critic failures before another fixed phase.
-AR-418 awaits upstream merge/adoption. No unchanged-condition native retries.
-OpenClaw observer was normally removed, permission/files gone, finalRPChealthy.
-Claude two exact Allow rules remain; semantic settings unchanged. All five hosts
-share planner/recruiter/critic routes. No pending tool or Codex trust approval.
+Package is blocked; PR 824 stays draft and unmerged. Diagnose shared staffing
+with sufficient bounded evidence before choosing a repair. Content-free rejected
+receipts do not establish an erroneous critic veto. No unchanged native retries.
+
+AR-426 isolated passes both accepted criterion 2, but criterion 1 remains absent
+(pointer evidence lacks the missing context itself in its frozen packet) and
+criterion 3 lacks native acceptance. Exact missing-context files 535347/535352
+and their SHA-256 manifest are now retained in repository evidence for a future
+corrected packet. The owner authorized one additional AR-426 isolated pass on 2026-09-09;
+reserve it until the native evidence packet is ready. AR-423's separately authorized third pass runs in its owned acceptance worktree. All five hosts stay in AR-404 scope.
 
 ## Verification
+
+Final metadata, policy availability, exact worklog, docs with required trackers,
+strict tracker parity (417 items) and diff checks pass. Owned branch is clean at
+this substantive/ledger checkpoint; main remains clean at c6c3e7b5. PR 824 remains
+draft. No merge, issue closure, exhaustive workflow or Windows workflow.
 
 Focused143pass, Claude context12pass, production1151pass/3skip, UI224pass,
 Ruff/metadata/policy/worklog/routing/docs/tracker checks pass. Frozen conformance

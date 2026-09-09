@@ -80,6 +80,12 @@ changes rather than duplicating every commit.
 
 ## Unreleased
 
+- Preserve the full inferred team during preflight; incomplete delivery now fails before any load is recorded (AR-427).
+
+- Preserve large Hermes specialist selections through bounded native card retrieval
+  without raising hook spill limits; count cards as loaded only after retrieval
+  (AR-426). Native acceptance remains tracked separately.
+
 - Bind structured workforce reranker responses to each work unit’s offered candidate IDs and counts; preserve exact validation and inference-owned ranking (AR-420).
 
 - Retain standard critic veto causes when a valid qualified reason exceeds the

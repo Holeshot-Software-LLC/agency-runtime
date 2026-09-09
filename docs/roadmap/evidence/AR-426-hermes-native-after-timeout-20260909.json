@@ -1,0 +1,233 @@
+{
+  "manifest": "AR-404-reliability-suite-20260909.json",
+  "phase": "after_timeout",
+  "installed_source": "22f24edd",
+  "host": "hermes",
+  "cases": [
+    {
+      "case": "multi_step",
+      "invocation": {
+        "case": "multi_step",
+        "host": "hermes",
+        "phase": "after_timeout",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar426-native-20260909",
+          "-q",
+          "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed."
+        ],
+        "native_session_id": "20260909_130400_c24d85",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 91.605
+      },
+      "run": {
+        "id": "2101bd72-cafc-443c-bea3-2813e9f1acfc",
+        "trace_id": "20260909_130400_c24d85:f1369f31-b3e1-43f1-845b-8e3fabde18a1:4e6a81af",
+        "session_id": "20260909_130400_c24d85",
+        "host": "hermes",
+        "started_at": "2026-09-09T17:04:10.276000+00:00",
+        "last_activity_at": "2026-09-09T17:05:13.110000+00:00",
+        "turn_sequence": 1687,
+        "ended_at": "2026-09-09T17:05:13.109000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "e5a03c24-a3b5-49aa-ab4d-2c96592c44c6",
+        "session_id": "20260909_130400_c24d85",
+        "trace_id": "20260909_130400_c24d85:f1369f31-b3e1-43f1-845b-8e3fabde18a1:4e6a81af",
+        "host": "hermes",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "stage": "planner",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 1,
+            "latency_ms": 19429,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "recall_embedding",
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-embedding:latest",
+            "model_group": "",
+            "actual_model": "qwen3-embedding:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "dense_recall_applied",
+            "latency_ms": 3450,
+            "input_count": 5,
+            "provider_call_count": 1,
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107"
+          },
+          {
+            "stage": "recall_reranker",
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "model_group": "",
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "rejected",
+            "reason_code": "provider_response_contract_invalid",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 3,
+            "latency_ms": 22232,
+            "timeout_ms": 120000,
+            "input_count": 0,
+            "provider_call_count": 1
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2",
+            "model_group": "task-agency-recruiter-v2",
+            "actual_model": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 4,
+            "latency_ms": 11350,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "critic",
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-critic-v2",
+            "model_group": "task-agency-critic-v2",
+            "actual_model": "task-agency-critic-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 5,
+            "latency_ms": 5249,
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_wrong_neighbor_selection"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T17:05:13.109000+00:00",
+        "schema_version": "agency.preflight.failure.v3"
+      },
+      "finalization": null,
+      "model_receipts": [],
+      "finalization_event_count": 0,
+      "accepted_terminal_event_count": 0,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "4b0a04c6bfb20e80ea924bd5bb8af567af4e81c55d48820d3c5bae7e2771df33",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent",
+        "failed_resident_manager_binding": {
+          "version": 2,
+          "binding_id": "rmb-da499162b4ce48dcfc381588420f3f88",
+          "host": "hermes",
+          "host_mode": "request_scoped",
+          "delivery_mode": "request",
+          "control_epoch": {
+            "master_generation": 6,
+            "master_materialized": true,
+            "host_generation": 2,
+            "host_materialized": true
+          },
+          "kernel": {
+            "version": 5,
+            "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+            "slugs": [
+              "agency-steward"
+            ]
+          }
+        }
+      },
+      "response": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\n```python\ndef average(values):\n    if not values:\n        raise ValueError(\"average() requires at least one value\")\n    return sum(values) / len(values)\n```\n\nDefects in the supplied function:\n- Uses `//`, so it floors instead of returning the arithmetic mean with fractional results.\n- Negative fractional means are especially wrong because `//` floors toward negative infinity.\n- Empty input raises `ZeroDivisionError`; the requested behavior is `ValueError`.\n\nFocused regression tests:\n\n```python\nimport pytest\n\n\ndef test_average_float_values_returns_fractional_mean():\n    assert average([1.0, 2.0]) == 1.5\n\n\ndef test_average_negative_numbers_returns_fractional_mean():\n    assert average([-1, -2]) == -1.5\n\n\ndef test_average_empty_input_raises_value_error():\n    with pytest.raises(ValueError):\n        average([])\n```\n\nSkipped file reads/edits and test execution per your boundary.\n",
+      "response_sha256": "1c5ec09aa057f98485eee32c6445db924325b5426adcf48ffa24dd25f8ee673c",
+      "accepted_hash_matches": false,
+      "terminal_hash_matches": false,
+      "headers": {
+        "observed": {},
+        "store_projection": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "failed; workforce_inference_failed; recall_reranker:provider_response_contract_invalid; staffing_critic_rejected; critic_wrong_neighbor_selection"
+        },
+        "all_five_match": false
+      },
+      "native_message_ids": [
+        535383,
+        535384,
+        535385,
+        535386
+      ],
+      "native_card_tool_results": [],
+      "native_final_bound": false,
+      "native_hook_contexts": [
+        {
+          "native_message_id": 535383,
+          "api_content_chars": 9451,
+          "api_content_sha256": "517a1c9e870b14712edffe09435ef2ff6fd1b1c5f16b8d472b82dd6faf4939e1",
+          "spill_pointer_present": false,
+          "contract_present": true,
+          "delivery_rules_present": true,
+          "native_card_tool_requested": false
+        }
+      ],
+      "card_proofs": [],
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    }
+  ]
+}

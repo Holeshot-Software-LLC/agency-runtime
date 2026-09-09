@@ -6,6 +6,7 @@ created: 2026-09-03
 updated: 2026-09-03
 tags: [workforce, critic, staffing, receipts, inference]
 related:
+  - docs/roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/roadmap/issue-AR-374-host-capability-vocabulary-gap.md

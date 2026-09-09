@@ -164,7 +164,7 @@ def test_generated_hermes_registers_callable_first_pass_finalizer(
     context = ToolContext()
     module.register(context)
 
-    assert set(context.tools) == {"agency_finalize"}
+    assert set(context.tools) == {"agency_finalize", "agency_load_specialist"}
     registration = context.tools["agency_finalize"]
     assert registration["toolset"] == "agency-runtime"
     assert registration["schema"]["name"] == "agency_finalize"

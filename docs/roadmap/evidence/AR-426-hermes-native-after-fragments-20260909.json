@@ -1,0 +1,720 @@
+{
+  "manifest": "AR-404-reliability-suite-20260909.json",
+  "phase": "after_fragments",
+  "installed_source": "22f24edd",
+  "host": "hermes",
+  "cases": [
+    {
+      "case": "ordinary_review",
+      "invocation": {
+        "case": "ordinary_review",
+        "host": "hermes",
+        "phase": "after_fragments",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar426-native-20260909",
+          "-q",
+          "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files."
+        ],
+        "native_session_id": "20260909_125749_06a4da",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 64.866
+      },
+      "run": {
+        "id": "fc8c463e-de60-4644-bc6c-db165aa2df9a",
+        "trace_id": "20260909_125749_06a4da:a4c1d9a5-d1f6-4e85-8542-d547d531da5f:0947cd43",
+        "session_id": "20260909_125749_06a4da",
+        "host": "hermes",
+        "started_at": "2026-09-09T16:57:58.286000+00:00",
+        "last_activity_at": "2026-09-09T16:58:40.756000+00:00",
+        "turn_sequence": 1684,
+        "ended_at": "2026-09-09T16:58:40.755000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "339c729e-bb5c-4dd2-a919-1aaa48f3de5b",
+        "session_id": "20260909_125749_06a4da",
+        "trace_id": "20260909_125749_06a4da:a4c1d9a5-d1f6-4e85-8542-d547d531da5f:0947cd43",
+        "host": "hermes",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "stage": "planner",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 1,
+            "latency_ms": 7790,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "recall_embedding",
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-embedding:latest",
+            "model_group": "",
+            "actual_model": "qwen3-embedding:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "dense_recall_applied",
+            "latency_ms": 2561,
+            "input_count": 1,
+            "provider_call_count": 1,
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107"
+          },
+          {
+            "stage": "recall_reranker",
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "model_group": "",
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 3,
+            "latency_ms": 10433,
+            "timeout_ms": 120000,
+            "input_count": 0,
+            "provider_call_count": 1
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2",
+            "model_group": "task-agency-recruiter-v2",
+            "actual_model": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "rejected",
+            "reason_code": "provider_response_contract_invalid",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 4,
+            "latency_ms": 3065,
+            "timeout_ms": 60000,
+            "validation_failures": [
+              {
+                "unit_id": "unit-average-defect-analysis",
+                "reason_code": "staff_without_safe_team",
+                "requirement_axis": "capability",
+                "ranked_agent_ids": "silent-failure-hunter~type-design-analyzer~code-reviewer~documentation-evidence-researcher~hallucination-root-cause-investigator~ai-evaluation-engineer~minimal-change-engineer~orgscript-engineer",
+                "safe_team_shortfall": "retrieved_coverer_not_selected",
+                "maximum_selected_per_unit": 4,
+                "ranked_executable_count": 4,
+                "required_agent_count": 3
+              }
+            ]
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2",
+            "model_group": "task-agency-recruiter-v2",
+            "actual_model": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "rejected",
+            "reason_code": "provider_response_contract_invalid",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 5,
+            "latency_ms": 3916,
+            "timeout_ms": 60000,
+            "validation_failures": [
+              {
+                "unit_id": "unit-average-defect-analysis",
+                "reason_code": "selection_confidence_too_low"
+              }
+            ]
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter-content-fallback",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2-content-fallback",
+            "model_group": "task-agency-recruiter-v2-content-fallback",
+            "actual_model": "task-agency-recruiter-v2-content-fallback",
+            "model_receipt_source": "response.body.model",
+            "status": "rejected",
+            "reason_code": "provider_response_contract_invalid",
+            "metadata_version": 1,
+            "provider_chain_index": 1,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 1,
+            "ordinal": 6,
+            "latency_ms": 7320,
+            "timeout_ms": 60000,
+            "validation_failures": [
+              {
+                "unit_id": "unit-average-defect-analysis",
+                "reason_code": "staff_without_safe_team",
+                "requirement_axis": "capability",
+                "ranked_agent_ids": "code-reviewer~minimal-change-engineer~type-design-analyzer",
+                "safe_team_shortfall": "retrieved_coverer_not_selected",
+                "maximum_selected_per_unit": 4,
+                "ranked_executable_count": 3,
+                "required_agent_count": 1
+              }
+            ]
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter-content-fallback",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2-content-fallback",
+            "model_group": "task-agency-recruiter-v2-content-fallback",
+            "actual_model": "task-agency-recruiter-v2-content-fallback",
+            "model_receipt_source": "response.body.model",
+            "status": "rejected",
+            "reason_code": "provider_response_contract_invalid",
+            "metadata_version": 1,
+            "provider_chain_index": 1,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 1,
+            "ordinal": 7,
+            "latency_ms": 6312,
+            "timeout_ms": 60000,
+            "validation_failures": [
+              {
+                "unit_id": "unit-average-defect-analysis",
+                "reason_code": "selection_confidence_too_low"
+              }
+            ]
+          }
+        ],
+        "staffing_reason_codes": [
+          "selection_confidence_too_low"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T16:58:40.755000+00:00",
+        "schema_version": "agency.preflight.failure.v3"
+      },
+      "finalization": null,
+      "model_receipts": [],
+      "finalization_event_count": 0,
+      "accepted_terminal_event_count": 0,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent",
+        "failed_resident_manager_binding": {
+          "version": 2,
+          "binding_id": "rmb-bc9571685f93884de417419c75e6e17b",
+          "host": "hermes",
+          "host_mode": "request_scoped",
+          "delivery_mode": "request",
+          "control_epoch": {
+            "master_generation": 6,
+            "master_materialized": true,
+            "host_generation": 2,
+            "host_materialized": true
+          },
+          "kernel": {
+            "version": 5,
+            "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+            "slugs": [
+              "agency-steward"
+            ]
+          }
+        }
+      },
+      "response": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\nAgency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: requested execution alias: alias-hermes-chat\nRecruited via: failed; workforce_inference_failed; recruiter:provider_response_contract_invalid; selection_confidence_too_low\n\nDefects:\n- For `[1.0, 2.0]`, `sum(values) // len(values)` returns `1.0`, not the arithmetic mean `1.5`, because `//` floor-divides instead of true-dividing.\n- For `[]`, `len(values)` is `0`, so the function raises `ZeroDivisionError`, not the required `ValueError`.\n\nCorrection approach:\n- Check for empty input first and raise `ValueError`.\n- Use `/` instead of `//` so fractional means are preserved.\n",
+      "response_sha256": "c082b6fcdca2c42f589ebe7069dc9b6732ff318711480f1935796bc399378121",
+      "accepted_hash_matches": false,
+      "terminal_hash_matches": false,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "requested execution alias: alias-hermes-chat"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "failed; workforce_inference_failed; recruiter:provider_response_contract_invalid; selection_confidence_too_low"
+        },
+        "all_five_match": false
+      },
+      "native_message_ids": [
+        535367,
+        535368,
+        535369,
+        535370
+      ],
+      "native_card_tool_results": [],
+      "native_final_bound": false,
+      "native_hook_contexts": [
+        {
+          "native_message_id": 535367,
+          "api_content_chars": 9304,
+          "api_content_sha256": "48c507e2a73b9f2ba0303e0e7bd7993522db1f73d70834dc409f7c81248b5119",
+          "spill_pointer_present": false,
+          "contract_present": true,
+          "delivery_rules_present": true,
+          "native_card_tool_requested": false
+        }
+      ],
+      "card_proofs": [],
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    },
+    {
+      "case": "short_followup",
+      "invocation": {
+        "case": "short_followup",
+        "host": "hermes",
+        "phase": "after_fragments",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar426-native-20260909",
+          "-q",
+          "go for it",
+          "--resume",
+          "20260909_125749_06a4da"
+        ],
+        "native_session_id": "20260909_125749_06a4da",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 81.974
+      },
+      "run": {
+        "id": "1a65d7e5-8d42-4238-a11c-ce2497e94272",
+        "trace_id": "20260909_125749_06a4da:3554307c-37cc-435d-926d-06700db97bc5:3323f33d",
+        "session_id": "20260909_125749_06a4da",
+        "host": "hermes",
+        "started_at": "2026-09-09T16:59:02.696000+00:00",
+        "last_activity_at": "2026-09-09T16:59:53.025000+00:00",
+        "turn_sequence": 1685,
+        "ended_at": "2026-09-09T16:59:53.024000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "4501c754-d398-4cd5-9aa1-ec610bd6adb4",
+        "session_id": "20260909_125749_06a4da",
+        "trace_id": "20260909_125749_06a4da:3554307c-37cc-435d-926d-06700db97bc5:3323f33d",
+        "host": "hermes",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "stage": "subject",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "",
+            "model_receipt_source": "unavailable",
+            "status": "failed",
+            "reason_code": "provider_model_text_not_json",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 1,
+            "latency_ms": 6741,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "planner",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 2,
+            "latency_ms": 8872,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "recall_embedding",
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-embedding:latest",
+            "model_group": "",
+            "actual_model": "qwen3-embedding:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "dense_recall_applied",
+            "latency_ms": 2108,
+            "input_count": 1,
+            "provider_call_count": 1,
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107"
+          },
+          {
+            "stage": "recall_reranker",
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "model_group": "",
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 4,
+            "latency_ms": 9999,
+            "timeout_ms": 120000,
+            "input_count": 0,
+            "provider_call_count": 1
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2",
+            "model_group": "task-agency-recruiter-v2",
+            "actual_model": "glm-5.3-flash",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 5,
+            "latency_ms": 17211,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "critic",
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-critic-v2",
+            "model_group": "task-agency-critic-v2",
+            "actual_model": "task-agency-critic-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 6,
+            "latency_ms": 4434,
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_wrong_neighbor_selection"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T16:59:53.024000+00:00",
+        "schema_version": "agency.preflight.failure.v3"
+      },
+      "finalization": null,
+      "model_receipts": [],
+      "finalization_event_count": 0,
+      "accepted_terminal_event_count": 0,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "cf97d012ecc86f377b7d8e87fbe81109c2e7d7596fbed57340f373d76504b7e6",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "da2ffdfc93893b24b669f3139c05af0ad3ee5cc46fabe016e1d88bfd546c2d3d",
+        "turn_kind": "new_intent",
+        "failed_resident_manager_binding": {
+          "version": 2,
+          "binding_id": "rmb-bc9571685f93884de417419c75e6e17b",
+          "host": "hermes",
+          "host_mode": "request_scoped",
+          "delivery_mode": "request",
+          "control_epoch": {
+            "master_generation": 6,
+            "master_materialized": true,
+            "host_generation": 2,
+            "host_materialized": true
+          },
+          "kernel": {
+            "version": 5,
+            "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+            "slugs": [
+              "agency-steward"
+            ]
+          }
+        }
+      },
+      "response": "Warning: Unknown toolsets: messaging\nAgency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: final-state-cleanup, production-hardening\nActual Model selected: requested execution alias: alias-hermes-chat\nRecruited via: failed; workforce_inference_failed; subject:provider_model_text_not_json; staffing_critic_rejected; critic_wrong_neighbor_selection\n\n```python\ndef average(values):\n    if not values:\n        raise ValueError(\"average requires at least one value\")\n    return sum(values) / len(values)\n```\n\nWhat changed: added the explicit empty-input guard and switched floor division to true division.\nWhat was deleted / fallbacks removed: the implicit `ZeroDivisionError` path and integer/flooring behavior from `//`.\nTests: mentally checked supplied cases only: `[1.0, 2.0] -> 1.5`; `[] -> ValueError`. No files modified and no commands run, per the supplied-code-only constraint.\n",
+      "response_sha256": "a307b3f05e8d02a67c2f01744ddb7909153b264518cf02eaf3db824ae19f81e9",
+      "accepted_hash_matches": false,
+      "terminal_hash_matches": false,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "final-state-cleanup, production-hardening",
+          "actual_model_selected": "requested execution alias: alias-hermes-chat"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "failed; workforce_inference_failed; subject:provider_model_text_not_json; staffing_critic_rejected; critic_wrong_neighbor_selection"
+        },
+        "all_five_match": false
+      },
+      "native_message_ids": [
+        535371,
+        535372,
+        535373,
+        535374,
+        535375,
+        535376,
+        535377,
+        535378
+      ],
+      "native_card_tool_results": [],
+      "native_final_bound": false,
+      "native_hook_contexts": [
+        {
+          "native_message_id": 535371,
+          "api_content_chars": 8960,
+          "api_content_sha256": "7b8cfdb9b872d098a51f7a8614d02b721cb49744dc342acba1a734d5eeb4e6ad",
+          "spill_pointer_present": false,
+          "contract_present": true,
+          "delivery_rules_present": true,
+          "native_card_tool_requested": false
+        }
+      ],
+      "card_proofs": [],
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    },
+    {
+      "case": "multi_step",
+      "invocation": {
+        "case": "multi_step",
+        "host": "hermes",
+        "phase": "after_fragments",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar426-native-20260909",
+          "-q",
+          "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed."
+        ],
+        "native_session_id": "20260909_130016_149b0c",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 89.795
+      },
+      "run": {
+        "id": "62fb4880-7b05-49c4-8f30-d20422543747",
+        "trace_id": "20260909_130016_149b0c:ece27397-150e-42e1-b043-76ccd51e5fca:ff98669f",
+        "session_id": "20260909_130016_149b0c",
+        "host": "hermes",
+        "started_at": "2026-09-09T17:00:25.060000+00:00",
+        "last_activity_at": "2026-09-09T17:01:25.930000+00:00",
+        "turn_sequence": 1686,
+        "ended_at": "2026-09-09T17:01:25.929000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "81986129-0cc3-4de6-aea1-7795a2c0c0c8",
+        "session_id": "20260909_130016_149b0c",
+        "trace_id": "20260909_130016_149b0c:ece27397-150e-42e1-b043-76ccd51e5fca:ff98669f",
+        "host": "hermes",
+        "stage": "routing",
+        "reason_code": "workforce_provider_unavailable",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "stage": "planner",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "",
+            "model_receipt_source": "unavailable",
+            "status": "failed",
+            "reason_code": "provider_call_timed_out",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 1,
+            "latency_ms": 60071,
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "inference_unavailable"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T17:01:25.930000+00:00",
+        "schema_version": "agency.preflight.failure.v3"
+      },
+      "finalization": null,
+      "model_receipts": [],
+      "finalization_event_count": 0,
+      "accepted_terminal_event_count": 0,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "4b0a04c6bfb20e80ea924bd5bb8af567af4e81c55d48820d3c5bae7e2771df33",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent",
+        "failed_resident_manager_binding": {
+          "version": 2,
+          "binding_id": "rmb-dfc3e6880e569b8176f7580da2d70dab",
+          "host": "hermes",
+          "host_mode": "request_scoped",
+          "delivery_mode": "request",
+          "control_epoch": {
+            "master_generation": 6,
+            "master_materialized": true,
+            "host_generation": 2,
+            "host_materialized": true
+          },
+          "kernel": {
+            "version": 5,
+            "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+            "slugs": [
+              "agency-steward"
+            ]
+          }
+        }
+      },
+      "response": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\nAgency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: requested execution alias: alias-hermes-chat\nRecruited via: failed; workforce_provider_unavailable; planner:provider_call_timed_out; inference_unavailable\n\n```python\ndef average(values):\n    if not values:\n        raise ValueError(\"average requires at least one value\")\n    return sum(values) / len(values)\n```\n\nCorrectness defects:\n- `//` floor-divides, so it loses fractional results.\n- Empty input raises `ZeroDivisionError`, not the requested `ValueError`.\n- Negative non-divisible results floor downward, e.g. `-3 // 2 == -2`, not `-1.5`.\n\nFocused regression tests:\n\n```python\ndef test_average_floats_fractional_result():\n    assert average([1.0, 2.0]) == 1.5\n\n\ndef test_average_negative_numbers():\n    assert average([-1, -2]) == -1.5\n\n\ndef test_average_empty_raises_value_error():\n    try:\n        average([])\n    except ValueError:\n        pass\n    else:\n        raise AssertionError(\"expected ValueError\")\n```\n\nNo files read or modified. Tests not executed.\n",
+      "response_sha256": "6e5edcecdf17cc6b566f3f530c4336b6f407ee5c4278a5c94133028c207f1644",
+      "accepted_hash_matches": false,
+      "terminal_hash_matches": false,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "requested execution alias: alias-hermes-chat"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "failed; workforce_provider_unavailable; planner:provider_call_timed_out; inference_unavailable"
+        },
+        "all_five_match": false
+      },
+      "native_message_ids": [
+        535379,
+        535380,
+        535381,
+        535382
+      ],
+      "native_card_tool_results": [],
+      "native_final_bound": false,
+      "native_hook_contexts": [
+        {
+          "native_message_id": 535379,
+          "api_content_chars": 9368,
+          "api_content_sha256": "97037a0e4f6a6105ed45115fe1440884c62f49f24f728cca44141845558b8647",
+          "spill_pointer_present": false,
+          "contract_present": true,
+          "delivery_rules_present": true,
+          "native_card_tool_requested": false
+        }
+      ],
+      "card_proofs": [],
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    }
+  ]
+}

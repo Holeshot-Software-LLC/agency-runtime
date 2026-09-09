@@ -1213,6 +1213,7 @@ def _prepare_preflight_evidence(
             hydration_catalog,
             hydration_routing,
             record_evidence=False,
+            require_complete=True,
             maximum_chars=specialist_budget,
             session_id=session_id,
             trace_id=trace_id,
@@ -1250,6 +1251,14 @@ def _prepare_preflight_evidence(
 
         if needs_mcp_context(host, manager_routing_context, loaded.context):
             recipe["specialist_context_via_mcp"] = True
+        from agency_runtime.core.hermes_context_delivery import HERMES_INLINE_CONTEXT_CHARS
+
+        if (
+            host == "hermes"
+            and loaded.context
+            and len(f"{manager_routing_context}\n\n{loaded.context}") > HERMES_INLINE_CONTEXT_CHARS
+        ):
+            recipe["specialist_context_via_hermes_tool"] = True
         if continuation_snapshot is not None:
             recipe["continuation_guard"] = continuation_snapshot["guard"]
         if turn_context_guard:
