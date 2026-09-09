@@ -104,3 +104,13 @@ The supplemented second packet uses the already available Codex verifier after
 the Claude verifier failed to return a criterion2 verdict. No third pass planned.
 An initial builder docs check rejected missing line locators; corrected before
 any verifier call, with no acceptance inferred from the failed command.
+
+## Second isolated Claude delivery pass
+
+Codex second pass:1absentaff6ed5e,2absent779c4d4e,3satisfied4833b3df.
+The verifier's bounded excerpt selection omitted the decisive pointer and card
+rows behind long earlier citations. Native success is preserved, but AR-423
+remains open; two independent passes have been used. A compact corrected packet
+will be prepared without a third pass in this package. No failed verdict is
+overridden or relabeled. AR-425 receives focused line citations before its first
+isolated pass.

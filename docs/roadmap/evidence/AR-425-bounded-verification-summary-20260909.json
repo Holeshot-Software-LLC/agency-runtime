@@ -1,0 +1,51 @@
+{
+  "source_commit": "03a82c3b",
+  "artifact_commit": "2b19cce6",
+  "focused_passed": 143,
+  "claude_context_tests_passed": 12,
+  "spine_summary": "1151 passed, 3 skipped in 70.58s (0:01:10)",
+  "ui_passed": 224,
+  "all_recorded_check_exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "conformance": {
+    "invalid": 0,
+    "killed": 188,
+    "mutations": 188,
+    "survived": 0
+  },
+  "conformance_passed": true,
+  "native_session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+  "native_trace_id": "df374667-2599-4798-a852-1e6f972aed25",
+  "native_elapsed_seconds": 239.508,
+  "native_planner_attempt_statuses": [
+    "rejected",
+    "applied"
+  ],
+  "native_critic_statuses": [
+    "applied"
+  ],
+  "native_four_exact_cards": true,
+  "native_five_fields_match": true,
+  "native_accepted_hash_matches": true,
+  "response_sha256": "f9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b",
+  "known_limitations": [
+    "Original Claude second semantic error remains unknown.",
+    "The new planner-only baseline already repaired successfully; native success is not controlled causal proof of this change.",
+    "Five-host fixed cases remain separate reliability evidence; all failed cases are retained."
+  ],
+  "sources": [
+    "AR-425-validation-20260909.json",
+    "AR-425-conformance-20260909.json",
+    "AR-404-claude-large-context-after-planner-context-20260909.json",
+    "AR-425-planner-diagnostic-20260909.json"
+  ]
+}
