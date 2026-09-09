@@ -62,3 +62,5 @@ Sixteen card slots plus one snapshot mirror the existing durable reference cap;
 empty slots do not dispatch. Card/version/turn guards and the result ceiling stay
 unchanged. The local tool remains a supported retrieval surface. No global native
 limit or model budget changes; loaded rows correspond to returned bounded fragments.
+
+Implementation commits `ab924385` and `faf5645a` are indexed in the related worklog.

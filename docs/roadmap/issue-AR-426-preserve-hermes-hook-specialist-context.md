@@ -34,6 +34,11 @@ This input-context defect is distinct from AR-418 output truncation.
 
 ## Current state
 
+Callback candidate sourcefaf5645a/artifact22f24edd is installed with616exact file
+matches. Focused131, production1151/3skip, UI224, conformance188/188 and canonical
+build/independent artifact/smoke checks pass. Fresh native proof follows once per
+fixed manifest case; initial tool-only failures remain preserved.
+
 First native tool-only phase failed all three full acceptance gates. Intact frames
 arrived, but the model skipped card retrieval. Recipe18 refines delivery through
 ordered per-card native callbacks and a final current snapshot; revised focused

@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-terminal-reliability-20260909
-evidence_commit: ab924385dc8b1e7f0b2c218c2bebab55cb52b3db
-minimum_ledger_commit: aee01dc6e866671db3fdc1da97e9762249028ad7
+evidence_commit: faf5645a6e7b9c86b15d6caad52b7ddbea6f032a
+minimum_ledger_commit: 22f24eddeb5fc43a017c7d774f2fd14d1b727988
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -29,6 +29,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 # AR-404 native reliability checkpoint
 
 ## Checkpoint
+
+Current callback sourcefaf5645a/artifact22f24edd is installed,616exact files.
+Focused131, production1151/3skip, UI224 and conformance188/188 pass. Three fixed
+Hermes requests now enter the live_demo phase once each; no old receipt retries.
 
 Active owned branch codex/ar404-terminal-reliability-20260909 starts at clean
 synchronized c6c3e7b5. AR-426/#823 owns the new Hermes native hook-spill repair,

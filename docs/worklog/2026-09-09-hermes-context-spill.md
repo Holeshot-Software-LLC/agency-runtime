@@ -105,3 +105,13 @@ hashes are preserved in AR-426-native-fragment-contract-20260909.json.
 
 Refined callback/context/terminal focused suite131passed; Ruff and format pass.
 Revised production, conformance and native proof follow the source checkpoint.
+
+## Callback candidate demo checkpoint
+
+Sourcefaf5645a/artifact22f24edd, recipe18: focused131pass, production1151pass/3skip,
+UI224pass, routing/Ruff/format/metadata/docs pass. Frozen conformance188/188killed,
+0invalid/0survived, source unchanged. Canonical build, Twine, independent artifact
+validation and installed smoke pass. All616files match wheel73cf18d6e49156fd736a62eed6de582b9d4d23f705fda67d4436f5c86f26479f.
+Only Hermes projection refreshed. The callback candidate will run the unchanged
+three native requests once each under360s. Initial native failures remain retained;
+AR-404/418/423/426 remain open before native and isolated proof.
