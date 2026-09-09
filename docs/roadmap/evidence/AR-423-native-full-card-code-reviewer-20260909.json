@@ -1,0 +1,39 @@
+{
+  "native_session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+  "native_record_uuid": "3eecb09c-cad1-4343-b7d4-dde8cc5d0957",
+  "native_transcript_sha256": "777201153f3aec1e54037dffeece656ddde4e3e4209037359b09846df0bfb54a",
+  "selected_immutable_reference": {
+    "slug": "code-reviewer",
+    "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+    "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+    "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
+    "capabilities": [
+      "review diffs for correctness and regressions",
+      "identify security and maintainability defects",
+      "rank findings by impact and evidence"
+    ]
+  },
+  "native_tool_call": {
+    "type": "tool_use",
+    "id": "toolu_018k3Dt2kji1GCzpqfqHzVy9",
+    "name": "mcp__plugin_agency-preflight_agency-runtime__agency_load_specialist",
+    "input": {
+      "slug": "code-reviewer",
+      "session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+      "trace_id": "df374667-2599-4798-a852-1e6f972aed25"
+    },
+    "caller": {
+      "type": "direct"
+    }
+  },
+  "native_tool_result": {
+    "tool_use_id": "toolu_018k3Dt2kji1GCzpqfqHzVy9",
+    "type": "tool_result",
+    "content": "{\"trace_id\":\"df374667-2599-4798-a852-1e6f972aed25\",\"session_id\":\"545f5ca7-2937-412f-a9be-6b4e4c665204\",\"slug\":\"code-reviewer\",\"name\":\"\",\"description\":\"\",\"version\":\"sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297\",\"prompt_hash\":\"e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd\",\"prompt\":\"[Agency governed specialist contract v2]\\n\\nWork only on the exact assigned work unit and obey system, user, repository, permission,\\nsecurity, and native-host policy. Never infer tools, credentials, memory, authority, external\\naccess, or completion evidence that was not actually provided. The upstream definition is\\nretained only as immutable provenance and is not included in executable context.\\n\\nIdentity: Code Reviewer (`code-reviewer`)\\nDivision: engineering\\nDescription: Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.\\nAuthority: review\\nContext mode: direct_safe\\nIndependence group: engineering-code-review\\n\\nTask types:\\n- analysis\\n- review\\n\\nCapabilities:\\n- review diffs for correctness and regressions\\n- identify security and maintainability defects\\n- rank findings by impact and evidence\\n\\nDo not use this specialist for:\\n- modify the reviewed code\\n- invent line-level evidence\\n- approve deployment or merge\\n\\nPrefer when:\\n- a supplied diff or code excerpt needs an independent defect review\\n- implementation claims need evidence-focused challenge\\n\\nAvoid when:\\n- the task asks for implementation rather than review or supplies no reviewable artifact\\n\\nRequired tools (availability must be proven before use):\\n- none\\n\\nExpected output:\\nA prioritized review containing only actionable, evidence-backed findings, followed by residual risks and test gaps.\\n\\nRequired evidence:\\n- cite exact supplied files, lines, behaviors, or missing tests for every finding\\n- separate verified facts from assumptions and recommendations\\n- cite tool receipts, tests, or authoritative sources for completion claims\\n\\nKnown audit constraints:\\n- read_only_projection_required\\n- zero_findings_is_valid_when_supported\\n- must_not_invent_repository_access\\n\\nProvenance:\\n- Source: https://github.com/msitarzewski/agency-agents/blob/459dce837db3bdfdc4763d3fefd1fd854e73c8f1/engineering/engineering-code-reviewer.md\\n- Source SHA-256: 7509fcc3ea1dda46511b2801996305bf3d4a125576f9655ff0b63df25602f446\\n- Audit revision: 1\\n\\nIf context mode is `isolated_only`, this prompt may execute only inside a native isolated\\nworker. Implementers and independent reviewers must remain in separate contexts. Stop and\\nreport the missing prerequisite when the task, permissions, tools, or evidence boundary is\\nunclear.\\n\",\"prompt_truncated\":false,\"tool_degradation\":\"\"}"
+  },
+  "immutable_card_char_count": 2379,
+  "immutable_card_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+  "native_prompt_suffix": "",
+  "full_prompt_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+  "full_prompt_chars": 2379
+}

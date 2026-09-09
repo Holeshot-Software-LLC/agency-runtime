@@ -1,0 +1,22 @@
+{
+  "source_evidence": "AR-425-installed-candidate-20260909.json",
+  "artifact": {
+    "artifact_source_commit": "2b19cce6",
+    "wheel_sha256": "cba264c1bdbd57730f7ba748af2b75a5971cd0c71e425ca6d9826c463fad2fcd",
+    "installed_package_files": 615,
+    "mismatches": [],
+    "fresh_isolated_recipe_version": 16
+  },
+  "conformance": {
+    "counts": {
+      "invalid": 0,
+      "killed": 188,
+      "mutations": 188,
+      "survived": 0
+    },
+    "passed": true,
+    "source_unchanged": true,
+    "status": "passed"
+  },
+  "conformance_source": "AR-425-conformance-20260909.json"
+}

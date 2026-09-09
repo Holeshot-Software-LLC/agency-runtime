@@ -14,7 +14,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-423
-branch: codex/ar404-planner-contract-20260909
+branch: codex/ar423-acceptance-20260909
 evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
 minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
 hard_checkpoint_percent: 50
@@ -24,6 +24,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 # AR-423 Claude native context delivery
 
 ## Checkpoint
+
+Owner authorized one third isolated pass on 2026-09-09 ("go for it"). The new
+owned worktree starts at c6c3e7b5; the packet now includes all four exact native
+MCP results, immutable card hashes and appended delivery disclosures. No new
+native trial or permission change is needed for this retained acceptance scope.
 
 Native full-card delivery now passes on PR821 candidate2b19cce6/source03a82c3b.
 The underlying recipe16 delivery implementation came from PR814/cd86e40a.

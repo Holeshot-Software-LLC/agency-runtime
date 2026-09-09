@@ -171,3 +171,13 @@ PR821 merged at 2026-09-09T16:02:51Z as `f28b66d7e350a781325c55c91fa23bf267d9e7f
 on remote main. AR-425 alone closes; AR-404, AR-418 and AR-423 remain open.
 The following ledger-only PR records this merge under the documented
 `docs(worklog):` exemption. Main was clean before its fast-forward.
+
+## Authorized AR-423 acceptance continuation
+
+Owner's 2026-09-09 "go for it" authorizes one additional isolated pass. New
+owned branch codex/ar423-acceptance-20260909 starts at c6c3e7b5. The packet
+now includes actual native tool results for all four selected cards, separating
+immutable card hashes from appended tool-availability disclosures. Full response
+and compact terminal evidence remain repository-local. No new native trial,
+permission change or failed receipt acceptance is used. The third isolated pass
+follows bounded packet inspection. AR-404 and AR-426 retain their separate gates.
