@@ -38,6 +38,13 @@ hook_additional_context instead contains an Output-too-large15.7KB file pointer.
 The ordinary one-specialist review has exact full-card evidence. See the retained
 AR-404-claude-suite-after-repair-20260909.json evidence in this repository.
 
+Read-only inspection of the installed2.1.266 binary identifies a10,000JavaScript
+string-length default for the native hook persistence helper. The observed15.7KB
+is payload size, not the limit. Four selected full cards alone exceed10,000characters;
+trimming the frame cannot preserve them all. See
+[evidence/AR-423-claude-native-hook-limit-20260909.json](evidence/AR-423-claude-native-hook-limit-20260909.json).
+No supported threshold override has been established.
+
 ## Approach
 
 Identify the native inline limit and supported delivery surface. Preserve exact

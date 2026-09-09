@@ -1,0 +1,573 @@
+{
+  "manifest": "AR-404-reliability-suite-20260909.json",
+  "phase": "after_repair",
+  "installed_source": "db1c642f",
+  "host": "hermes",
+  "cases": [
+    {
+      "case": "ordinary_review",
+      "invocation": {
+        "case": "ordinary_review",
+        "host": "hermes",
+        "phase": "after_repair",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909",
+          "-q",
+          "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files."
+        ],
+        "native_session_id": "20260909_071950_034119",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 299.269
+      },
+      "run": {
+        "id": "67e62d5f-45b5-4af5-adca-0aa4b06445ed",
+        "trace_id": "20260909_071950_034119:2e31f4e2-957d-47b3-9056-2b159c647824:2b8ee4fc",
+        "session_id": "20260909_071950_034119",
+        "host": "hermes",
+        "started_at": "2026-09-09T11:20:00.771000+00:00",
+        "last_activity_at": "2026-09-09T11:24:40.281000+00:00",
+        "turn_sequence": 1636,
+        "ended_at": "2026-09-09T11:24:40.280759+00:00",
+        "status": "completed",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "finalization": {
+        "id": "febf46dc-9de8-4e9f-856b-38120224edc2",
+        "trace_id": "20260909_071950_034119:2e31f4e2-957d-47b3-9056-2b159c647824:2b8ee4fc",
+        "host": "hermes",
+        "action": "accept",
+        "missing": null,
+        "response_hash": "60e5cdfe231892af601c1a8e4772cf76db4010f58cc9689c2382e1ee7152cddb",
+        "policy_response_hash": null,
+        "terminal_status": "completed",
+        "created_at": "2026-09-09T11:24:40.280759+00:00",
+        "session_id": "20260909_071950_034119",
+        "status": "completed",
+        "ended_at": "2026-09-09T11:24:40.280759+00:00",
+        "authoritative": true
+      },
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent"
+      },
+      "routing": {
+        "status": "accepted",
+        "selected_ids": [
+          "code-reviewer"
+        ],
+        "latency_ms": 268702,
+        "receipt": {
+          "compatibility": {
+            "added_requirements": [],
+            "compatible": false,
+            "contract_version": 0,
+            "overflow_review_ids": [],
+            "rejected_count": 0,
+            "rejection_reason_counts": [],
+            "rejections": [],
+            "requested_ids": [],
+            "selected_ids": [],
+            "selected_root_ids": [],
+            "selection_limit": 0,
+            "separate_context_pairs": []
+          },
+          "effect_codes": [
+            "inference_attempted",
+            "eligibility_exclusions_applied",
+            "specialists_selected",
+            "hiring_not_attempted"
+          ],
+          "eligibility": {
+            "eligible_count": 72,
+            "evaluated_count": 293,
+            "rejected_count": 221,
+            "rejection_reason_counts": [
+              {
+                "count": 21,
+                "reason_code": "missing_capabilities"
+              },
+              {
+                "count": 2,
+                "reason_code": "unsupported_execution_host"
+              }
+            ],
+            "rejections": [
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "application-observability-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:product-analytics-reader",
+                "slug": "behavioral-nudge-engine"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "cms-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "compliance-auditor"
+              },
+              {
+                "reason_code": "missing_capabilities:current-cultural-research",
+                "slug": "cultural-intelligence-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:database-access",
+                "slug": "database-optimizer"
+              },
+              {
+                "reason_code": "missing_capabilities:cross-platform-test-host",
+                "slug": "developer-tooling-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "feedback-synthesizer"
+              },
+              {
+                "reason_code": "unsupported_execution_host:hermes",
+                "slug": "finance-security-snapshot-review-specialist"
+              },
+              {
+                "reason_code": "missing_capabilities:jira",
+                "slug": "jira-workflow-steward"
+              },
+              {
+                "reason_code": "missing_capabilities:language-server-runtime",
+                "slug": "lsp-index-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:official-mcp-documentation",
+                "slug": "mcp-builder"
+              },
+              {
+                "reason_code": "unsupported_execution_host:hermes",
+                "slug": "network-diagnostic-explanation-specialist"
+              },
+              {
+                "reason_code": "missing_capabilities:orgscript-cli",
+                "slug": "orgscript-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "proposal-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "rapid-prototyper"
+              },
+              {
+                "reason_code": "missing_capabilities:roblox-studio",
+                "slug": "roblox-systems-scripter"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "security-architect"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "senior-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:security-analysis",
+                "slug": "senior-secops-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:media-processing",
+                "slug": "short-video-editing-coach"
+              },
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "threat-detection-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "ux-architect"
+              }
+            ],
+            "sample_truncated": true
+          },
+          "hiring": {
+            "attempted_count": 0,
+            "calls_used": 0,
+            "events": [],
+            "outcome": "no_attempt",
+            "truncated": false,
+            "workforce_changes": 0
+          },
+          "inference": {
+            "attempted": true,
+            "configured": true,
+            "mode": "inferred",
+            "provider_attempts": [
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-router",
+                "ordinal": 1,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "linux-task-agency-router",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-router",
+                "stage": "planner",
+                "status": "applied"
+              },
+              {
+                "model_group": "",
+                "ordinal": 2,
+                "provider_name": "local-workforce-embedding",
+                "provider_type": "ollama",
+                "reason_code": "dense_recall_applied",
+                "requested_model": "qwen3-embedding:latest",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "",
+                "ordinal": 3,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "local-workforce-reranker",
+                "provider_type": "ollama",
+                "reason_code": "structured_response_applied",
+                "requested_model": "qwen3-14b-abliterated:latest",
+                "stage": "recall_reranker",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-router",
+                "ordinal": 4,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "linux-task-agency-router",
+                "provider_type": "litellm",
+                "reason_code": "provider_call_timed_out",
+                "requested_model": "task-agency-router",
+                "stage": "recruiter",
+                "status": "failed"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2-content-fallback",
+                "ordinal": 5,
+                "provider_call_attempted": true,
+                "provider_chain_index": 1,
+                "provider_fallback_count": 1,
+                "provider_name": "agency-recruiter-content-fallback",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-recruiter-v2-content-fallback",
+                "stage": "recruiter",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-router",
+                "ordinal": 6,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "linux-task-agency-router",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-router",
+                "stage": "critic",
+                "status": "applied"
+              }
+            ],
+            "required": true
+          },
+          "reason_codes": [
+            "turn_kind:new_intent",
+            "routing_status:accepted",
+            "inference_mode:inferred",
+            "eligibility:missing_capabilities",
+            "eligibility:unsupported_execution_host"
+          ],
+          "receipt_version": 1,
+          "retrieval": {
+            "candidate_union_count": 0,
+            "full_roster_count": 0,
+            "hard_negative_count": 0,
+            "lexical_count": 0,
+            "mode": "unavailable",
+            "semantic_count": 0
+          },
+          "staffing": {
+            "gap_count": 0,
+            "global_reason_codes": [],
+            "status": "accepted",
+            "truncated": false,
+            "units": [
+              {
+                "nominated_ids": [
+                  "code-reviewer",
+                  "python-application-engineer",
+                  "test-results-analyzer"
+                ],
+                "proposed_ids": [
+                  "code-reviewer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-1"
+              },
+              {
+                "nominated_ids": [
+                  "code-reviewer",
+                  "test-results-analyzer",
+                  "python-application-engineer"
+                ],
+                "proposed_ids": [
+                  "code-reviewer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-2"
+              }
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)\nRecruited via: inference\n\nFindings:\n- High: `average([1.0, 2.0])` returns `1.0`, not `1.5`, because `//` performs floor division. That violates the requirement to return the arithmetic mean including fractional results. Use true division (`/`) for the mean.\n- High: `average([])` raises `ZeroDivisionError` from `len(values) == 0`, not `ValueError`. That violates the required empty-input behavior. Add an explicit empty check before dividing and raise `ValueError`.\n\nProposed correction, without writing the function yet:\n- Check emptiness first, e.g. `if not values: raise ValueError(...)` for sequence inputs.\n- Compute the result as `sum(values) / len(values)`, not `//`, so fractional means are preserved.\n\nResidual risks/test gaps:\n- The supplied requirements mention nonempty numeric sequences only; behavior for iterators, non-numeric values, or custom sequence types is unspecified.\n- Minimal tests should include `[1.0, 2.0] -> 1.5` and `[]` raising `ValueError`.",
+      "response_sha256": "60e5cdfe231892af601c1a8e4772cf76db4010f58cc9689c2382e1ee7152cddb",
+      "accepted_hash_matches": true,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward, code-reviewer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)",
+          "recruited_via": "inference"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward, code-reviewer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)",
+          "recruited_via": "inference"
+        },
+        "all_five_match": true
+      },
+      "native_message_ids": [
+        535329
+      ],
+      "card_proofs": [
+        {
+          "slug": "code-reviewer",
+          "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+          "store_hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "full_prompt_chars": 2379,
+          "prompt_bytes_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "exact_full_card_present": true,
+          "source": "native Hermes user api_content matched exact supplied request and subsequent same-session assistant accepted response hash before next user message"
+        }
+      ],
+      "exact_card_injection": true,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": {
+          "id": "f66f3894-6a01-4d93-b225-cdec29d9a0f7",
+          "trace_id": "20260909_071950_034119:2e31f4e2-957d-47b3-9056-2b159c647824:2b8ee4fc",
+          "session_id": "20260909_071950_034119",
+          "host": "hermes",
+          "requested_model": "alias-hermes-chat",
+          "model_group": "alias-hermes-chat",
+          "resolved_provider": "",
+          "resolved_model": "alias-hermes-chat",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "host",
+          "recorded_at": "2026-09-09T11:24:39.917000+00:00",
+          "started_at": "2026-09-09T11:24:39.917050+00:00",
+          "ended_at": "2026-09-09T11:24:39.917054+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "code-reviewer"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "code-reviewer",
+            "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+            "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+            "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
+            "capabilities": [
+              "review diffs for correctness and regressions",
+              "identify security and maintainability defects",
+              "rank findings by impact and evidence"
+            ]
+          }
+        ],
+        "delegations": []
+      },
+      "status": "accepted native evidence"
+    },
+    {
+      "case": "short_followup",
+      "invocation": {
+        "case": "short_followup",
+        "host": "hermes",
+        "phase": "after_repair",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909",
+          "-q",
+          "go for it",
+          "--resume",
+          "20260909_071950_034119"
+        ],
+        "native_session_id": "20260909_071950_034119",
+        "exit_code": 130,
+        "timeout": true,
+        "elapsed_seconds": 365.059
+      },
+      "run": {
+        "id": "2776ea30-c5ca-4a64-82e1-c77c35b2d84e",
+        "trace_id": "20260909_071950_034119:195c3c34-87f2-4978-ac72-e60eee2bab14:ac5a1a4c",
+        "session_id": "20260909_071950_034119",
+        "host": "hermes",
+        "started_at": "2026-09-09T11:24:59.126000+00:00",
+        "last_activity_at": "2026-09-09T11:30:52.191000+00:00",
+        "turn_sequence": 1637,
+        "ended_at": "2026-09-09T11:30:52.186068+00:00",
+        "status": "interrupted",
+        "preflight_state": "in_progress"
+      },
+      "failure": null,
+      "finalization": null,
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "cf97d012ecc86f377b7d8e87fbe81109c2e7d7596fbed57340f373d76504b7e6",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "511ee009e84cfdc9e4d3b3c3165e4358f763dfe573fbf304ab342ed4bf30ef34",
+        "turn_kind": "continuation"
+      },
+      "response": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\n",
+      "response_sha256": "23f68890ad1003b0748f518df3e7edb6a8fa5090552ab743f12aa91132fe148e",
+      "accepted_hash_matches": false,
+      "headers": {
+        "observed": {},
+        "store_projection": {
+          "agencies_loaded": "none",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "none (no routing receipt)"
+        },
+        "all_five_match": false
+      },
+      "native_message_ids": [],
+      "card_proofs": [],
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    },
+    {
+      "case": "multi_step",
+      "invocation": {
+        "case": "multi_step",
+        "host": "hermes",
+        "phase": "after_repair",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909",
+          "-q",
+          "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed."
+        ],
+        "native_session_id": "20260909_073055_d17855",
+        "exit_code": 130,
+        "timeout": true,
+        "elapsed_seconds": 364.591
+      },
+      "run": {
+        "id": "ee53020e-21f2-4031-9787-8166ef7f3d8c",
+        "trace_id": "20260909_073055_d17855:69d16ec9-0d38-4e36-8d3a-b59ce2baa539:a726064a",
+        "session_id": "20260909_073055_d17855",
+        "host": "hermes",
+        "started_at": "2026-09-09T11:31:11.064000+00:00",
+        "last_activity_at": "2026-09-09T11:36:56.962000+00:00",
+        "turn_sequence": 1638,
+        "ended_at": "2026-09-09T11:36:56.959313+00:00",
+        "status": "interrupted",
+        "preflight_state": "in_progress"
+      },
+      "failure": null,
+      "finalization": null,
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "4b0a04c6bfb20e80ea924bd5bb8af567af4e81c55d48820d3c5bae7e2771df33",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent"
+      },
+      "response": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\n",
+      "response_sha256": "23f68890ad1003b0748f518df3e7edb6a8fa5090552ab743f12aa91132fe148e",
+      "accepted_hash_matches": false,
+      "headers": {
+        "observed": {},
+        "store_projection": {
+          "agencies_loaded": "none",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "none (no routing receipt)"
+        },
+        "all_five_match": false
+      },
+      "native_message_ids": [],
+      "card_proofs": [],
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    }
+  ]
+}

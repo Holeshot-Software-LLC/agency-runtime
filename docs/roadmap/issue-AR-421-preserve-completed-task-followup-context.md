@@ -41,7 +41,10 @@ native sample and isolated acceptance remain. Native refresh is now published as
 1825059191a2/classifier6; Codex requires attended approval of8modified hooks.
 The first post-wheel sample still ran classifier5 and the next had no Agency
 receipt; neither is repair acceptance. Claude review now proves fresh classifier6
-and accepted exact native evidence; the follow-up remains pending.
+and accepted exact native evidence. Claude and Zcode follow-ups correlate the
+exact completed review and require fresh staffing. Zcode additionally proves full
+cards, all five headers and accepted hashes on both review and follow-up. Its
+multi-step staffing failure remains in AR-404; isolated AR-421 verdicts are pending.
 
 ## Approach
 

@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-421
-candidate_commit: 110748470f9be46e22c0a58c15d5b6e07ab8f546
+candidate_commit: ae49f8a481f673a7a43e84c68e8076417a84b6bb
 evidence_cutoff: 2026-09-09
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/808
 ---
@@ -33,6 +33,8 @@ The independent verifier supplies each criterion verdict.
 | 2 | test | Trust, failed-state, new-task and replay rejection contracts | 2026-09-09 | tests/test_completed_task_followup.py:1-125 |
 | 3 | file | Fresh Claude classifier6 continuation, exact source trace, new inference and accepted output; native card limitation retained | 2026-09-09 | docs/roadmap/evidence/AR-404-claude-suite-after-repair-20260909.json:1-1150 |
 | 3 | command-output | Focused, spine, UI, conformance and installed native evidence with limitations | 2026-09-09 | docs/worklog/2026-09-09-completed-task-context.md#verification |
+| 3 | file | Fresh Zcode exact completed-task correlation, full selected cards, truthful headers and accepted hashes; multi-step failure retained | 2026-09-09 | docs/roadmap/evidence/AR-404-zcode-suite-after-config-schema-20260909.json:390-450 |
+| 3 | file | Exact full card, all five Store headers and accepted native response hash on the Zcode continuation | 2026-09-09 | docs/roadmap/evidence/AR-404-zcode-suite-after-config-schema-20260909.json:687-773 |
 
 ## Verification
 

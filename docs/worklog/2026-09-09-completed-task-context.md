@@ -187,3 +187,21 @@ AR-421/422 builder records are prepared for isolated verdicts, scoped respective
 to completed-task context and native executable permissions. Initial dry-run
 caught an out-of-range test citation; corrected references pass. No verdict is
 authored by the builder.
+
+## Refreshed Hermes and Claude boundary checkpoint
+
+Hermes unchanged native7cd91114 with Agency classifier6 completed the review in
+299.269s, of which routing records268.702s. Native user api_content is bound by
+the exact supplied request and following assistant accepted response hash in the
+same session; the full selected card, all five headers and finalization match.
+Follow-up365.059s and multi-step364.591s hit the360s deadline and are interrupted;
+no acceptance was manufactured. See AR-404-hermes-suite-after-repair-20260909.json.
+
+Claude installed2.1.266 native JavaScript uses a10,000UTF-16-code-unit default
+for hook additionalContext persistence. The observed15.7KB is output size, not
+the threshold. Four exact cards alone exceed the native inline ceiling. AR-423
+retains the binary hash and bounded limiter excerpt; no native binary was edited.
+OpenClaw's observer now takes the native event runId with context fallback; normal
+stop/install/start completed and read-only RPC reports healthy. The unchanged-route
+fixed sample is running. Codex attended hook trust and staffing-route choice remain
+pending; no configuration alignment or repeated Codex provider turn was performed.
