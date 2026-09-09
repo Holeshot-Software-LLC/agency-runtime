@@ -33,10 +33,15 @@ safely be worked around by reading that file automatically.
 
 ## Current state
 
-Priority continuation: Claude refreshed from verified recipe20 artifact ecf8a584.
-Both native MCP Allow rules remain unchanged; Claude context12 passes. One fresh
-large-context native trial will capture planner initial/repair replies as well as
-full card and terminal evidence before any additional isolated acceptance pass.
+Priority continuation: fresh recipe20 Claude session
+`a5c13def-36a1-4a3e-9484-d0f09f105209`, trace
+`95f96215-d84b-4b4e-9628-c808e99b9d23`, passed complete4/4 inferred native MCP
+cards, five Store headers and authoritative finalization in264.750s. Both exact
+MCP Allow rules remain unchanged. Planner initial response contains distinct
+correctness/security reviews; accepted staffing has no assurance advisories.
+No delegated specialist execution is claimed. One owner-authorized additional
+isolated pass will judge the updated complete-team and assurance evidence.
+
 
 Fresh recipe 19 Claude session `0a59da24` / trace `28c8db15` failed two planner
 contracts before delivery in 118.255s. The first lacked correctness/security review;

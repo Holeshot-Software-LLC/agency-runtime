@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-423
-candidate_commit: 38fa9e437fa0070fe85eac05c456e0ef093ef17c
+candidate_commit: pending
 evidence_cutoff: 2026-09-09
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 ---
@@ -21,31 +21,37 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 
 ## Builder evidence
 
-The builder cites evidence and does not judge criteria. Failed native turns remain
-failed; this packet does not establish AR-404 all-host reliability.
+The builder cites evidence and does not judge. This new recipe20 native turn
+retains every inferred card and its independent-review bindings. Staffing records
+no assurance advisory, and the independent critic applied. No native delegated
+specialist execution occurred or is claimed; the verifier must assess preservation
+of the pre-execution assurance boundary against the unchanged criterion. The old
+four-of-five delivery gap and all failed native/isolated results remain historical.
+
+The owner's explicit “go for ar423” authorizes this one further isolated pass with
+new source and native evidence. Complete source and packets exist in the candidate
+snapshot beyond excerpt limits. This is not an all-host reliability claim.
 
 | Criterion | Kind | Artifact | Observed | Source |
 |---|---|---|---|---|
-| 1 | file | Exact native attachment pointer, timestamp, persisted size, hash and session/trace correlation | 2026-09-09 | docs/roadmap/evidence/AR-423-original-native-pointer-20260909.json:1-27 |
-| 1 | file | Read-only native binary limit and exact baseline scope | 2026-09-09 | docs/roadmap/evidence/AR-423-claude-native-hook-limit-20260909.json:1-14 |
-| 2 | file | Exact native tool use/result, immutable selected reference, full card and separate appended disclosure | 2026-09-09 | docs/roadmap/evidence/AR-423-native-full-card-application-security-engineer-20260909.json:1-39 |
-| 2 | file | Exact native tool use/result, immutable selected reference, full card and separate appended disclosure | 2026-09-09 | docs/roadmap/evidence/AR-423-native-full-card-backend-service-engineer-20260909.json:1-40 |
-| 2 | file | Exact native tool use/result, immutable selected reference, full card and separate appended disclosure | 2026-09-09 | docs/roadmap/evidence/AR-423-native-full-card-code-reviewer-20260909.json:1-39 |
-| 2 | file | Exact native tool use/result, immutable selected reference, full card and separate appended disclosure | 2026-09-09 | docs/roadmap/evidence/AR-423-native-full-card-technical-writer-20260909.json:1-39 |
-| 2 | file | Two exact approved native per-tool rules | 2026-09-09 | docs/roadmap/evidence/AR-423-approved-tool-grant-20260909.json:1-15 |
-| 2 | file | Selected version and active-turn guards before load recording | 2026-09-09 | agency_runtime/server/mcp_tools.py:207-290 |
-| 2 | file | Accepted native terminal, exact Store headers and retained response hash | 2026-09-09 | docs/roadmap/evidence/AR-423-native-terminal-summary-20260909.json:1-86 |
-| 3 | command-output | Recorded focused, fast and native validation with exact scope and limitations | 2026-09-09 | docs/worklog/2026-09-09-planner-repair-context.md:28-94 |
-| 3 | file | Canonical installed artifact and frozen conformance summary | 2026-09-09 | docs/roadmap/evidence/AR-423-compact-installed-validation-20260909.json:1-22 |
-| 3 | file | Fresh native invocation and authoritative terminal evidence with matching headers | 2026-09-09 | docs/roadmap/evidence/AR-423-native-terminal-summary-20260909.json:1-86 |
+| 1 | file | Original native pointer and exact session/trace, size and hash | 2026-09-09 | docs/roadmap/evidence/AR-423-original-native-pointer-20260909.json:1-27 |
+| 1 | file | Exact native limit and baseline scope | 2026-09-09 | docs/roadmap/evidence/AR-423-claude-native-hook-limit-20260909.json:1-14 |
+| 2 | file | Exact native MCP call/result and full immutable selected card | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-full-card-application-security-engineer-20260909.json:1-37 |
+| 2 | file | Exact native MCP call/result and full immutable selected card | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-full-card-python-application-engineer-20260909.json:1-38 |
+| 2 | file | Exact native MCP call/result and full immutable selected card | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-full-card-software-test-engineer-20260909.json:1-38 |
+| 2 | file | Exact native MCP call/result and full immutable selected card | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-full-card-code-reviewer-20260909.json:1-37 |
+| 2 | file | Complete selected team, native accepted staffing without assurance advisories and critic receipt | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-assurance-summary-20260909.json:1-8 |
+| 2 | file | Distinct inferred implementation/test/correctness/security bindings and dependency timing | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-plan-bindings-20260909.json:1-7 |
+| 2 | file | Exact selected version and active-turn guards remain enforced | 2026-09-09 | agency_runtime/server/mcp_tools.py:207-290 |
+| 2 | file | Assurance requires disjoint selected identities, contexts and independence classes | 2026-09-09 | agency_runtime/core/workforce/staffing_verifier.py:1030-1083 |
+| 2 | file | Assurance check runs and records every advisory before accepting the staffed team | 2026-09-09 | agency_runtime/core/workforce/staffing_verifier.py:1133-1164 |
+| 2 | file | Two exact native MCP Allow rules remain unchanged | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-allow-rules-20260909.json:1-7 |
+| 3 | command-output | Recipe20 focused/fast, canonical installed artifact and frozen conformance | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-validation-20260909.json:1-38 |
+| 3 | command-output | Claude context regression results | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-focused-20260909.txt:1-2 |
+| 3 | file | Fresh native complete team, five Store headers and authoritative accepted response hash | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-terminal-20260909.json:1-78 |
+| 3 | command-output | Temporary observer restored configuration byte-for-byte without errors | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-observer-restoration-20260909.json:1-7 |
 
 ## Verification
 
-Owner authorized one additional isolated pass on 2026-09-09 ("go for it").
-Earlier failed passes remain preserved; this is the third pass, not a retry loop.
-
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | satisfied | `AR-423.1-20260909-481b2034` | `0f3a6aa2b2703c07429e442b681d74eed136c134e77a67f441ced19bae56a0e1` | 2026-09-09 | AR-423-original-native-pointer-20260909.json captures the exact substitution, timestamp, size, hashes and session/trace correlation; AR-423-claude-native-hook-limit-20260909.json shows the native 10,000-unit limiter exceeded by the 16,067-unit output. |
-| 2 | absent | `AR-423.2-20260909-1cdde5fb` | `a876e3ce2df7354000345044c6f6362e0e08be2b171a6e42948353646c372d26` | 2026-09-09 | The full-card receipts and mcp_tools.py demonstrate native delivery and turn guards, but the terminal summary records no delegation and does not establish preservation of independent assurance. |
-| 3 | satisfied | `AR-423.3-20260909-c12f936f` | `3166cbf7b5a6b26bc784a8778e119b20689ea6961cf17883f3eb588944baa88e` | 2026-09-09 | The worklog records passing regression suites, the installed validation artifact reports 188/188 conformance mutations killed, and the native terminal summary records a fresh session with accepted authoritative completion and matching headers. |

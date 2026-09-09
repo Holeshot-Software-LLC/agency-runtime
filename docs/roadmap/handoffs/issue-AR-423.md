@@ -51,17 +51,16 @@ correlation. Native limit10,000UTF16; prior denied and planner-failed probes rem
 
 ## Exact blocker
 
-Fresh recipe 19 Claude session `0a59da24-79ca-4bc5-afa2-b4f4e32ba5eb` / trace
-`28c8db15-403f-4d27-85c2-c660b4e16ae1` failed both planner contracts in 118.255s
-before card delivery. First reply missed correctness/security reviews; second
-reported semantic invalidity. No unchanged retry or fourth isolated pass.
+Fresh recipe20 native session `a5c13def-36a1-4a3e-9484-d0f09f105209` /
+trace `95f96215-d84b-4b4e-9628-c808e99b9d23` passed all4 inferred full cards,
+five Store headers and authoritative hash
+`1c5f87780ecf485d2f4ab4018b3a71a45c79522edd237707447667cfca638c1c`
+in264.750s. Planner/critic applied; distinct review bindings remain, staffing
+advisory codes empty. One captured planner packet; config restored byte-exact.
 
-
-Authorized third pass: criteria 1/3 satisfied, criterion 2 absent because the
-packet did not establish independent assurance. Read-only routing evidence then
-found five selected workers but four persisted prompt references, omitting the
-security reviewer. AR-427/#825 repairs that High delivery defect in PR 824.
-AR-423 remains blocked until fresh complete-team proof and isolated evidence.
+No native delegated execution occurred. The owner's explicit AR-423 request
+supports one further isolated pass against this new complete-team and assurance
+packet. Prior C2 absent verdict remains historical; no closure before all satisfied.
 
 ## Same-task continuity
 

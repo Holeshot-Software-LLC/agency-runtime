@@ -1,0 +1,1287 @@
+{
+  "manifest": "unchanged large_context_surface request; full invocation retained",
+  "phase": "priority_planner_observation",
+  "installed_source": "ecf8a584e51d7cfcfd6c888881f62736e44262ae",
+  "host": "claude",
+  "cases": [
+    {
+      "case": "large_context_surface",
+      "invocation": {
+        "case": "large_context_surface",
+        "host": "claude",
+        "phase": "priority_planner_observation",
+        "command": [
+          "claude",
+          "--print",
+          "--output-format",
+          "stream-json",
+          "--verbose",
+          "--permission-mode",
+          "default",
+          "--session-id",
+          "a5c13def-36a1-4a3e-9484-d0f09f105209",
+          "Review this supplied Python download-path helper for correctness and input security:\n\nfrom pathlib import Path\n\ndef download_path(root, name):\n    return Path(root) / name\n\nRequirements: return a resolved path strictly inside the configured root; reject absolute names, parent-directory traversal and symlink escapes with ValueError. Explain the defects, provide a corrected function, and give focused pytest cases for valid nested paths, absolute names, traversal and symlink escapes. State filesystem assumptions and remaining race limitations. Work only from this supplied snippet; do not read or modify files or execute tests, and do not claim execution."
+        ],
+        "native_session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 264.75
+      },
+      "run": {
+        "id": "49b38f9c-7568-42fe-a496-4044859fdc38",
+        "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+        "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+        "host": "claude",
+        "started_at": "2026-09-09T19:49:05.763932+00:00",
+        "last_activity_at": "2026-09-09T19:52:53.818000+00:00",
+        "turn_sequence": 1699,
+        "ended_at": "2026-09-09T19:52:53.817310+00:00",
+        "status": "completed",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "finalization": {
+        "id": "60fc86d0-1393-4970-bb05-944483d92007",
+        "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+        "host": "claude",
+        "action": "accept",
+        "missing": null,
+        "response_hash": "1c5f87780ecf485d2f4ab4018b3a71a45c79522edd237707447667cfca638c1c",
+        "policy_response_hash": null,
+        "terminal_status": "completed",
+        "created_at": "2026-09-09T19:52:53.817310+00:00",
+        "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+        "status": "completed",
+        "ended_at": "2026-09-09T19:52:53.817310+00:00",
+        "authoritative": true
+      },
+      "model_receipts": [
+        {
+          "requested_model": "task-agency-planner-v2",
+          "model_group": "task-agency-planner-v2",
+          "resolved_provider": "agency-planner",
+          "resolved_model": "task-agency-planner-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-recruiter-v2",
+          "model_group": "task-agency-recruiter-v2",
+          "resolved_provider": "agency-recruiter",
+          "resolved_model": "task-agency-recruiter-v2",
+          "source": "wrapper",
+          "status": "failed",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-recruiter-v2",
+          "model_group": "task-agency-recruiter-v2",
+          "resolved_provider": "agency-recruiter",
+          "resolved_model": "task-agency-recruiter-v2",
+          "source": "wrapper",
+          "status": "failed",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "qwen3-14b-abliterated:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-reranker",
+          "resolved_model": "qwen3-14b-abliterated:latest",
+          "source": "wrapper",
+          "status": "failed",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "qwen3-embedding:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-embedding",
+          "resolved_model": "qwen3-embedding:latest",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-recruiter-v2-content-fallback",
+          "model_group": "task-agency-recruiter-v2-content-fallback",
+          "resolved_provider": "agency-recruiter-content-fallback",
+          "resolved_model": "task-agency-recruiter-v2-content-fallback",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        }
+      ],
+      "finalization_event_count": 1,
+      "accepted_terminal_event_count": 1,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "37c5117dbedc29666a48d669a67658b25be89327c934e93619f15e03ebc4373a",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent"
+      },
+      "routing_decision": {
+        "available_companion_ids": [],
+        "available_fallback_companion_ids": [],
+        "cache_hit": false,
+        "candidate_count": 293,
+        "companion_actions": [],
+        "companion_ids": [],
+        "confidence": 1.0,
+        "context_fingerprint": "834ff17acb8d1804ff6ef692f8ed1b4922dadab53fcf8c2262bd97b3d6152b8c",
+        "continuation_resolution_required": false,
+        "continuation_reused": false,
+        "execution_context": {
+          "capabilities": [
+            "code-execution",
+            "native-delegation",
+            "package-management",
+            "repository-read",
+            "repository-write",
+            "runtime-evidence",
+            "shell-execution",
+            "source-control",
+            "test-execution"
+          ],
+          "contract_version": "1",
+          "evidence": [
+            "native-adapter-event:claude",
+            "managed-host-contract:1"
+          ],
+          "execution_host": "claude",
+          "inference_surface": "",
+          "observed_at": "2026-09-09T19:49:05.771497+00:00",
+          "platform": "linux",
+          "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+          "source": "native-adapter-event",
+          "status": "native-contract-verified",
+          "surface": "claude",
+          "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+          "unknown_tools": []
+        },
+        "fallback_applied": false,
+        "fallback_companion_ids": [],
+        "fallback_considered": false,
+        "latency_ms": 93655,
+        "query_hash": "37c5117dbedc29666a48d669a67658b25be89327c934e93619f15e03ebc4373a",
+        "routing_receipt": {
+          "compatibility": {
+            "added_requirements": [],
+            "compatible": false,
+            "contract_version": 0,
+            "overflow_review_ids": [],
+            "rejected_count": 0,
+            "rejection_reason_counts": [],
+            "rejections": [],
+            "requested_ids": [],
+            "selected_ids": [],
+            "selected_root_ids": [],
+            "selection_limit": 0,
+            "separate_context_pairs": []
+          },
+          "effect_codes": [
+            "inference_attempted",
+            "eligibility_exclusions_applied",
+            "specialists_selected",
+            "hiring_not_attempted"
+          ],
+          "eligibility": {
+            "eligible_count": 74,
+            "evaluated_count": 293,
+            "rejected_count": 219,
+            "rejection_reason_counts": [
+              {
+                "count": 21,
+                "reason_code": "missing_capabilities"
+              }
+            ],
+            "rejections": [
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "application-observability-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:product-analytics-reader",
+                "slug": "behavioral-nudge-engine"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "cms-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "compliance-auditor"
+              },
+              {
+                "reason_code": "missing_capabilities:current-cultural-research",
+                "slug": "cultural-intelligence-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:database-access",
+                "slug": "database-optimizer"
+              },
+              {
+                "reason_code": "missing_capabilities:cross-platform-test-host",
+                "slug": "developer-tooling-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "feedback-synthesizer"
+              },
+              {
+                "reason_code": "missing_capabilities:jira",
+                "slug": "jira-workflow-steward"
+              },
+              {
+                "reason_code": "missing_capabilities:language-server-runtime",
+                "slug": "lsp-index-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:official-mcp-documentation",
+                "slug": "mcp-builder"
+              },
+              {
+                "reason_code": "missing_capabilities:orgscript-cli",
+                "slug": "orgscript-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "proposal-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "rapid-prototyper"
+              },
+              {
+                "reason_code": "missing_capabilities:roblox-studio",
+                "slug": "roblox-systems-scripter"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "security-architect"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "senior-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:security-analysis",
+                "slug": "senior-secops-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:media-processing",
+                "slug": "short-video-editing-coach"
+              },
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "threat-detection-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "ux-architect"
+              }
+            ],
+            "sample_truncated": true
+          },
+          "hiring": {
+            "attempted_count": 0,
+            "calls_used": 0,
+            "events": [],
+            "outcome": "no_attempt",
+            "truncated": false,
+            "workforce_changes": 0
+          },
+          "inference": {
+            "attempted": true,
+            "configured": true,
+            "mode": "inferred",
+            "provider_attempts": [
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-planner-v2",
+                "ordinal": 1,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-planner",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-planner-v2",
+                "stage": "planner",
+                "status": "applied"
+              },
+              {
+                "model_group": "",
+                "ordinal": 2,
+                "provider_name": "local-workforce-embedding",
+                "provider_type": "ollama",
+                "reason_code": "dense_recall_applied",
+                "requested_model": "qwen3-embedding:latest",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "",
+                "ordinal": 3,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "local-workforce-reranker",
+                "provider_type": "ollama",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "qwen3-14b-abliterated:latest",
+                "stage": "recall_reranker",
+                "status": "rejected"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2",
+                "ordinal": 4,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "task-agency-recruiter-v2",
+                "stage": "recruiter",
+                "status": "rejected",
+                "validation_failures": [
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-defect-analysis"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-corrected-helper"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-pytest-cases"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-correctness-review"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-security-review"
+                  }
+                ]
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2",
+                "ordinal": 5,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "task-agency-recruiter-v2",
+                "stage": "recruiter",
+                "status": "rejected",
+                "validation_failures": [
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-defect-analysis"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-corrected-helper"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-pytest-cases"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-correctness-review"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-security-review"
+                  }
+                ]
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2-content-fallback",
+                "ordinal": 6,
+                "provider_call_attempted": true,
+                "provider_chain_index": 1,
+                "provider_fallback_count": 1,
+                "provider_name": "agency-recruiter-content-fallback",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-recruiter-v2-content-fallback",
+                "stage": "recruiter",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-critic-v2",
+                "ordinal": 7,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter-critic",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-critic-v2",
+                "stage": "critic",
+                "status": "applied"
+              }
+            ],
+            "required": true
+          },
+          "reason_codes": [
+            "turn_kind:new_intent",
+            "routing_status:accepted",
+            "inference_mode:inferred",
+            "eligibility:missing_capabilities"
+          ],
+          "receipt_version": 1,
+          "retrieval": {
+            "candidate_union_count": 0,
+            "full_roster_count": 0,
+            "hard_negative_count": 0,
+            "lexical_count": 0,
+            "mode": "unavailable",
+            "semantic_count": 0
+          },
+          "staffing": {
+            "gap_count": 0,
+            "global_reason_codes": [],
+            "status": "accepted",
+            "truncated": false,
+            "units": [
+              {
+                "nominated_ids": [
+                  "application-security-engineer",
+                  "code-reviewer"
+                ],
+                "proposed_ids": [
+                  "application-security-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-defect-analysis"
+              },
+              {
+                "nominated_ids": [
+                  "python-application-engineer",
+                  "minimal-change-engineer"
+                ],
+                "proposed_ids": [
+                  "python-application-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-corrected-helper"
+              },
+              {
+                "nominated_ids": [
+                  "software-test-engineer",
+                  "python-application-engineer",
+                  "test-automation-engineer"
+                ],
+                "proposed_ids": [
+                  "software-test-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-pytest-cases"
+              },
+              {
+                "nominated_ids": [
+                  "code-reviewer",
+                  "type-design-analyzer"
+                ],
+                "proposed_ids": [
+                  "code-reviewer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-correctness-review"
+              },
+              {
+                "nominated_ids": [
+                  "application-security-engineer",
+                  "penetration-tester",
+                  "senior-secops-engineer"
+                ],
+                "proposed_ids": [
+                  "application-security-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-security-review"
+              }
+            ]
+          }
+        },
+        "selected_ids": [
+          "application-security-engineer",
+          "python-application-engineer",
+          "software-test-engineer",
+          "code-reviewer"
+        ],
+        "semantic_ids": [
+          "application-security-engineer",
+          "python-application-engineer",
+          "software-test-engineer",
+          "code-reviewer"
+        ],
+        "session_reused": false,
+        "source": "workforce_inference",
+        "source_message_hash": "37c5117dbedc29666a48d669a67658b25be89327c934e93619f15e03ebc4373a",
+        "status": "accepted",
+        "top_score": 1.0,
+        "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+        "turn_context_applied": false,
+        "unavailable_companion_ids": [],
+        "unavailable_fallback_companion_ids": [],
+        "work_units": {
+          "confidence": "high",
+          "count": 5,
+          "delegate": false,
+          "source": "verified-workforce-plan"
+        },
+        "workforce_subject_hints": {
+          "capability_ids": [
+            "analysis",
+            "investigation",
+            "implementation",
+            "testing",
+            "review",
+            "verification",
+            "threat-modeling"
+          ],
+          "domains": [
+            "software-engineering",
+            "security",
+            "quality-assurance"
+          ],
+          "frameworks": [],
+          "languages": [
+            "python"
+          ],
+          "platforms": [
+            "linux"
+          ]
+        },
+        "workforce_unit_bindings": [
+          {
+            "artifact_kind": "analysis",
+            "confidence": 1.0,
+            "delivery": "load",
+            "depends_on": [],
+            "mutation_scope": "read_only",
+            "parallelization": "unspecified",
+            "required_evidence": [
+              "Evidence proves the requested analysis outcome."
+            ],
+            "required_tools": [
+              "repository-read"
+            ],
+            "selected": [
+              "application-security-engineer"
+            ],
+            "timing": "immediate",
+            "work_unit_id": "unit-2bc8933a61"
+          },
+          {
+            "artifact_kind": "implementation-change",
+            "confidence": 1.0,
+            "delivery": "load",
+            "depends_on": [
+              "unit-2bc8933a61"
+            ],
+            "mutation_scope": "workspace_write",
+            "parallelization": "sequential",
+            "required_evidence": [
+              "Evidence proves the requested implementation change outcome."
+            ],
+            "required_tools": [
+              "repository-read",
+              "repository-write",
+              "code-execution"
+            ],
+            "selected": [
+              "python-application-engineer"
+            ],
+            "timing": "immediate",
+            "work_unit_id": "unit-71285d60f4"
+          },
+          {
+            "artifact_kind": "test-code",
+            "confidence": 1.0,
+            "delivery": "load",
+            "depends_on": [
+              "unit-71285d60f4"
+            ],
+            "mutation_scope": "workspace_write",
+            "parallelization": "sequential",
+            "required_evidence": [
+              "Evidence proves the requested test code outcome."
+            ],
+            "required_tools": [
+              "repository-read",
+              "repository-write",
+              "code-execution",
+              "test-execution"
+            ],
+            "selected": [
+              "software-test-engineer"
+            ],
+            "timing": "immediate",
+            "work_unit_id": "unit-ab840f1ee6"
+          },
+          {
+            "artifact_kind": "review-report",
+            "confidence": 1.0,
+            "delivery": "load",
+            "depends_on": [
+              "unit-71285d60f4",
+              "unit-ab840f1ee6"
+            ],
+            "mutation_scope": "read_only",
+            "parallelization": "sequential",
+            "required_evidence": [
+              "Evidence proves the requested review report outcome."
+            ],
+            "required_tools": [
+              "repository-read"
+            ],
+            "selected": [
+              "code-reviewer"
+            ],
+            "timing": "after_artifact",
+            "work_unit_id": "unit-7e792365ac"
+          },
+          {
+            "artifact_kind": "review-report",
+            "confidence": 1.0,
+            "delivery": "load",
+            "depends_on": [
+              "unit-71285d60f4",
+              "unit-ab840f1ee6"
+            ],
+            "mutation_scope": "read_only",
+            "parallelization": "sequential",
+            "required_evidence": [
+              "Evidence proves the requested review report outcome."
+            ],
+            "required_tools": [
+              "repository-read"
+            ],
+            "selected": [
+              "application-security-engineer"
+            ],
+            "timing": "after_artifact",
+            "work_unit_id": "unit-e27e43f044"
+          }
+        ],
+        "workforce_unit_descriptors": [
+          {
+            "artifact_kind": "analysis",
+            "authority": "advise",
+            "lifecycle_phase": "discovery",
+            "mutation_scope": "read_only",
+            "ordinal": 1
+          },
+          {
+            "artifact_kind": "implementation-change",
+            "authority": "modify",
+            "lifecycle_phase": "implementation",
+            "mutation_scope": "workspace_write",
+            "ordinal": 2
+          },
+          {
+            "artifact_kind": "test-code",
+            "authority": "modify",
+            "lifecycle_phase": "testing",
+            "mutation_scope": "workspace_write",
+            "ordinal": 3
+          },
+          {
+            "artifact_kind": "review-report",
+            "authority": "review",
+            "lifecycle_phase": "review",
+            "mutation_scope": "read_only",
+            "ordinal": 4
+          },
+          {
+            "artifact_kind": "review-report",
+            "authority": "review",
+            "lifecycle_phase": "review",
+            "mutation_scope": "read_only",
+            "ordinal": 5
+          }
+        ]
+      },
+      "routing": {
+        "status": "accepted",
+        "selected_ids": [
+          "application-security-engineer",
+          "python-application-engineer",
+          "software-test-engineer",
+          "code-reviewer"
+        ],
+        "latency_ms": 93655,
+        "receipt": {
+          "compatibility": {
+            "added_requirements": [],
+            "compatible": false,
+            "contract_version": 0,
+            "overflow_review_ids": [],
+            "rejected_count": 0,
+            "rejection_reason_counts": [],
+            "rejections": [],
+            "requested_ids": [],
+            "selected_ids": [],
+            "selected_root_ids": [],
+            "selection_limit": 0,
+            "separate_context_pairs": []
+          },
+          "effect_codes": [
+            "inference_attempted",
+            "eligibility_exclusions_applied",
+            "specialists_selected",
+            "hiring_not_attempted"
+          ],
+          "eligibility": {
+            "eligible_count": 74,
+            "evaluated_count": 293,
+            "rejected_count": 219,
+            "rejection_reason_counts": [
+              {
+                "count": 21,
+                "reason_code": "missing_capabilities"
+              }
+            ],
+            "rejections": [
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "application-observability-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:product-analytics-reader",
+                "slug": "behavioral-nudge-engine"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "cms-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "compliance-auditor"
+              },
+              {
+                "reason_code": "missing_capabilities:current-cultural-research",
+                "slug": "cultural-intelligence-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:database-access",
+                "slug": "database-optimizer"
+              },
+              {
+                "reason_code": "missing_capabilities:cross-platform-test-host",
+                "slug": "developer-tooling-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "feedback-synthesizer"
+              },
+              {
+                "reason_code": "missing_capabilities:jira",
+                "slug": "jira-workflow-steward"
+              },
+              {
+                "reason_code": "missing_capabilities:language-server-runtime",
+                "slug": "lsp-index-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:official-mcp-documentation",
+                "slug": "mcp-builder"
+              },
+              {
+                "reason_code": "missing_capabilities:orgscript-cli",
+                "slug": "orgscript-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "proposal-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "rapid-prototyper"
+              },
+              {
+                "reason_code": "missing_capabilities:roblox-studio",
+                "slug": "roblox-systems-scripter"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "security-architect"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "senior-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:security-analysis",
+                "slug": "senior-secops-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:media-processing",
+                "slug": "short-video-editing-coach"
+              },
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "threat-detection-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "ux-architect"
+              }
+            ],
+            "sample_truncated": true
+          },
+          "hiring": {
+            "attempted_count": 0,
+            "calls_used": 0,
+            "events": [],
+            "outcome": "no_attempt",
+            "truncated": false,
+            "workforce_changes": 0
+          },
+          "inference": {
+            "attempted": true,
+            "configured": true,
+            "mode": "inferred",
+            "provider_attempts": [
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-planner-v2",
+                "ordinal": 1,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-planner",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-planner-v2",
+                "stage": "planner",
+                "status": "applied"
+              },
+              {
+                "model_group": "",
+                "ordinal": 2,
+                "provider_name": "local-workforce-embedding",
+                "provider_type": "ollama",
+                "reason_code": "dense_recall_applied",
+                "requested_model": "qwen3-embedding:latest",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "",
+                "ordinal": 3,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "local-workforce-reranker",
+                "provider_type": "ollama",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "qwen3-14b-abliterated:latest",
+                "stage": "recall_reranker",
+                "status": "rejected"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2",
+                "ordinal": 4,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "task-agency-recruiter-v2",
+                "stage": "recruiter",
+                "status": "rejected",
+                "validation_failures": [
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-defect-analysis"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-corrected-helper"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-pytest-cases"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-correctness-review"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-security-review"
+                  }
+                ]
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2",
+                "ordinal": 5,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "task-agency-recruiter-v2",
+                "stage": "recruiter",
+                "status": "rejected",
+                "validation_failures": [
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-defect-analysis"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-corrected-helper"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-pytest-cases"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-correctness-review"
+                  },
+                  {
+                    "reason_code": "missing_work_unit",
+                    "unit_id": "unit-security-review"
+                  }
+                ]
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2-content-fallback",
+                "ordinal": 6,
+                "provider_call_attempted": true,
+                "provider_chain_index": 1,
+                "provider_fallback_count": 1,
+                "provider_name": "agency-recruiter-content-fallback",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-recruiter-v2-content-fallback",
+                "stage": "recruiter",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-critic-v2",
+                "ordinal": 7,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter-critic",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-critic-v2",
+                "stage": "critic",
+                "status": "applied"
+              }
+            ],
+            "required": true
+          },
+          "reason_codes": [
+            "turn_kind:new_intent",
+            "routing_status:accepted",
+            "inference_mode:inferred",
+            "eligibility:missing_capabilities"
+          ],
+          "receipt_version": 1,
+          "retrieval": {
+            "candidate_union_count": 0,
+            "full_roster_count": 0,
+            "hard_negative_count": 0,
+            "lexical_count": 0,
+            "mode": "unavailable",
+            "semantic_count": 0
+          },
+          "staffing": {
+            "gap_count": 0,
+            "global_reason_codes": [],
+            "status": "accepted",
+            "truncated": false,
+            "units": [
+              {
+                "nominated_ids": [
+                  "application-security-engineer",
+                  "code-reviewer"
+                ],
+                "proposed_ids": [
+                  "application-security-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-defect-analysis"
+              },
+              {
+                "nominated_ids": [
+                  "python-application-engineer",
+                  "minimal-change-engineer"
+                ],
+                "proposed_ids": [
+                  "python-application-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-corrected-helper"
+              },
+              {
+                "nominated_ids": [
+                  "software-test-engineer",
+                  "python-application-engineer",
+                  "test-automation-engineer"
+                ],
+                "proposed_ids": [
+                  "software-test-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-pytest-cases"
+              },
+              {
+                "nominated_ids": [
+                  "code-reviewer",
+                  "type-design-analyzer"
+                ],
+                "proposed_ids": [
+                  "code-reviewer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-correctness-review"
+              },
+              {
+                "nominated_ids": [
+                  "application-security-engineer",
+                  "penetration-tester",
+                  "senior-secops-engineer"
+                ],
+                "proposed_ids": [
+                  "application-security-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-security-review"
+              }
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward, application-security-engineer, python-application-engineer, software-test-engineer, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)\nRecruited via: inference\n\nWhy: The task is a security-focused code review of a supplied snippet with a corrected implementation and tests, matching the four inferred specialist cards.\nHow it shaped outcome: The review is desk-checked from the snippet only. Nothing was read from disk, written, or executed, and no test results are claimed.\n\nThe supplied helper does no validation at all. It fails every one of the stated requirements, and it fails in a way an attacker controlling `name` can exploit directly.\n\n## Defects in the supplied helper\n\n- **Absolute names win outright.** In pathlib, joining an absolute right operand discards the left one. `Path(\"/srv/dl\") / \"/etc/passwd\"` is `/etc/passwd`. On Windows, drive-relative names like `C:evil` and rooted names like `\\evil` are also not caught by an absolute-path check alone.\n- **Parent traversal is joined verbatim.** A name such as `../../etc/cron.d/x` produces a path outside the root. Nothing normalizes or checks the components.\n- **Symlinks are never resolved.** A name like `link/file.bin`, where `link` inside the root points elsewhere, is accepted even though it lands outside the root. The same applies to a symlinked leaf or a dangling symlink.\n- **Nothing is resolved at all.** The result is neither canonical nor guaranteed absolute, so \"strictly inside root\" cannot be assessed. A relative root silently depends on the current working directory, and a symlinked root is never collapsed.\n- **Empty, `.`, and NUL names slip through.** An empty name or `.` returns the root itself, which is not strictly inside it. Embedded NUL bytes are accepted and only blow up later at the OS call.\n- **No error contract.** The function never raises ValueError, so callers cannot distinguish a rejected name from a valid one.\n\n## Corrected function\n\nPolicy choices baked in: any `..` component is rejected lexically, even one that would land back inside the root, because the same name combined with a symlink can escape and there is no legitimate need for it. Absolute names are rejected even if they point inside the root.\n\n```python\nimport os\nfrom pathlib import Path\n\n\ndef download_path(root: \"str | os.PathLike[str]\", name: \"str | os.PathLike[str]\") -> Path:\n    \"\"\"Return the resolved absolute path for ``name`` strictly inside ``root``.\n\n    Raises ValueError for absolute, drive- or root-anchored, empty, or\n    NUL-containing names, for any ``..`` component, and for any name that\n    resolves (through symlinks) outside the resolved root or onto the root.\n    \"\"\"\n    raw = os.fspath(name)\n    if not isinstance(raw, str):\n        raise ValueError(\"name must be str, not bytes\")\n    if not raw or \"\\x00\" in raw:\n        raise ValueError(\"name must be non-empty and contain no NUL bytes\")\n\n    rel = Path(raw)\n    # is_absolute() alone misses Windows drive-relative ('C:x') and rooted ('\\\\x') names.\n    if rel.is_absolute() or rel.drive or rel.root:\n        raise ValueError(f\"absolute or anchored name not allowed: {raw!r}\")\n    if not rel.parts:  # '.' or './'\n        raise ValueError(f\"name does not select a file inside root: {raw!r}\")\n    if \"..\" in rel.parts:\n        raise ValueError(f\"parent-directory traversal not allowed: {raw!r}\")\n\n    # The root must exist. Resolving it collapses symlinks at or above the root\n    # and removes any dependence on the current working directory.\n    real_root = Path(root).resolve(strict=True)\n    if not real_root.is_dir():\n        raise ValueError(f\"root is not a directory: {os.fspath(root)!r}\")\n\n    # strict=False because the leaf usually does not exist yet. Every existing\n    # prefix component, including symlinks, is still resolved to its real location.\n    candidate = (real_root / rel).resolve(strict=False)\n\n    # Component-wise containment, so '/srv/dl2' is not mistaken for inside '/srv/dl'.\n    if candidate == real_root or not candidate.is_relative_to(real_root):\n        raise ValueError(f\"name escapes root: {raw!r}\")\n    return candidate\n```\n\nOn Python 3.8 replace the containment test with `real_root in candidate.parents`.\n\n## Tests\n\nThese are written against the corrected function above and have not been run. Adjust the import to the real module name.\n\n```python\nimport sys\nfrom pathlib import Path\n\nimport pytest\n\nfrom downloads import download_path  # adjust to the real module\n\n\n@pytest.fixture\ndef root(tmp_path: Path) -> Path:\n    r = tmp_path / \"root\"\n    r.mkdir()\n    return r\n\n\ndef _symlink(link: Path, target: Path) -> None:\n    try:\n        link.symlink_to(target, target_is_directory=target.is_dir())\n    except (OSError, NotImplementedError):\n        pytest.skip(\"symlinks not supported or not permitted here\")\n\n\n# ---- valid nested paths ------------------------------------------------------\n\n@pytest.mark.parametrize(\"name\", [\"file.bin\", \"a/b/c.bin\", \"./a/b\", \"a//b\", \"a/b/\"])\ndef test_valid_nested_path_stays_inside_root(root: Path, name: str) -> None:\n    result = download_path(root, name)\n    expected = (root.resolve() / Path(name)).resolve()\n    assert result == expected\n    assert result.is_absolute()\n    assert result != root.resolve()\n    assert result.is_relative_to(root.resolve())\n\n\ndef test_relative_or_symlinked_root_is_resolved(tmp_path: Path, root: Path, monkeypatch) -> None:\n    monkeypatch.chdir(tmp_path)\n    assert download_path(\"root\", \"a/b.bin\") == root.resolve() / \"a\" / \"b.bin\"\n    link = tmp_path / \"root_link\"\n    _symlink(link, root)\n    assert download_path(link, \"a/b.bin\") == root.resolve() / \"a\" / \"b.bin\"\n\n\ndef test_symlink_pointing_inside_root_is_allowed(root: Path) -> None:\n    (root / \"real\").mkdir()\n    _symlink(root / \"alias\", root / \"real\")\n    assert download_path(root, \"alias/x.bin\") == root.resolve() / \"real\" / \"x.bin\"\n\n\n# ---- absolute names ------------------------------------------------------------\n\ndef test_absolute_name_rejected(root: Path, tmp_path: Path) -> None:\n    outside = tmp_path / \"outside\" / \"x.bin\"\n    assert outside.is_absolute()\n    with pytest.raises(ValueError):\n        download_path(root, str(outside))\n    with pytest.raises(ValueError):\n        download_path(root, str(root / \"inside.bin\"))  # absolute even if inside root\n\n\n@pytest.mark.skipif(sys.platform != \"win32\", reason=\"Windows-only path forms\")\n@pytest.mark.parametrize(\"name\", [\"C:evil.bin\", r\"\\evil.bin\", r\"\\\\server\\share\\evil.bin\"])\ndef test_windows_anchored_name_rejected(root: Path, name: str) -> None:\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\n# ---- parent-directory traversal -------------------------------------------------\n\n@pytest.mark.parametrize(\n    \"name\",\n    [\"..\", \"../x.bin\", \"a/../../x.bin\", \"a/..\", \"../root/x.bin\", \"a/../b.bin\"],\n)\ndef test_parent_traversal_rejected(root: Path, name: str) -> None:\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\n@pytest.mark.parametrize(\"name\", [\"\", \".\", \"./\", \"a\\x00b\"])\ndef test_empty_dot_and_nul_rejected(root: Path, name: str) -> None:\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\n# ---- symlink escapes -------------------------------------------------------------\n\ndef test_symlinked_directory_escape_rejected(root: Path, tmp_path: Path) -> None:\n    outside = tmp_path / \"outside\"\n    outside.mkdir()\n    _symlink(root / \"link\", outside)\n    with pytest.raises(ValueError):\n        download_path(root, \"link/x.bin\")\n\n\ndef test_symlinked_leaf_escape_rejected(root: Path, tmp_path: Path) -> None:\n    outside_file = tmp_path / \"outside.bin\"\n    outside_file.write_bytes(b\"\")\n    _symlink(root / \"leaf.bin\", outside_file)\n    with pytest.raises(ValueError):\n        download_path(root, \"leaf.bin\")\n\n\ndef test_dangling_symlink_escape_rejected(root: Path, tmp_path: Path) -> None:\n    _symlink(root / \"dangling\", tmp_path / \"does-not-exist\" / \"x.bin\")\n    with pytest.raises(ValueError):\n        download_path(root, \"dangling\")\n\n\ndef test_symlink_back_to_root_rejected(root: Path) -> None:\n    _symlink(root / \"self\", root)\n    with pytest.raises(ValueError):\n        download_path(root, \"self\")\n\n\ndef test_prefix_named_sibling_directory_rejected(root: Path, tmp_path: Path) -> None:\n    sibling = tmp_path / (root.name + \"2\")\n    sibling.mkdir()\n    _symlink(root / \"link\", sibling)\n    with pytest.raises(ValueError):\n        download_path(root, \"link/x.bin\")\n```\n\n**Filesystem and platform assumptions.**\n- Python 3.9 or newer for `is_relative_to`. Python 3.10 or newer is safer on Windows, where earlier non-strict `resolve` had inconsistent behaviour for missing components.\n- Path semantics are native to the host. On POSIX a backslash is an ordinary filename character, so a name like `..\\..\\x` is one harmless component. On Windows it is a separator and is handled by the checks above.\n- Windows reserved device names such as `CON` and NTFS alternate data streams like `x.bin:hidden` are not rejected. Add an explicit check if the service runs on Windows.\n- Case-insensitive filesystems are handled fail-closed. If the configured root and a symlink target differ only in case, the containment check may reject a valid path rather than accept an invalid one.\n- The root is trusted configuration. The function raises FileNotFoundError, not ValueError, if the root does not exist, because that is a deployment error rather than bad input.\n\n**Remaining race limitations.**\n- The check is time-of-check versus time-of-use. Anyone who can create symlinks inside the root can swap a directory component for a symlink between this call and the caller's open, and the open will follow it. The function cannot prevent that. Mitigations are to deny untrusted writers inside the root, to open the leaf with `O_CREAT | O_EXCL | O_NOFOLLOW`, or on Linux 5.6 and newer to open through `openat2` with `RESOLVE_BENEATH` and treat this function as the lexical pre-check.\n- The leaf is resolved non-strictly because it does not exist yet. A symlink created at that name after the check but before the open is not seen. The same leaf-open flags above close that gap.\n- Hard links and bind mounts are invisible to path resolution. An existing file inside the root that is a hard link to a file outside will be overwritten in place. Writing to a fresh temporary name and renaming avoids following an existing hard link.",
+      "response_sha256": "1c5f87780ecf485d2f4ab4018b3a71a45c79522edd237707447667cfca638c1c",
+      "accepted_hash_matches": true,
+      "terminal_hash_matches": true,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward, application-security-engineer, python-application-engineer, software-test-engineer, code-reviewer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward, application-security-engineer, python-application-engineer, software-test-engineer, code-reviewer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "all_five_match": true
+      },
+      "native_card_tool_results": [
+        {
+          "tool_use_id": "toolu_01EP5SenjvjjMZvHE5vSV8Ss",
+          "slug": "application-security-engineer",
+          "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+          "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+          "native_record_uuid": "8b219adf-6146-4f9d-962d-65803cb31b39",
+          "content_sha256": "94a71c87c23c5eaa05da984ff2b214a4daa21a94a1dfb9ada41a6b87d7a9deff"
+        },
+        {
+          "tool_use_id": "toolu_01TbcwFpzyz4RDwpdfEwisx6",
+          "slug": "python-application-engineer",
+          "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+          "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+          "native_record_uuid": "f3faed96-cb79-4ed6-89f7-6fa9d8c9d3dc",
+          "content_sha256": "be3a041f02135fea3e56d1395da14f9eebf3a5b7e5c650614b0d3fa4201578c2"
+        },
+        {
+          "tool_use_id": "toolu_0183xMHoS3euKb54AGF2zuG4",
+          "slug": "software-test-engineer",
+          "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+          "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+          "native_record_uuid": "09c7a3b0-221c-4e82-a967-ab8506067576",
+          "content_sha256": "909ea627957cdaed5f7f92256da326290c093b5e4c03c947304ec710415639dc"
+        },
+        {
+          "tool_use_id": "toolu_01V8N7TDVW2Ld2dyozcdAsu4",
+          "slug": "code-reviewer",
+          "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+          "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+          "native_record_uuid": "b14ff5c1-225a-4c9f-83a9-25ba4f7b53e1",
+          "content_sha256": "2b56daed762f992dd73af383c95164e6c5e5e1b97f5a8b71c6f94706599305a8"
+        }
+      ],
+      "card_proofs": [
+        {
+          "slug": "application-security-engineer",
+          "version": "sha256:4d89d87f6a0d11e91984e4b3e29be8247b51fe214ac046428d4a85f0e2b11e77",
+          "store_hash": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+          "full_prompt_chars": 2645,
+          "prompt_bytes_sha256": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+          "exact_full_card_present": true,
+          "source": "native Claude hook with exact trace or native tool_result correlated to same-session agency_load_specialist tool_use with exact session/trace arguments"
+        },
+        {
+          "slug": "python-application-engineer",
+          "version": "contractor-4-7fc606fc0e5dda5b",
+          "store_hash": "sha256:7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+          "full_prompt_chars": 3072,
+          "prompt_bytes_sha256": "7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+          "exact_full_card_present": true,
+          "source": "native Claude hook with exact trace or native tool_result correlated to same-session agency_load_specialist tool_use with exact session/trace arguments"
+        },
+        {
+          "slug": "software-test-engineer",
+          "version": "contractor-4-336f7dccc2212825",
+          "store_hash": "sha256:336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+          "full_prompt_chars": 3193,
+          "prompt_bytes_sha256": "336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+          "exact_full_card_present": true,
+          "source": "native Claude hook with exact trace or native tool_result correlated to same-session agency_load_specialist tool_use with exact session/trace arguments"
+        },
+        {
+          "slug": "code-reviewer",
+          "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+          "store_hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "full_prompt_chars": 2379,
+          "prompt_bytes_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "exact_full_card_present": true,
+          "source": "native Claude hook with exact trace or native tool_result correlated to same-session agency_load_specialist tool_use with exact session/trace arguments"
+        }
+      ],
+      "complete_selected_team": {
+        "inferred": [
+          "application-security-engineer",
+          "python-application-engineer",
+          "software-test-engineer",
+          "code-reviewer"
+        ],
+        "retained": [
+          "application-security-engineer",
+          "python-application-engineer",
+          "software-test-engineer",
+          "code-reviewer"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "exact_match": true
+      },
+      "exact_card_injection": true,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": {
+          "id": "bb55258e-67b7-4e37-94c0-c9589eeaeb28",
+          "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+          "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+          "host": "claude",
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "wrapper",
+          "recorded_at": "2026-09-09T19:50:40.691000+00:00",
+          "started_at": "2026-09-09T19:50:40.688000+00:00",
+          "ended_at": "2026-09-09T19:50:40.688000+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "application-security-engineer",
+          "python-application-engineer",
+          "software-test-engineer",
+          "code-reviewer"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "application-security-engineer",
+            "version": "sha256:4d89d87f6a0d11e91984e4b3e29be8247b51fe214ac046428d4a85f0e2b11e77",
+            "hash": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+            "description": "AppSec specialist who secures the software development lifecycle through threat modeling, secure code review, SAST/DAST integration, and developer security education that makes secure code the default.",
+            "capabilities": [
+              "review application attack surfaces",
+              "design secure implementation and test changes",
+              "produce evidence-backed threat models"
+            ]
+          },
+          {
+            "slug": "python-application-engineer",
+            "version": "contractor-4-7fc606fc0e5dda5b",
+            "hash": "sha256:7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+            "description": "Production Python applications, services, and CLIs",
+            "capabilities": [
+              "Maintainable production Python behavior",
+              "Portable Python packaging",
+              "Async Python design",
+              "Typing and tests"
+            ]
+          },
+          {
+            "slug": "software-test-engineer",
+            "version": "contractor-4-336f7dccc2212825",
+            "hash": "sha256:336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+            "description": "Implementation of software test suites and failure-path harnesses",
+            "capabilities": [
+              "Meaningful executable test coverage",
+              "Reproducible failure detection",
+              "Unit tests",
+              "Integration tests"
+            ]
+          },
+          {
+            "slug": "code-reviewer",
+            "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+            "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+            "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
+            "capabilities": [
+              "review diffs for correctness and regressions",
+              "identify security and maintainability defects",
+              "rank findings by impact and evidence"
+            ]
+          }
+        ],
+        "delegations": []
+      },
+      "status": "accepted native evidence"
+    }
+  ]
+}

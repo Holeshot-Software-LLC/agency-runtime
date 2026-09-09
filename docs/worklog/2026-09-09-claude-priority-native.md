@@ -11,10 +11,10 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: ef124c50b90e20aa1624a07f902728636c4e5472
+short: ef124c50
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/832
 related_issues:
   - docs/roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md
 ---
@@ -47,3 +47,19 @@ unchanged after refresh. Native evidence and isolated acceptance remain pending.
 Inspect exact native outcome before choosing a repair. Use the owner's explicit
 AR-423 request for one further isolated acceptance pass only if new evidence is
 ready. AR-404 retains all host reliability limits; Zcode remains owner-deferred.
+
+## Fresh native result
+
+Session `a5c13def-36a1-4a3e-9484-d0f09f105209`, trace
+`95f96215-d84b-4b4e-9628-c808e99b9d23`, completed in264.750s. All four inferred
+cards are retained and delivered exactly through native MCP. Five Store headers
+match; authoritative response hash is
+`1c5f87780ecf485d2f4ab4018b3a71a45c79522edd237707447667cfca638c1c`.
+The initial planner reply contains five units, with distinct correctness/security
+reviews and no test-evidence unit. Independent critic applied; staffing receipt
+has no advisory reason codes. No delegated specialist execution occurred or is
+claimed. The new acceptance packet must let the isolated verifier judge whether
+this preserves the criterion's independent assurance boundary.
+One planner packet was captured; observer errors empty; configuration restored
+byte-for-byte. The owner's explicit AR-423 request authorizes one additional
+isolated pass after this changed source and complete-team native evidence.

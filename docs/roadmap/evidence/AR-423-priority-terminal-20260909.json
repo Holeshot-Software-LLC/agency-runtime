@@ -1,0 +1,78 @@
+{
+  "run": {
+    "id": "49b38f9c-7568-42fe-a496-4044859fdc38",
+    "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+    "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+    "host": "claude",
+    "started_at": "2026-09-09T19:49:05.763932+00:00",
+    "last_activity_at": "2026-09-09T19:52:53.818000+00:00",
+    "turn_sequence": 1699,
+    "ended_at": "2026-09-09T19:52:53.817310+00:00",
+    "status": "completed",
+    "preflight_state": "ready"
+  },
+  "failure": null,
+  "finalization": {
+    "id": "60fc86d0-1393-4970-bb05-944483d92007",
+    "trace_id": "95f96215-d84b-4b4e-9628-c808e99b9d23",
+    "host": "claude",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "1c5f87780ecf485d2f4ab4018b3a71a45c79522edd237707447667cfca638c1c",
+    "policy_response_hash": null,
+    "terminal_status": "completed",
+    "created_at": "2026-09-09T19:52:53.817310+00:00",
+    "session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+    "status": "completed",
+    "ended_at": "2026-09-09T19:52:53.817310+00:00",
+    "authoritative": true
+  },
+  "headers": {
+    "observed": {
+      "agencies_loaded": "agency-steward, application-security-engineer, python-application-engineer, software-test-engineer, code-reviewer",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+      "recruited_via": "inference"
+    },
+    "store_projection": {
+      "agencies_loaded": "agency-steward, application-security-engineer, python-application-engineer, software-test-engineer, code-reviewer",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+      "recruited_via": "inference"
+    },
+    "all_five_match": true
+  },
+  "complete_selected_team": {
+    "inferred": [
+      "application-security-engineer",
+      "python-application-engineer",
+      "software-test-engineer",
+      "code-reviewer"
+    ],
+    "retained": [
+      "application-security-engineer",
+      "python-application-engineer",
+      "software-test-engineer",
+      "code-reviewer"
+    ],
+    "missing": [],
+    "unexpected": [],
+    "exact_match": true
+  },
+  "accepted_hash_matches": true,
+  "finalization_event_count": 1,
+  "accepted_terminal_event_count": 1,
+  "status": "accepted native evidence",
+  "invocation": {
+    "case": "large_context_surface",
+    "host": "claude",
+    "phase": "priority_planner_observation",
+    "native_session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+    "exit_code": 0,
+    "timeout": false,
+    "elapsed_seconds": 264.75
+  },
+  "response_sha256": "1c5f87780ecf485d2f4ab4018b3a71a45c79522edd237707447667cfca638c1c"
+}
