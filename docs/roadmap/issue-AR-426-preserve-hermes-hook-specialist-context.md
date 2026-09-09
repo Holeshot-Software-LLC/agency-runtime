@@ -34,28 +34,30 @@ This input-context defect is distinct from AR-418 output truncation.
 
 ## Current state
 
-Callback candidate sourcefaf5645a/artifact22f24edd is installed with616exact file
-matches. Focused131, production1151/3skip, UI224, conformance188/188 and canonical
-build/independent artifact/smoke checks pass. Fresh native proof follows once per
-fixed manifest case; initial tool-only failures remain preserved.
+Callback source faf5645a, canonical artifact source 22f24edd, is installed;
+616 package files match. Focused 131, production 1151 passed / 3 skipped,
+UI 224 and conformance 188/188 pass. Recipe 18 delivers bounded card fragments
+through ordered native callbacks before the model runs.
 
-First native tool-only phase failed all three full acceptance gates. Intact frames
-arrived, but the model skipped card retrieval. Recipe18 refines delivery through
-ordered per-card native callbacks and a final current snapshot; revised focused
-and fast validation/install/demo are pending. Prior failures are preserved.
+The first tool-only phase failed all three full acceptance gates: models skipped
+retrieval. The second callback phase never reached card delivery: ordinary review
+failed coverage/confidence verification, follow-up received a critic veto, and
+multi-step timed out at the planner after 60 seconds. All six failed gates remain
+in the two native evidence JSONs; none is reopened or manually finalized.
 
-Recipe18 candidate implemented;75context/terminal tests pass. Fast production1151/3skip, UI224, conformance188/188 and canonical616file install
-pass. Native proof and isolated acceptance remain pending. Exact baseline is
-evidence/AR-426-exact-native-spill-and-terminal-audit-20260909.json.
+One fresh multi-step attempt is bounded to 360 seconds following the provider
+timeout. No further attempt is scheduled. Native full-card/header/finalization
+proof and isolated acceptance remain outstanding. AR-426 remains open.
 
-Scoped from the exact retained AR-404 receipts. Installed native checkout is
-7cd91114b462b7af76e558cc4e97f82201d2e884; its default spilling is enabled at
-10,000 characters. No budget, permission, selection or old receipt is changed.
+The actual Hermes checkout is 7cd91114b462b7af76e558cc4e97f82201d2e884;
+its default hook spill threshold remains 10,000 characters. AR-418's separate
+output truncation limit and upstream adoption remain unproven.
 
 ## Approach
 
-Keep a bounded hook frame and deliver large selected card sets through a native
-local tool bound to the active session and trace. Resolve only selected immutable
+Keep a bounded hook frame and deliver large selected card sets through ordered
+native callbacks using the guarded local retrieval operation, bound to the active
+session and trace. Resolve only selected immutable
 versions, record loads after the full bounded result is built, and fail oversized
 results without claiming delivery. Preserve first-pass finalization and all
 staffing/critic gates. Verify source regression, installed files and fresh native

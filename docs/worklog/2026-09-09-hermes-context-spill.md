@@ -115,3 +115,17 @@ validation and installed smoke pass. All616files match wheel73cf18d6e49156fd736a
 Only Hermes projection refreshed. The callback candidate will run the unchanged
 three native requests once each under360s. Initial native failures remain retained;
 AR-404/418/423/426 remain open before native and isolated proof.
+
+## Callback native phase
+
+The second fixed phase exercised recipe 18 once per case and failed 0/3 full
+acceptance gates. Ordinary review failed recruiter coverage and confidence;
+follow-up received `critic_wrong_neighbor_selection`; multi-step timed out at
+the planner after 60,071 ms. All have zero finalization events. The native
+callback delivery path therefore remains unproven, despite passing source and
+installed checks. Exact receipts are in
+`AR-426-hermes-native-after-fragments-20260909.json`.
+
+One fresh multi-step attempt is bounded to 360 seconds after the provider
+timeout; there is no retry loop or manual staffing. AR-426 remains open and
+PR 824 remains draft pending native and isolated acceptance evidence.

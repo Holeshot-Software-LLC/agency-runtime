@@ -24,14 +24,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823
 
 ## Checkpoint
 
-Current callback sourcefaf5645a/artifact22f24edd is installed,616exact files.
-Focused131, production1151/3skip, UI224 and conformance188/188 pass. Three fixed
-Hermes requests now enter the live_demo phase once each; no old receipt retries.
+PR 824 remains draft. Callback source faf5645a / artifact 22f24edd is installed;
+616 exact file matches. Focused 131, production 1151 / 3 skipped, UI 224 and
+conformance 188/188 pass. Only the Hermes native projection was refreshed.
 
-PR824 draft, sourceab924385/artifactaee01dc6. Recipe18 defers large selected
-Hermes card sets to bounded local tool retrieval. Small inline path preserved.
-All616installed files match canonical wheel; only Hermes projection refreshed.
-Required fast validation passes; package demo_ready pending native proof.
+Both three-case native phases failed the full acceptance gate. The tool-only
+phase omitted card retrieval; the callback phase failed staffing before delivery.
+The second phase records review coverage/confidence rejection, follow-up critic
+veto, and a 60-second planner timeout. No failed receipt is reopened.
 
 ## Completed evidence
 
@@ -44,11 +44,13 @@ Baseline and fast-install JSONs live under docs/roadmap/evidence/AR-426-*.
 
 ## Exact blocker
 
-First native phase omitted card retrieval; all3full gates remain failed.
-Revised native callbacks deliver cards before model execution; fresh validation
-and native full-card/header/finalization demonstration are pending. Isolated acceptance must follow that proof. AR-418
-is a separate output-truncation issue: upstream PR106490 remains open, default
-native checkout7cd91114 unchanged, original provider output cap unknown.
+No callback candidate native turn has yet passed staffing, so native delivery,
+five-header and authoritative finalization proof remain absent. One fresh
+multi-step attempt follows the provider timeout, with a 360-second cap and no
+further retry scheduled. Isolated acceptance has not run for AR-426.
+
+AR-418 remains separate: upstream PR 106490 is open, default native checkout
+7cd91114 is unchanged, and the original provider output cap is unknown.
 
 ## Same-task continuity
 
@@ -58,10 +60,10 @@ No manual selection, trust changes, global spill increases or failed-receipt reo
 
 ## Next bounded work package
 
-Run the three fixed Hermes requests once under360s each, retain every failure,
-inspect exact native tool-call/results against selected card hashes and Store.
-Then prepare isolated evidence, close only passed criteria, merge PR824 and
-record exact worklog/merge ledger. AR-404 retains all five hosts and residuals.
+Run the one bounded post-timeout attempt, retain its outcome, and inspect exact
+native card bodies against immutable selected versions and Store finalization.
+If native proof is absent, keep AR-426 open and PR 824 draft. Do not weaken
+staffing to obtain a demonstration. AR-404 retains all five hosts and residuals.
 
 ## Verification
 

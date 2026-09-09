@@ -30,17 +30,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Current callback sourcefaf5645a/artifact22f24edd is installed,616exact files.
-Focused131, production1151/3skip, UI224 and conformance188/188 pass. Three fixed
-Hermes requests now enter the live_demo phase once each; no old receipt retries.
+AR-426 / PR 824 callback source faf5645a, artifact 22f24edd, is installed with
+616 exact file matches. Focused 131, production 1151 / 3 skipped, UI 224 and
+conformance 188/188 pass. Both Hermes three-case phases failed full acceptance.
+The callback phase stopped before delivery: review coverage/confidence failure,
+follow-up critic veto, multi-step planner timeout. One fresh multi-step attempt
+follows the timeout; no further retry is scheduled. AR-426 remains open and its
+PR remains draft until native delivery and isolated acceptance are evidenced.
 
-Active owned branch codex/ar404-terminal-reliability-20260909 starts at clean
-synchronized c6c3e7b5. AR-426/#823 owns the new Hermes native hook-spill repair,
-separate from AR-418 output truncation. Recipe18 refinement follows a failed tool-only native phase: models skipped
-retrieval. Native ordered per-card callbacks now retrieve before the model runs;
-131focused tests pass. Revised fast validation and native proof are pending.
-Fast production1151/3skip, UI224, conformance188/188 and canonical616file
-installation pass. Hermes native demo follows; other host projections unchanged.
+The owned branch starts at clean synchronized c6c3e7b5. Only Hermes's native
+projection changed. No validator, critic, trust or native spill limit changed.
 Exact baseline: AR-426-exact-native-spill-and-terminal-audit-20260909.json.
 Fresh Codex8/8trusted; process2200222 runs published6db15efbecbe, MCP responds,
 classifier6,615installed files match prior wheel. Handoff trace01a086f4 is failed
@@ -67,9 +66,9 @@ semantic cause unknown. A new planner-only diagnostic reproduced the first
 missing correctness review but its repair succeeded before the source change.
 
 Fresh Codex hooks/list after owner review:8/8trusted,0modified/missing/duplicate.
-Parent process still runs stale projection6e7dc299c23e; its MCP transport failed
-on prior turns. Reinstall does not refresh a running process. Fresh native Codex
-cases supply evidence, not the parent. Prior session01a08200-6530-79a3-a19c-4fb24b1983ae,
+The previous parent ran stale projection 6e7dc299c23e and its MCP transport
+failed. This turn verified process 2200222 at published projection 6db15efbecbe
+and a successful MCP call. Reinstall alone does not refresh a running process. Prior session01a08200-6530-79a3-a19c-4fb24b1983ae,
 trace01a082b9-e7df-70e2-b76c-b8be7e01ad5a remains a separate failed staffing receipt.
 
 ## Exact blocker
@@ -101,8 +100,8 @@ records belong to this package, not a later optional cleanup.
 
 ## Next bounded work package
 
-Complete AR-426 focused/fast validation, canonical install, affected Hermes native
-card/header/terminal demo, then isolated acceptance and owned PR merge/worklogs.
+Inspect the single post-timeout Hermes attempt, then record bounded acceptance
+or the remaining blocker. PR 824 stays draft if native proof is absent.
 No native spill/output budget changes. Zcode first outputs put permission prose
 before headers; old terminal rejection is valid. No raw failed staffing selection
 is retained, so critic correctness is unknown and its authority stays unchanged.
