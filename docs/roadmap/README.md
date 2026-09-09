@@ -45,6 +45,8 @@ bounded package are in AR-404's
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
+| `AR-427` | [Preserve the complete inferred specialist team during hydration](issue-AR-427-preserve-complete-inferred-specialist-team.md) | in_progress | p1 | reliability | [#825](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825) |
+| `AR-428` | [Avoid test-result analysis units when no results exist](issue-AR-428-avoid-test-results-units-without-test-results.md) | open | p1 | reliability | [#826](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/826) |
 | `AR-426` | [Preserve Hermes specialist context across native hook spilling](issue-AR-426-preserve-hermes-hook-specialist-context.md) | blocked | p1 | host-integrations | [#823](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823) |
 | `AR-421` | [Preserve completed-task follow-up context](issue-AR-421-preserve-completed-task-followup-context.md) | done | p1 | host-integrations | [#808](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/808) |
 | `AR-422` | [Preserve Claude executable permissions across npm updates](issue-AR-422-preserve-claude-update-permissions.md) | done | p1 | host-integrations | [#809](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/809) |
@@ -473,6 +475,8 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
+| [AR-427](issue-AR-427-preserve-complete-inferred-specialist-team.md) | pending | [ADR-0245](../decisions/0245-preserve-complete-inferred-teams-during-delivery.md) |
+| [AR-428](issue-AR-428-avoid-test-results-units-without-test-results.md) | pending | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 | [AR-426](issue-AR-426-preserve-hermes-hook-specialist-context.md) | `ab924385`, `d73eda4d`, `faf5645a`, `8f81d89f`, `843030cf`, `e67b70ae`, `4186af41`, `a6d8f8a2`, `a5b5caac`, `abdb69aa`, `73ab49d2`, `d8b7b418` | [ADR-0244](../decisions/0244-deliver-large-hermes-card-sets-through-native-tools.md) |
 | [AR-421](issue-AR-421-preserve-completed-task-followup-context.md) | `cf4ed77f` | [ADR-0064](../decisions/0064-classify-turn-intent-from-durable-state.md), [ADR-0163](../decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md) |
 | [AR-422](issue-AR-422-preserve-claude-update-permissions.md) | `cf4ed77f` | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |

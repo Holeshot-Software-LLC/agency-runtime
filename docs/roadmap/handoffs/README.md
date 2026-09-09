@@ -110,3 +110,5 @@ behavior.
 - [AR-289 native reranker transports](issue-AR-289.md)
 - [AR-290 end-to-end guided setup](issue-AR-290.md)
 - [AR-297 complete unattended container bootstrap](issue-AR-297.md)
+
+- [AR-427 complete-team delivery](issue-AR-427.md)

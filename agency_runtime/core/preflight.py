@@ -1213,6 +1213,7 @@ def _prepare_preflight_evidence(
             hydration_catalog,
             hydration_routing,
             record_evidence=False,
+            require_complete=True,
             maximum_chars=specialist_budget,
             session_id=session_id,
             trace_id=trace_id,

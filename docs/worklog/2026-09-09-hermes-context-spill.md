@@ -17,6 +17,8 @@ short: ab924385
 pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/824
 date: 2026-09-09
 related_issues:
+  - docs/roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md
+  - docs/roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md
   - docs/roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md
 ---
 
@@ -193,3 +195,27 @@ forwards request/response bytes unchanged, forwards credentials without logging
 headers, and captures only the exact supplied-code request. Synthetic tests
 pass all three boundaries. The call is capped at 360 seconds and never loops;
 the owner config is restored in finally. No trust or staffing validator changes.
+
+## Complete-team delivery finding and repair
+
+The authorized AR-423 pass satisfied criteria 1/3 but left criterion 2 absent on
+independent assurance. Read-only Store comparison found a concrete High defect:
+five specialists were selected, including a separate security reviewer, while
+four immutable prompt references were persisted. AR-427/#825 owns the legacy
+hydration cap repair. Recipe 19 requests complete-team hydration under the
+existing sixteen-reference and host-context limits. Missing or overflowing teams
+fail before any load recording; default legacy helper callers retain their cap.
+
+Corrected regressions fail on old source in all five host paths and both native
+retrieval paths (7 failed for the omitted fifth worker). The first fixture was
+invalid because it put five workers in one unit; that failure is retained and is
+not causal evidence. Valid candidate checks: 66 passed / 1 skipped focused,
+production 1151 passed / 3 skipped, UI 224 passed. Frozen conformance and a fresh
+installed native complete-team demonstration follow this checkpoint.
+
+The one Hermes critic diagnostic ran 103.375 seconds, captured one exact packet,
+and restored owner configuration byte-for-byte with no observer errors. The
+critic veto remains failed. Its plan invented static test-result analysis and
+selected a role requiring completed results despite no execution. AR-428/#826
+records that separate planning defect; no speculative critic override or planner
+repair is bundled with the bounded hydration change.

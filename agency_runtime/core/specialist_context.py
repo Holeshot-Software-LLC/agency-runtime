@@ -351,6 +351,7 @@ def hydrate_selected_specialist_context(
     record_evidence: bool = True,
     maximum_chars: int = MAX_SPECIALIST_CONTEXT_CHARS,
     disabled_agents: Container[str] | None = None,
+    require_complete: bool = False,
 ) -> LoadedSpecialistContext:
     """Load selected governed prompts and record exactly what shaped one turn.
 
@@ -366,10 +367,21 @@ def hydrate_selected_specialist_context(
         catalog,
         routing,
         disabled_agents=disabled_agents,
+        maximum_specialists=(
+            MAX_DURABLE_SPECIALIST_REFERENCES if require_complete else MAX_SELECTED_SPECIALISTS
+        ),
     )
     context, included = _fit_loaded_context(prompts, maximum_chars)
     references = tuple(_prompt_reference(prompt) for prompt in included)
     slugs = tuple(reference.slug for reference in references)
+    if require_complete:
+        expected = {
+            str(slug).strip()
+            for slug in routing.get("selected_ids", [])
+            if str(slug).strip() and not is_resident_manager_slug(str(slug).strip())
+        }
+        if set(slugs) != expected:
+            raise RuntimeError("selected specialist team cannot be delivered completely")
     if record_evidence:
         for slug in slugs:
             store.record_specialist_loaded(
