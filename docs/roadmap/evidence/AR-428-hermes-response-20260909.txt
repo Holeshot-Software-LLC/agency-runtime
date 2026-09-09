@@ -1,0 +1,39 @@
+Warning: Unknown toolsets: agency-runtime, async-delegation, messaging
+Agency/Agencies loaded: agency-steward
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: requested execution alias: alias-hermes-chat
+Recruited via: failed; workforce_inference_failed; staffing_critic_rejected; critic_wrong_neighbor_selection
+
+```python
+def average(values):
+    if not values:
+        raise ValueError("average requires at least one value")
+    return sum(values) / len(values)
+```
+
+Defects in the supplied function:
+- Uses `//`, so it floors/truncates the result instead of returning fractional means.
+- Raises `ZeroDivisionError` for empty input instead of the requested `ValueError`.
+
+Focused regression tests:
+
+```python
+def test_average_float_fractional_result():
+    assert average([1.0, 2.0]) == 1.5
+
+
+def test_average_negative_numbers():
+    assert average([-1, -2, -3]) == -2
+
+
+def test_average_empty_raises_value_error():
+    try:
+        average([])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError")
+```
+
+No files read or modified. Tests not executed.

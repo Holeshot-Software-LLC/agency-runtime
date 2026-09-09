@@ -16,7 +16,17 @@
     "mismatches": [],
     "fresh_isolated_recipe_version": 20
   },
-  "frozen_conformance": "running; not yet asserted",
+  "frozen_conformance": {
+    "counts": {
+      "invalid": 0,
+      "killed": 188,
+      "mutations": 188,
+      "survived": 0
+    },
+    "passed": true,
+    "source_unchanged": true,
+    "evidence_boundary": "Curated decision sensitivity only; no coverage, superiority, or exhaustive mutation claim."
+  },
   "exhaustive_workflow_run": false,
   "windows_workflow_run": false
 }

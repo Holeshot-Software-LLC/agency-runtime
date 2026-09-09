@@ -67,3 +67,12 @@ Run final focused and required fast checks, canonical installed verification and
 one bounded fresh Hermes native case. Verify the inferred plan and actual cards,
 headers and first authoritative receipt. Isolated acceptance governs closure.
 Then proceed Codex and Claude; Zcode remains owner-deferred.
+
+## First native trial
+
+Recipe20 session `20260909_153129_1f3091`, trace
+`20260909_153129_1f3091:a49b3460-b988-4716-b31b-e3ba26b04e38:90199598`,
+returned after81.860s. Planner/recruiter applied, independent critic vetoed
+wrong-neighbor selection. No saved routing plan or authoritative finalization.
+Frozen conformance passed188/188. No native acceptance or sole-cause claim.
+One new diagnostic packet capture is required before another repair can be chosen.

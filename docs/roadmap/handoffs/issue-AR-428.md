@@ -36,8 +36,9 @@ PR830 merged; its exact ledger is the first commit on this owned branch.
 
 ## Exact blocker
 
-Final recipe20 checks, canonical installed identity, fresh Hermes native plan and
-delivery evidence, and isolated acceptance remain pending.
+Fresh Hermes session20260909_153129_1f3091 failed wrong-neighbor staffing in81.860s.
+Planner/recruiter applied; exact plan was not retained. Finalization absent.
+Native acceptance and isolated verification remain pending.
 
 ## Same-task continuity
 
@@ -46,15 +47,16 @@ checkpoint and continue. Preserve unrelated work and failed receipts.
 
 ## Next bounded work package
 
-Finish focused/fast checks, build and verify the exact artifact, refresh Hermes
-normally, then run one bounded fresh multi-step native case. Inspect inferred
-artifacts and independent review before interpreting finalization as acceptance.
+Capture one new diagnostic native critic packet through a byte-preserving observer.
+Retain the failed receipt; do not infer the veto was erroneous. Choose any next
+repair only from the captured plan, nominees and contracts.
 
 ## Verification
 
 Final recipe20 focused164/1skip and production1151/3skip pass. UI224, routing,
 Ruff788, docs1379 and strict tracker419 pass. Frozen conformance and native evidence
-remain pending; no exhaustive/Windows run.
+passed188/188 and canonical artifact/616 installed files verify. Fresh native failed;
+no exhaustive/Windows run.
 
 ## Constraints
 

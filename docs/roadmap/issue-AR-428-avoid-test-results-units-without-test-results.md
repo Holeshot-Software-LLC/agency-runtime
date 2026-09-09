@@ -35,10 +35,16 @@ sources; mandatory execution gates and independent review are not waived.
 Recipe 20 separates this planning context from older immutable receipts.
 
 The original native packet and critic veto remain unchanged. Final recipe20 focused
-164 / 1 skipped and production 1151 / 3 skipped pass; UI224, routing, Ruff788,
-docs1379 and strict tracker419 pass. Frozen conformance, installed native evidence
-and isolated acceptance are pending.
-No critic veto is assumed erroneous and no worker is selected by this repair.
+164 / 1 skipped, production1151 / 3 skipped, UI224, routing, Ruff788 and frozen
+conformance188/188 pass. Canonical artifact `ecf8a584` and all616 installed files
+verify; Hermes refreshed on recipe20.
+
+Fresh exact-request session `20260909_153129_1f3091` failed in81.860s with
+`staffing_critic_rejected; critic_wrong_neighbor_selection`. Planner and recruiter
+applied, but no routing decision/plan was retained and finalization is absent.
+The response is not acceptance evidence. A single pass-through observation of a
+new diagnostic turn is next; it will capture the actual critic packet and cannot
+reconstruct or accept the failed receipt. Isolated acceptance remains pending.
 
 ## Approach
 
