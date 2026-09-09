@@ -2304,6 +2304,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a18e556c` | 2026-09-09 | docs(reliability): apply approved shared staffing and verify Codex hook trust | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 | `07a2addf` | 2026-09-09 | docs(evidence): preserve Hermes shared staffing native outcomes | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 | `59e93d3c` | 2026-09-09 | docs(evidence): bind OpenClaw native cards and accepted CLI finalization | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `c823608c` | 2026-09-09 | docs(acceptance): freeze bounded OpenClaw evidence references | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
