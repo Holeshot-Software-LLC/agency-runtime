@@ -2288,6 +2288,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `345eaf51` | 2026-09-09 | docs(AR-404): record upstream Hermes repair and remaining native gates | AR-404, AR-418, AR-423 | [Detail](2026-09-09-completed-task-context.md) |
 | `73a127ac` | 2026-09-09 | docs(AR-404): preserve Zcode native evidence and prepare scoped acceptance | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
 | `12138e8b` | 2026-09-09 | docs(AR-404): retain refreshed Hermes failures and Claude native limit | AR-404, AR-421, AR-423 | [Detail](2026-09-09-completed-task-context.md) |
+| `c4c12667` | 2026-09-09 | docs(AR-404): preserve OpenClaw sample and native observer permission gate | AR-404, AR-419 | [Detail](2026-09-09-completed-task-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
