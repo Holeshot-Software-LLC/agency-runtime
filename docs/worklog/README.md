@@ -2327,6 +2327,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ef7805b8` | 2026-09-09 | docs(acceptance): cite bounded call and independent assurance enforcement | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `aa7284d9` | 2026-09-09 | docs(reliability): retain five-host results and accept bounded planner repair | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `f28b66d7` | 2026-09-09 | Merge pull request #821 from Holeshot-Software-LLC/codex/ar404-planner-contract-20260909 | AR-404, AR-423, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `38fa9e43` | 2026-09-09 | docs: prepare authorized AR-423 native acceptance packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
