@@ -1,0 +1,206 @@
+Agency/Agencies loaded: agency-steward, application-security-engineer, python-application-engineer, software-test-engineer, code-reviewer
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)
+Recruited via: inference
+
+Why: The task is a security-focused code review of a supplied snippet with a corrected implementation and tests, matching the four inferred specialist cards.
+How it shaped outcome: The review is desk-checked from the snippet only. Nothing was read from disk, written, or executed, and no test results are claimed.
+
+The supplied helper does no validation at all. It fails every one of the stated requirements, and it fails in a way an attacker controlling `name` can exploit directly.
+
+## Defects in the supplied helper
+
+- **Absolute names win outright.** In pathlib, joining an absolute right operand discards the left one. `Path("/srv/dl") / "/etc/passwd"` is `/etc/passwd`. On Windows, drive-relative names like `C:evil` and rooted names like `\evil` are also not caught by an absolute-path check alone.
+- **Parent traversal is joined verbatim.** A name such as `../../etc/cron.d/x` produces a path outside the root. Nothing normalizes or checks the components.
+- **Symlinks are never resolved.** A name like `link/file.bin`, where `link` inside the root points elsewhere, is accepted even though it lands outside the root. The same applies to a symlinked leaf or a dangling symlink.
+- **Nothing is resolved at all.** The result is neither canonical nor guaranteed absolute, so "strictly inside root" cannot be assessed. A relative root silently depends on the current working directory, and a symlinked root is never collapsed.
+- **Empty, `.`, and NUL names slip through.** An empty name or `.` returns the root itself, which is not strictly inside it. Embedded NUL bytes are accepted and only blow up later at the OS call.
+- **No error contract.** The function never raises ValueError, so callers cannot distinguish a rejected name from a valid one.
+
+## Corrected function
+
+Policy choices baked in: any `..` component is rejected lexically, even one that would land back inside the root, because the same name combined with a symlink can escape and there is no legitimate need for it. Absolute names are rejected even if they point inside the root.
+
+```python
+import os
+from pathlib import Path
+
+
+def download_path(root: "str | os.PathLike[str]", name: "str | os.PathLike[str]") -> Path:
+    """Return the resolved absolute path for ``name`` strictly inside ``root``.
+
+    Raises ValueError for absolute, drive- or root-anchored, empty, or
+    NUL-containing names, for any ``..`` component, and for any name that
+    resolves (through symlinks) outside the resolved root or onto the root.
+    """
+    raw = os.fspath(name)
+    if not isinstance(raw, str):
+        raise ValueError("name must be str, not bytes")
+    if not raw or "\x00" in raw:
+        raise ValueError("name must be non-empty and contain no NUL bytes")
+
+    rel = Path(raw)
+    # is_absolute() alone misses Windows drive-relative ('C:x') and rooted ('\\x') names.
+    if rel.is_absolute() or rel.drive or rel.root:
+        raise ValueError(f"absolute or anchored name not allowed: {raw!r}")
+    if not rel.parts:  # '.' or './'
+        raise ValueError(f"name does not select a file inside root: {raw!r}")
+    if ".." in rel.parts:
+        raise ValueError(f"parent-directory traversal not allowed: {raw!r}")
+
+    # The root must exist. Resolving it collapses symlinks at or above the root
+    # and removes any dependence on the current working directory.
+    real_root = Path(root).resolve(strict=True)
+    if not real_root.is_dir():
+        raise ValueError(f"root is not a directory: {os.fspath(root)!r}")
+
+    # strict=False because the leaf usually does not exist yet. Every existing
+    # prefix component, including symlinks, is still resolved to its real location.
+    candidate = (real_root / rel).resolve(strict=False)
+
+    # Component-wise containment, so '/srv/dl2' is not mistaken for inside '/srv/dl'.
+    if candidate == real_root or not candidate.is_relative_to(real_root):
+        raise ValueError(f"name escapes root: {raw!r}")
+    return candidate
+```
+
+On Python 3.8 replace the containment test with `real_root in candidate.parents`.
+
+## Tests
+
+These are written against the corrected function above and have not been run. Adjust the import to the real module name.
+
+```python
+import sys
+from pathlib import Path
+
+import pytest
+
+from downloads import download_path  # adjust to the real module
+
+
+@pytest.fixture
+def root(tmp_path: Path) -> Path:
+    r = tmp_path / "root"
+    r.mkdir()
+    return r
+
+
+def _symlink(link: Path, target: Path) -> None:
+    try:
+        link.symlink_to(target, target_is_directory=target.is_dir())
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks not supported or not permitted here")
+
+
+# ---- valid nested paths ------------------------------------------------------
+
+@pytest.mark.parametrize("name", ["file.bin", "a/b/c.bin", "./a/b", "a//b", "a/b/"])
+def test_valid_nested_path_stays_inside_root(root: Path, name: str) -> None:
+    result = download_path(root, name)
+    expected = (root.resolve() / Path(name)).resolve()
+    assert result == expected
+    assert result.is_absolute()
+    assert result != root.resolve()
+    assert result.is_relative_to(root.resolve())
+
+
+def test_relative_or_symlinked_root_is_resolved(tmp_path: Path, root: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    assert download_path("root", "a/b.bin") == root.resolve() / "a" / "b.bin"
+    link = tmp_path / "root_link"
+    _symlink(link, root)
+    assert download_path(link, "a/b.bin") == root.resolve() / "a" / "b.bin"
+
+
+def test_symlink_pointing_inside_root_is_allowed(root: Path) -> None:
+    (root / "real").mkdir()
+    _symlink(root / "alias", root / "real")
+    assert download_path(root, "alias/x.bin") == root.resolve() / "real" / "x.bin"
+
+
+# ---- absolute names ------------------------------------------------------------
+
+def test_absolute_name_rejected(root: Path, tmp_path: Path) -> None:
+    outside = tmp_path / "outside" / "x.bin"
+    assert outside.is_absolute()
+    with pytest.raises(ValueError):
+        download_path(root, str(outside))
+    with pytest.raises(ValueError):
+        download_path(root, str(root / "inside.bin"))  # absolute even if inside root
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows-only path forms")
+@pytest.mark.parametrize("name", ["C:evil.bin", r"\evil.bin", r"\\server\share\evil.bin"])
+def test_windows_anchored_name_rejected(root: Path, name: str) -> None:
+    with pytest.raises(ValueError):
+        download_path(root, name)
+
+
+# ---- parent-directory traversal -------------------------------------------------
+
+@pytest.mark.parametrize(
+    "name",
+    ["..", "../x.bin", "a/../../x.bin", "a/..", "../root/x.bin", "a/../b.bin"],
+)
+def test_parent_traversal_rejected(root: Path, name: str) -> None:
+    with pytest.raises(ValueError):
+        download_path(root, name)
+
+
+@pytest.mark.parametrize("name", ["", ".", "./", "a\x00b"])
+def test_empty_dot_and_nul_rejected(root: Path, name: str) -> None:
+    with pytest.raises(ValueError):
+        download_path(root, name)
+
+
+# ---- symlink escapes -------------------------------------------------------------
+
+def test_symlinked_directory_escape_rejected(root: Path, tmp_path: Path) -> None:
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    _symlink(root / "link", outside)
+    with pytest.raises(ValueError):
+        download_path(root, "link/x.bin")
+
+
+def test_symlinked_leaf_escape_rejected(root: Path, tmp_path: Path) -> None:
+    outside_file = tmp_path / "outside.bin"
+    outside_file.write_bytes(b"")
+    _symlink(root / "leaf.bin", outside_file)
+    with pytest.raises(ValueError):
+        download_path(root, "leaf.bin")
+
+
+def test_dangling_symlink_escape_rejected(root: Path, tmp_path: Path) -> None:
+    _symlink(root / "dangling", tmp_path / "does-not-exist" / "x.bin")
+    with pytest.raises(ValueError):
+        download_path(root, "dangling")
+
+
+def test_symlink_back_to_root_rejected(root: Path) -> None:
+    _symlink(root / "self", root)
+    with pytest.raises(ValueError):
+        download_path(root, "self")
+
+
+def test_prefix_named_sibling_directory_rejected(root: Path, tmp_path: Path) -> None:
+    sibling = tmp_path / (root.name + "2")
+    sibling.mkdir()
+    _symlink(root / "link", sibling)
+    with pytest.raises(ValueError):
+        download_path(root, "link/x.bin")
+```
+
+**Filesystem and platform assumptions.**
+- Python 3.9 or newer for `is_relative_to`. Python 3.10 or newer is safer on Windows, where earlier non-strict `resolve` had inconsistent behaviour for missing components.
+- Path semantics are native to the host. On POSIX a backslash is an ordinary filename character, so a name like `..\..\x` is one harmless component. On Windows it is a separator and is handled by the checks above.
+- Windows reserved device names such as `CON` and NTFS alternate data streams like `x.bin:hidden` are not rejected. Add an explicit check if the service runs on Windows.
+- Case-insensitive filesystems are handled fail-closed. If the configured root and a symlink target differ only in case, the containment check may reject a valid path rather than accept an invalid one.
+- The root is trusted configuration. The function raises FileNotFoundError, not ValueError, if the root does not exist, because that is a deployment error rather than bad input.
+
+**Remaining race limitations.**
+- The check is time-of-check versus time-of-use. Anyone who can create symlinks inside the root can swap a directory component for a symlink between this call and the caller's open, and the open will follow it. The function cannot prevent that. Mitigations are to deny untrusted writers inside the root, to open the leaf with `O_CREAT | O_EXCL | O_NOFOLLOW`, or on Linux 5.6 and newer to open through `openat2` with `RESOLVE_BENEATH` and treat this function as the lexical pre-check.
+- The leaf is resolved non-strictly because it does not exist yet. A symlink created at that name after the check but before the open is not seen. The same leaf-open flags above close that gap.
+- Hard links and bind mounts are invisible to path resolution. An existing file inside the root that is a hard link to a file outside will be overwritten in place. Writing to a fresh temporary name and renaming avoids following an existing hard link.

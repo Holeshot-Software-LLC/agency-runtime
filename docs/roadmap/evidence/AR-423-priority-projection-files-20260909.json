@@ -1,0 +1,10 @@
+{
+  "host": "claude",
+  "published_digest": "79138e80adcc1b22ebc1d68f310c5fea4ffa01b22af89eefdd700999e0d58643",
+  "manifest_sha256": "79138e80adcc1b22ebc1d68f310c5fea4ffa01b22af89eefdd700999e0d58643",
+  "manifest_matches_digest": true,
+  "projection_files": 651,
+  "mismatches": [],
+  "native_session_id": "a5c13def-36a1-4a3e-9484-d0f09f105209",
+  "scope": "Published recipe20 projection files checked after fresh native process; running parent Codex is separate."
+}

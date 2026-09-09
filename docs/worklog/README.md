@@ -2362,6 +2362,14 @@ This registry connects repository history to the roadmap and to optional detail 
 | `817e6722` | 2026-09-09 | docs(reliability): freeze AR-428 isolated acceptance candidate | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 | `0969646d` | 2026-09-09 | docs(reliability): retain AR-428 partial isolated verification | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 | `5b1632e6` | 2026-09-09 | docs(reliability): accept AR-428 planning boundary with isolated evidence | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `0839e158` | 2026-09-09 | fix(planner): merge PR831 observed test evidence boundary | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `ef124c50` | 2026-09-09 | docs(reliability): scope observed Claude native acceptance turn | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
+| `fb7e8a3a` | 2026-09-09 | docs(reliability): retain Claude refresh preconditions | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
+| `5dbe612a` | 2026-09-09 | docs(reliability): retain complete Claude native context evidence | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
+| `c272b1cd` | 2026-09-09 | docs(reliability): freeze bounded AR-423 assurance packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
+| `e6acb2d4` | 2026-09-09 | docs(reliability): accept AR-423 native context delivery | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
+| `cbb83fa6` | 2026-09-09 | docs(reliability): retain AR-423 handoff constraints | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
+| `3238dfa4` | 2026-09-09 | docs(reliability): direct recovery to remaining Hermes evidence | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-claude-priority-native.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

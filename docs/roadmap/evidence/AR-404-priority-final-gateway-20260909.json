@@ -1,0 +1,39 @@
+{
+  "rpc": {
+    "ok": true,
+    "kind": "connect",
+    "capability": "read_only",
+    "auth": {
+      "role": "operator",
+      "scopes": [
+        "operator.read"
+      ],
+      "capability": "read_only"
+    },
+    "server": {
+      "version": "2026.8.2",
+      "buildId": "2026.8.2-0965053fe6b9-2026-09-01T09-44-31.342Z",
+      "connId": "ed5f6e6e-b22b-45d2-86e4-931832788c65"
+    },
+    "version": "2026.8.2",
+    "url": "ws://127.0.0.1:18789"
+  },
+  "runtime": {
+    "status": "running",
+    "state": "active",
+    "subState": "running",
+    "pid": 2680971,
+    "lastExitStatus": 0,
+    "lastExitReason": "0",
+    "systemd": {
+      "unit": "openclaw-gateway.service",
+      "killMode": "control-group",
+      "tasksCurrent": 12,
+      "memoryCurrent": 464576512,
+      "result": "success",
+      "nRestarts": 0,
+      "startLimitBurst": 5
+    }
+  },
+  "scope": "Read-only gateway health after both temporary observers restored owner config; no full-card observer remains."
+}

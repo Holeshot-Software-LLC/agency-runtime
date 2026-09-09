@@ -15,6 +15,7 @@ related:
   - docs/roadmap/reference-workforce-inference-stages.md
   - docs/decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md
   - docs/decisions/0110-remove-agency-owned-windows-hello.md
+  - docs/worklog/2026-09-09-hermes-planner-evidence.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -129,3 +130,10 @@ durable receipt carries. Diagnosing a veto needed the capture harness.
   field means a schema version and a store migration for what the existing
   `staffing_reason_codes` list already expresses once the codes fit its
   vocabulary.
+
+## AR-428 implementation provenance
+
+Commit `0ac9d78e` clarifies static proposed-test review versus observed results in
+the active compact planner and repair prompt. The independent critic and advisory
+doctrine are unchanged; both fresh Hermes vetoes remain retained. AR-428's three
+isolated criteria satisfy the bounded planning repair, not whole-host reliability.

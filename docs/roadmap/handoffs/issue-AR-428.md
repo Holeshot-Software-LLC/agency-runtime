@@ -51,9 +51,10 @@ checkpoint and continue. Preserve unrelated work and failed receipts.
 
 ## Next bounded work package
 
-Merge PR831 and close AR-428 with the three isolated verdicts. Remaining nomination
-relevance stays under AR-404. Codex trust and projection files verify; proceed
-Claude AR-423 with fresh native planner observation and complete-team evidence.
+PR831 merged at0839e158 and AR-428 is closed. AR-423 now has fresh complete-team
+Claude native evidence and three satisfied isolated criteria. Remaining Hermes
+nomination relevance stays under AR-404; use its current capsule. Codex trust and
+projection files verify. Zcode remains deferred.
 
 ## Verification
 

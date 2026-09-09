@@ -70,24 +70,28 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
-OpenClaw priority diagnostic completed: one fresh review/follow-up pair passed
-five headers and authoritative terminal hashes in 82.956s/58.928s. Original critic
-veto did not recur; only the review packet was captured. Full native card injection
-was not observed in this diagnostic. Owner config restored exactly and gateway RPC
-healthy. Next active host is Hermes (AR-428), then Codex and Claude; Zcode deferred.
+Owner priority is OpenClaw, Hermes, Codex, Claude; Zcode changes are deferred.
+OpenClaw's fresh review/follow-up diagnostic passed headers and terminal hashes,
+with full-card injection unobserved. Final RPC healthy and observers removed.
 
+AR-428 merged in PR831 and closed for its planning boundary. Both fresh Hermes
+turns still failed wrong-neighbor staffing; the observed packet preserves the
+corrected four-unit plan and rejected nominations. AR-418 remains open: actual
+Hermes checkout7cd91114 unchanged, upstream PR106490 open and unadopted, original
+truncation cap unproven. The next bounded repair must follow that evidence.
 
-Hermes AR-428 recipe20 changed the native planning boundary: observed diagnostic
-session `20260909_153433_eef6b8` retains independent static review and no invented
-test-evidence unit. Both fresh native trials still failed wrong-neighbor staffing;
-no authoritative finalization. Their packets are retained, and all three isolated planning
-criteria satisfied for AR-428. No critic veto is assumed erroneous.
+Codex8/8 trust and651 published projection files verify; its prior fresh recipe19
+native proof is scoped separately from this stale parent. Recipe20 artifactecf8a584
+matches616 installed package files; Hermes and Claude refreshed only.
 
-Codex read-only priority checks still find8/8 hooks trusted, matching prior native
-hashes; all651 files in published projection `37c1bf7d5eb0` match its manifest.
-Prior fresh recipe19 Codex native evidence remains valid for its scope; the current
-parent stays stale on `6db15efbecbe`. Global recipe20 install refreshed Hermes only.
-Claude AR-423 remains next; Zcode changes remain owner-deferred.
+AR-423's fresh Claude session a5c13def/trace95f96215 passed all4 inferred native
+MCP cards, five Store headers and authoritative finalization in264.750s. All three
+isolated criteria satisfied against candidate dc83cc40; PR832 carries completion
+and the PR831 ledger. No delegated worker execution or all-host claim is made.
+
+## Earlier checkpoints
+
+The dated records below remain historical; the current capsule owns remaining gates.
 
 
 PR 824 merged at `e81f8e00` on September 9. AR-426/#823 and AR-427/#825

@@ -9,6 +9,7 @@ related:
   - docs/roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md
   - docs/roadmap/issue-AR-424-preserve-last-card-whitespace.md
   - docs/worklog/2026-09-09-claude-native-context-delivery.md
+  - docs/worklog/2026-09-09-claude-priority-native.md
   - docs/worklog/README.md
 supersedes: []
 superseded_by: null
@@ -58,3 +59,10 @@ Reading a persisted native file violates this caller's scope. Raising undocument
 native thresholds depends on unsupported configuration. Trimming cards changes
 selected prompt bytes. Automatically treating selected cards as loaded would
 manufacture evidence. These alternatives are rejected.
+
+## Acceptance provenance
+
+AR-423 evidence commit `5dbe612a` retains the complete recipe20 native four-card
+MCP delivery, exact Store headers and authoritative finalization. The updated
+isolated packet satisfies all three criteria; native delegated execution and
+all-host reliability are not claimed. See the linked AR-423 worklog and registry.

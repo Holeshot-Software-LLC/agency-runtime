@@ -1,6 +1,6 @@
 ---
 title: "AR-423: Preserve Claude specialist context across native hook output limits"
-status: blocked
+status: done
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -32,6 +32,18 @@ model-facing specialist delivery. A caller who prohibits file access cannot
 safely be worked around by reading that file automatically.
 
 ## Current state
+
+Priority continuation: all three isolated criteria satisfied (`7371e07f`,
+`de031b6f`, `0e4e187d`) against candidate dc83cc40. AR-423 is complete for native
+context delivery. Fresh recipe20 session `a5c13def-36a1-4a3e-9484-d0f09f105209`,
+trace `95f96215-d84b-4b4e-9628-c808e99b9d23`, passed complete4/4 inferred MCP
+cards, five Store headers and authoritative finalization in264.750s. Both exact
+MCP Allow rules remain unchanged. The independent verifier accepted the preserved
+pre-execution assurance boundary; no delegated specialist execution is claimed.
+
+The following dated checkpoints remain historical; AR-404 owns broader reliability.
+
+
 
 Fresh recipe 19 Claude session `0a59da24` / trace `28c8db15` failed two planner
 contracts before delivery in 118.255s. The first lacked correctness/security review;
@@ -134,7 +146,7 @@ AR-422 owns executable installation only.
 
 Repository-required isolated verdicts govern closure after these criteria are judged.
 
-- [ ] Reproduce the native pointer substitution with exact bounded evidence.
-- [ ] Deliver the selected full cards through a supported native surface without
+- [x] Reproduce the native pointer substitution with exact bounded evidence.
+- [x] Deliver the selected full cards through a supported native surface without
       bypassing caller scope, trust, inference or independent assurance.
-- [ ] Verify regression and fresh native evidence.
+- [x] Verify regression and fresh native evidence.

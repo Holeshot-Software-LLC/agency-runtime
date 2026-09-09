@@ -1,0 +1,7 @@
+{
+  "rules": [
+    "mcp__plugin_agency-preflight_agency-runtime__agency_load_specialist",
+    "mcp__plugin_agency-preflight_agency-runtime__agency_finalize"
+  ],
+  "unchanged": true
+}

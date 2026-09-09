@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-host-priority-20260909
-evidence_commit: e81f8e00d5d511e2c605192ff9c5a461aebe0cb2
-minimum_ledger_commit: 89d728aee6a897c036b5a369d459f154299a4a12
+branch: codex/ar423-native-priority-20260909
+evidence_commit: 5dbe612a7dd3bd7ecca1b2f60411a44b175d278f
+minimum_ledger_commit: adab07907448c152e5a214e8abd5150d535f282d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -30,84 +30,74 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Owner priority is now OpenClaw, Hermes, Codex, Claude; Zcode work is deferred.
-The OpenClaw diagnostic passed review/follow-up headers and terminal hashes, with
-full card injection unobserved. Hermes AR-428 recipe20 now plans independent static
-review without invented test-evidence, but two fresh turns failed wrong-neighbor
-staffing. Exact original/new critic packets remain; no authoritative completion.
-AR-428 all three isolated planning criteria satisfied; PR831 is ready to merge.
-
-Codex current8/8 trust and all651 published projection files verify. Prior fresh
-recipe19 native proof remains scoped; current parent remains stale. Global recipe20
-installation refreshed Hermes only. Claude AR-423 is next; Zcode remains deferred.
-
-
-Owned PR 824 branch contains recipe 19 complete-team delivery and bounded Hermes
-callbacks. Source `176adc19`, canonical artifact `20c49e0d`; all 616 installed
-files match. PR 827 retained Claude audit evidence and merged into this branch;
-PR 824 merged at `e81f8e00`; AR-426/#823 and AR-427/#825 are closed.
+Owner order: OpenClaw, Hermes, Codex, Claude. Zcode changes are deferred but its
+historical failures remain in the five-host scope. AR-428 planning repair merged
+in PR831 (`0839e158`) and closed. AR-423 now has all three isolated criteria
+satisfied; PR832 carries fresh complete-team native evidence and the PR831 ledger.
+AR-404 and AR-418 remain open; no all-host reliability claim.
 
 ## Completed evidence
 
-Fresh Hermes session `20260909_143551_e08888` passed in 114.863s. Native message
-535391 contains all five inferred immutable cards, contract and delivery rules
-without a spill pointer. Five Store headers match; first authoritative response
-hash `6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968`.
-AR-427 evidence retains exact native context, each full card, terminal and request.
+OpenClaw review/follow-up sessions under
+`agent:openclaw:ar404-20260909-priority-review-followup` passed five Store headers
+and authoritative hashes in82.956s/58.928s. Only the review critic packet was
+captured; no llm_input observation proves new full-card injection. No repair was
+inferred from the unreproduced old veto. Final gateway RPC healthy; observers removed.
 
-Corrected original-source regressions fail seven cases across all five host paths
-and both native retrieval paths; recipe 19 preserves the fifth selected worker
-or rejects incomplete delivery before any load. Host/context ceilings are unchanged.
-Focused 66 / 1 skipped, production 1151 / 3 skipped, UI 224, routing and frozen
-conformance 188/188 pass. Canonical build, independent artifact and installed smoke
-pass. Earlier permissive-umask and invalid-fixture failures remain recorded.
+AR-428 source `0ac9d78e`, artifact `ecf8a584`, recipe20 distinguishes unexecuted
+proposed-test review from observed results. Exact616 installed package files match.
+Hermes and Claude refreshed; Codex/OpenClaw/Zcode retain their prior projections.
+All three AR-428 planning criteria satisfied; both current Hermes staffing failures
+remain authoritative and no terminal completion is claimed for them.
 
-The one critic observer diagnostic restored owner configuration byte-for-byte.
-Its real plan requested test-result interpretation without results; AR-428/#826
-records that concern. The critic veto remains authoritative.
+Codex8/8 hooks trusted, current hashes equal prior native proof, all651 files in
+published projection `37c1bf7d5eb0` match. Prior fresh native session
+`01a0877b-45dd-7b01-b99d-92c03587393f` passed five cards/headers/finalization in103.434s.
+This parent remains stale on `6db15efbecbe`; reinstall cannot refresh it.
+
+Claude session `a5c13def-36a1-4a3e-9484-d0f09f105209`, trace
+`95f96215-d84b-4b4e-9628-c808e99b9d23`, passed4/4 inferred full native MCP cards,
+five Store headers and authoritative hash
+`1c5f87780ecf485d2f4ab4018b3a71a45c79522edd237707447667cfca638c1c`
+in264.750s. Distinct correctness/security bindings and no staffing advisories;
+no delegated specialist execution claim. Isolated verdicts7371e07f/de031b6f/0e4e187d
+satisfy AR-423. Two exact Allow rules unchanged; published79138e80 has651 matching files.
 
 ## Exact blocker
 
-AR-426 authorized third isolated pass and AR-427 first pass satisfied all three
-criteria each. Both scoped issues are done; PR 824 is merged at `e81f8e00`. AR-423 third pass satisfied criteria 1/3, left criterion 2 absent:
-prior Claude routing selected five but native delivery retained four, omitting an
-independent security reviewer. Fresh Claude session `0a59da24` / trace `28c8db15`
-failed planner contracts in 118.255s before delivery. No unchanged retry is queued.
+Hermes sessions `20260909_153129_1f3091` and `20260909_153433_eef6b8` failed
+wrong-neighbor staffing in81.860s/78.821s. The second exact critic packet is
+`AR-428-observed-native-critic-packet-20260909.json`: four units, no test-evidence,
+independent static review; type-design and silent-failure nominees remain. The
+critic code does not establish a sole cause. Neither receipt has finalization.
 
-AR-418/#796 remains open: actual Hermes checkout `7cd91114`, upstream PR106490
-still OPEN at `30f421ecce`; default adoption and original output cap are unproven.
-Zcode first review/follow-up outputs put permission prose before headers and are
-valid terminal rejections; later headers cannot replace those failed receipts.
-Claude ordinary review and OpenClaw follow-up staffing failures remain retained.
-
-Codex's eight refreshed hooks are now trusted with no modified/missing entries.
-A fresh native Codex process and UserPromptSubmit hook run published projection
-`37c1bf7d5eb0`; the parent still runs `6db15efbecbe`. The fresh probe passed in 103.434s, five exact cards and authoritative finalization. OpenClaw refresh completed; subsequent gateway RPC is healthy.
+AR-418 upstream PR106490 remains OPEN at30f421ecce. Actual Hermes checkout is
+clean7cd91114b462b7af76e558cc4e97f82201d2e884. Default adoption and the original
+truncation cap are unproven. Zcode's early invalid finalizations remain failed;
+later headers cannot reopen or replace them. Old sample8/15 remains historical.
 
 ## Same-task continuity
 
-The implementation and acceptance branches are historical and merged. Preserve
-unrelated scratchpad and Windows work; create a new owned tree for the next repair.
-At or below 50 percent, keep a clean substantive/ledger checkpoint and continue.
-No empty recovery pair, forced transfer or failed-receipt reopening.
+After PR832 merge, use a fresh owned worktree. Preserve unrelated scratchpad and
+Windows work. At or below50percent checkpoint substantive state plus exact ledger
+and continue. No empty recovery commits, forced transfer, or failed-receipt reopening.
 
 ## Next bounded work package
 
-OpenClaw's one observed review/follow-up sequence passed headers and authoritative
-completion (82.956s/58.928s). The earlier critic veto did not recur; no repair is
-inferred. Only the review critic packet was captured, and no llm_input observer
-proved fresh full cards. Config restored exactly and gateway RPC healthy.
-Proceed to Hermes's AR-428 captured static-test-evidence planning defect in a new
-owned package, then Codex and Claude. Zcode remains deferred by the owner.
+Inspect Hermes's observed nomination packet against selected contracts and eligible neighbours. Choose a
+bounded repair only from that evidence; do not assume a critic mistake. Preserve
+the separate AR-418 upstream terminal gate. Keep the owner's host order and Zcode deferral.
 
 ## Verification
 
-Metadata, policy availability, docs, exact worklog, strict tracker parity (419
-items), Ruff and diff checks pass at the prior checkpoint. Recheck changed records
-before handoff. No exhaustive or Windows workflow ran.
+Recipe20 focused164/1skip; named production1151/3skip; UI224; routing; Ruff788;
+frozen conformance188/188; canonical artifact/Twine/installed smoke passed.
+Claude context12 passed. Final documentation, worklog and tracker checks precede
+handoff. No exhaustive or Windows workflow ran.
 
 ## Constraints
 
-Inference alone selects specialists. Preserve critic, validators, trust, caller
-scope and native limits. No manual selection, acceptance, external messages or
-unbounded retries. AR-419 and AR-425 stay closed; umbrella AR-404 stays open.
+Inference alone selects specialists. Preserve independent critic, validators,
+trust, native limits and caller scope. No manual selection, acceptance, external
+messages or unbounded retries. No pending Codex trust or Claude tool approval.
+AR-419/423/425/426/427/428 have satisfied their scoped acceptance gates; umbrella AR-404 stays open.
