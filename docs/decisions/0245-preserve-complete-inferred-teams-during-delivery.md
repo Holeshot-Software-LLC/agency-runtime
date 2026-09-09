@@ -48,3 +48,6 @@ All five native host paths use the shared preflight rule.
 Increasing global context/output budgets changes unrelated behavior. Reordering
 or choosing a smaller team in hydration would replace inference authority.
 Counting omitted cards loaded would falsify evidence. All are rejected.
+
+Implementation: `176adc19`; exact source ledger `20c49e0d`. See the linked
+worklog registry for the unmodified subjects and the AR-427 evidence records.

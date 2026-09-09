@@ -219,3 +219,14 @@ critic veto remains failed. Its plan invented static test-result analysis and
 selected a role requiring completed results despite no execution. AR-428/#826
 records that separate planning defect; no speculative critic override or planner
 repair is bundled with the bounded hydration change.
+
+## Recipe 19 installed checkpoint
+
+Source `176adc19` and ledger `20c49e0d` preserve the complete selected team.
+Frozen conformance passed 188/188 under private umask 077 after the retained
+permissive-umask fixture failure. Canonical distribution, installed smoke and
+616-file identity checks pass. OpenClaw normal stop/refresh/start completed;
+the immediate RPC startup probe failed, and the subsequent read-only probe is
+healthy. No observer remains. Eight refreshed Codex hooks are modified; owner
+trust review and fresh process are pending. PR 827 retained Claude evidence and
+its absent criterion 2; no issue closure or whole-team acceptance is claimed.

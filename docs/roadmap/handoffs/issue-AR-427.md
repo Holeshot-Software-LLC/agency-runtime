@@ -14,8 +14,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-427
 branch: codex/ar404-terminal-reliability-20260909
-evidence_commit: d8b7b4189e68418304a02d2bf6cc13779926b2dc
-minimum_ledger_commit: 4e710a82c87eec5b1419ee8701c3473f3dfa74c2
+evidence_commit: 176adc19c01139c370b43665cb593761a474686a
+minimum_ledger_commit: 20c49e0d42d95b90055d4f8916728a8bccad80fd
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825
 ---
@@ -37,8 +37,11 @@ pass. Existing sixteen-reference and host context limits remain unchanged.
 
 ## Exact blocker
 
-Frozen conformance, canonical installed identity, fresh native complete-team
-proof and isolated acceptance remain pending. AR-423 third pass left criterion 2
+Frozen conformance 188/188 and all 616 installed files match recipe 19 artifact
+source `20c49e0d`. Installed smoke and independent artifact verification pass.
+OpenClaw refresh complete; gateway RPC healthy. Codex eight modified hooks need
+native trust review and a fresh process (old process projection remains stale).
+Fresh native complete-team proof and isolated acceptance remain pending. AR-423 third pass left criterion 2
 absent; the omitted reviewer invalidates a whole-team claim. AR-426 retains the
 separate Hermes callback proof. AR-428 records static test-result planning without
 observed results; its captured critic veto is preserved.
@@ -50,9 +53,8 @@ substantive/ledger checkpoint and continue. No manual selection or receipt reope
 
 ## Next bounded work package
 
-Finish frozen conformance and canonical installation. Refresh affected native
-projections normally, then run one bounded fresh Claude and Hermes large-context
-probe. Compare all inferred identities, immutable references, actual native bodies,
+Run one bounded fresh Claude and Hermes large-context probe against the verified
+recipe 19 installation. Compare all inferred identities, immutable references, actual native bodies,
 five headers and authoritative finalization before claiming acceptance.
 
 ## Verification
