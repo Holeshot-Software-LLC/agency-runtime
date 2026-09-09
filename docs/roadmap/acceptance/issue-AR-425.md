@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-425
-candidate_commit: 115b471f1f32a369fea1cf8dc9fd1d7118e9e679
+candidate_commit: c32dd73234255855f891f6b759eeba8516ef9aaa
 evidence_cutoff: 2026-09-09
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/820
 ---
@@ -26,16 +26,17 @@ failed; this packet does not establish AR-404 all-host reliability.
 
 | Criterion | Kind | Artifact | Observed | Source |
 |---|---|---|---|---|
+| 2 | file | Same unit, context or independence class cannot assure its own modifying work; missing independent assurance is rejected | 2026-09-09 | agency_runtime/core/workforce/staffing_verifier.py:1030-1083 |
+| 2 | file | Provider call rejects exhausted budget or reserved required slots before invoker | 2026-09-09 | agency_runtime/core/workforce/inference.py:1762-1781 |
+| 2 | file | Budget consume refuses used maximum and remaining never becomes negative | 2026-09-09 | agency_runtime/core/workforce/inference.py:1222-1240 |
+| 2 | file | Actual fast-mode test composes planner and recruiter repairs with exactly four calls, then no extra response | 2026-09-09 | tests/test_workforce_inference.py:2362-2395 |
+| 2 | file | Actual planner repair rejects missing security/evidence assurance and wrong order; repaired graph is inference's returned graph | 2026-09-09 | tests/test_workforce_inference.py:2261-2331 |
 | 4 | command-output | Exact compact check counts, source identity, native planner repair then critic approval and accepted hash, with limitations | 2026-09-09 | docs/roadmap/evidence/AR-425-bounded-verification-summary-20260909.json:1-51 |
 | 2 | file | Rejected model data enters only the bounded planner repair field | 2026-09-09 | agency_runtime/core/workforce/inference.py:1701-1716 |
 | 2 | file | Every replacement goes back through parser before accepted; same two-attempt loop | 2026-09-09 | agency_runtime/core/workforce/inference.py:1950-1995 |
-| 2 | file | Rejected content has no worker or approval authority | 2026-09-09 | agency_runtime/core/workforce/intent.py:368-387 |
 | 1 | command-output | Old source real-orchestration regression raises KeyError for missing rejected_plan_untrusted; known-code regression also fails | 2026-09-09 | docs/roadmap/evidence/AR-425-validation-20260909.json:1-162 |
 | 1 | file | Real plan_and_staff_workforce regression sends rejected object through one repair and observes parser validation | 2026-09-09 | tests/test_workforce_inference.py:1936-1980 |
-| 2 | file | Existing stage forwards rejected result into bounded planner-only repair data; replacement traverses same parser and call loop | 2026-09-09 | agency_runtime/core/workforce/inference.py:1809-1839 |
 | 2 | file | Hostile answer is data, oversized answer omitted, nonplanner excludes field | 2026-09-09 | tests/test_planner_repair_context.py:1-89 |
-| 2 | file | Work-unit cap, assurance graph and per-stage budget tests retain rejection and inference authority | 2026-09-09 | tests/test_workforce_inference.py:2031-2077 |
-| 2 | file | Critic remains veto-only for already verified teams and bounded fallback preserves critic requirement | 2026-09-09 | tests/test_workforce_inference.py:3146-3210 |
 | 3 | file | Exact runtime errors map to five known codes; unknown and suffix-injected text remain generic | 2026-09-09 | agency_runtime/core/workforce/plan_policy.py:338-357 |
 | 3 | file | Closed codes survive terminal projection without validation_detail or rejected content | 2026-09-09 | tests/test_planner_repair_context.py:1-89 |
 | 4 | command-output | Focused143, production1151/3skipped, UI224 and docs/tracker/Ruff checks | 2026-09-09 | docs/roadmap/evidence/AR-425-validation-20260909.json:1-162 |
@@ -48,7 +49,3 @@ failed; this packet does not establish AR-404 all-host reliability.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | satisfied | `AR-425.1-20260909-b925dd5e` | `b2eaef7462ed511fa69b00cfc9bc835931deb9bd094a581974048f975add3330` | 2026-09-09 | tests/test_workforce_inference.py:1936-1980 exercises plan_and_staff_workforce and asserts rejected-plan context in repair feedback; AR-425-validation-20260909.json records the original KeyError for rejected_plan_untrusted. |
-| 2 | absent | `AR-425.2-20260909-e4da83a4` | `4592527f332e26eb5778e8d0784b09f156e12d1c8565ff5962c2f3d62f9e2233` | 2026-09-09 | inference.py excerpts show bounded repair data and replacement parsing, but the cited tests and loop excerpt do not demonstrate independent assurance preservation or enforcement of existing call budgets during repair. |
-| 3 | satisfied | `AR-425.3-20260909-79466089` | `4860f88d1b11ff7be663dfd338d64b3c77eb277839c9a0299da174f07439c1de` | 2026-09-09 | plan_policy.py:338-357 maps exact known errors to closed codes and defaults unknown errors to generic; test_planner_repair_context.py:52-89 verifies projection retains codes while excluding validation details and rejected content. |
-| 4 | satisfied | `AR-425.4-20260909-9fedf21a` | `9099ec7d7fc322448b619493ca3191b98b44c313b0fd5ad88ac256f97d25a208` | 2026-09-09 | AR-425 validation and bounded-summary excerpts record passing focused and production checks; planner-diagnostic and AR-404 native artifacts preserve bounded attempts, original failures, accepted completion, and explicit replay and causal limitations. |
