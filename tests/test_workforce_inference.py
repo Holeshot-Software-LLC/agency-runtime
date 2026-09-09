@@ -1968,9 +1968,10 @@ def test_semantically_invalid_provider_output_gets_one_bounded_repair_attempt() 
         "applied",
     ]
     assert outcome.attempts[0].validation_detail == "work-unit plan contains duplicate unit ids"
-    assert outcome.attempts[0].validation_reason_codes == ("plan_response_semantic_invalid",)
     feedback = json.loads(prompts[1].partition("[RUNTIME VALIDATION FEEDBACK]\n")[2])
-    assert feedback["validation_reason_codes"] == ["plan_response_semantic_invalid"]
+    assert feedback["rejected_plan_untrusted"] == invalid
+    assert outcome.attempts[0].validation_reason_codes == ("plan_duplicate_unit_ids",)
+    assert feedback["validation_reason_codes"] == ["plan_duplicate_unit_ids"]
     assert feedback["deterministic_validation_detail"] == (
         "work-unit plan contains duplicate unit ids"
     )

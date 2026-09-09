@@ -1,0 +1,360 @@
+{
+  "scope": "New planner-only diagnostic, not exact original prompt replay or native acceptance. Current roster and canonical Claude capabilities; no correlated native turn context. No recruitment or activation.",
+  "roster_generation": 395,
+  "roster_fingerprint": "sha256:2ee376d88ee62c9d00c15c615e183278465354d4f2e7800d7a0de7c9d34e9108",
+  "max_calls": 2,
+  "request_sha256": "37c5117dbedc29666a48d669a67658b25be89327c934e93619f15e03ebc4373a",
+  "elapsed_seconds": 33.937,
+  "accepted": true,
+  "failure": "",
+  "attempts": [
+    {
+      "stage": "planner",
+      "provider_name": "agency-planner",
+      "provider_type": "litellm",
+      "requested_model": "task-agency-planner-v2",
+      "model_group": "task-agency-planner-v2",
+      "actual_model": "task-agency-planner-v2",
+      "model_receipt_source": "response.body.model",
+      "status": "rejected",
+      "reason_code": "provider_response_contract_invalid",
+      "latency_ms": 17390,
+      "timeout_ms": 60000,
+      "http_status": 0,
+      "validation_detail": "workforce plan is incomplete: plan_missing_code_correctness_review",
+      "validation_reason_codes": [
+        "plan_missing_code_correctness_review"
+      ],
+      "input_count": 0,
+      "dimensions": 0,
+      "candidate_count": 0,
+      "catalog_cache_hit": false,
+      "catalog_identity": "",
+      "provider_call_count": 0,
+      "reply_budget_tokens": 4096,
+      "completion_cap_tokens": 6144,
+      "completion_tokens": 616,
+      "reply_truncated": false,
+      "metadata_version": 1,
+      "provider_chain_index": 0,
+      "provider_call_attempted": true,
+      "provider_fallback_count": 0
+    },
+    {
+      "stage": "planner",
+      "provider_name": "agency-planner",
+      "provider_type": "litellm",
+      "requested_model": "task-agency-planner-v2",
+      "model_group": "task-agency-planner-v2",
+      "actual_model": "task-agency-planner-v2",
+      "model_receipt_source": "response.body.model",
+      "status": "applied",
+      "reason_code": "structured_response_applied",
+      "latency_ms": 16514,
+      "timeout_ms": 60000,
+      "http_status": 0,
+      "validation_detail": "",
+      "validation_reason_codes": [],
+      "input_count": 0,
+      "dimensions": 0,
+      "candidate_count": 0,
+      "catalog_cache_hit": false,
+      "catalog_identity": "",
+      "provider_call_count": 0,
+      "reply_budget_tokens": 4096,
+      "completion_cap_tokens": 6144,
+      "completion_tokens": 882,
+      "reply_truncated": false,
+      "metadata_version": 1,
+      "provider_chain_index": 0,
+      "provider_call_attempted": true,
+      "provider_fallback_count": 0
+    }
+  ],
+  "replies": [
+    {
+      "value": {
+        "request_summary": "Static security-and-correctness review of a supplied Python download-path helper, producing defect explanations, a corrected function that confines resolved paths under the root and rejects absolute names, traversal, and symlink escapes with ValueError, focused pytest cases, filesystem assumptions, and race limitations \u2014 without reading files or executing tests.",
+        "units": [
+          {
+            "unit_id": "unit-path-defect-analysis",
+            "outcome": "Analyze the supplied download_path snippet, explain the absolute-name, parent-directory traversal, and symlink-escape defects, and produce a corrected function that resolves strictly inside the configured root and raises ValueError, plus filesystem assumptions and remaining race limitations; pure static work with no file access or execution.",
+            "artifact_kind": "analysis",
+            "domains": [
+              "security",
+              "software-engineering"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "analysis",
+              "review",
+              "threat-modeling"
+            ],
+            "novel_capability": "",
+            "depends_on": []
+          },
+          {
+            "unit_id": "unit-pytest-cases",
+            "outcome": "Author focused pytest cases for the corrected function covering valid nested paths, absolute names, parent-directory traversal, and symlink escapes, designed so they can later be run without claiming any execution in this session.",
+            "artifact_kind": "test-code",
+            "domains": [
+              "security",
+              "software-engineering"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "testing",
+              "design"
+            ],
+            "novel_capability": "",
+            "depends_on": [
+              "unit-path-defect-analysis"
+            ]
+          },
+          {
+            "unit_id": "unit-case-review",
+            "outcome": "Independently review the corrected function and the pytest cases against the stated requirements, verifying each case targets a distinct rejection or acceptance path and that assumptions and race limitations are accurately documented, with no execution claims.",
+            "artifact_kind": "review-report",
+            "domains": [
+              "security",
+              "software-engineering"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "review",
+              "verification"
+            ],
+            "novel_capability": "",
+            "depends_on": [
+              "unit-pytest-cases"
+            ]
+          },
+          {
+            "unit_id": "unit-case-evidence",
+            "outcome": "Interpret the pytest cases statically against the corrected function to provide evidence reasoning for valid nested paths, absolute names, traversal, and symlink escapes, explicitly noting cases were not executed and results are unverified pending a real test run.",
+            "artifact_kind": "test-evidence",
+            "domains": [
+              "security",
+              "software-engineering"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "verification",
+              "analysis"
+            ],
+            "novel_capability": "",
+            "depends_on": [
+              "unit-pytest-cases"
+            ]
+          }
+        ]
+      },
+      "receipt": {
+        "provider_name": "agency-planner",
+        "provider_type": "litellm",
+        "transport": "",
+        "requested_model": "task-agency-planner-v2",
+        "model_group": "task-agency-planner-v2",
+        "actual_model": "task-agency-planner-v2",
+        "model_receipt_source": "response.body.model",
+        "latency_ms": 17390,
+        "thinking_level_configured": "medium",
+        "thinking_level_consumed": "medium",
+        "reply_budget_tokens": 4096,
+        "completion_cap_tokens": 6144,
+        "completion_tokens": 616,
+        "finish_reason": "stop",
+        "reply_truncated": false,
+        "model_text_repair": "",
+        "failure_reason": "",
+        "call_attempted": false,
+        "http_status": 0
+      },
+      "validation": null,
+      "validation_error": {
+        "type": "_PlanPolicyValidationError",
+        "detail": "workforce plan is incomplete: plan_missing_code_correctness_review",
+        "codes": [
+          "plan_missing_code_correctness_review"
+        ]
+      }
+    },
+    {
+      "value": {
+        "request_summary": "Review the supplied Python download-path helper for correctness and input security, explain defects, provide a corrected function with pytest cases for nested paths, absolute names, traversal, and symlink escapes, and state filesystem assumptions and race limitations without executing anything.",
+        "units": [
+          {
+            "unit_id": "unit-analysis-snippet",
+            "outcome": "Analyze the supplied download_path snippet, mapping its inputs and code path to required behaviors: resolved path strictly inside root and rejection of absolute names, traversal, and symlink escapes.",
+            "artifact_kind": "analysis",
+            "domains": [
+              "software-engineering",
+              "security"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "analysis",
+              "investigation"
+            ],
+            "novel_capability": "",
+            "depends_on": []
+          },
+          {
+            "unit_id": "unit-implementation-fix",
+            "outcome": "Author a corrected download_path function that resolves the root, rejects absolute names and traversal with ValueError, and verifies containment and symlink escape resistance.",
+            "artifact_kind": "implementation-change",
+            "domains": [
+              "software-engineering",
+              "security"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "implementation",
+              "risk-analysis"
+            ],
+            "novel_capability": "",
+            "depends_on": [
+              "unit-analysis-snippet"
+            ]
+          },
+          {
+            "unit_id": "unit-tests-pytest",
+            "outcome": "Write focused pytest cases covering valid nested paths, absolute name rejection, parent-directory traversal rejection, and symlink escape rejection; not executed, authored only.",
+            "artifact_kind": "test-code",
+            "domains": [
+              "software-engineering",
+              "security"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "testing"
+            ],
+            "novel_capability": "",
+            "depends_on": [
+              "unit-implementation-fix"
+            ]
+          },
+          {
+            "unit_id": "unit-test-evidence",
+            "outcome": "Compile authored test-case evidence enumerating each pytest case and the expected ValueError/containment outcome for the corrected download_path, explicitly without execution claims.",
+            "artifact_kind": "test-evidence",
+            "domains": [
+              "software-engineering",
+              "security"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "verification",
+              "testing"
+            ],
+            "novel_capability": "",
+            "depends_on": [
+              "unit-tests-pytest"
+            ]
+          },
+          {
+            "unit_id": "unit-review-correctness",
+            "outcome": "Software-engineering correctness review of the corrected download_path implementation and its pytest cases, checking resolution logic, exception behavior, and platform edge cases.",
+            "artifact_kind": "review-report",
+            "domains": [
+              "software-engineering"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "review",
+              "analysis"
+            ],
+            "novel_capability": "",
+            "depends_on": [
+              "unit-implementation-fix",
+              "unit-tests-pytest"
+            ]
+          },
+          {
+            "unit_id": "unit-review-security",
+            "outcome": "Security review assessing exploitability of the corrected download_path against absolute-name, traversal, and symlink-escape attacks, including race-condition limitations and filesystem assumptions.",
+            "artifact_kind": "review-report",
+            "domains": [
+              "security",
+              "software-engineering"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "review",
+              "threat-modeling"
+            ],
+            "novel_capability": "",
+            "depends_on": [
+              "unit-implementation-fix",
+              "unit-tests-pytest"
+            ]
+          },
+          {
+            "unit_id": "unit-documentation",
+            "outcome": "Document the defects in the original snippet, the corrected function, focused pytest cases, filesystem assumptions, and remaining symlink race limitations.",
+            "artifact_kind": "documentation",
+            "domains": [
+              "software-engineering",
+              "security"
+            ],
+            "stacks": [
+              "python"
+            ],
+            "capability_ids": [
+              "documentation",
+              "communication"
+            ],
+            "novel_capability": "",
+            "depends_on": [
+              "unit-review-correctness",
+              "unit-review-security"
+            ]
+          }
+        ]
+      },
+      "receipt": {
+        "provider_name": "agency-planner",
+        "provider_type": "litellm",
+        "transport": "",
+        "requested_model": "task-agency-planner-v2",
+        "model_group": "task-agency-planner-v2",
+        "actual_model": "task-agency-planner-v2",
+        "model_receipt_source": "response.body.model",
+        "latency_ms": 16514,
+        "thinking_level_configured": "medium",
+        "thinking_level_consumed": "medium",
+        "reply_budget_tokens": 4096,
+        "completion_cap_tokens": 6144,
+        "completion_tokens": 882,
+        "finish_reason": "stop",
+        "reply_truncated": false,
+        "model_text_repair": "",
+        "failure_reason": "",
+        "call_attempted": false,
+        "http_status": 0
+      },
+      "validation": "accepted",
+      "validation_error": null
+    }
+  ]
+}

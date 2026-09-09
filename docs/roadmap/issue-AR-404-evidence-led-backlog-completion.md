@@ -68,6 +68,13 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+September9 planner package AR-425/#820: the first rejected planner answer is
+reproduced, but the new diagnostic's one repair succeeds. The original second
+semantic failure stays unknown. Candidate supplies missing rejected-plan data to
+the stateless repair and adds closed semantic reason codes; focused143pass.
+Native Claude full-card and five-host fixed cases follow required verification.
+
+
 ### Approved Claude permission probe outcome
 
 Native sessionf4897a2b-8ae1-4462-a692-8cd9b53808a6, trace

@@ -19,7 +19,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar423-claude-tool-grant-20260909
+branch: codex/ar404-planner-contract-20260909
 evidence_commit: b62c31c7ea6fecae5bd407e9bd2e2730d055d4f4
 minimum_ledger_commit: 6a3dc1541da56d94426046b9a628a00c9187d130
 hard_checkpoint_percent: 50
@@ -137,14 +137,16 @@ empty continuation for telemetry. Preserve unrelated and Windows work.
 
 ## Next bounded work package
 
-Investigate the exact retained recruiter/critic and missing-header failures under
-AR-404 before another bounded phase; no unchanged-condition retry.
-The shared-staffing phase is complete with every failed case retained.
-No observer remains; normal gateway RPC is healthy.
-Claude grant probe failed both planner attempts; inspect exact trace
-be4757dc-c14f-4e39-b366-bdfa2ef0ae40 before another phase.
-Zcode review/follow-up passed but multi-step failed; retain that scope and evidence.
-No manual specialists, altered critic decisions or unchanged-condition retries.
+AR-425/#820 candidate repairs missing rejected-plan data in the existing bounded
+planner repair and preserves five known parser reason codes. New diagnostic
+reproduces missing correctness review, but its repair succeeds in33.937s; original
+second Claude error remains unknown. Focused143pass; required verification running.
+Basee3090882 is clean main after PR818/819; current owned branch is unmerged.
+Finish verification, freeze/install candidate, then Claude large-context and fixed
+five-host phase. Preserve every failure; no unchanged-condition retry or manual
+staffing. See issue-AR-425-preserve-planner-repair-context.md and its worklog.
+No observer remains and no new Claude permission is needed. Codex's long-lived
+parent is stale; fresh processes must prove actual projection/trust separately.
 
 ## Verification
 

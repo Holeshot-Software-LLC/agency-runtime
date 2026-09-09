@@ -115,6 +115,7 @@ Status meanings:
 | [ADR-0129](0129-repair-verifier-rejected-recruiter-proposals-once.md) | Repair verifier-rejected recruiter proposals once | Accepted |
 | [ADR-0130](0130-repair-critic-rejected-contractor-proposals-once.md) | Repair critic-rejected contractor proposals once | Accepted |
 | [ADR-0131](0131-bind-verifier-evidence-into-contractor-critiques.md) | Bind verifier evidence into contractor critiques | Accepted |
+| [ADR-0243](0243-supply-rejected-plans-as-untrusted-repair-data.md) | Supply rejected plans as untrusted repair data | Accepted |
 | [ADR-0132](0132-fund-one-repair-per-workforce-inference-stage.md) | Fund one repair per workforce inference stage | Accepted |
 | [ADR-0235](0235-reserve-required-staffing-calls-before-optional-work.md) | Reserve required staffing calls before optional work | Accepted |
 | [ADR-0122](0122-use-one-agency-native-resident-steward.md) | Use one Agency-native resident steward | Accepted |

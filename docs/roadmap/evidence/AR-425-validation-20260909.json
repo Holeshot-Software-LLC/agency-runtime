@@ -1,0 +1,150 @@
+{
+  "source_base": "e3090882b2086b2db0a4402d207b6fba1b97e065",
+  "focused": {
+    "command": "python -m pytest tests/test_planner_repair_context.py tests/test_workforce_inference.py tests/test_preflight_failure_diagnosis.py -q -W error",
+    "passed": 143
+  },
+  "red_regression": [
+    "Original semantic identity assertion failed: generic plan_response_semantic_invalid instead of plan_duplicate_unit_ids.",
+    "Original orchestration assertion failed: KeyError rejected_plan_untrusted."
+  ],
+  "checks": [
+    {
+      "check": "spine",
+      "command": [
+        "/tmp/agency-ar404-venv.AUBJlC/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_senior_audit_hardening.py",
+        "tests/test_configuration_namespace_security.py",
+        "tests/test_executable_namespace_security.py",
+        "tests/test_storage_file_trust.py",
+        "tests/test_dashboard_auth_boundary_regression.py",
+        "tests/test_dashboard_transaction_refactors.py",
+        "tests/test_routing_correctness.py",
+        "tests/test_workforce_hiring_contract.py",
+        "tests/test_workforce_selection_safety.py",
+        "tests/test_workforce_dynamic_hiring.py",
+        "tests/test_upstream_selection_eval.py",
+        "tests/test_decision_conformance.py",
+        "tests/test_delegation_p1_correctness.py",
+        "tests/test_store_turn_atomicity.py",
+        "tests/test_roster_snapshot_generation.py",
+        "tests/test_mcp_protocol_hardening.py",
+        "tests/test_cli_parser_contract.py",
+        "tests/test_cli_upgrade.py",
+        "tests/test_update_service.py",
+        "tests/test_native_installer.py",
+        "tests/test_host_uninstall.py",
+        "tests/test_cli_uninstall.py",
+        "tests/test_host_boundary_hardening.py",
+        "tests/test_cli_owner_authority.py",
+        "tests/test_security_turn_boundaries.py",
+        "tests/test_canary_coverage_complete.py",
+        "tests/test_complexity_refactors.py",
+        "tests/test_coverage_final_host_cli.py",
+        "tests/test_resident_manager_lifecycle.py",
+        "-q",
+        "-W",
+        "error"
+      ],
+      "exit_code": 0,
+      "seconds": 71.067
+    },
+    {
+      "check": "ui",
+      "command": [
+        "node",
+        "--test",
+        "tests/dashboard_ui.test.mjs"
+      ],
+      "exit_code": 0,
+      "seconds": 0.242
+    },
+    {
+      "check": "metadata",
+      "command": [
+        "/tmp/agency-ar404-venv.AUBJlC/bin/python",
+        "scripts/docs_metadata.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.058
+    },
+    {
+      "check": "policy",
+      "command": [
+        "/tmp/agency-ar404-venv.AUBJlC/bin/python",
+        "scripts/update_policy_availability.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.371
+    },
+    {
+      "check": "worklog",
+      "command": [
+        "/tmp/agency-ar404-venv.AUBJlC/bin/python",
+        "scripts/update_worklog.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.086
+    },
+    {
+      "check": "ruff",
+      "command": [
+        "/tmp/agency-ar404-venv.AUBJlC/bin/ruff",
+        "check",
+        "agency_runtime",
+        "tests",
+        "scripts"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01
+    },
+    {
+      "check": "format",
+      "command": [
+        "/tmp/agency-ar404-venv.AUBJlC/bin/ruff",
+        "format",
+        "--check",
+        "agency_runtime",
+        "tests",
+        "scripts"
+      ],
+      "exit_code": 0,
+      "seconds": 0.048
+    },
+    {
+      "check": "routing",
+      "command": [
+        "/tmp/agency-ar404-venv.AUBJlC/bin/python",
+        "-c",
+        "from agency_runtime.cli.entrypoint import main; raise SystemExit(main())",
+        "eval",
+        "routing",
+        "--json",
+        "--no-details"
+      ],
+      "exit_code": 0,
+      "seconds": 6.359
+    },
+    {
+      "check": "diff",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.015
+    }
+  ],
+  "spine_summary": "1151 passed, 3 skipped in 70.58s (0:01:10)",
+  "ui_passed": 224,
+  "docs_markdown": 1364,
+  "tracker_items": 416,
+  "conformance": "pending frozen-source evaluation",
+  "exhaustive_workflow_dispatched": false
+}

@@ -44,6 +44,7 @@ from agency_runtime.core.reply_budget import (
 )
 from agency_runtime.core.roster.limits import MAX_ACTIVE_ROSTER_SIZE
 from agency_runtime.core.structured_provider import (
+    MAX_STRUCTURED_RESPONSE_BYTES,
     PROVIDER_CREDENTIAL_ENV_UNSET,
     StructuredProviderResult,
     invoke_structured_provider_result,
@@ -1619,6 +1620,7 @@ def _semantic_retry_prompts(
     detail: str,
     validation_reason_codes: Sequence[str],
     truncation: Mapping[str, Any] | None,
+    rejected_value: Mapping[str, Any] | None = None,
 ) -> tuple[str, str]:
     """Return the ``(system_prompt, prompt)`` for one bounded semantic retry.
 
@@ -1699,6 +1701,13 @@ def _semantic_retry_prompts(
             ),
         }
     if feedback is not None:
+        if stage == "planner" and rejected_value is not None:
+            # A provider request has no implicit memory of its rejected answer.
+            # Keep it as bounded untrusted data, never as runtime instructions
+            # or an accepted plan; the replacement still traverses the parser.
+            rejected_json = _json_prompt(rejected_value)
+            if len(rejected_json.encode("utf-8")) <= MAX_STRUCTURED_RESPONSE_BYTES:
+                feedback["rejected_plan_untrusted"] = dict(rejected_value)
         if truncation is not None:
             feedback["reply_truncation"] = truncation
         next_prompt = f"{prompt}\n\n[RUNTIME VALIDATION FEEDBACK]\n" + _json_prompt(feedback)
@@ -1972,6 +1981,7 @@ def _invoke_stage(
                         detail=detail,
                         validation_reason_codes=validation_reason_codes,
                         truncation=_reply_truncation_feedback(result) if truncated else None,
+                        rejected_value=result.value,
                     )
                     continue
                 break
