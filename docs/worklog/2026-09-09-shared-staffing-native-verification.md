@@ -86,3 +86,16 @@ is still warming up; the subsequent read-only check is healthy, without another
 restart. Per-session16events,1MiB/event and8MiB/process bounds remain. No delivery
 or external message is requested. Observed callbacks and exact cards remain to
 be collected from the new native phase; registration alone is not proof.
+
+## Shared staffing Hermes phase
+
+The unchanged three requests returned in86.111s,83.279s,87.094s. Ordinary review
+passes exact native card, five headers and matching authoritative accepted hash;
+routing56.290s versus268.702s in the prior299.269s total sample. An invalid recruiter
+candidate is retained before the existing bounded repair succeeds. Follow-up fails
+critic_wrong_neighbor_selection; multi-step staff succeeds but output becomes
+response_invalid. Neither is accepted or retried. Model receipt aliases are not
+proof of the deployed backend and zero persisted per-call durations are unreported,
+not instantaneous. All evidence is AR-404-hermes-suite-after-shared-staffing-20260909.json.
+AR-418 remains open: upstream PR106490 is still unmerged, default7cd91114 unchanged.
+OpenClaw and fresh trusted Codex are the next fixed phases; Claude grant is pending.

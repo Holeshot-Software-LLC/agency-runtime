@@ -34,6 +34,9 @@ critic. Preserve answering models, provider definitions, credentials, budgets,
 other settings and inference-owned selection. Validate the exact semantic delta
 and resolve all five hosts from a fresh configuration read before native trials.
 
+Application evidence is committed at `a18e556c`; its exact ledger is `3624ddf5`.
+The worklog registry and AR-404 traceability table record both scope and provenance.
+
 ## Consequences
 
 The requested staffing profiles are aligned; actual provider replies still govern

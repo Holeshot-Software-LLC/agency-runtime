@@ -41,6 +41,10 @@ projection07d88875a9e6; Codex/Hermes/OpenClaw1825059191a2. This parent has a sta
 long-lived integration and previously failed finalizer transport. Fresh processes
 must supply native evidence. Earlier branches are historical and merged.
 
+Shared Hermes phase: review86.111s/routing56.290s passes all native gates;
+follow-up83.279s critic rejection; multi-step87.094s response_invalid. No retry.
+Evidence: AR-404-hermes-suite-after-shared-staffing-20260909.json.
+
 ## Completed evidence
 
 Frozen evidence/AR-404-reliability-suite-20260909.json fixes ordinary review,
@@ -50,7 +54,8 @@ case/phase,360second process cap. Preserve every failed and blocked attempt.
 Codex baseline review73.147s/multi114.055s have exact cards, headers and accepted
 hashes; follow-up84.122s fails staffing. Post-wheel sample still used classifier5
 and is invalid repair evidence. Post-refresh sample answered with no Agency
-receipt because8modified hooks are untrusted. No additional retry pending trust.
+receipt because8modified hooks were untrusted. The current fresh inspection confirms
+all8trusted; a new native phase is pending.
 
 Hermes baseline review187.194s has complete evidence; follow-up363.486s and
 multi368.628s time out. After-refresh review299.269s has complete evidence and
@@ -69,7 +74,8 @@ permission, explicitly logged by native registration, explains absent observer e
 Documented permission is now granted; runtime imports3hooks. Startup RPC initially
 was not ready, subsequent read-only probe passes. One new ordinary probe226.500s captures all3callbacks but fails staffing
 (recruiter timeout and malformed fallback). No selected cards/accepted finalization.
-Observer now normally removed, native RPC healthy; no unchanged-condition retry.
+That observer was normally removed, native RPC healthy. The shared-staffing
+phase reinstalls it for only two new exact keys; native RPC is healthy.
 No external delivery. Metadata alone is not callback/card proof.
 
 Claude native2.1.266 PATH repair uses its supported native installer, not npm.
@@ -91,10 +97,11 @@ binds CLI session/native trace and Agency trace; their trace IDs differ.
 
 ## Exact blocker
 
-AR-423/424 source cd86e40a / artifact 0cd4f289 is installed, draft PR814. Recipe 16 supplies a bounded
-Claude hook and exact selected-version MCP retrieval; pending cards are not
-reported loaded. Shared bridge preserves trailing card bytes. Native delivery
-and isolated acceptance remain pending. See the AR-423 capsule and worklog.
+AR-423/424 source cd86e40a / artifact0cd4f289 merged via PR814. AR-424
+closed with isolated byte-preservation evidence. AR-423 emits a bounded frame
+and exact selected-version MCP requests; its four-card native probe was denied
+by normal tool permissions. Ordinary inline delivery passed; full MCP delivery
+and AR-423 isolated acceptance remain pending. See its capsule and worklog.
 
 The owner reports Codex trusted; fresh hooks/list confirms8trusted/0modified.
 The next normal native phase must prove staffing, injection and terminal behavior.
