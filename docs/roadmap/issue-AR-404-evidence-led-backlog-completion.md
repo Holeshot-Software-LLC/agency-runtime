@@ -873,3 +873,8 @@ The older AR-152/298/348-first ordering above is historical and does not overrid
 the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
 visible, exclude Windows execution, and do not close the full backlog until
 every baseline record has a reviewed disposition and remaining acceptance is met.
+
+Native projection checkpoint: normal refresh publishes1825059191a2/classifier6.
+Codex8modified hook approvals are pending; stale and unactivated attempts are
+retained. Claude fresh review has complete exact native evidence. The remaining
+four-host/follow-up gates remain open. See the active capsule and PR810 worklog.

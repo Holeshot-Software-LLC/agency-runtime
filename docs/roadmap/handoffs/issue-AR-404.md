@@ -124,3 +124,13 @@ Inference alone selects staff. No manual specialists, weaker critic/validators,
 unbounded retries, manual failed-receipt finalization or external message delivery.
 Keep Claude and Zcode explicitly in scope. Restore gateway health and maintain
 owned-worktree/PR/merge/exact worklog records. Close only scoped evidenced gates.
+
+## Latest native projection gate
+
+Post-wheel Codex still used classifier5; native refresh now publishes1825059191a2
+(classifier6), plugin64c34689b8a1. Native hooks/list:8modified/0trusted; next three
+answers had no Agency receipt. Both samples retained; owner terminal hook trust
+is pending, no hash edits or further unchanged retries. Claude review57.602s has
+classifier6, exact card, all headers and accepted hash; remaining cases pending.
+Hermes upstream port in owned worktree onbf53ff00a7 has5red invariant variants;
+default Hermes unchanged. Model alignment remains unapplied pending owner choice.

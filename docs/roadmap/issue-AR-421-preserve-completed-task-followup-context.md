@@ -37,7 +37,11 @@ accepted hashes; same-session "go for it"84.122s fails staffing. See
 [evidence/AR-404-codex-suite-baseline-20260909.json](evidence/AR-404-codex-suite-baseline-20260909.json).
 Verified artifactdb1c642f is installed; all614package files match and a fresh
 isolated interpreter reports classifier6. Conformance188/188 passes. After-repair
-native sample and isolated acceptance remain.
+native sample and isolated acceptance remain. Native refresh is now published as
+1825059191a2/classifier6; Codex requires attended approval of8modified hooks.
+The first post-wheel sample still ran classifier5 and the next had no Agency
+receipt; neither is repair acceptance. Claude review now proves fresh classifier6
+and accepted exact native evidence; the follow-up remains pending.
 
 ## Approach
 

@@ -121,3 +121,28 @@ Claude same-version native reinstall under process002 preserves the exact binary
 and normal executable trust. Zcode's existing enabled desktop Z.AI provider now
 fills the missing CLI model config; hooks are unchanged and no new credentials
 were provisioned. Fresh Claude/Zcode native turn gates remain.
+
+## Native projection and activation gates
+
+The first post-wheel Codex sample still ran frozen projection6e7dc299c23e and
+classifier5: review100.569s, follow-up72.701s, multi-step106.534s. All finalized,
+but the follow-up selected product/change-management specialists. These attempts
+do not exercise the repair and are retained with that explicit limitation.
+Normal native refresh now publishes projection1825059191a2/classifier6 for all
+five hosts. Codex plugin64c34689b8a1 is enabled, but native hooks/list reports
+all8events modified/0trusted. Its next8.231s/8.731s/11.086s answers have no Agency
+receipt and are retained as activation failures. No trust hash was edited.
+Owner native approval is pending; no further Codex provider retry occurs before it.
+
+Claude's first fresh native review57.602s uses classifier6, accepts code-reviewer,
+contains its exact selected full card in correlated hook_additional_context, has
+all five Store-matching headers and an accepted exact response hash. Remaining
+fixed cases run sequentially. Hermes/OpenClaw staffing-model alignment remains
+unapplied while awaiting the owner's choice.
+
+Current Hermes upstreambf53ff00a7 was inspected in a new owned worktree. The two
+existing invariant tests reproduce5failures (two truncated-loop variants and three
+printable-failure exit variants). An initial runner used the release interpreter
+without pytest and started no tests; corrected native runner uses the dev venv.
+The historical patch is being ported to extracted turn phases; no default Hermes
+source or upstream branch has changed.
