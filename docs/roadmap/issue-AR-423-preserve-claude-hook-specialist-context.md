@@ -6,6 +6,8 @@ created: 2026-09-09
 updated: 2026-09-09
 tags: [claude, context, native, reliability]
 related:
+  - docs/decisions/0241-deliver-large-claude-card-sets-through-versioned-mcp.md
+  - docs/worklog/2026-09-09-claude-native-context-delivery.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/decisions/0016-central-finalization-and-session-correlation.md
   - docs/worklog/2026-09-09-completed-task-context.md
@@ -45,6 +47,13 @@ trimming the frame cannot preserve them all. See
 [evidence/AR-423-claude-native-hook-limit-20260909.json](evidence/AR-423-claude-native-hook-limit-20260909.json).
 No supported threshold override has been established.
 
+The owned candidate uses recipe 16 to keep a bounded hook frame and retrieve
+large card sets through the existing MCP tool. Retrieval is restricted to the
+selected immutable version and exact active turn; pending cards do not appear
+loaded. The final emitted envelope is checked in UTF-16 units. Candidate source
+is not installed yet; fresh native delivery and isolated verdicts remain pending.
+Original-source integration emits 15,076 units and fails the real-hook regression.
+
 ## Approach
 
 Identify the native inline limit and supported delivery surface. Preserve exact
@@ -58,7 +67,9 @@ AR-422 owns executable installation only.
 
 ## Acceptance
 
+Repository-required isolated verdicts govern closure after these criteria are judged.
+
 - [ ] Reproduce the native pointer substitution with exact bounded evidence.
 - [ ] Deliver the selected full cards through a supported native surface without
       bypassing caller scope, trust, inference or independent assurance.
-- [ ] Verify regression and fresh native evidence through isolated acceptance.
+- [ ] Verify regression and fresh native evidence.

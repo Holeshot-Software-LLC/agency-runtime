@@ -2584,7 +2584,7 @@ class HookBridge:
             # nothing, so the model reused an earlier turn's header and lost the
             # turn. Say the values are missing instead of staying silent.
             header_context = header_snapshot_unavailable_context("INITIAL")
-        context_segments = [context.rstrip()]
+        context_segments = [context]
         if plan_context:
             context_segments.append(plan_context)
         if header_context:
@@ -2592,6 +2592,15 @@ class HookBridge:
             context_segments.append(response_contract_context())
             context_segments.append(header_context)
         combined_context = "\n\n".join(context_segments)
+        if self.host == "claude":
+            from agency_runtime.core.claude_context_delivery import (
+                CLAUDE_NATIVE_HOOK_UNITS,
+                utf16_units,
+            )
+
+            if utf16_units(combined_context) > CLAUDE_NATIVE_HOOK_UNITS:
+                self.store.close_turn_evidence(correlation.session_id, trace_id, status="failed")
+                raise HookInputError("Claude hook context exceeds the native inline ceiling")
         if len(combined_context) > MAX_CONTEXT_CHARS:
             combined_context = context
         return {

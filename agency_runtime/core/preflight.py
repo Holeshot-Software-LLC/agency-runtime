@@ -1246,6 +1246,10 @@ def _prepare_preflight_evidence(
             "roster_size": len(catalog),
             "roster_generation": roster_generation,
         }
+        from agency_runtime.core.claude_context_delivery import needs_mcp_context
+
+        if needs_mcp_context(host, manager_routing_context, loaded.context):
+            recipe["specialist_context_via_mcp"] = True
         if continuation_snapshot is not None:
             recipe["continuation_guard"] = continuation_snapshot["guard"]
         if turn_context_guard:

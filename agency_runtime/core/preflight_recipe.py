@@ -726,6 +726,14 @@ def _result_from_recipe(
     ):
         raise RuntimeError("ready preflight policy fingerprint does not match")
 
+    from agency_runtime.core.claude_context_delivery import (
+        CLAUDE_RETRIEVAL_CONTEXT_UNITS,
+        mcp_context_enabled,
+        selected_card_requests,
+        utf16_units,
+    )
+
+    via_mcp = mcp_context_enabled(recipe)
     classification = _recipe_turn_classification(
         recipe,
         trivial=trivial,
@@ -829,6 +837,17 @@ def _result_from_recipe(
             maximum_chars=context_limit,
         )
         loaded_slugs = selected.slugs
+        if via_mcp:
+            context = _combine_context(
+                manager_routing_context,
+                selected_card_requests(references, session_id, trace_id),
+                maximum_chars=context_limit,
+            )
+            if utf16_units(context) > CLAUDE_RETRIEVAL_CONTEXT_UNITS:
+                raise RuntimeError("Claude retrieval context exceeds the native delivery ceiling")
+            getter = getattr(store, "get_specialists_for_trace", None)
+            observed = set(getter(session_id, trace_id)) if callable(getter) else set()
+            loaded_slugs = tuple(slug for slug in selected.slugs if slug in observed)
     _require_persistent_host_context_output(context)
     return PreflightResult(
         session_id=session_id,

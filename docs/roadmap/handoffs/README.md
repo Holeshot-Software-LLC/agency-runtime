@@ -74,6 +74,8 @@ behavior.
 
 ## Active capsules
 
+- [AR-423 Claude native context delivery](issue-AR-423.md)
+
 - [AR-414 staffing and failure-header repair](issue-AR-414.md)
 
 - [AR-312 explicit configuration document validation](issue-AR-312.md)

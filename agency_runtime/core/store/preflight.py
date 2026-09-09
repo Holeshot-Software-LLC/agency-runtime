@@ -665,6 +665,12 @@ def _project_preflight_recipe(
         or not isinstance(trivial, bool)
     ):
         return None
+    from agency_runtime.core.claude_context_delivery import mcp_context_enabled
+
+    try:
+        via_mcp = mcp_context_enabled(value)
+    except (TypeError, ValueError):
+        return None
     refs = _project_specialist_refs(value.get("specialist_refs"))
     selection_refs = _project_specialist_refs(
         value.get("selection_refs", []),
@@ -790,6 +796,8 @@ def _project_preflight_recipe(
         "roster_size": _bounded_nonnegative_int(value.get("roster_size", 0), maximum=100_000),
         "roster_generation": roster_generation,
     }
+    if via_mcp:
+        projected["specialist_context_via_mcp"] = True
     if turn_classification is not None:
         projected["turn_classification"] = turn_classification
     if resident_manager_kernel is not None:
@@ -2595,7 +2603,7 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                         receipt["status"],
                     ),
                 )
-            if delivery_mode == "direct":
+            if delivery_mode == "direct" and not evidence.recipe.get("specialist_context_via_mcp"):
                 for specialist in projected_refs:
                     conn.execute(
                         "INSERT INTO specialists_loaded "

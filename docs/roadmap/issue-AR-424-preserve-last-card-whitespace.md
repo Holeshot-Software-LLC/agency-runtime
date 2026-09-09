@@ -6,6 +6,8 @@ created: 2026-09-09
 updated: 2026-09-09
 tags: [native, context, exact-delivery]
 related:
+  - docs/decisions/0241-deliver-large-claude-card-sets-through-versioned-mcp.md
+  - docs/worklog/2026-09-09-claude-native-context-delivery.md
   - docs/roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/decisions/0120-construct-first-pass-evidence-headers.md
@@ -32,8 +34,9 @@ card, breaking exact immutable prompt delivery.
 
 A four-card regression through the real Zcode hook bridge reproduces the issue:
 the first three complete bodies match; the last matches only after stripping.
-The adjacent AR-423 owned candidate removes this trim. That candidate is not
-part of PR810's production change and is not installed or accepted yet.
+The AR-423 owned candidate removes this trim and tests full leading/trailing
+whitespace through the shared native bridge. PR810 is merged; this separate
+source candidate is not installed or accepted yet.
 
 ## Approach
 

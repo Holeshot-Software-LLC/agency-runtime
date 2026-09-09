@@ -66,6 +66,15 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+PR810 merged at 3a921c61; AR-421/422 are closed with all three isolated verdicts
+satisfied each. Merge ledger PR813 is merged at b801c08f. The separate owned
+AR-423/424 package on codex/ar423-native-context-20260909 implements bounded
+Claude MCP retrieval and exact final-card bytes. It is not installed or accepted
+yet. OpenClaw's documented observer permission was corrected; one bounded probe
+captured all callbacks but failed staffing. The observer is removed and native
+RPC is healthy. Staffing-route changes and Codex hook trust still await the owner.
+The paragraphs below retain the preceding package's historical checkpoints.
+
 The refreshed fixed sample is complete; all-host reliability remains unproved.
 Hermes review passes full native evidence in299.269s, but both remaining cases
 time out. OpenClaw review209.513s passes central/header gates; missing documented
