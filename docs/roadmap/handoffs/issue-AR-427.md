@@ -13,9 +13,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-427
-branch: codex/ar404-terminal-reliability-20260909
-evidence_commit: 176adc19c01139c370b43665cb593761a474686a
-minimum_ledger_commit: 20c49e0d42d95b90055d4f8916728a8bccad80fd
+branch: codex/ar404-merge-record-20260909
+evidence_commit: e81f8e00d5d511e2c605192ff9c5a461aebe0cb2
+minimum_ledger_commit: 89d728aee6a897c036b5a369d459f154299a4a12
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825
 ---
@@ -39,13 +39,15 @@ pass. Existing sixteen-reference and host context limits remain unchanged.
 
 Frozen conformance 188/188 and all 616 installed files match recipe 19 artifact
 source `20c49e0d`. Installed smoke and independent artifact verification pass.
-OpenClaw refresh complete; gateway RPC healthy. Codex eight modified hooks need
-native trust review and a fresh process (old process projection remains stale).
+OpenClaw refresh complete; gateway RPC healthy. Codex eight hooks are trusted;
+fresh runtime and UserPromptSubmit use published `37c1bf7d5eb0`. Fresh Codex
+passed all five cards, headers and authoritative completion in 103.434s.
+The existing parent process remains stale at `6db15efbecbe`.
 Fresh Hermes native complete-team proof passes: session `20260909_143551_e08888`,
 114.863s, five exact cards, matching five headers and authoritative hash.
 The first AR-427 and authorized third AR-426 isolated passes satisfied all criteria. AR-423 third pass left criterion 2
-absent; the omitted reviewer invalidates a whole-team claim. AR-426 retains the
-separate Hermes callback proof. AR-428 records static test-result planning without
+absent; the omitted reviewer invalidates a whole-team claim. AR-426 also has all-satisfied
+isolated acceptance for Hermes callback delivery. AR-428 records static test-result planning without
 observed results; its captured critic veto is preserved.
 
 ## Same-task continuity
@@ -55,7 +57,8 @@ substantive/ledger checkpoint and continue. No manual selection or receipt reope
 
 ## Next bounded work package
 
-Merge PR 824 with the recorded all-satisfied AR-427/426 isolated verdicts. Fresh Claude trace `28c8db15` failed planner contracts before delivery;
+PR 824 merged with all-satisfied AR-427/426 isolated verdicts. This scope is done.
+Create a fresh owned worktree for remaining AR-404 work. Fresh Claude trace `28c8db15` failed planner contracts before delivery;
 retain that failure without an unchanged retry.
 
 ## Verification

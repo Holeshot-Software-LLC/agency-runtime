@@ -261,3 +261,12 @@ PID 2750290 on published projection `37c1bf7d5eb0`. The parent PID 2200222
 remains stale at `6db15efbecbe`; no process was silently replaced. Fresh Codex
 session `01a0877b-45dd-7b01-b99d-92c03587393f` passed in 103.434s with all
 five selected cards and response hash `72f3a83528f0165e820684d23f3cd1b3394d2ae1b30c9805a4da06e81acc85e0`.
+
+## Merge checkpoint
+
+PR 824 merged at `e81f8e00d5d511e2c605192ff9c5a461aebe0cb2` with exact
+subject `fix(runtime): merge PR824 complete native specialist delivery`.
+The immediately following ledger records that commit. AR-426/#823 and AR-427/#825
+closed automatically from the reviewed PR body after all criteria satisfied.
+AR-404, AR-418, AR-423 and AR-428 remain open. Implementation and acceptance
+worktrees are historical and merged; next substantive work uses a new owned tree.

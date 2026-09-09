@@ -70,6 +70,11 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+PR 824 merged at `e81f8e00` on September 9. AR-426/#823 and AR-427/#825
+are closed with all-satisfied isolated acceptance. Exact merge ledger follows.
+AR-404/#672, AR-418/#796, AR-423/#811 and AR-428/#826 remain open.
+
+
 September 9 recipe 19 checkpoint: source `176adc19` preserves every inferred
 specialist during hydration; fresh Hermes native session `20260909_143551_e08888`
 passed five exact cards, five Store headers and authoritative completion. AR-426
