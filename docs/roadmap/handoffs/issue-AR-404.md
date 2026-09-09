@@ -19,7 +19,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-merge-record-20260909
+branch: codex/ar404-host-priority-20260909
 evidence_commit: e81f8e00d5d511e2c605192ff9c5a461aebe0cb2
 minimum_ledger_commit: 89d728aee6a897c036b5a369d459f154299a4a12
 hard_checkpoint_percent: 50
@@ -29,6 +29,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 # AR-404 five-host reliability
 
 ## Checkpoint
+
+Owner priority is now OpenClaw, Hermes, Codex, Claude; Zcode work is deferred.
+The AR-423 bootstrap was read-only before the owner reordered the work. Current
+package captures one fresh OpenClaw review/follow-up critic packet, with one
+360-second limit per turn and no retries. The old failed follow-up has no saved
+routing proposal and no authoritative finalization.
+
 
 Owned PR 824 branch contains recipe 19 complete-team delivery and bounded Hermes
 callbacks. Source `176adc19`, canonical artifact `20c49e0d`; all 616 installed
@@ -81,10 +88,12 @@ No empty recovery pair, forced transfer or failed-receipt reopening.
 
 ## Next bounded work package
 
-PR 824 and its exact ledger are recorded. Create a new owned worktree for
-AR-428 planning repair from the captured packet; diagnose
-Claude's exact second planner response before assigning its semantic failure.
-All five hosts remain in scope; original fixed sample 8/15 is historical only.
+OpenClaw's one observed review/follow-up sequence passed headers and authoritative
+completion (82.956s/58.928s). The earlier critic veto did not recur; no repair is
+inferred. Only the review critic packet was captured, and no llm_input observer
+proved fresh full cards. Config restored exactly and gateway RPC healthy.
+Proceed to Hermes's AR-428 captured static-test-evidence planning defect in a new
+owned package, then Codex and Claude. Zcode remains deferred by the owner.
 
 ## Verification
 

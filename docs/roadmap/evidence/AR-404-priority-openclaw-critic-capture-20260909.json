@@ -1,0 +1,1422 @@
+{
+  "observer_result": {
+    "scope": "One fresh native OpenClaw review/follow-up sequence; actual critic packets unchanged; no retry.",
+    "observer_errors": [],
+    "owner_config_restored_byte_exact": true,
+    "captured_packets": 1
+  },
+  "packets": [
+    {
+      "started_at": 1788981073.7639651,
+      "ended_at": 1788981080.2162716,
+      "request_sha256": "9e16ccd93f5c0937c527ce87c13f49bc10ade0413a45f794137bd6a23287170e",
+      "response_sha256": "9166906e0f914f40895fd476926d7e65948608d773b9ea0eec1ee4749765be1c",
+      "http_status": 200,
+      "critic_packet": {
+        "critic_contract": {
+          "composition_uses_selected_workers_only": true,
+          "eligible_neighbourhood_is_complete_per_unit": true,
+          "execution_authority_holder": "host",
+          "minimum_confidence": 0.8,
+          "minimum_margin": 0.1,
+          "never_veto_for": [
+            "execution-or-installation-authority",
+            "waived-roster-coverage-gaps",
+            "plan-authority-units-for-host-side-work",
+            "implementation-units-the-planner-did-not-plan",
+            "completed-task-evidence"
+          ],
+          "plan_authority_units_for_host_side_work_are_intended": true,
+          "response_semantics": {
+            "approved_false_reason_codes": "one_or_more_unique_hyphenated_codes",
+            "approved_true_reason_codes": "empty"
+          },
+          "review_scope": "pre_execution_semantic_staffing",
+          "roster_coverage_gaps_are_runtime_waivers": true,
+          "selected_authority_bound_by_eligibility": true,
+          "unselected_categories": [
+            "acceptable",
+            "runner_up",
+            "forbidden",
+            "disabled_shadows",
+            "unavailable_shadows"
+          ],
+          "verified_staffing_hard_checks_passed": true,
+          "veto_grounds": [
+            "wrong-neighbor-selection",
+            "missing-lifecycle-assurance-the-plan-calls-for",
+            "unsafe-selected-team-composition",
+            "unsupported-confidence"
+          ],
+          "workforce_is_advisory": true,
+          "wrong_neighbor_must_name_an_eligible_card": true
+        },
+        "eligible_neighbourhood": {
+          "unit-correctness-review": {
+            "eligible_candidate_ids": [
+              "accessibility-auditor",
+              "accounts-payable-agent",
+              "agentic-identity-trust-architect",
+              "ai-citation-strategist",
+              "ai-evaluation-engineer",
+              "ai-generated-code-security-auditor",
+              "ai-governance-auditor",
+              "analytics-reporter",
+              "app-store-optimizer",
+              "application-integration-verifier",
+              "application-security-engineer",
+              "blockchain-security-auditor",
+              "bookkeeper-controller",
+              "brand-guardian",
+              "chief-financial-officer",
+              "civil-engineer",
+              "clinical-evidence-agent",
+              "code-reviewer",
+              "codebase-archaeologist",
+              "codebase-onboarding-engineer",
+              "compliance-auditor",
+              "cross-platform-release-verifier",
+              "cultural-intelligence-strategist",
+              "customer-service",
+              "data-privacy-officer",
+              "documentation-evidence-researcher",
+              "drone-reality-mapping-specialist",
+              "esg-sustainability-officer",
+              "evidence-collector",
+              "executive-summary-generator",
+              "experiment-tracker",
+              "fedramp-rmf-compliance-engineer",
+              "feedback-synthesizer",
+              "finance-snapshot-security-reviewer",
+              "finance-tracker",
+              "financial-analyst",
+              "gaussdb-expert-engineer",
+              "gis-qa-engineer",
+              "government-digital-presales-consultant",
+              "hallucination-root-cause-investigator",
+              "healthcare-marketing-compliance-specialist",
+              "historian",
+              "identity-graph-operator",
+              "inclusive-visuals-specialist",
+              "legal-billing-time-tracking",
+              "legal-client-intake",
+              "legal-compliance-checker",
+              "legal-document-review",
+              "loan-officer-assistant",
+              "macos-spatial-metal-engineer",
+              "medical-billing-coding-specialist",
+              "meeting-notes-specialist",
+              "model-qa-specialist",
+              "organizational-psychologist",
+              "paid-media-auditor",
+              "penetration-tester",
+              "performance-benchmarker",
+              "persona-walkthrough-specialist",
+              "pipeline-analyst",
+              "real-estate-buyer-seller",
+              "reality-checker",
+              "recruitment-specialist",
+              "report-distribution-agent",
+              "retail-customer-returns",
+              "search-query-analyst",
+              "secrets-credential-hygiene-engineer",
+              "section-508-accessibility-specialist",
+              "selection-safety-critic",
+              "senior-secops-engineer",
+              "silent-failure-hunter",
+              "spatial-data-scientist",
+              "statistician",
+              "supply-chain-strategist",
+              "terminal-integration-specialist",
+              "test-results-analyzer",
+              "threat-intelligence-analyst",
+              "tool-evaluator",
+              "trend-researcher",
+              "type-design-analyzer",
+              "ux-researcher",
+              "visionos-spatial-engineer",
+              "x-twitter-intelligence-analyst"
+            ],
+            "eligible_count": 82,
+            "ranked_eligible_cards": [
+              {
+                "agent_id": "civil-engineer",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Civil Engineer",
+                "domains": [
+                  "specialist-services"
+                ],
+                "not_for": [
+                  "the task seeks a final design field decision or use without current codes site data and licensed sign-off"
+                ],
+                "outcomes": [
+                  "review structural calculations and design assumptions",
+                  "compare code pathways",
+                  "prepare issues for licensed engineers"
+                ]
+              },
+              {
+                "agent_id": "code-reviewer",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Code Reviewer",
+                "domains": [
+                  "software-engineering",
+                  "security",
+                  "quality-assurance"
+                ],
+                "not_for": [
+                  "the task asks for implementation rather than review or supplies no reviewable artifact"
+                ],
+                "outcomes": [
+                  "review diffs for correctness and regressions",
+                  "identify security and maintainability defects",
+                  "rank findings by impact and evidence"
+                ]
+              },
+              {
+                "agent_id": "codebase-archaeologist",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Codebase Archaeologist",
+                "domains": [
+                  "specialist-services"
+                ],
+                "not_for": [
+                  "the repository history is unavailable or the task asks for implementation rather than findings"
+                ],
+                "outcomes": [
+                  "audit code and documentation drift",
+                  "trace semantic values and async state assumptions",
+                  "produce evidence-ranked findings"
+                ]
+              },
+              {
+                "agent_id": "documentation-evidence-researcher",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Documentation Evidence Researcher",
+                "domains": [
+                  "research"
+                ],
+                "not_for": [
+                  "Rewrite the repository README and contributor guide after an implementation change",
+                  "Act outside Primary-documentation verification of APIs, versions, defaults, caveats, and framework behavior"
+                ],
+                "outcomes": [
+                  "source-backed technical answers",
+                  "explicit version, default, caveat, and uncertainty boundaries",
+                  "primary-source documentation research",
+                  "version and deprecation comparison",
+                  "api defaults, error modes, and caveat verification",
+                  "fact, inference, and unresolved ambiguity separation"
+                ]
+              },
+              {
+                "agent_id": "finance-snapshot-security-reviewer",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Read-Only Finance Snapshot Security Reviewer",
+                "domains": [
+                  "finance",
+                  "security"
+                ],
+                "not_for": [
+                  "live account operations",
+                  "billing changes",
+                  "executive approval",
+                  "broad financial planning"
+                ],
+                "outcomes": [
+                  "review",
+                  "verification",
+                  "audit",
+                  "redaction-review",
+                  "output-shape-validation",
+                  "validate snapshot output shape against the acceptance contract",
+                  "verify numeric fallback and normalization rules",
+                  "confirm only read-only tools were used"
+                ]
+              },
+              {
+                "agent_id": "model-qa-specialist",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Model QA Specialist",
+                "domains": [
+                  "specialist-services",
+                  "machine-learning"
+                ],
+                "not_for": [
+                  "data rights model artifacts materiality criteria or independent reviewer status are missing"
+                ],
+                "outcomes": [
+                  "independently audit model data and methodology",
+                  "replicate metrics and calibration",
+                  "review drift interpretability and fairness"
+                ]
+              },
+              {
+                "agent_id": "silent-failure-hunter",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Silent Failure Hunter",
+                "domains": [
+                  "software-engineering"
+                ],
+                "not_for": [
+                  "the task asks for an implementation or a merge decision rather than a findings list"
+                ],
+                "outcomes": [
+                  "find empty or swallowed exception handlers and errors turned into empty values",
+                  "flag default values and fallbacks that hide a real failure from callers",
+                  "trace lost stack traces, generic rethrows, and unhandled async paths",
+                  "spot missing timeout, error, and rollback handling around network, file, and database work"
+                ]
+              },
+              {
+                "agent_id": "type-design-analyzer",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Type Design Analyzer",
+                "domains": [
+                  "software-engineering"
+                ],
+                "not_for": [
+                  "the task asks for an implementation or an approval decision rather than a scored type review"
+                ],
+                "outcomes": [
+                  "evaluate encapsulation and whether invariants can be violated from outside a type",
+                  "judge whether types encode business rules and keep impossible states unrepresentable",
+                  "score invariant usefulness against the real bugs it prevents",
+                  "find escape hatches that bypass type-level enforcement"
+                ]
+              }
+            ],
+            "selected_are_whole_neighbourhood": false
+          },
+          "unit-defect-analysis": {
+            "eligible_candidate_ids": [
+              "accessibility-auditor",
+              "account-strategist",
+              "accounts-payable-agent",
+              "aeo-foundations-architect",
+              "agentic-identity-trust-architect",
+              "agentic-search-optimizer",
+              "agents-orchestrator",
+              "ai-citation-strategist",
+              "ai-data-remediation-engineer",
+              "ai-engineer",
+              "ai-evaluation-engineer",
+              "ai-generated-code-security-auditor",
+              "ai-governance-auditor",
+              "ai-observability-engineer",
+              "analytics-reporter",
+              "anthropologist",
+              "api-platform-engineer",
+              "app-store-optimizer",
+              "application-integration-verifier",
+              "application-security-engineer",
+              "automation-governance-architect",
+              "autonomous-optimization-architect",
+              "backend-architect",
+              "baidu-seo-specialist",
+              "behavioral-nudge-engine",
+              "bilibili-content-strategist",
+              "blender-add-on-engineer",
+              "blockchain-security-auditor",
+              "book-co-author",
+              "bookkeeper-controller",
+              "brand-guardian",
+              "business-strategist",
+              "carousel-growth-engine",
+              "cartography-designer",
+              "change-management-consultant",
+              "chief-financial-officer",
+              "chief-of-staff",
+              "china-e-commerce-operator",
+              "china-market-localization-strategist",
+              "civil-engineer",
+              "clinical-evidence-agent",
+              "cloud-security-architect",
+              "cms-developer",
+              "code-reviewer",
+              "codebase-archaeologist",
+              "codebase-onboarding-engineer",
+              "compliance-auditor",
+              "corporate-training-designer",
+              "cross-border-e-commerce-specialist",
+              "cross-platform-release-verifier",
+              "cultural-intelligence-strategist",
+              "customer-service",
+              "customer-success-manager",
+              "data-engineer",
+              "data-privacy-officer",
+              "database-optimizer",
+              "database-reliability-engineer",
+              "deal-strategist",
+              "desktop-app-engineer",
+              "developer-advocate",
+              "developer-tooling-engineer",
+              "devops-automator",
+              "discovery-coach",
+              "documentation-evidence-researcher",
+              "douyin-strategist",
+              "drone-reality-mapping-specialist",
+              "drupal-performance-engineer",
+              "drupal-shopping-cart-engineer",
+              "email-intelligence-engineer",
+              "email-marketing-strategist",
+              "embedded-firmware-engineer",
+              "esg-sustainability-officer",
+              "evidence-collector",
+              "executive-summary-generator",
+              "experiment-tracker",
+              "fedramp-rmf-compliance-engineer",
+              "feedback-synthesizer",
+              "feishu-integration-developer",
+              "filament-optimization-specialist",
+              "finance-readonly-snapshot-investigator",
+              "finance-snapshot-security-reviewer",
+              "finance-tracker",
+              "financial-analyst",
+              "finops-engineer",
+              "fp-a-analyst",
+              "french-consulting-market-navigator",
+              "frontend-developer",
+              "game-designer",
+              "gaussdb-expert-engineer",
+              "geographer",
+              "gis-analyst",
+              "gis-qa-engineer",
+              "git-workflow-master",
+              "global-podcast-strategist",
+              "godot-shader-developer",
+              "government-digital-presales-consultant",
+              "grant-writer",
+              "growth-hacker",
+              "hallucination-root-cause-investigator",
+              "healthcare-customer-service",
+              "healthcare-innovation-strategist",
+              "healthcare-marketing-compliance-specialist",
+              "historian",
+              "hospitality-guest-services",
+              "hr-onboarding",
+              "identity-access-engineer",
+              "identity-graph-operator",
+              "image-prompt-engineer",
+              "incident-responder",
+              "incident-response-commander",
+              "inclusive-visuals-specialist",
+              "infrastructure-maintainer",
+              "instagram-curator",
+              "internationalization-engineer",
+              "investment-researcher",
+              "iot-fleet-engineer",
+              "it-service-manager",
+              "korean-business-navigator",
+              "kuaishou-strategist",
+              "language-translator",
+              "legal-billing-time-tracking",
+              "legal-client-intake",
+              "legal-compliance-checker",
+              "legal-document-review",
+              "level-designer",
+              "linkedin-content-creator",
+              "livestream-commerce-coach",
+              "loan-officer-assistant",
+              "lsp-index-engineer",
+              "m-a-integration-manager",
+              "macos-spatial-metal-engineer",
+              "medical-billing-coding-specialist",
+              "meeting-notes-specialist",
+              "minimal-change-engineer",
+              "mobile-app-builder",
+              "mobile-release-engineer",
+              "model-qa-specialist",
+              "multi-agent-systems-architect",
+              "multi-platform-publisher",
+              "narrative-designer",
+              "narratologist",
+              "network-diagnostic-explanation-specialist",
+              "network-engineer",
+              "offer-lead-gen-strategist",
+              "operations-manager",
+              "organizational-psychologist",
+              "orgscript-engineer",
+              "outbound-strategist",
+              "paid-media-auditor",
+              "paid-social-strategist",
+              "payments-billing-engineer",
+              "penetration-tester",
+              "performance-benchmarker",
+              "persona-walkthrough-specialist",
+              "personal-growth-mentor",
+              "pipeline-analyst",
+              "podcast-strategist",
+              "policy-guardrail-architect",
+              "ppc-campaign-strategist",
+              "pr-communications-manager",
+              "pricing-analyst",
+              "private-domain-operator",
+              "product-manager",
+              "programmatic-display-buyer",
+              "project-shepherd",
+              "prompt-engineer",
+              "psychologist",
+              "rag-pipeline-engineer",
+              "rapid-prototyper",
+              "read-only-finance-ops-snapshot-investigator",
+              "real-estate-buyer-seller",
+              "reality-checker",
+              "realtime-collaboration-engineer",
+              "recruitment-specialist",
+              "reddit-community-builder",
+              "report-distribution-agent",
+              "resume-tailor",
+              "retail-customer-returns",
+              "roblox-experience-designer",
+              "sales-coach",
+              "sales-engineer",
+              "sales-outreach",
+              "search-query-analyst",
+              "search-relevance-engineer",
+              "secrets-credential-hygiene-engineer",
+              "section-508-accessibility-specialist",
+              "security-architect",
+              "selection-safety-critic",
+              "senior-developer",
+              "senior-secops-engineer",
+              "seo-specialist",
+              "silent-failure-hunter",
+              "social-media-strategist",
+              "software-architect",
+              "solidity-smart-contract-engineer",
+              "solution-engineer",
+              "sovereign-health-systems-agent",
+              "spatial-data-scientist",
+              "sprint-prioritizer",
+              "sre-site-reliability-engineer",
+              "statistician",
+              "strategy-duel-agent",
+              "studio-operations",
+              "studio-producer",
+              "study-abroad-advisor",
+              "supply-chain-strategist",
+              "support-responder",
+              "tax-strategist",
+              "technical-artist",
+              "technical-consultant",
+              "technical-writer",
+              "terminal-integration-specialist",
+              "test-results-analyzer",
+              "threat-detection-engineer",
+              "threat-intelligence-analyst",
+              "tiktok-strategist",
+              "tool-evaluator",
+              "tracking-measurement-specialist",
+              "trend-researcher",
+              "twitter-engager",
+              "type-design-analyzer",
+              "unity-shader-graph-artist",
+              "unreal-systems-engineer",
+              "unreal-technical-artist",
+              "unreal-world-builder",
+              "uswds-developer",
+              "ux-researcher",
+              "video-optimization-specialist",
+              "video-streaming-engineer",
+              "visionos-spatial-engineer",
+              "voice-ai-integration-engineer",
+              "webassembly-engineer",
+              "wechat-mini-program-developer",
+              "wechat-official-account-manager",
+              "weibo-strategist",
+              "wordpress-performance-engineer",
+              "wordpress-shopping-cart-engineer",
+              "workflow-architect",
+              "workflow-optimizer",
+              "x-twitter-intelligence-analyst",
+              "xiaohongshu-specialist",
+              "xr-interface-architect",
+              "zhihu-strategist"
+            ],
+            "eligible_count": 243,
+            "ranked_eligible_cards": [
+              {
+                "agent_id": "ai-evaluation-engineer",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "AI Evaluation Engineer",
+                "domains": [
+                  "software-engineering"
+                ],
+                "not_for": [
+                  "Implement production tracing and logging across the live AI request path",
+                  "Act outside Evaluation design for prompts, retrieval, tools, and multi-step AI workflows"
+                ],
+                "outcomes": [
+                  "decision-grade ai quality measurement",
+                  "regression thresholds tied to real workflow failures",
+                  "failure-mode-driven scenario design",
+                  "prompt, retrieval, tool-use, and multi-turn evaluation",
+                  "human-review and judgment-consistency design",
+                  "quality, cost, and latency tradeoff measurement"
+                ]
+              },
+              {
+                "agent_id": "app-store-optimizer",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "App Store Optimizer",
+                "domains": [
+                  "marketing"
+                ],
+                "not_for": [
+                  "current primary platform sources or the relevant supplied data are unavailable",
+                  "the request would publish or mutate a live listing, campaign, review, or account"
+                ],
+                "outcomes": [
+                  "review app-store listing structure",
+                  "analyze supplied keyword and conversion evidence",
+                  "propose listing experiment hypotheses"
+                ]
+              },
+              {
+                "agent_id": "code-reviewer",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Code Reviewer",
+                "domains": [
+                  "software-engineering",
+                  "security",
+                  "quality-assurance"
+                ],
+                "not_for": [
+                  "the task asks for implementation rather than review or supplies no reviewable artifact"
+                ],
+                "outcomes": [
+                  "review diffs for correctness and regressions",
+                  "identify security and maintainability defects",
+                  "rank findings by impact and evidence"
+                ]
+              },
+              {
+                "agent_id": "finance-snapshot-security-reviewer",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Read-Only Finance Snapshot Security Reviewer",
+                "domains": [
+                  "finance",
+                  "security"
+                ],
+                "not_for": [
+                  "live account operations",
+                  "billing changes",
+                  "executive approval",
+                  "broad financial planning"
+                ],
+                "outcomes": [
+                  "review",
+                  "verification",
+                  "audit",
+                  "redaction-review",
+                  "output-shape-validation",
+                  "validate snapshot output shape against the acceptance contract",
+                  "verify numeric fallback and normalization rules",
+                  "confirm only read-only tools were used"
+                ]
+              },
+              {
+                "agent_id": "hallucination-root-cause-investigator",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Hallucination Root-Cause Investigator",
+                "domains": [
+                  "software-engineering"
+                ],
+                "not_for": [
+                  "Review a general product claim for plausibility when no AI factuality failure occurred",
+                  "Act outside Root-cause analysis of unsupported AI claims across context, retrieval, prompts, tools, and workflow design"
+                ],
+                "outcomes": [
+                  "evidence-backed factuality failure reconstruction",
+                  "targeted recurrence reduction and regression cases",
+                  "available-evidence reconstruction",
+                  "retrieval, ranking, staleness, prompt, and tool-failure diagnosis",
+                  "unsupported-inference and uncertainty-boundary analysis",
+                  "root-cause-specific regression design"
+                ]
+              },
+              {
+                "agent_id": "orgscript-engineer",
+                "archetype": "implementer",
+                "authority": "modify",
+                "display_name": "OrgScript Engineer",
+                "domains": [
+                  "software-engineering"
+                ],
+                "not_for": [
+                  "the local specification, exact CLI version, examples, or target runtime are unavailable"
+                ],
+                "outcomes": [
+                  "implement OrgScript only from verified local specifications",
+                  "review OrgScript schemas and workflows",
+                  "diagnose OrgScript CLI failures"
+                ]
+              },
+              {
+                "agent_id": "prompt-engineer",
+                "archetype": "planner",
+                "authority": "plan",
+                "display_name": "Prompt Engineer",
+                "domains": [
+                  "software-engineering"
+                ],
+                "not_for": [
+                  "the task expects hidden reasoning disclosure or a prompt to replace application-level security controls"
+                ],
+                "outcomes": [
+                  "design testable prompt contracts",
+                  "build adversarial prompt evaluations",
+                  "review model-specific failure modes"
+                ]
+              },
+              {
+                "agent_id": "read-only-finance-ops-snapshot-investigator",
+                "archetype": "advisor",
+                "authority": "advise",
+                "display_name": "Read-Only Finance Operations Snapshot Investigator",
+                "domains": [
+                  "finance"
+                ],
+                "not_for": [
+                  "any workflow needing trade execution or account mutation",
+                  "any task requiring credentials or non-read-only tools",
+                  "any ambiguous ownership or production action",
+                  "external writes"
+                ],
+                "outcomes": [
+                  "analysis",
+                  "operations",
+                  "verified read-only finance snapshot",
+                  "evidence-backed cash and positions summary",
+                  "shape-checked output with no mutation tools"
+                ]
+              },
+              {
+                "agent_id": "silent-failure-hunter",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Silent Failure Hunter",
+                "domains": [
+                  "software-engineering"
+                ],
+                "not_for": [
+                  "the task asks for an implementation or a merge decision rather than a findings list"
+                ],
+                "outcomes": [
+                  "find empty or swallowed exception handlers and errors turned into empty values",
+                  "flag default values and fallbacks that hide a real failure from callers",
+                  "trace lost stack traces, generic rethrows, and unhandled async paths",
+                  "spot missing timeout, error, and rollback handling around network, file, and database work"
+                ]
+              },
+              {
+                "agent_id": "test-results-analyzer",
+                "archetype": "tester",
+                "authority": "review",
+                "display_name": "Test Results Analyzer",
+                "domains": [
+                  "quality-assurance"
+                ],
+                "not_for": [
+                  "the data are incomplete but a deterministic go or no-go answer is demanded"
+                ],
+                "outcomes": [
+                  "analyze supplied test results",
+                  "identify failure patterns",
+                  "review quality-risk evidence"
+                ]
+              },
+              {
+                "agent_id": "tool-evaluator",
+                "archetype": "tester",
+                "authority": "review",
+                "display_name": "Tool Evaluator",
+                "domains": [
+                  "quality-assurance"
+                ],
+                "not_for": [
+                  "the task requires unapproved network testing, contract commitments, or sensitive production data"
+                ],
+                "outcomes": [
+                  "design tool evaluations",
+                  "compare verified capabilities and costs",
+                  "plan bounded pilots"
+                ]
+              },
+              {
+                "agent_id": "type-design-analyzer",
+                "archetype": "reviewer",
+                "authority": "review",
+                "display_name": "Type Design Analyzer",
+                "domains": [
+                  "software-engineering"
+                ],
+                "not_for": [
+                  "the task asks for an implementation or an approval decision rather than a scored type review"
+                ],
+                "outcomes": [
+                  "evaluate encapsulation and whether invariants can be violated from outside a type",
+                  "judge whether types encode business rules and keep impossible states unrepresentable",
+                  "score invariant usefulness against the real bugs it prevents",
+                  "find escape hatches that bypass type-level enforcement"
+                ]
+              }
+            ],
+            "selected_are_whole_neighbourhood": false
+          }
+        },
+        "plan": {
+          "plan_hash": "sha256:4f63b4896609b6f52767e88f9ffa874f5c972f622a46fe1bf2f4897f971c38bc",
+          "request_summary": "Review the supplied Python average() function against the arithmetic-mean requirements, identify defects using [1.0, 2.0] and [] inputs, and propose corrections without implementing or touching any files.",
+          "schema_version": 2,
+          "units": [
+            {
+              "acceptance_evidence": [
+                "Evidence proves the requested analysis outcome."
+              ],
+              "artifact_kind": "analysis",
+              "authority": "advise",
+              "claims": [],
+              "depends_on": [],
+              "domains": [
+                "software-engineering"
+              ],
+              "frameworks": [],
+              "languages": [],
+              "lifecycle_phase": "discovery",
+              "mutation_scope": "read_only",
+              "outcome": "Analyze the supplied average(values) function purely from the provided source: confirm integer floor division causes loss of fractional results for [1.0, 2.0], and confirm len() of an empty sequence raises ZeroDivisionError instead of ValueError for []. No repository or file access.",
+              "parallelization": "unspecified",
+              "platforms": [
+                "linux"
+              ],
+              "required_capabilities": [
+                "analysis"
+              ],
+              "required_tools": [
+                "repository-read"
+              ],
+              "resources": [
+                "request",
+                "repository"
+              ],
+              "risks": [],
+              "trust_boundaries": [
+                "repository"
+              ],
+              "unit_id": "unit-defect-analysis"
+            },
+            {
+              "acceptance_evidence": [
+                "Evidence proves the requested review report outcome."
+              ],
+              "artifact_kind": "review-report",
+              "authority": "review",
+              "claims": [],
+              "depends_on": [
+                "unit-defect-analysis"
+              ],
+              "domains": [
+                "software-engineering",
+                "quality-assurance"
+              ],
+              "frameworks": [],
+              "languages": [],
+              "lifecycle_phase": "review",
+              "mutation_scope": "read_only",
+              "outcome": "Independent software-engineering review report of the supplied function: document the two defects observed via [1.0, 2.0] (integer-only result, no fractional mean) and [] (ZeroDivisionError rather than ValueError), assess requirement conformance, and recommend the correction approach (true division and an explicit empty-input guard) without writing the corrected code.",
+              "parallelization": "sequential",
+              "platforms": [
+                "linux"
+              ],
+              "required_capabilities": [
+                "review",
+                "verification"
+              ],
+              "required_tools": [
+                "repository-read"
+              ],
+              "resources": [
+                "request",
+                "repository"
+              ],
+              "risks": [],
+              "trust_boundaries": [
+                "repository"
+              ],
+              "unit_id": "unit-correctness-review"
+            }
+          ]
+        },
+        "proposal": {
+          "plan_hash": "sha256:4f63b4896609b6f52767e88f9ffa874f5c972f622a46fe1bf2f4897f971c38bc",
+          "roster_count": 293,
+          "roster_fingerprint": "sha256:2ee376d88ee62c9d00c15c615e183278465354d4f2e7800d7a0de7c9d34e9108",
+          "roster_generation": 395,
+          "schema_version": 2,
+          "units": [
+            {
+              "abstention_reasons": [],
+              "acceptable": [
+                "type-design-analyzer",
+                "test-results-analyzer",
+                "ai-evaluation-engineer",
+                "tool-evaluator"
+              ],
+              "confidence": 0.9,
+              "contexts": [
+                {
+                  "agent_id": "silent-failure-hunter",
+                  "context_id": "ctx-unit-defect-analysis-silent-failure-hunter"
+                },
+                {
+                  "agent_id": "code-reviewer",
+                  "context_id": "ctx-unit-defect-analysis-code-reviewer"
+                }
+              ],
+              "delivery": "load",
+              "disabled_shadows": [],
+              "forbidden": [
+                "hallucination-root-cause-investigator",
+                "prompt-engineer",
+                "app-store-optimizer",
+                "finance-snapshot-security-reviewer",
+                "orgscript-engineer",
+                "read-only-finance-ops-snapshot-investigator"
+              ],
+              "margin": 0.1,
+              "ranked_enabled": [
+                {
+                  "agent_id": "silent-failure-hunter",
+                  "rank": 1,
+                  "score": 1.0
+                },
+                {
+                  "agent_id": "code-reviewer",
+                  "rank": 2,
+                  "score": 0.9
+                },
+                {
+                  "agent_id": "type-design-analyzer",
+                  "rank": 3,
+                  "score": 0.8
+                },
+                {
+                  "agent_id": "test-results-analyzer",
+                  "rank": 4,
+                  "score": 0.7
+                },
+                {
+                  "agent_id": "ai-evaluation-engineer",
+                  "rank": 5,
+                  "score": 0.6
+                },
+                {
+                  "agent_id": "tool-evaluator",
+                  "rank": 6,
+                  "score": 0.5
+                },
+                {
+                  "agent_id": "hallucination-root-cause-investigator",
+                  "rank": 7,
+                  "score": 0.4
+                },
+                {
+                  "agent_id": "prompt-engineer",
+                  "rank": 8,
+                  "score": 0.3
+                },
+                {
+                  "agent_id": "app-store-optimizer",
+                  "rank": 9,
+                  "score": 0.2
+                },
+                {
+                  "agent_id": "finance-snapshot-security-reviewer",
+                  "rank": 10,
+                  "score": 0.1
+                },
+                {
+                  "agent_id": "orgscript-engineer",
+                  "rank": 11,
+                  "score": 0.0
+                },
+                {
+                  "agent_id": "read-only-finance-ops-snapshot-investigator",
+                  "rank": 12,
+                  "score": 0.0
+                }
+              ],
+              "ranked_executable": [
+                {
+                  "agent_id": "silent-failure-hunter",
+                  "rank": 1,
+                  "score": 1.0
+                },
+                {
+                  "agent_id": "code-reviewer",
+                  "rank": 2,
+                  "score": 0.9
+                },
+                {
+                  "agent_id": "type-design-analyzer",
+                  "rank": 3,
+                  "score": 0.8
+                },
+                {
+                  "agent_id": "test-results-analyzer",
+                  "rank": 4,
+                  "score": 0.7
+                },
+                {
+                  "agent_id": "ai-evaluation-engineer",
+                  "rank": 5,
+                  "score": 0.6
+                },
+                {
+                  "agent_id": "tool-evaluator",
+                  "rank": 6,
+                  "score": 0.5
+                }
+              ],
+              "ranked_semantic": [
+                {
+                  "agent_id": "silent-failure-hunter",
+                  "rank": 1,
+                  "score": 1.0
+                },
+                {
+                  "agent_id": "code-reviewer",
+                  "rank": 2,
+                  "score": 0.9
+                },
+                {
+                  "agent_id": "type-design-analyzer",
+                  "rank": 3,
+                  "score": 0.8
+                },
+                {
+                  "agent_id": "test-results-analyzer",
+                  "rank": 4,
+                  "score": 0.7
+                },
+                {
+                  "agent_id": "ai-evaluation-engineer",
+                  "rank": 5,
+                  "score": 0.6
+                },
+                {
+                  "agent_id": "tool-evaluator",
+                  "rank": 6,
+                  "score": 0.5
+                },
+                {
+                  "agent_id": "hallucination-root-cause-investigator",
+                  "rank": 7,
+                  "score": 0.4
+                },
+                {
+                  "agent_id": "prompt-engineer",
+                  "rank": 8,
+                  "score": 0.3
+                },
+                {
+                  "agent_id": "app-store-optimizer",
+                  "rank": 9,
+                  "score": 0.2
+                },
+                {
+                  "agent_id": "finance-snapshot-security-reviewer",
+                  "rank": 10,
+                  "score": 0.1
+                },
+                {
+                  "agent_id": "orgscript-engineer",
+                  "rank": 11,
+                  "score": 0.0
+                },
+                {
+                  "agent_id": "read-only-finance-ops-snapshot-investigator",
+                  "rank": 12,
+                  "score": 0.0
+                }
+              ],
+              "required": [
+                "silent-failure-hunter",
+                "code-reviewer"
+              ],
+              "runner_up": [
+                "type-design-analyzer",
+                "test-results-analyzer"
+              ],
+              "selected": [
+                "silent-failure-hunter",
+                "code-reviewer"
+              ],
+              "timing": "immediate",
+              "unavailable_shadows": [],
+              "unit_id": "unit-defect-analysis"
+            },
+            {
+              "abstention_reasons": [],
+              "acceptable": [
+                "type-design-analyzer",
+                "documentation-evidence-researcher"
+              ],
+              "confidence": 0.9,
+              "contexts": [
+                {
+                  "agent_id": "code-reviewer",
+                  "context_id": "ctx-unit-correctness-review-code-reviewer"
+                },
+                {
+                  "agent_id": "silent-failure-hunter",
+                  "context_id": "ctx-unit-correctness-review-silent-failure-hunter"
+                }
+              ],
+              "delivery": "load",
+              "disabled_shadows": [],
+              "forbidden": [
+                "codebase-archaeologist",
+                "finance-snapshot-security-reviewer",
+                "model-qa-specialist",
+                "civil-engineer"
+              ],
+              "margin": 0.1,
+              "ranked_enabled": [
+                {
+                  "agent_id": "code-reviewer",
+                  "rank": 1,
+                  "score": 1.0
+                },
+                {
+                  "agent_id": "silent-failure-hunter",
+                  "rank": 2,
+                  "score": 0.9
+                },
+                {
+                  "agent_id": "type-design-analyzer",
+                  "rank": 3,
+                  "score": 0.8
+                },
+                {
+                  "agent_id": "documentation-evidence-researcher",
+                  "rank": 4,
+                  "score": 0.7
+                },
+                {
+                  "agent_id": "codebase-archaeologist",
+                  "rank": 5,
+                  "score": 0.6
+                },
+                {
+                  "agent_id": "finance-snapshot-security-reviewer",
+                  "rank": 6,
+                  "score": 0.5
+                },
+                {
+                  "agent_id": "model-qa-specialist",
+                  "rank": 7,
+                  "score": 0.4
+                },
+                {
+                  "agent_id": "civil-engineer",
+                  "rank": 8,
+                  "score": 0.3
+                }
+              ],
+              "ranked_executable": [
+                {
+                  "agent_id": "code-reviewer",
+                  "rank": 1,
+                  "score": 1.0
+                },
+                {
+                  "agent_id": "silent-failure-hunter",
+                  "rank": 2,
+                  "score": 0.9
+                },
+                {
+                  "agent_id": "type-design-analyzer",
+                  "rank": 3,
+                  "score": 0.8
+                },
+                {
+                  "agent_id": "documentation-evidence-researcher",
+                  "rank": 4,
+                  "score": 0.7
+                }
+              ],
+              "ranked_semantic": [
+                {
+                  "agent_id": "code-reviewer",
+                  "rank": 1,
+                  "score": 1.0
+                },
+                {
+                  "agent_id": "silent-failure-hunter",
+                  "rank": 2,
+                  "score": 0.9
+                },
+                {
+                  "agent_id": "type-design-analyzer",
+                  "rank": 3,
+                  "score": 0.8
+                },
+                {
+                  "agent_id": "documentation-evidence-researcher",
+                  "rank": 4,
+                  "score": 0.7
+                },
+                {
+                  "agent_id": "codebase-archaeologist",
+                  "rank": 5,
+                  "score": 0.6
+                },
+                {
+                  "agent_id": "finance-snapshot-security-reviewer",
+                  "rank": 6,
+                  "score": 0.5
+                },
+                {
+                  "agent_id": "model-qa-specialist",
+                  "rank": 7,
+                  "score": 0.4
+                },
+                {
+                  "agent_id": "civil-engineer",
+                  "rank": 8,
+                  "score": 0.3
+                }
+              ],
+              "required": [
+                "code-reviewer",
+                "silent-failure-hunter"
+              ],
+              "runner_up": [
+                "type-design-analyzer",
+                "documentation-evidence-researcher"
+              ],
+              "selected": [
+                "code-reviewer",
+                "silent-failure-hunter"
+              ],
+              "timing": "after_artifact",
+              "unavailable_shadows": [],
+              "unit_id": "unit-correctness-review"
+            }
+          ]
+        },
+        "request": "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files.",
+        "selected_worker_contracts": [
+          {
+            "agent_id": "code-reviewer",
+            "archetype": "reviewer",
+            "artifact_kinds": [
+              "analysis",
+              "review-report"
+            ],
+            "audit": {
+              "contract_valid": true,
+              "revision": "1",
+              "status": "approved"
+            },
+            "authority": "review",
+            "capability_ids": [
+              "analysis",
+              "review"
+            ],
+            "composition": {
+              "complements": [],
+              "independence_class": "engineering-code-review",
+              "must_follow": [],
+              "must_review_independently": [],
+              "requires": [],
+              "same_context_conflicts": [
+                "codebase-onboarding-engineer"
+              ],
+              "selection_exclusive": [],
+              "substitutes_for": [],
+              "substitution_group": ""
+            },
+            "context_mode": "direct_safe",
+            "display_name": "Code Reviewer",
+            "domains": [
+              "software-engineering",
+              "security",
+              "quality-assurance"
+            ],
+            "employment": "employee",
+            "enabled": true,
+            "hosts": [
+              "codex",
+              "claude",
+              "openclaw",
+              "hermes"
+            ],
+            "lifecycle_phases": [
+              "discovery",
+              "review"
+            ],
+            "not_for": [
+              "the task asks for implementation rather than review or supplies no reviewable artifact"
+            ],
+            "origin": "upstream",
+            "outcomes": [
+              "review diffs for correctness and regressions",
+              "identify security and maintainability defects",
+              "rank findings by impact and evidence"
+            ],
+            "platforms": [
+              "windows",
+              "linux"
+            ],
+            "schema_version": "2",
+            "scope_qualifiers": [
+              "review code for correctness"
+            ],
+            "stacks": [],
+            "tool_classes": [],
+            "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+            "version_hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+            "worker_id": "98a501b0-b7a4-5700-9220-7f736d432623"
+          },
+          {
+            "agent_id": "silent-failure-hunter",
+            "archetype": "reviewer",
+            "artifact_kinds": [
+              "analysis",
+              "review-report"
+            ],
+            "audit": {
+              "contract_valid": true,
+              "revision": "2",
+              "status": "approved"
+            },
+            "authority": "review",
+            "capability_ids": [
+              "review",
+              "analysis"
+            ],
+            "composition": {
+              "complements": [],
+              "independence_class": "engineering-silent-failure-review",
+              "must_follow": [],
+              "must_review_independently": [],
+              "requires": [],
+              "same_context_conflicts": [],
+              "selection_exclusive": [],
+              "substitutes_for": [],
+              "substitution_group": ""
+            },
+            "context_mode": "direct_safe",
+            "display_name": "Silent Failure Hunter",
+            "domains": [
+              "software-engineering"
+            ],
+            "employment": "employee",
+            "enabled": true,
+            "hosts": [
+              "codex",
+              "claude",
+              "openclaw",
+              "hermes"
+            ],
+            "lifecycle_phases": [
+              "review",
+              "discovery"
+            ],
+            "not_for": [
+              "the task asks for an implementation or a merge decision rather than a findings list"
+            ],
+            "origin": "upstream",
+            "outcomes": [
+              "find empty or swallowed exception handlers and errors turned into empty values",
+              "flag default values and fallbacks that hide a real failure from callers",
+              "trace lost stack traces, generic rethrows, and unhandled async paths",
+              "spot missing timeout, error, and rollback handling around network, file, and database work"
+            ],
+            "platforms": [
+              "windows",
+              "linux"
+            ],
+            "schema_version": "2",
+            "scope_qualifiers": [
+              "a change touches exception handling, retries, fallbacks, or failure logging",
+              "a fail-open or swallowed-error defect is suspected and needs an independent finding"
+            ],
+            "stacks": [],
+            "tool_classes": [],
+            "version": "sha256:baa298f7e741f6c0ab6042c4c232c4f158ac758fa6542a1548146f88a79d6087",
+            "version_hash": "e85eea6b703152d9370916be7269cb2dba9ff4cc3842b6c1d0ddf39722263672",
+            "worker_id": "eefedf01-8371-5e9d-adbb-f657a100de6b"
+          }
+        ],
+        "verified_staffing": {
+          "abstention_reasons": [],
+          "status": "accepted",
+          "units": [
+            {
+              "contexts": [
+                [
+                  "silent-failure-hunter",
+                  "ctx-unit-defect-analysis-silent-failure-hunter"
+                ],
+                [
+                  "code-reviewer",
+                  "ctx-unit-defect-analysis-code-reviewer"
+                ]
+              ],
+              "delivery": "load",
+              "disabled_shadows": [],
+              "selected": [
+                "silent-failure-hunter",
+                "code-reviewer"
+              ],
+              "timing": "immediate",
+              "unavailable_shadows": [],
+              "unit_id": "unit-defect-analysis"
+            },
+            {
+              "contexts": [
+                [
+                  "code-reviewer",
+                  "ctx-unit-correctness-review-code-reviewer"
+                ],
+                [
+                  "silent-failure-hunter",
+                  "ctx-unit-correctness-review-silent-failure-hunter"
+                ]
+              ],
+              "delivery": "load",
+              "disabled_shadows": [],
+              "selected": [
+                "code-reviewer",
+                "silent-failure-hunter"
+              ],
+              "timing": "after_artifact",
+              "unavailable_shadows": [],
+              "unit_id": "unit-correctness-review"
+            }
+          ]
+        }
+      },
+      "response_text": "{\"model\": \"task-agency-critic-v2\", \"choices\": [{\"message\": {\"content\": \"{\\\"approved\\\":true,\\\"reason_codes\\\":[]}\"}, \"finish_reason\": \"stop\"}]}"
+    }
+  ],
+  "limitation": "Review packet captured; follow-up semantic plan did not contain literal average and was excluded by the observer filter. No historical veto cause is inferred."
+}

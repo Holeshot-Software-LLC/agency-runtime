@@ -70,6 +70,21 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+OpenClaw priority diagnostic completed: one fresh review/follow-up pair passed
+five headers and authoritative terminal hashes in 82.956s/58.928s. Original critic
+veto did not recur; only the review packet was captured. Full native card injection
+was not observed in this diagnostic. Owner config restored exactly and gateway RPC
+healthy. Next active host is Hermes (AR-428), then Codex and Claude; Zcode deferred.
+
+
+Owner priority update: OpenClaw, Hermes, Codex, Claude; defer Zcode changes.
+The next bounded package starts with OpenClaw trace
+`bdf2e524-1b4e-4214-8db0-b58733e83b08`: planner/recruiter applied, critic vetoed
+wrong-neighbor selection, zero saved routing proposals and no accepted finalization.
+One fresh observed review/follow-up sequence will preserve the actual critic
+packet before deciding a repair. No old receipt is reopened.
+
+
 PR 824 merged at `e81f8e00` on September 9. AR-426/#823 and AR-427/#825
 are closed with all-satisfied isolated acceptance. Exact merge ledger follows.
 AR-404/#672, AR-418/#796, AR-423/#811 and AR-428/#826 remain open.
