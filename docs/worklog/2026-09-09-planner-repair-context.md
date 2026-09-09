@@ -163,3 +163,11 @@ to the exact eight source/guard citations and validated before the second pass.
 Unrelated tracked scratchpad edits in another worktree were observed and left
 untouched. This package's commits and evidence will merge through PR821, followed
 by one exact merge-ledger PR. No exhaustive workflow or Windows work was dispatched.
+
+## Remote main delivery
+
+PR821 merged at 2026-09-09T16:02:51Z as `f28b66d7e350a781325c55c91fa23bf267d9e7ff` with exact subject
+`Merge pull request #821 from Holeshot-Software-LLC/codex/ar404-planner-contract-20260909`. The source and every retained native/isolated result are now
+on remote main. AR-425 alone closes; AR-404, AR-418 and AR-423 remain open.
+The following ledger-only PR records this merge under the documented
+`docs(worklog):` exemption. Main was clean before its fast-forward.
