@@ -2281,6 +2281,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ad8b05de` | 2026-09-08 | docs(hosts): merge PR806 Claude recurrence evidence | AR-404 | [Detail](2026-09-08-reranker-membership-repair.md) |
 | `c13f3b72` | 2026-09-09 | docs(AR-404): freeze native reliability sample and preserve follow-up failure | AR-404 | [Detail](2026-09-09-native-reliability-suite.md) |
 | `cf4ed77f` | 2026-09-09 | fix(routing): preserve completed-task context for fresh follow-up staffing | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `8aa72148` | 2026-09-09 | docs(AR-404): retain native follow-up failures and exact card evidence | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
