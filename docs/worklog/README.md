@@ -2328,6 +2328,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `aa7284d9` | 2026-09-09 | docs(reliability): retain five-host results and accept bounded planner repair | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `f28b66d7` | 2026-09-09 | Merge pull request #821 from Holeshot-Software-LLC/codex/ar404-planner-contract-20260909 | AR-404, AR-423, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `ab924385` | 2026-09-09 | fix(hermes): preserve bounded native specialist context (AR-426) | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `d73eda4d` | 2026-09-09 | docs: record AR-426 installed demo checkpoint | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
