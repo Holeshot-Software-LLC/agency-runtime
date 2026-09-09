@@ -1,0 +1,166 @@
+{
+  "manifest": "AR-404-reliability-suite-20260909.json",
+  "phase": "baseline",
+  "installed_agency_source": "3fe3d7ba",
+  "observer_limit": "Initial manifest lacked startup activation; installed metadata did not imply imported callbacks. No native input events were captured. Activation is corrected for the after-repair phase.",
+  "cases": [
+    {
+      "case": "ordinary_review",
+      "invocation": {
+        "case": "ordinary_review",
+        "host": "openclaw",
+        "phase": "baseline",
+        "command": [
+          "openclaw",
+          "agent",
+          "--session-key",
+          "agent:openclaw:ar404-20260909-baseline-review_followup",
+          "--json",
+          "--timeout",
+          "350",
+          "--message",
+          "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files."
+        ],
+        "native_session_id": "agent:openclaw:ar404-20260909-baseline-review_followup",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 143.701
+      },
+      "run": {
+        "id": "66729b1f-61d0-4902-8079-6bf74d2fb3d8",
+        "trace_id": "7c64e988-1d5f-432f-b8fb-81278f088248",
+        "session_id": "agent:openclaw:ar404-20260909-baseline-review_followup",
+        "host": "openclaw",
+        "started_at": "2026-09-09T10:27:50.548000+00:00",
+        "last_activity_at": "2026-09-09T10:29:52.149000+00:00",
+        "turn_sequence": 1624,
+        "ended_at": "2026-09-09T10:29:52.143000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "2c401fba-c0d4-4869-95cb-931362f3bbc7",
+        "session_id": "agent:openclaw:ar404-20260909-baseline-review_followup",
+        "trace_id": "7c64e988-1d5f-432f-b8fb-81278f088248",
+        "host": "openclaw",
+        "stage": "routing",
+        "reason_code": "workforce_provider_unavailable",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "actual_model": "",
+            "latency_ms": 120123,
+            "metadata_version": 1,
+            "model_group": "task-agency-router",
+            "model_receipt_source": "unavailable",
+            "ordinal": 1,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "linux-task-agency-router",
+            "provider_type": "litellm",
+            "reason_code": "provider_call_timed_out",
+            "requested_model": "task-agency-router",
+            "stage": "planner",
+            "status": "failed",
+            "timeout_ms": 120000
+          }
+        ],
+        "staffing_reason_codes": [
+          "inference_unavailable"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T10:29:52.145000+00:00"
+      },
+      "response": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: requested execution alias: task-general\nRecruited via: failed; workforce_provider_unavailable; planner:provider_call_timed_out; inference_unavailable\n\n**Defects**\n- `average([1.0, 2.0])` returns `1.0`, not `1.5`, because `//` performs floor division and discards the fractional part.\n- `average([])` raises `ZeroDivisionError`, not the required `ValueError`, because `len(values)` is zero.\n\n**Proposed correction**\n- Explicitly detect an empty sequence and raise `ValueError`.\n- Use true division (`/`) rather than floor division (`//`) to preserve fractional results.",
+      "response_sha256": "8e5723383fba2269bd803d54b816ef213783ad7a551883fcd62e9dab72c58441",
+      "finalization": null,
+      "status": "failed staffing",
+      "exact_card_injection": false
+    },
+    {
+      "case": "short_followup",
+      "invocation": {
+        "case": "short_followup",
+        "host": "openclaw",
+        "phase": "baseline",
+        "command": [
+          "openclaw",
+          "agent",
+          "--session-key",
+          "agent:openclaw:ar404-20260909-baseline-review_followup",
+          "--json",
+          "--timeout",
+          "350",
+          "--message",
+          "go for it"
+        ],
+        "native_session_id": "agent:openclaw:ar404-20260909-baseline-review_followup",
+        "exit_code": 1,
+        "timeout": false,
+        "elapsed_seconds": 353.101
+      },
+      "run": {
+        "id": "9dcd5c49-f358-4921-89c0-8a0712eb5976",
+        "trace_id": "ef404b5c-4cbf-4eac-b6a3-ab17781254d7",
+        "session_id": "agent:openclaw:ar404-20260909-baseline-review_followup",
+        "host": "openclaw",
+        "started_at": "2026-09-09T10:30:10.877000+00:00",
+        "last_activity_at": "2026-09-09T10:35:53.511000+00:00",
+        "turn_sequence": 1625,
+        "ended_at": null,
+        "status": "active",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "response": "Request timed out before a response was generated. Please try again, or increase `agents.defaults.timeoutSeconds` in your config.",
+      "response_sha256": "87e7857f767651db679e6e4f6a6ac18e0817376db05e0f7baaf486718f42d3d9",
+      "finalization": null,
+      "status": "native gate not passed",
+      "exact_card_injection": false
+    },
+    {
+      "case": "multi_step",
+      "invocation": {
+        "case": "multi_step",
+        "host": "openclaw",
+        "phase": "baseline",
+        "command": [
+          "openclaw",
+          "agent",
+          "--session-key",
+          "agent:openclaw:ar404-20260909-baseline-multi_step",
+          "--json",
+          "--timeout",
+          "350",
+          "--message",
+          "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed."
+        ],
+        "native_session_id": "agent:openclaw:ar404-20260909-baseline-multi_step",
+        "exit_code": 143,
+        "timeout": true,
+        "elapsed_seconds": 361.216
+      },
+      "run": {
+        "id": "1ff6ffa2-c8cc-4be3-9580-4c6978982700",
+        "trace_id": "b52990e9-e558-4361-947c-bf943793e059",
+        "session_id": "agent:openclaw:ar404-20260909-baseline-multi_step",
+        "host": "openclaw",
+        "started_at": "2026-09-09T10:36:07.274000+00:00",
+        "last_activity_at": "2026-09-09T10:42:12.370000+00:00",
+        "turn_sequence": 1626,
+        "ended_at": null,
+        "status": "active",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "response": "",
+      "response_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "finalization": null,
+      "status": "timeout",
+      "exact_card_injection": false
+    }
+  ]
+}

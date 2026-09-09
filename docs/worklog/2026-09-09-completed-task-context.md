@@ -96,3 +96,28 @@ test paths. Corrected invocation sets process077, preserves the failed report,
 and is still running. Additional selector/context43tests pass. One earlier
 command named a nonexistent test file and ran no tests; corrected selection
 is the43pass result. Candidate installation waits for the frozen baseline.
+
+## Installed repair checkpoint
+
+Frozen conformance now passes188/188 with no surviving/invalid mutation and
+unchanged production source. Verified wheeldb1c642f is installed; a fresh isolated
+interpreter reports classifier6 and all614package files match the wheel exactly.
+Normal gateway stop/install/start succeeds. Staffing model settings remain unchanged.
+
+OpenClaw baseline review143.701s answers without accepted staffing after a planner
+timeout; follow-up353.101s fails natively and multi-step hits the360s process
+deadline (361.216s including termination). All are retained. The initial observer
+manifest lacked startup activation: installed metadata did not prove callbacks
+were imported. Startup activation is now declared and normally reinstalled;
+its after-repair native input evidence is still pending.
+
+Read-only LiteLLM model info proves host routing differs: Hermes/OpenClaw override
+all Agency routes with task-agency-router/Mistral Small3.2 24B, while Codex uses
+separate planner/recruiter/critic pools. Pool membership does not identify a
+historical selected backend. A minimal removal of the two host overrides is
+prepared and validated, but awaits the owner's model/cost choice.
+
+Claude same-version native reinstall under process002 preserves the exact binary
+and normal executable trust. Zcode's existing enabled desktop Z.AI provider now
+fills the missing CLI model config; hooks are unchanged and no new credentials
+were provisioned. Fresh Claude/Zcode native turn gates remain.

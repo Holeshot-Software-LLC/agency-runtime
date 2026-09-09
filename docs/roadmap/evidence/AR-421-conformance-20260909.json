@@ -1,0 +1,24 @@
+{
+  "schema": "agency-runtime.decision-conformance",
+  "version": 1,
+  "status": "passed",
+  "passed": true,
+  "counts": {
+    "invalid": 0,
+    "killed": 188,
+    "mutations": 188,
+    "survived": 0
+  },
+  "source_scope": "pyproject.toml, agency_runtime regular files, and selected test inputs",
+  "source_unchanged": true,
+  "evidence_boundary": "Curated decision sensitivity only; no coverage, superiority, or exhaustive mutation claim.",
+  "baseline": {
+    "status": "passed",
+    "exit_code": 0,
+    "duration_ms": 197444
+  },
+  "report_sha256": "acc24d82cf3ea9d80c3af35289d5e865f0e63385ba4cd15b534141197b86617c",
+  "production_commit": "cf4ed77f",
+  "artifact_source_commit": "db1c642f",
+  "earlier_attempt": "Baseline failed under inherited002umask before mutation execution; corrected077process invocation passed all188."
+}

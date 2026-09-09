@@ -28,14 +28,16 @@ The classifier drops available bounded same-session context for executable follo
 
 ## Current state
 
-Phase fast_verification. Version6 correlates completed-task replies/revisions
+Phase live_demo. Version6 correlates completed-task replies/revisions
 with fresh staffing; version1-5 receipts remain readable. Focused152pass;
 seven new regressions fail against original version5, including real preflight
 context handoff. Production spine1151pass/3skip, UI224pass, Ruff pass.
 Native baseline review73.147s and multi-step114.055s complete with matching
 accepted hashes; same-session "go for it"84.122s fails staffing. See
 [evidence/AR-404-codex-suite-baseline-20260909.json](evidence/AR-404-codex-suite-baseline-20260909.json).
-Candidate is not installed yet; after-repair native and isolated acceptance remain.
+Verified artifactdb1c642f is installed; all614package files match and a fresh
+isolated interpreter reports classifier6. Conformance188/188 passes. After-repair
+native sample and isolated acceptance remain.
 
 ## Approach
 

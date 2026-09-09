@@ -1,0 +1,249 @@
+{
+  "routes": [
+    {
+      "host": "codex",
+      "stage": "planner",
+      "providers": [
+        {
+          "name": "agency-planner",
+          "model": "task-agency-planner-v2",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "codex",
+      "stage": "recruiter",
+      "providers": [
+        {
+          "name": "agency-recruiter",
+          "model": "task-agency-recruiter-v2",
+          "timeout_seconds": 60.0
+        },
+        {
+          "name": "agency-recruiter-content-fallback",
+          "model": "task-agency-recruiter-v2-content-fallback",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "codex",
+      "stage": "critic",
+      "providers": [
+        {
+          "name": "agency-recruiter-critic",
+          "model": "task-agency-critic-v2",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "hermes",
+      "stage": "planner",
+      "providers": [
+        {
+          "name": "linux-task-agency-router",
+          "model": "task-agency-router",
+          "timeout_seconds": 120.0
+        }
+      ]
+    },
+    {
+      "host": "hermes",
+      "stage": "recruiter",
+      "providers": [
+        {
+          "name": "linux-task-agency-router",
+          "model": "task-agency-router",
+          "timeout_seconds": 120.0
+        },
+        {
+          "name": "agency-recruiter-content-fallback",
+          "model": "task-agency-recruiter-v2-content-fallback",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "hermes",
+      "stage": "critic",
+      "providers": [
+        {
+          "name": "linux-task-agency-router",
+          "model": "task-agency-router",
+          "timeout_seconds": 120.0
+        }
+      ]
+    },
+    {
+      "host": "openclaw",
+      "stage": "planner",
+      "providers": [
+        {
+          "name": "linux-task-agency-router",
+          "model": "task-agency-router",
+          "timeout_seconds": 120.0
+        }
+      ]
+    },
+    {
+      "host": "openclaw",
+      "stage": "recruiter",
+      "providers": [
+        {
+          "name": "linux-task-agency-router",
+          "model": "task-agency-router",
+          "timeout_seconds": 120.0
+        },
+        {
+          "name": "agency-recruiter-content-fallback",
+          "model": "task-agency-recruiter-v2-content-fallback",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "openclaw",
+      "stage": "critic",
+      "providers": [
+        {
+          "name": "linux-task-agency-router",
+          "model": "task-agency-router",
+          "timeout_seconds": 120.0
+        }
+      ]
+    },
+    {
+      "host": "claude",
+      "stage": "planner",
+      "providers": [
+        {
+          "name": "agency-planner",
+          "model": "task-agency-planner-v2",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "claude",
+      "stage": "recruiter",
+      "providers": [
+        {
+          "name": "agency-recruiter",
+          "model": "task-agency-recruiter-v2",
+          "timeout_seconds": 60.0
+        },
+        {
+          "name": "agency-recruiter-content-fallback",
+          "model": "task-agency-recruiter-v2-content-fallback",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "claude",
+      "stage": "critic",
+      "providers": [
+        {
+          "name": "agency-recruiter-critic",
+          "model": "task-agency-critic-v2",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "zcode",
+      "stage": "planner",
+      "providers": [
+        {
+          "name": "agency-planner",
+          "model": "task-agency-planner-v2",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "zcode",
+      "stage": "recruiter",
+      "providers": [
+        {
+          "name": "agency-recruiter",
+          "model": "task-agency-recruiter-v2",
+          "timeout_seconds": 60.0
+        },
+        {
+          "name": "agency-recruiter-content-fallback",
+          "model": "task-agency-recruiter-v2-content-fallback",
+          "timeout_seconds": 60.0
+        }
+      ]
+    },
+    {
+      "host": "zcode",
+      "stage": "critic",
+      "providers": [
+        {
+          "name": "agency-recruiter-critic",
+          "model": "task-agency-critic-v2",
+          "timeout_seconds": 60.0
+        }
+      ]
+    }
+  ],
+  "alias_deployments": [
+    {
+      "alias": "task-agency-router",
+      "model": "ollama/mistral-small3.2:24b",
+      "max_tokens": null,
+      "timeout": null
+    },
+    {
+      "alias": "task-agency-recruiter-v2",
+      "model": "anthropic/MiniMax-M3",
+      "max_tokens": null,
+      "timeout": 45.0
+    },
+    {
+      "alias": "task-agency-critic-v2",
+      "model": "ollama/qwen3.5:2b",
+      "max_tokens": null,
+      "timeout": 45.0
+    },
+    {
+      "alias": "task-agency-critic-v2",
+      "model": "chatgpt/gpt-5.6-terra",
+      "max_tokens": null,
+      "timeout": 45.0
+    },
+    {
+      "alias": "task-agency-planner-v2",
+      "model": "chatgpt/gpt-5.5",
+      "max_tokens": null,
+      "timeout": 45.0
+    },
+    {
+      "alias": "task-agency-planner-v2",
+      "model": "openai/glm-5-turbo",
+      "max_tokens": null,
+      "timeout": 45.0
+    },
+    {
+      "alias": "task-agency-recruiter-v2",
+      "model": "openai/glm-5-turbo",
+      "max_tokens": null,
+      "timeout": 45.0
+    },
+    {
+      "alias": "task-agency-recruiter-v2-content-fallback",
+      "model": "openai/glm-5-turbo",
+      "max_tokens": null,
+      "timeout": 45.0
+    }
+  ],
+  "limitations": [
+    "Alias deployment lists are pool configuration, not identification of the backend selected for each historical request.",
+    "The exact critic route key is workforce.recruiter.critic; an earlier diagnostic using workforce.critic did not represent actual critic routing.",
+    "Model-route alignment is prepared but awaits owner approval; no active staffing model or provider setting changed."
+  ]
+}

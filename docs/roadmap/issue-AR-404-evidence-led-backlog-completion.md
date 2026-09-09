@@ -66,6 +66,18 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+Repair artifactdb1c642f is installed with exact614file equality and fresh isolated
+classifier6. Conformance188/188 passes. OpenClaw baseline adds three failed cases:
+review staffing timeout143.701s, follow-up native failure353.101s, multi-step process
+timeout361.216s. Initial observer lacked startup activation; corrected through
+normal maintenance for after-repair evidence. No success is inferred from installation.
+Read-only model info confirms Hermes/OpenClaw use Mistral Small3.2 24B instead of
+Codex's separate staffing pools; removing their overrides is prepared, awaiting
+owner choice because it changes backend models/cost. Claude native update-survival
+passes. Zcode now uses its existing enabled desktop Z.AI provider in CLI config,
+hooks unchanged. Next: fresh fixed after-repair sample, then isolated acceptance.
+
+
 Fixed baseline continues: Codex review and multi-step now have exact selected-card
 proof as well as accepted matching response hashes. Hermes normal review187.194s
 also passes exact card/hash; its follow-up and multi-step both hit the360second

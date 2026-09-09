@@ -66,6 +66,23 @@
   "limits": [
     "No npm user configuration changed: the config-mask-only fixture did not secure all launch-critical paths.",
     "Individual updating process not attributed. Existing user terminals were preserved.",
-    "Fresh native answering/finalization and update-survival evidence still required."
-  ]
+    "Fresh native answering/finalization and isolated acceptance remain required; update survival covers this same-version native reinstall only."
+  ],
+  "update_survival": {
+    "command": [
+      "claude",
+      "install",
+      "2.1.266",
+      "--force"
+    ],
+    "process_umask": "0002",
+    "exit_code": 0,
+    "native_gate_executable": [
+      "/home/holeshot/.local/share/claude/versions/2.1.266"
+    ],
+    "native_gate_reason": "",
+    "same_versioned_binary_path": true,
+    "same_binary_sha256": true,
+    "scope": "Supported native reinstall of the current version under the original permissive process umask; no future-version claim."
+  }
 }
