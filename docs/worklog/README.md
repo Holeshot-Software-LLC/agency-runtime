@@ -2303,6 +2303,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0cc40aba` | 2026-09-09 | Merge pull request #814 from Holeshot-Software-LLC/codex/ar423-native-context-20260909 | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
 | `a18e556c` | 2026-09-09 | docs(reliability): apply approved shared staffing and verify Codex hook trust | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 | `07a2addf` | 2026-09-09 | docs(evidence): preserve Hermes shared staffing native outcomes | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `59e93d3c` | 2026-09-09 | docs(evidence): bind OpenClaw native cards and accepted CLI finalization | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
