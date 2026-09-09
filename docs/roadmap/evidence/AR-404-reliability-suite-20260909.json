@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "issue": "AR-404",
+  "frozen_date": "2026-09-09",
+  "baseline_commit": "77f6773f5b31c47e69d5fdc9a67625f290ba6839",
+  "hosts": [
+    "codex",
+    "hermes",
+    "openclaw",
+    "claude",
+    "zcode"
+  ],
+  "cases": [
+    {
+      "id": "ordinary_review",
+      "session": "review_followup",
+      "request": "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files.",
+      "answer_gate": "Identifies floor division and ZeroDivisionError, proposes true division and empty guard without claiming executed tests.",
+      "request_sha256": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7"
+    },
+    {
+      "id": "short_followup",
+      "session": "review_followup",
+      "after": "ordinary_review",
+      "request": "go for it",
+      "answer_gate": "Uses the preceding review to provide the corrected average function, with no unrelated scope clarification or fabricated tests.",
+      "request_sha256": "cf97d012ecc86f377b7d8e87fbe81109c2e7d7596fbed57340f373d76504b7e6"
+    },
+    {
+      "id": "multi_step",
+      "session": "multi_step",
+      "request": "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed.",
+      "answer_gate": "Provides correct function and three meaningful regression tests, distinguishes proposed tests from executed tests.",
+      "request_sha256": "4b0a04c6bfb20e80ea924bd5bb8af567af4e81c55d48820d3c5bae7e2771df33"
+    }
+  ],
+  "protocol": {
+    "attempts_per_case_per_phase": 1,
+    "native_timeout_seconds": 360,
+    "phases": [
+      "baseline",
+      "after_repair"
+    ],
+    "order": "Sequential hosts in listed order, sequential cases; second case resumes first native session even if the first fails. A missing executable/provider/trust gate is recorded as blocked, never passed.",
+    "success": "Accepted inference-owned staffing, correct scoped answer, exact selected-card injection in native model context, five Store-consistent headers, one authoritative accepted finalization matching visible-response SHA256, completed Store state.",
+    "preservation": "Keep every outcome, failed internal provider attempt, valid critic veto, timeout, blocked gate and source/configuration fingerprint. No outer retries within a phase. Internal governed budgets unchanged.",
+    "timing": "Report total and per-stage latency and embedding cache status. Sequential runs do not equal a controlled underlying-model benchmark.",
+    "repairs": "Only reproduced causes; record a separate issue and meaningful regression. Keep models, provider routes, critic, validators and staffing authority unchanged.",
+    "scope_limit": "15 native turns per phase is a bounded acceptance sample, not a statistical reliability or performance guarantee."
+  }
+}

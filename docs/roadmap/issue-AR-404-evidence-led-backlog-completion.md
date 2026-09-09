@@ -3,7 +3,7 @@ title: "AR-404: Complete the backlog through evidence-led delivery packages"
 status: in_progress
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-08
+updated: 2026-09-09
 tags: [backlog, review, acceptance, delivery]
 related:
   - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
@@ -65,6 +65,23 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+September9 package scoped: freeze three ordinary/native requests across all five
+hosts before baseline calls. The immutable prompts, per-phase one-attempt budget,
+360-second deadline, answer and lifecycle gates are in
+[evidence/AR-404-reliability-suite-20260909.json](evidence/AR-404-reliability-suite-20260909.json).
+Every failure and blocked gate stays visible; no all-host reliability claim follows
+from one successful example. Source baseline77f6773f; owned branch
+codex/ar404-reliability-suite-20260909.
+
+Current native trace01a08595-581c-7853-89e1-f1a8e2e9b50c failed. Its exact receipt
+and read-only same-state reconstruction are preserved in
+[evidence/AR-404-followup-failure-20260909.json](evidence/AR-404-followup-failure-20260909.json).
+The classifier treated "go for it" as executable new intent and discarded the
+available prior completed-task context. The state revision matches persisted
+metadata. The critic proposal is unavailable, so its veto remains unadjudicated.
+Reranker passed; cold embedding took39.653seconds. Claude trust gate still fails.
+
 
 Final September8 Claude gate: package replacement at22:38:08UTC restored775
 parent modes after the earlier permission repair and successful isolated

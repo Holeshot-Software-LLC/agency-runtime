@@ -3,7 +3,7 @@ title: "AR-404 native terminal repairs and remaining gates"
 status: active
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-08
+updated: 2026-09-09
 tags: [handoff, hermes, openclaw, live-evaluation]
 related:
   - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
@@ -19,7 +19,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar420-staffing-reliability-20260908
+branch: codex/ar404-reliability-suite-20260909
 evidence_commit: 0540a5ad15b635ff227031a80831972f14a134d2
 minimum_ledger_commit: 86c99a36ec5fc2420f46cb57e70deda58e480e35
 hard_checkpoint_percent: 50
@@ -93,24 +93,25 @@ pair and continue. Preserve unrelated worktrees and operator files.
 
 ## Next bounded work package
 
-Staffing reliability is the immediate priority after repeated owner-visible
-failures. AR-420 captures a reranker cross-unit candidate defect and a bounded
-schema repair, installed source3fe3d7ba/all614wheel files verified; focused164,
-production1151/three skips, UI224pass. Fresh native Codex41.514s completed with
-all staffing stages applied, full card injection and matching accepted response
-hash; trace01a0831f-1a40-7a12-a079-3386a3b439d3. Three isolated AR-420
-criteria satisfied; only the membership defect is closed, broader reliability open.
-Owned branchcodex/ar420-staffing-reliability-20260908, PR803.
-Latest native trace01a0830f-8143-7542-ac77-5ace98ceb5d4 remains failed with
-critic_wrong_neighbor_selection; its proposal is unavailable, veto unadjudicated.
-See2026-09-08-reranker-membership-repair.md. Preserve independent critic and
-validators; one accepted turn never establishes general reliability.
+September9 owner approved the reliability package. Baseline77f6773f clean and
+synchronized; new owned branchcodex/ar404-reliability-suite-20260909.
+Freeze and run evidence/AR-404-reliability-suite-20260909.json: review, same-session
+"go for it", multi-step correction on Codex/Hermes/OpenClaw/Claude/Zcode, one
+attempt per case per phase,360second deadline. Retain failures and blocked gates.
+Record exact proposal/critic/stage timings where native observation supports it.
+Fix reproduced causes with regression tests and repeat the same suite; no claim
+of general reliability from a15turn sample. Host gates remain required.
 
-Waiting for owner choices: standalone Zcode answering provider, native OpenClaw
-observer consent, and permission to submit the tested Hermes patch upstream.
-Then finish the three remaining gates without retries or trust bypass. Hermes
-candidate-source success is proven; default native adoption remains. Close issues
-only after isolated acceptance. Preserve the completed PR799 merge and exact ledger.
+Current trace01a08595-581c-7853-89e1-f1a8e2e9b50c failed. Read-only reconstruction
+matches persisted state revision: completed prior task context existed, but
+"go for it" classified new intent and preflight discarded that context. Failed
+proposal unavailable; critic veto unadjudicated. Reranker passed, cold embedding
+39.653s. See evidence/AR-404-followup-failure-20260909.json. Investigate context
+loss without weakening inference, critic or validator boundaries.
+AR-420 is scoped acceptance-closed; remaining reliability stays withAR-404.
+Claude executable trust remains failed. Resolve replacing actor; keep user
+terminals intact. Complete Hermes default adoption, OpenClaw exact injection,
+and Zcode answering setup using existing authorization and supported native gates.
 
 ## Verification
 

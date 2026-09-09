@@ -1,0 +1,282 @@
+{
+  "run": {
+    "id": "ad9b9373-d9e1-483e-ab16-7ecba899e189",
+    "trace_id": "01a08595-581c-7853-89e1-f1a8e2e9b50c",
+    "session_id": "01a082bc-b107-72d2-9f7d-157afd32ea99",
+    "host": "codex",
+    "started_at": "2026-09-09T09:52:32.778325+00:00",
+    "last_activity_at": "2026-09-09T09:53:47.393000+00:00",
+    "turn_sequence": 1617,
+    "ended_at": "2026-09-09T09:53:47.392000+00:00",
+    "status": "preflight_failed",
+    "preflight_state": ""
+  },
+  "receipt": {
+    "id": "7a1f8c30-4381-4974-8739-195843f27384",
+    "session_id": "01a082bc-b107-72d2-9f7d-157afd32ea99",
+    "trace_id": "01a08595-581c-7853-89e1-f1a8e2e9b50c",
+    "host": "codex",
+    "stage": "routing",
+    "reason_code": "workforce_inference_failed",
+    "invariant_code": "",
+    "exception_category": "runtime_error",
+    "provider_attempts": [
+      {
+        "actual_model": "task-agency-planner-v2",
+        "latency_ms": 2519,
+        "metadata_version": 1,
+        "model_group": "task-agency-planner-v2",
+        "model_receipt_source": "response.body.model",
+        "ordinal": 1,
+        "provider_call_attempted": true,
+        "provider_chain_index": 0,
+        "provider_fallback_count": 0,
+        "provider_name": "agency-planner",
+        "provider_type": "litellm",
+        "reason_code": "provider_response_contract_invalid",
+        "requested_model": "task-agency-planner-v2",
+        "stage": "subject",
+        "status": "rejected",
+        "timeout_ms": 60000
+      },
+      {
+        "actual_model": "task-agency-planner-v2",
+        "latency_ms": 7442,
+        "metadata_version": 1,
+        "model_group": "task-agency-planner-v2",
+        "model_receipt_source": "response.body.model",
+        "ordinal": 2,
+        "provider_call_attempted": true,
+        "provider_chain_index": 0,
+        "provider_fallback_count": 0,
+        "provider_name": "agency-planner",
+        "provider_type": "litellm",
+        "reason_code": "structured_response_applied",
+        "requested_model": "task-agency-planner-v2",
+        "stage": "planner",
+        "status": "applied",
+        "timeout_ms": 60000
+      },
+      {
+        "actual_model": "qwen3-embedding:latest",
+        "catalog_cache_hit": false,
+        "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107",
+        "input_count": 294,
+        "latency_ms": 39653,
+        "model_group": "",
+        "model_receipt_source": "response.body.model",
+        "provider_call_count": 1,
+        "provider_name": "local-workforce-embedding",
+        "provider_type": "ollama",
+        "reason_code": "dense_recall_applied",
+        "requested_model": "qwen3-embedding:latest",
+        "stage": "recall_embedding",
+        "status": "applied"
+      },
+      {
+        "actual_model": "qwen3-14b-abliterated:latest",
+        "input_count": 0,
+        "latency_ms": 13672,
+        "metadata_version": 1,
+        "model_group": "",
+        "model_receipt_source": "response.body.model",
+        "ordinal": 4,
+        "provider_call_attempted": true,
+        "provider_call_count": 1,
+        "provider_chain_index": 0,
+        "provider_fallback_count": 0,
+        "provider_name": "local-workforce-reranker",
+        "provider_type": "ollama",
+        "reason_code": "structured_response_applied",
+        "requested_model": "qwen3-14b-abliterated:latest",
+        "stage": "recall_reranker",
+        "status": "applied",
+        "timeout_ms": 120000
+      },
+      {
+        "actual_model": "task-agency-recruiter-v2",
+        "latency_ms": 3011,
+        "metadata_version": 1,
+        "model_group": "task-agency-recruiter-v2",
+        "model_receipt_source": "response.body.model",
+        "ordinal": 5,
+        "provider_call_attempted": true,
+        "provider_chain_index": 0,
+        "provider_fallback_count": 0,
+        "provider_name": "agency-recruiter",
+        "provider_type": "litellm",
+        "reason_code": "provider_response_contract_invalid",
+        "requested_model": "task-agency-recruiter-v2",
+        "stage": "recruiter",
+        "status": "rejected",
+        "timeout_ms": 60000,
+        "validation_failures": [
+          {
+            "reason_code": "selection_confidence_too_low",
+            "unit_id": "unit-scope-clarification"
+          }
+        ]
+      },
+      {
+        "actual_model": "task-agency-recruiter-v2",
+        "latency_ms": 2588,
+        "metadata_version": 1,
+        "model_group": "task-agency-recruiter-v2",
+        "model_receipt_source": "response.body.model",
+        "ordinal": 6,
+        "provider_call_attempted": true,
+        "provider_chain_index": 0,
+        "provider_fallback_count": 0,
+        "provider_name": "agency-recruiter",
+        "provider_type": "litellm",
+        "reason_code": "structured_response_applied",
+        "requested_model": "task-agency-recruiter-v2",
+        "stage": "recruiter",
+        "status": "applied",
+        "timeout_ms": 60000
+      },
+      {
+        "actual_model": "task-agency-critic-v2",
+        "latency_ms": 4586,
+        "metadata_version": 1,
+        "model_group": "task-agency-critic-v2",
+        "model_receipt_source": "response.body.model",
+        "ordinal": 7,
+        "provider_call_attempted": true,
+        "provider_chain_index": 0,
+        "provider_fallback_count": 0,
+        "provider_name": "agency-recruiter-critic",
+        "provider_type": "litellm",
+        "reason_code": "structured_response_applied",
+        "requested_model": "task-agency-critic-v2",
+        "stage": "critic",
+        "status": "applied",
+        "timeout_ms": 60000
+      }
+    ],
+    "staffing_reason_codes": [
+      "staffing_critic_rejected",
+      "critic_wrong_neighbor_selection"
+    ],
+    "hiring_reason_codes": [],
+    "eligibility_reason_codes": [],
+    "recorded_at": "2026-09-09T09:53:47.392000+00:00"
+  },
+  "read_only_state_reconstruction": {
+    "state": {
+      "previous_trace_id": "01a083f9-3bdb-7990-97e9-213fe672d094",
+      "state_known": true,
+      "state_status": "current",
+      "previous_status": "completed",
+      "previous_turn_kind": "new_intent",
+      "active_plan": false,
+      "unfinished_work": false,
+      "pending_question": false,
+      "pending_authorization": false,
+      "retry_pending": false,
+      "configuration_revision": "5714a35f0ac72773b6f03deb05f5f118348f81a9aebaae362539b463ed6a4e41",
+      "roster_revision": "395",
+      "specialist_revision": "723a996a5e239df383a0e4ff8d05aaa822ca00128219e11f7dd4521705fb55cd",
+      "delegation_revision": "",
+      "state_revision": "70e9f31c36285564da22372b4682d5720c23a8e0927d089916d58703f2f7cf11"
+    },
+    "context": {
+      "context_version": 1,
+      "source_trace_id": "01a083f9-3bdb-7990-97e9-213fe672d094",
+      "source_status": "completed",
+      "source_turn_kind": "new_intent",
+      "specialists": [
+        {
+          "slug": "codebase-onboarding-engineer",
+          "description": "Expert developer onboarding specialist who helps new engineers understand unfamiliar codebases fast by reading source code, tracing code paths, and stating only facts grounded in the code.",
+          "capabilities": [
+            "map repository structure and execution flow",
+            "trace concepts to concrete files",
+            "produce evidence-only onboarding guides"
+          ]
+        },
+        {
+          "slug": "project-shepherd",
+          "description": "Expert project manager specializing in cross-functional project coordination, timeline management, and stakeholder alignment. Focused on shepherding projects from conception to completion while managing resources, risks, and communications across multiple",
+          "capabilities": [
+            "build delivery plans",
+            "surface dependencies and risks",
+            "draft stakeholder-ready status"
+          ]
+        },
+        {
+          "slug": "business-strategist",
+          "description": "Senior management consulting specialist for competitive analysis, market entry strategy, business model design, growth planning, organizational strategy, and strategic decision-making \u2014 translating complex market dynamics into clear, actionable strategies",
+          "capabilities": [
+            "frame strategic choices",
+            "apply business analysis frameworks",
+            "build scenario and decision briefs"
+          ]
+        }
+      ],
+      "workforce_unit_descriptors": [
+        {
+          "ordinal": 1,
+          "artifact_kind": "analysis",
+          "lifecycle_phase": "discovery",
+          "authority": "advise",
+          "mutation_scope": "read_only"
+        },
+        {
+          "ordinal": 2,
+          "artifact_kind": "plan",
+          "lifecycle_phase": "planning",
+          "authority": "plan",
+          "mutation_scope": "read_only"
+        }
+      ],
+      "workforce_subject_hints": {
+        "domains": [
+          "codebase-discovery",
+          "project-delivery"
+        ],
+        "languages": [],
+        "frameworks": [],
+        "capability_ids": [
+          "analysis",
+          "investigation",
+          "planning",
+          "advice"
+        ],
+        "platforms": [
+          "linux"
+        ]
+      }
+    },
+    "guard": {
+      "guard_version": 1,
+      "source_trace_id": "01a083f9-3bdb-7990-97e9-213fe672d094",
+      "source_turn_sequence": 1616,
+      "source_evidence_revision": 18,
+      "source_roster_generation": 395,
+      "source_recipe_digest": "c9cea8ef1c47df02af567c1d909394da7a403c0dd12970068baf5722a6311c15",
+      "source_context_revision": "6618939830e589ab35dfbc942bc9135e53d6c0467e3e2fd323f6538b976cbcdc"
+    },
+    "classification": {
+      "turn_kind": "new_intent",
+      "selection_required": true,
+      "reroute_required": true,
+      "execution_decision_required": true,
+      "continuation_of": "",
+      "confidence": 0.9,
+      "reason_codes": [
+        "requested_question_task_or_output"
+      ],
+      "state_revision": "70e9f31c36285564da22372b4682d5720c23a8e0927d089916d58703f2f7cf11",
+      "classifier_version": 5,
+      "message_fingerprint": "cf97d012ecc86f377b7d8e87fbe81109c2e7d7596fbed57340f373d76504b7e6",
+      "legacy_request_kind": "nontrivial"
+    }
+  },
+  "findings": [
+    "Reconstructed state revision exactly matches persisted run metadata. Classifier treats go for it as new intent; preflight discards available prior context on executable new intent.",
+    "Prior terminal turn has completed status and no persisted pending interaction. No full failed proposal exists in this receipt; the critic veto remains unadjudicated.",
+    "Reranker passes. Cold catalog embedding takes 39653ms; this is an observed component, not proof of all latency causes."
+  ],
+  "authority": "Read-only receipt and state reconstruction; no manual finalization or selection."
+}
