@@ -45,6 +45,10 @@ Shared Hermes phase: review86.111s/routing56.290s passes all native gates;
 follow-up83.279s critic rejection; multi-step87.094s response_invalid. No retry.
 Evidence: AR-404-hermes-suite-after-shared-staffing-20260909.json.
 
+OpenClaw shared phase: review57.109s and multi95.268s fail staffing; follow-up
+53.401s passes exact native card, five headers and one matching accepted terminal.
+AR-419 isolated verification follows; failures remain under AR-404.
+
 ## Completed evidence
 
 Frozen evidence/AR-404-reliability-suite-20260909.json fixes ordinary review,

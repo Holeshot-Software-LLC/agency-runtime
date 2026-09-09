@@ -68,6 +68,19 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+### Shared staffing native OpenClaw phase
+
+Fresh ordinary CLI follow-up7bdd5df5-248a-48a1-aa2b-3667c35a2200 returns the
+correct function in53.401s. Native llm_input with exact session/run contains the
+complete selected card; five fields match Store; one authoritative accepted terminal
+event binds response6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf.
+No --deliver, external message or manual finalization. The initial57.109s review
+and95.268s multi-step fail staffing and stay in the same fixed-phase evidence.
+Exact focused91passed/1skipped; the first command named a nonexistent test file
+and ran no tests, retained in the packet. Isolated AR-419 verification follows;
+this candidate does not establish all-host or all-case reliability.
+
+
 ### Shared staffing Hermes phase
 
 The unchanged three requests returned in86.111s,83.279s,87.094s. Ordinary review

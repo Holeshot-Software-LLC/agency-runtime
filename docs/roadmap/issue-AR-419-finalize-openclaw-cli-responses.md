@@ -3,7 +3,7 @@ title: "AR-419: Finalize ordinary OpenClaw CLI responses with exact evidence"
 status: in_progress
 category: roadmap
 created: 2026-09-08
-updated: 2026-09-08
+updated: 2026-09-09
 tags: [openclaw, cli, lifecycle, finalization]
 related:
   - docs/worklog/2026-09-08-native-terminal-repair.md
@@ -30,6 +30,19 @@ accepted staffing, yet leave Agency active with zero finalization events. Native
 ok/completed status does not establish a centrally accepted response.
 
 ## Current state
+
+### Shared staffing native OpenClaw phase
+
+Fresh ordinary CLI follow-up7bdd5df5-248a-48a1-aa2b-3667c35a2200 returns the
+correct function in53.401s. Native llm_input with exact session/run contains the
+complete selected card; five fields match Store; one authoritative accepted terminal
+event binds response6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf.
+No --deliver, external message or manual finalization. The initial57.109s review
+and95.268s multi-step fail staffing and stay in the same fixed-phase evidence.
+Exact focused91passed/1skipped; the first command named a nonexistent test file
+and ran no tests, retained in the packet. Isolated AR-419 verification follows;
+this candidate does not establish all-host or all-case reliability.
+
 
 The declared observer probe returned in226.500s, native trace
 a24020c3-c3d0-43e2-bf10-230965702e21. Native llm_input, before_agent_finalize and

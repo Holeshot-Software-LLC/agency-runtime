@@ -99,3 +99,20 @@ proof of the deployed backend and zero persisted per-call durations are unreport
 not instantaneous. All evidence is AR-404-hermes-suite-after-shared-staffing-20260909.json.
 AR-418 remains open: upstream PR106490 is still unmerged, default7cd91114 unchanged.
 OpenClaw and fresh trusted Codex are the next fixed phases; Claude grant is pending.
+
+
+### Shared staffing native OpenClaw phase
+
+Fresh ordinary CLI follow-up7bdd5df5-248a-48a1-aa2b-3667c35a2200 returns the
+correct function in53.401s. Native llm_input with exact session/run contains the
+complete selected card; five fields match Store; one authoritative accepted terminal
+event binds response6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf.
+No --deliver, external message or manual finalization. The initial57.109s review
+and95.268s multi-step fail staffing and stay in the same fixed-phase evidence.
+Exact focused91passed/1skipped; the first command named a nonexistent test file
+and ran no tests, retained in the packet. Isolated AR-419 verification follows;
+this candidate does not establish all-host or all-case reliability.
+
+Observer cleanup: stop/uninstall/start exits0; files, entry and permission removed.
+Initial RPC warmup retained; subsequent read-only RPC check passes. Non-plugin
+configuration sections unchanged. See the cleanup evidence JSON.

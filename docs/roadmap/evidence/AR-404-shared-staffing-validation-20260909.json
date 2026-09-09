@@ -1,0 +1,44 @@
+{
+  "issue": "AR-404",
+  "date": "2026-09-09",
+  "production_source": "cd86e40a994bd7d6fad8699047140a8e369718a0",
+  "production_source_changed": false,
+  "focused": {
+    "command": "pytest tests/test_inference_profiles.py -q -W error",
+    "passed": 88
+  },
+  "production_spine": {
+    "passed": 1151,
+    "skipped": 3,
+    "elapsed_seconds": 69.99
+  },
+  "ui": {
+    "command": "node --test tests/dashboard_ui.test.mjs",
+    "passed": 224
+  },
+  "ruff": {
+    "check": "passed",
+    "format_check_files": 784
+  },
+  "documentation": {
+    "passed": true,
+    "files": 1359,
+    "require_tracker": true
+  },
+  "tracker": {
+    "passed": true,
+    "items": 415,
+    "historical_pr_items_skipped": 2
+  },
+  "source_conformance": {
+    "reused_for_unchanged_source": "AR-423-context-delivery-validation-20260909.json",
+    "passed": 188,
+    "total": 188
+  },
+  "not_run": [
+    "exhaustive Python corpus",
+    "coverage gate",
+    "Windows matrix",
+    "workflow_dispatch"
+  ]
+}
