@@ -63,7 +63,8 @@ has startup/hook activation and event.runId correlation. Normal maintenance exit
 RPC healthy. After-refresh review209.513s has exact accepted hash/headers; follow-up352.602s
 fails staffing and multi361.217s times out. Missing per-plugin conversation-access
 permission, explicitly logged by native registration, explains absent observer events.
-One new ordinary probe after documented permission grant is prepared.
+Documented permission is now granted; runtime imports3hooks. Startup RPC initially
+was not ready, subsequent read-only probe passes. One new ordinary probe is prepared.
 No external delivery. Metadata alone is not callback/card proof.
 
 Claude native2.1.266 PATH repair uses its supported native installer, not npm.

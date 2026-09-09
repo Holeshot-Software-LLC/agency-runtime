@@ -224,3 +224,9 @@ AR-419-openclaw-observer-permission-20260909.json. No earlier missing card proof
 is retroactively promoted. A transient remote internal-server-error rejected one
 push; a single retry published the same branch unchanged. Final policy-availability
 check needed explicit PYTHONPATH after a launcher import error; corrected check passes.
+
+The documented per-plugin conversation permission is now granted. Normal
+stop/install/grant/start all exit0; runtime inspection imports the observer and
+registers all3typed hooks. Immediate startup RPC was not ready; the next read-only
+probe passes without another restart. Every non-plugin/non-meta configuration
+section is unchanged. The one new ordinary review remains to run.
