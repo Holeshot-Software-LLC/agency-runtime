@@ -1,0 +1,943 @@
+{
+  "manifest": "AR-404-reliability-suite-20260909.json",
+  "phase": "after_shared_staffing",
+  "installed_source": "db1c642f",
+  "host": "openclaw",
+  "cases": [
+    {
+      "case": "ordinary_review",
+      "invocation": {
+        "case": "ordinary_review",
+        "host": "openclaw",
+        "phase": "after_shared_staffing",
+        "command": [
+          "openclaw",
+          "agent",
+          "--session-key",
+          "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+          "--json",
+          "--timeout",
+          "350",
+          "--message",
+          "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files."
+        ],
+        "native_session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 57.109
+      },
+      "run": {
+        "id": "96dcf1f1-3873-48e1-ab2f-f30938f6a9ab",
+        "trace_id": "63385227-5676-4a1f-9a4c-32ef9756b754",
+        "session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+        "host": "openclaw",
+        "started_at": "2026-09-09T13:53:17.339000+00:00",
+        "last_activity_at": "2026-09-09T13:53:57.510000+00:00",
+        "turn_sequence": 1652,
+        "ended_at": "2026-09-09T13:53:57.509000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "ae2751c8-f19b-4674-9600-0b450f771793",
+        "session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+        "trace_id": "63385227-5676-4a1f-9a4c-32ef9756b754",
+        "host": "openclaw",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "stage": "planner",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 1,
+            "latency_ms": 10116,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "recall_embedding",
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-embedding:latest",
+            "model_group": "",
+            "actual_model": "qwen3-embedding:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "dense_recall_applied",
+            "latency_ms": 2443,
+            "input_count": 1,
+            "provider_call_count": 1,
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107"
+          },
+          {
+            "stage": "recall_reranker",
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "model_group": "",
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 3,
+            "latency_ms": 9758,
+            "timeout_ms": 120000,
+            "input_count": 0,
+            "provider_call_count": 1
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2",
+            "model_group": "task-agency-recruiter-v2",
+            "actual_model": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "rejected",
+            "reason_code": "provider_response_contract_invalid",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 4,
+            "latency_ms": 5659,
+            "timeout_ms": 60000,
+            "validation_failures": [
+              {
+                "unit_id": "unit-review-average-defects",
+                "reason_code": "staff_without_safe_team",
+                "requirement_axis": "capability",
+                "ranked_agent_ids": "code-reviewer~type-design-analyzer~silent-failure-hunter~test-results-analyzer~ai-evaluation-engineer~hallucination-root-cause-investigator",
+                "safe_team_shortfall": "retrieved_coverer_not_selected",
+                "ranked_executable_count": 3,
+                "maximum_selected_per_unit": 4,
+                "required_agent_count": 1
+              }
+            ]
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2",
+            "model_group": "task-agency-recruiter-v2",
+            "actual_model": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 5,
+            "latency_ms": 4254,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "critic",
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-critic-v2",
+            "model_group": "task-agency-critic-v2",
+            "actual_model": "task-agency-critic-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 6,
+            "latency_ms": 6708,
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_wrong_neighbor_selection"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T13:53:57.509000+00:00",
+        "schema_version": "agency.preflight.failure.v3"
+      },
+      "finalization": null,
+      "model_receipts": [],
+      "finalization_event_count": 0,
+      "accepted_terminal_event_count": 0,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent",
+        "failed_resident_manager_binding": {
+          "version": 2,
+          "binding_id": "rmb-b85abad5e7237bc68a3ce96295dad09f",
+          "host": "openclaw",
+          "host_mode": "request_scoped",
+          "delivery_mode": "request",
+          "control_epoch": {
+            "master_generation": 6,
+            "master_materialized": true,
+            "host_generation": 2,
+            "host_materialized": true
+          },
+          "kernel": {
+            "version": 5,
+            "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+            "slugs": [
+              "agency-steward"
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: requested execution alias: task-general\nRecruited via: failed; workforce_inference_failed; recruiter:provider_response_contract_invalid; staffing_critic_rejected; critic_wrong_neighbor_selection\n\n**Defects**\n- `sum(values) // len(values)` uses floor division. For `[1.0, 2.0]`, it returns `1.0` instead of the arithmetic mean `1.5`.\n- Empty input is not handled explicitly. For `[]`, the function attempts `0 // 0` and raises `ZeroDivisionError`, but the requirement specifies `ValueError`.\n\n**Correction**\n- Check whether the sequence is empty and raise `ValueError` before performing the calculation.\n- Replace floor division (`//`) with true division (`/`) so fractional means are preserved.",
+      "response_sha256": "79705d41cceedd22fc62d9d5a4816217500a708b882fa75de330e9dee10786b9",
+      "accepted_hash_matches": false,
+      "terminal_hash_matches": false,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "requested execution alias: task-general",
+          "recruited_via": "failed; workforce_inference_failed; recruiter:provider_response_contract_invalid; staffing_critic_rejected; critic_wrong_neighbor_selection"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "failed; workforce_inference_failed; recruiter:provider_response_contract_invalid; staffing_critic_rejected; critic_wrong_neighbor_selection"
+        },
+        "all_five_match": false
+      },
+      "card_proofs": [],
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    },
+    {
+      "case": "short_followup",
+      "invocation": {
+        "case": "short_followup",
+        "host": "openclaw",
+        "phase": "after_shared_staffing",
+        "command": [
+          "openclaw",
+          "agent",
+          "--session-key",
+          "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+          "--json",
+          "--timeout",
+          "350",
+          "--message",
+          "go for it"
+        ],
+        "native_session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 53.401
+      },
+      "run": {
+        "id": "f59c7f55-ffe2-4f10-842e-f04188e91609",
+        "trace_id": "7bdd5df5-248a-48a1-aa2b-3667c35a2200",
+        "session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+        "host": "openclaw",
+        "started_at": "2026-09-09T13:54:13.393000+00:00",
+        "last_activity_at": "2026-09-09T13:55:05.281000+00:00",
+        "turn_sequence": 1653,
+        "ended_at": "2026-09-09T13:55:05.280416+00:00",
+        "status": "completed",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "finalization": {
+        "id": "63e302fa-9bc1-46b8-860e-71c30098e477",
+        "trace_id": "7bdd5df5-248a-48a1-aa2b-3667c35a2200",
+        "host": "openclaw",
+        "action": "accept",
+        "missing": null,
+        "response_hash": "6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf",
+        "policy_response_hash": "6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf",
+        "terminal_status": "completed",
+        "created_at": "2026-09-09T13:55:05.280416+00:00",
+        "session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+        "status": "completed",
+        "ended_at": "2026-09-09T13:55:05.280416+00:00",
+        "authoritative": true
+      },
+      "model_receipts": [
+        {
+          "requested_model": "task-agency-planner-v2",
+          "model_group": "task-agency-planner-v2",
+          "resolved_provider": "agency-planner",
+          "resolved_model": "task-agency-planner-v2",
+          "source": "wrapper",
+          "status": "failed",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-recruiter-v2",
+          "model_group": "task-agency-recruiter-v2",
+          "resolved_provider": "agency-recruiter",
+          "resolved_model": "glm-5.3-flash",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "qwen3-14b-abliterated:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-reranker",
+          "resolved_model": "qwen3-14b-abliterated:latest",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "qwen3-embedding:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-embedding",
+          "resolved_model": "qwen3-embedding:latest",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-planner-v2",
+          "model_group": "task-agency-planner-v2",
+          "resolved_provider": "agency-planner",
+          "resolved_model": "task-agency-planner-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        }
+      ],
+      "finalization_event_count": 1,
+      "accepted_terminal_event_count": 1,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "cf97d012ecc86f377b7d8e87fbe81109c2e7d7596fbed57340f373d76504b7e6",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "d8c56ded0be5024d28d24bec49aac2842ce63f66f91b0b19e18b289a05e87379",
+        "turn_kind": "new_intent"
+      },
+      "routing": {
+        "status": "accepted",
+        "selected_ids": [
+          "codebase-onboarding-engineer"
+        ],
+        "latency_ms": 33800,
+        "receipt": {
+          "compatibility": {
+            "added_requirements": [],
+            "compatible": false,
+            "contract_version": 0,
+            "overflow_review_ids": [],
+            "rejected_count": 0,
+            "rejection_reason_counts": [],
+            "rejections": [],
+            "requested_ids": [],
+            "selected_ids": [],
+            "selected_root_ids": [],
+            "selection_limit": 0,
+            "separate_context_pairs": []
+          },
+          "effect_codes": [
+            "inference_attempted",
+            "eligibility_exclusions_applied",
+            "specialists_selected",
+            "hiring_not_attempted"
+          ],
+          "eligibility": {
+            "eligible_count": 68,
+            "evaluated_count": 293,
+            "rejected_count": 225,
+            "rejection_reason_counts": [
+              {
+                "count": 21,
+                "reason_code": "missing_capabilities"
+              },
+              {
+                "count": 6,
+                "reason_code": "unsupported_execution_host"
+              }
+            ],
+            "rejections": [
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "application-observability-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:product-analytics-reader",
+                "slug": "behavioral-nudge-engine"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "cms-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "compliance-auditor"
+              },
+              {
+                "reason_code": "unsupported_execution_host:openclaw",
+                "slug": "conversation-memory-assessment-analyst"
+              },
+              {
+                "reason_code": "missing_capabilities:current-cultural-research",
+                "slug": "cultural-intelligence-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:database-access",
+                "slug": "database-optimizer"
+              },
+              {
+                "reason_code": "missing_capabilities:cross-platform-test-host",
+                "slug": "developer-tooling-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "feedback-synthesizer"
+              },
+              {
+                "reason_code": "unsupported_execution_host:openclaw",
+                "slug": "finance-security-snapshot-review-specialist"
+              },
+              {
+                "reason_code": "unsupported_execution_host:openclaw",
+                "slug": "finance-snapshot-json-documentation-verifier"
+              },
+              {
+                "reason_code": "missing_capabilities:jira",
+                "slug": "jira-workflow-steward"
+              },
+              {
+                "reason_code": "missing_capabilities:language-server-runtime",
+                "slug": "lsp-index-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:official-mcp-documentation",
+                "slug": "mcp-builder"
+              },
+              {
+                "reason_code": "unsupported_execution_host:openclaw",
+                "slug": "memory-action-planning-governance-specialist"
+              },
+              {
+                "reason_code": "missing_capabilities:orgscript-cli",
+                "slug": "orgscript-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "proposal-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "rapid-prototyper"
+              },
+              {
+                "reason_code": "unsupported_execution_host:openclaw",
+                "slug": "read-only-finance-security-snapshot-reviewer"
+              },
+              {
+                "reason_code": "unsupported_execution_host:openclaw",
+                "slug": "repository-disclosure-refusal-analyst"
+              },
+              {
+                "reason_code": "missing_capabilities:roblox-studio",
+                "slug": "roblox-systems-scripter"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "security-architect"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "senior-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:security-analysis",
+                "slug": "senior-secops-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:media-processing",
+                "slug": "short-video-editing-coach"
+              },
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "threat-detection-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "ux-architect"
+              }
+            ],
+            "sample_truncated": true
+          },
+          "hiring": {
+            "attempted_count": 0,
+            "calls_used": 0,
+            "events": [],
+            "outcome": "no_attempt",
+            "truncated": false,
+            "workforce_changes": 0
+          },
+          "inference": {
+            "attempted": true,
+            "configured": true,
+            "mode": "inferred",
+            "provider_attempts": [
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-planner-v2",
+                "ordinal": 1,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-planner",
+                "provider_type": "litellm",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "task-agency-planner-v2",
+                "stage": "subject",
+                "status": "rejected"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-planner-v2",
+                "ordinal": 2,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-planner",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-planner-v2",
+                "stage": "planner",
+                "status": "applied"
+              },
+              {
+                "model_group": "",
+                "ordinal": 3,
+                "provider_name": "local-workforce-embedding",
+                "provider_type": "ollama",
+                "reason_code": "dense_recall_applied",
+                "requested_model": "qwen3-embedding:latest",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "",
+                "ordinal": 4,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "local-workforce-reranker",
+                "provider_type": "ollama",
+                "reason_code": "structured_response_applied",
+                "requested_model": "qwen3-14b-abliterated:latest",
+                "stage": "recall_reranker",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2",
+                "ordinal": 5,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-recruiter-v2",
+                "stage": "recruiter",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-critic-v2",
+                "ordinal": 6,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter-critic",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-critic-v2",
+                "stage": "critic",
+                "status": "applied"
+              }
+            ],
+            "required": true
+          },
+          "reason_codes": [
+            "turn_kind:new_intent",
+            "routing_status:accepted",
+            "inference_mode:inferred",
+            "eligibility:missing_capabilities",
+            "eligibility:unsupported_execution_host"
+          ],
+          "receipt_version": 1,
+          "retrieval": {
+            "candidate_union_count": 0,
+            "full_roster_count": 0,
+            "hard_negative_count": 0,
+            "lexical_count": 0,
+            "mode": "unavailable",
+            "semantic_count": 0
+          },
+          "staffing": {
+            "gap_count": 0,
+            "global_reason_codes": [],
+            "status": "accepted",
+            "truncated": false,
+            "units": [
+              {
+                "nominated_ids": [
+                  "codebase-onboarding-engineer",
+                  "software-architect",
+                  "codebase-archaeologist"
+                ],
+                "proposed_ids": [
+                  "codebase-onboarding-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-scope-investigation"
+              }
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward, codebase-onboarding-engineer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)\nRecruited via: inference\n\n```python\ndef average(values):\n    if len(values) == 0:\n        raise ValueError(\"average requires at least one value\")\n    return sum(values) / len(values)\n```\n\n- `average([1.0, 2.0])` returns `1.5`.\n- `average([])` raises `ValueError`.",
+      "response_sha256": "6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf",
+      "accepted_hash_matches": true,
+      "terminal_hash_matches": true,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward, codebase-onboarding-engineer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward, codebase-onboarding-engineer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "all_five_match": true
+      },
+      "card_proofs": [
+        {
+          "slug": "codebase-onboarding-engineer",
+          "version": "sha256:36a665df48c915f15ba2447e871d510aac1141e677a8bcc3b6f16562c473d23b",
+          "store_hash": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+          "full_prompt_chars": 2496,
+          "prompt_bytes_sha256": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+          "exact_full_card_present": true,
+          "source": "native llm_input observer matched exact sessionKey and runId"
+        }
+      ],
+      "exact_card_injection": true,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": {
+          "id": "a7af97a9-99f4-4db6-ba93-fcbb35c065d2",
+          "trace_id": "7bdd5df5-248a-48a1-aa2b-3667c35a2200",
+          "session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+          "host": "openclaw",
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "wrapper",
+          "recorded_at": "2026-09-09T13:54:48.190000+00:00",
+          "started_at": "2026-09-09T13:54:48.186000+00:00",
+          "ended_at": "2026-09-09T13:54:48.186000+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "codebase-onboarding-engineer"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "codebase-onboarding-engineer",
+            "version": "sha256:36a665df48c915f15ba2447e871d510aac1141e677a8bcc3b6f16562c473d23b",
+            "hash": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+            "description": "Expert developer onboarding specialist who helps new engineers understand unfamiliar codebases fast by reading source code, tracing code paths, and stating only facts grounded in the code.",
+            "capabilities": [
+              "map repository structure and execution flow",
+              "trace concepts to concrete files",
+              "produce evidence-only onboarding guides"
+            ]
+          }
+        ],
+        "delegations": []
+      },
+      "status": "accepted native evidence"
+    },
+    {
+      "case": "multi_step",
+      "invocation": {
+        "case": "multi_step",
+        "host": "openclaw",
+        "phase": "after_shared_staffing",
+        "command": [
+          "openclaw",
+          "agent",
+          "--session-key",
+          "agent:openclaw:ar404-20260909-after_shared_staffing-multi_step",
+          "--json",
+          "--timeout",
+          "350",
+          "--message",
+          "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed."
+        ],
+        "native_session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-multi_step",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 95.268
+      },
+      "run": {
+        "id": "28ba623e-06bb-4188-82f7-d72fe7b75682",
+        "trace_id": "e6f1704b-41ab-491b-ba13-75469dec6ad6",
+        "session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-multi_step",
+        "host": "openclaw",
+        "started_at": "2026-09-09T13:55:06.761000+00:00",
+        "last_activity_at": "2026-09-09T13:56:19.707000+00:00",
+        "turn_sequence": 1654,
+        "ended_at": "2026-09-09T13:56:19.706000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "d4e6e74f-c02f-4fe4-abda-66c79214081d",
+        "session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-multi_step",
+        "trace_id": "e6f1704b-41ab-491b-ba13-75469dec6ad6",
+        "host": "openclaw",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "stage": "planner",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 1,
+            "latency_ms": 14524,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "recall_embedding",
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-embedding:latest",
+            "model_group": "",
+            "actual_model": "qwen3-embedding:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "dense_recall_applied",
+            "latency_ms": 2827,
+            "input_count": 5,
+            "provider_call_count": 1,
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107"
+          },
+          {
+            "stage": "recall_reranker",
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "model_group": "",
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 3,
+            "latency_ms": 21612,
+            "timeout_ms": 120000,
+            "input_count": 0,
+            "provider_call_count": 1
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2",
+            "model_group": "task-agency-recruiter-v2",
+            "actual_model": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 4,
+            "latency_ms": 22639,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "critic",
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-critic-v2",
+            "model_group": "task-agency-critic-v2",
+            "actual_model": "task-agency-critic-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 5,
+            "latency_ms": 10130,
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_wrong_neighbor_selection"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T13:56:19.706000+00:00",
+        "schema_version": "agency.preflight.failure.v3"
+      },
+      "finalization": null,
+      "model_receipts": [],
+      "finalization_event_count": 0,
+      "accepted_terminal_event_count": 0,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "4b0a04c6bfb20e80ea924bd5bb8af567af4e81c55d48820d3c5bae7e2771df33",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent",
+        "failed_resident_manager_binding": {
+          "version": 2,
+          "binding_id": "rmb-9edef9c6a41e585258502b4836e22bed",
+          "host": "openclaw",
+          "host_mode": "request_scoped",
+          "delivery_mode": "request",
+          "control_epoch": {
+            "master_generation": 6,
+            "master_materialized": true,
+            "host_generation": 2,
+            "host_materialized": true
+          },
+          "kernel": {
+            "version": 5,
+            "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+            "slugs": [
+              "agency-steward"
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: requested execution alias: task-general\nRecruited via: failed; workforce_inference_failed; staffing_critic_rejected; critic_wrong_neighbor_selection\n\nCorrectness defects:\n\n- `//` performs floor division, so fractional means are lost; `[1.0, 2.0]` incorrectly returns `1.0`.\n- Floor division rounds toward negative infinity, so negative fractional means are also wrong; `[-1, -2]` returns `-2` instead of `-1.5`.\n- Empty input causes `ZeroDivisionError` rather than the required `ValueError`.\n\n```python\ndef average(values):\n    if not values:\n        raise ValueError(\"average requires at least one value\")\n    return sum(values) / len(values)\n```\n\nFocused pytest regression tests:\n\n```python\nimport pytest\n\n\ndef test_average_returns_fractional_result():\n    assert average([1.0, 2.0]) == 1.5\n\n\ndef test_average_handles_negative_numbers():\n    assert average([-1, -2]) == -1.5\n\n\ndef test_average_rejects_empty_input():\n    with pytest.raises(ValueError):\n        average([])\n```\n\nThese tests are provided without execution, as requested.",
+      "response_sha256": "4571d09adf6e8af0ac8d82727d5d7fca342cde739f385d6bf2edaabfa84a0622",
+      "accepted_hash_matches": false,
+      "terminal_hash_matches": false,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "requested execution alias: task-general",
+          "recruited_via": "failed; workforce_inference_failed; staffing_critic_rejected; critic_wrong_neighbor_selection"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "failed; workforce_inference_failed; staffing_critic_rejected; critic_wrong_neighbor_selection"
+        },
+        "all_five_match": false
+      },
+      "card_proofs": [],
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "scope": "Nine fixed native cases, one attempt each; not a reliability estimate",
+  "rows": [
+    {
+      "host": "hermes",
+      "case": "ordinary_review",
+      "seconds": 86.111,
+      "status": "completed",
+      "all_native_gates": true,
+      "staffing_reasons": []
+    },
+    {
+      "host": "hermes",
+      "case": "short_followup",
+      "seconds": 83.279,
+      "status": "preflight_failed",
+      "all_native_gates": false,
+      "staffing_reasons": [
+        "staffing_critic_rejected",
+        "critic_wrong_neighbor_selection"
+      ]
+    },
+    {
+      "host": "hermes",
+      "case": "multi_step",
+      "seconds": 87.094,
+      "status": "response_invalid",
+      "all_native_gates": false,
+      "staffing_reasons": []
+    },
+    {
+      "host": "openclaw",
+      "case": "ordinary_review",
+      "seconds": 57.109,
+      "status": "preflight_failed",
+      "all_native_gates": false,
+      "staffing_reasons": [
+        "staffing_critic_rejected",
+        "critic_wrong_neighbor_selection"
+      ]
+    },
+    {
+      "host": "openclaw",
+      "case": "short_followup",
+      "seconds": 53.401,
+      "status": "completed",
+      "all_native_gates": true,
+      "staffing_reasons": []
+    },
+    {
+      "host": "openclaw",
+      "case": "multi_step",
+      "seconds": 95.268,
+      "status": "preflight_failed",
+      "all_native_gates": false,
+      "staffing_reasons": [
+        "staffing_critic_rejected",
+        "critic_wrong_neighbor_selection"
+      ]
+    },
+    {
+      "host": "codex",
+      "case": "ordinary_review",
+      "seconds": 62.855,
+      "status": "completed",
+      "all_native_gates": true,
+      "staffing_reasons": []
+    },
+    {
+      "host": "codex",
+      "case": "short_followup",
+      "seconds": 53.903,
+      "status": "completed",
+      "all_native_gates": true,
+      "staffing_reasons": []
+    },
+    {
+      "host": "codex",
+      "case": "multi_step",
+      "seconds": 100.324,
+      "status": "preflight_failed",
+      "all_native_gates": false,
+      "staffing_reasons": [
+        "staffing_critic_rejected",
+        "critic_wrong_neighbor_selection"
+      ]
+    }
+  ],
+  "rejected_provider_attempts": [
+    {
+      "stage": "recruiter",
+      "reason": "provider_response_contract_invalid",
+      "count": 2
+    },
+    {
+      "stage": "subject",
+      "reason": "provider_response_contract_invalid",
+      "count": 1
+    },
+    {
+      "stage": "recall_reranker",
+      "reason": "provider_response_contract_invalid",
+      "count": 1
+    }
+  ],
+  "claude": "Normal tool Allow grant pending; no new native probe",
+  "zcode": "Previously accepted review and follow-up; failed multi-step retained",
+  "hermes_upstream": "AR-418 native patch unmerged and not adopted"
+}

@@ -1,0 +1,82 @@
+{
+  "issue": "AR-419",
+  "scope": "ordinary native CLI follow-up; not all-host reliability",
+  "suite_source": "AR-404-openclaw-suite-after-shared-staffing-20260909.json",
+  "host": "openclaw",
+  "native_version": "2026.8.2",
+  "installed_source": "db1c642f",
+  "trace_id": "7bdd5df5-248a-48a1-aa2b-3667c35a2200",
+  "session_key": "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+  "request": "go for it",
+  "preceding_request_sha256": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7",
+  "elapsed_seconds": 53.401,
+  "routing_latency_ms": 33800,
+  "native_exit_code": 0,
+  "correct_scoped_function": true,
+  "selected_cards": [
+    {
+      "slug": "codebase-onboarding-engineer",
+      "version": "sha256:36a665df48c915f15ba2447e871d510aac1141e677a8bcc3b6f16562c473d23b",
+      "store_hash": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+      "full_prompt_chars": 2496,
+      "prompt_bytes_sha256": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+      "exact_full_card_present": true,
+      "source": "native llm_input observer matched exact sessionKey and runId"
+    }
+  ],
+  "native_card_surface": "llm_input exact sessionKey and runId, model-facing systemPrompt/prompt/historyMessages string values",
+  "exact_full_cards": true,
+  "all_five_store_headers_match": true,
+  "visible_response_sha256": "6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf",
+  "authoritative_finalization": {
+    "id": "63e302fa-9bc1-46b8-860e-71c30098e477",
+    "trace_id": "7bdd5df5-248a-48a1-aa2b-3667c35a2200",
+    "host": "openclaw",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf",
+    "policy_response_hash": "6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf",
+    "terminal_status": "completed",
+    "created_at": "2026-09-09T13:55:05.280416+00:00",
+    "session_id": "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+    "status": "completed",
+    "ended_at": "2026-09-09T13:55:05.280416+00:00",
+    "authoritative": true
+  },
+  "accepted_terminal_event_count": 1,
+  "native_command_no_deliver": true,
+  "manual_finalization": false,
+  "observer_permission": "normal owner-approved allowConversationAccess true for bounded observer",
+  "observer_source_sha256": "f80510ec4a03540117f2b4fd45bc92498005c1aeb61d0131c20ad95d0cf8b9f2",
+  "focused_command": "python -m pytest tests/test_openclaw_cli_terminal.py tests/test_openclaw_adapter.py tests/test_openclaw_streaming_policy.py -q -W error",
+  "focused_output": "............s........................................................... [ 78%]\n....................                                                     [100%]\n91 passed, 1 skipped in 1.79s\n",
+  "initial_test_command_error": "ERROR: file or directory not found: tests/test_openclaw_finalization_invariants.py\n\n\nno tests ran in 0.00s\n",
+  "source_identities": {
+    "agency_runtime/adapters/openclaw": {
+      "HEAD": "286929ae551f7c6deaae5623a2093ace797d2f1f",
+      "db1c642f": "286929ae551f7c6deaae5623a2093ace797d2f1f"
+    },
+    "tests/test_openclaw_cli_terminal.py": {
+      "HEAD": "815b711d3641d97353d1e496222bf86867f5044f",
+      "db1c642f": "815b711d3641d97353d1e496222bf86867f5044f"
+    },
+    "tests/test_openclaw_adapter.py": {
+      "HEAD": "efb0f2d80adc500f263835e5b57b31efaa32bcb3",
+      "db1c642f": "efb0f2d80adc500f263835e5b57b31efaa32bcb3"
+    },
+    "tests/test_openclaw_streaming_policy.py": {
+      "HEAD": "11ee0a995ba4e1925afdfb1118c63b8685aed9d2",
+      "db1c642f": "11ee0a995ba4e1925afdfb1118c63b8685aed9d2"
+    },
+    "agency_runtime/core/installer_payload_openclaw.py": {
+      "HEAD": "4d695d52e09ad8938e69d4e611577e2a9404825c",
+      "db1c642f": "4d695d52e09ad8938e69d4e611577e2a9404825c"
+    }
+  },
+  "limitations": [
+    "First ordinary review failed staffing and is retained.",
+    "Hermes truncation upstream adoption pending.",
+    "Claude permission grant pending.",
+    "Zcode multi-step staffing failed."
+  ]
+}

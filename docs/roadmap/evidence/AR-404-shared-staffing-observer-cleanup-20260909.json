@@ -1,0 +1,70 @@
+{
+  "steps": [
+    {
+      "step": "stop",
+      "command": [
+        "openclaw",
+        "gateway",
+        "stop",
+        "--force"
+      ],
+      "exit_code": 0
+    },
+    {
+      "step": "remove",
+      "command": [
+        "openclaw",
+        "plugins",
+        "uninstall",
+        "ar404-native-witness",
+        "--force"
+      ],
+      "exit_code": 0
+    },
+    {
+      "step": "start",
+      "command": [
+        "openclaw",
+        "gateway",
+        "start"
+      ],
+      "exit_code": 0
+    },
+    {
+      "step": "health",
+      "command": [
+        "openclaw",
+        "gateway",
+        "status",
+        "--json"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "non_plugin_sections_unchanged": {
+    "agents": true,
+    "tools": true,
+    "hooks": true,
+    "messages": true,
+    "models": true,
+    "approvals": true,
+    "gateway": true,
+    "session": true,
+    "channels": true,
+    "surfaces": true,
+    "memory": true,
+    "mcp": true,
+    "bindings": true,
+    "skills": true,
+    "acp": true,
+    "talk": true,
+    "wizard": true,
+    "commands": true,
+    "auth": true
+  },
+  "rpc_healthy": false,
+  "gateway_runtime": "running",
+  "observer_removed": true,
+  "observer_files_removed": true,
+  "subsequent_rpc_healthy": true
+}

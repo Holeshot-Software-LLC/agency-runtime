@@ -14,7 +14,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-423
-branch: codex/ar423-native-context-20260909
+branch: codex/ar404-shared-staffing-20260909
 evidence_commit: cd86e40a994bd7d6fad8699047140a8e369718a0
 minimum_ledger_commit: 0cd4f2897b12f9a3de1f277303ba381dd6aa61d5
 hard_checkpoint_percent: 50
@@ -26,12 +26,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 ## Checkpoint
 
 Scoped outcome: exact selected full cards reach Claude despite its native hook
-limit, with truthful loaded evidence. Waiting_for_operator after the live-demo checkpoint; delivery PR814.
-PR810 and merge ledger PR813 are merged; main b801c08f. AR-421/422 closed only
-against their isolated gates. Source cd86e40a / artifact 0cd4f289 is installed; all 615 package files match.
-Claude/Zcode normal refresh publishes07d88875a9e6; packaged smoke passes and
-gateway RPC is healthy. After PR814 merges, this branch is historical; create a
-new owned worktree for further changes. Exact merge entries live in the worklog.
+limit, with truthful loaded evidence. Waiting_for_operator: exact tool grant pending.
+PR814 and merge ledger PR815 are merged; base main f013e63a. AR-421/422/424
+closed only against their isolated gates. Current owned branch is shared-staffing
+PR816. Source cd86e40a / artifact0cd4f289 remains installed;615files match.
+Claude/Zcode projection07d88875a9e6 is unchanged. The older native-context branch
+is historical. The new worklog documents normal /permissions Allow rules;
+startup alone does not prompt. No rule was written without the pending grant.
 
 ## Completed evidence
 
@@ -49,11 +50,13 @@ agency_load_specialist calls were denied; loaded evidence stays empty. Native
 Stop accepts the exact truthful response. AR-423 full-card acceptance is absent. AR-424 all three isolated criteria are
 satisfied; its byte-preservation scope is done, with closure in PR814.
 Fast checks pass; fresh-source conformance passes 188/188.
-No staffing models or provider configuration changed; failed suite outcomes remain.
+This Claude installation and routes are unchanged. Owner-approved Hermes/OpenClaw
+shared-route alignment is recorded separately; all failed suite outcomes remain.
 
 ## Same-task continuity
 
-Continue this owned branch. At or below 50 percent, checkpoint the smallest safe
+After PR816 merges, create a new owned worktree for further changes. At or below
+50 percent, checkpoint the smallest safe
 source/ledger pair, then continue the same task. The umbrella capsule retains
 other host evidence and pending owner actions. Do not recreate historical work.
 
@@ -61,8 +64,9 @@ other host evidence and pending owner actions. Do not recreate historical work.
 
 The fixed sample retained review success, follow-up response_invalid and multi-step
 staffing failure; neither staffed case exercised the large-card MCP path. The separate probe (219.959s) is retained with four native permission denials.
-Wait for normal attended approval of agency_load_specialist before a new phase.
-Do not change permissions or retry under the same condition. Bind full native
+Wait for the owner to grant the exact agency_load_specialist and agency_finalize
+Allow rules through /permissions or authorize their normal user-settings write.
+Do not bypass native permissions or retry under the same condition. Bind full native
 MCP tool results to exact session/trace and selected version/hash. Do not claim
 card delivery from tool instructions alone. Build isolated acceptance afterward.
 

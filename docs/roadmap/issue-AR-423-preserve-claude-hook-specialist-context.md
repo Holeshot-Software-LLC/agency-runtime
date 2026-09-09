@@ -61,6 +61,11 @@ is unproved. State: waiting_for_operator for normal agency_load_specialist permi
 No permission override or trust bypass. Isolated acceptance remains pending.
 Original-source integration emits 15,076 units and fails the real-hook regression.
 
+The owner reports no startup approval prompt. Normal Claude /permissions can
+add the exact per-tool Allow rules documented in troubleshooting. A narrowly
+scoped user-settings write is prepared for owner approval; no grant has yet been
+applied. Startup alone is not a tool-use permission request.
+
 ## Approach
 
 Identify the native inline limit and supported delivery surface. Preserve exact

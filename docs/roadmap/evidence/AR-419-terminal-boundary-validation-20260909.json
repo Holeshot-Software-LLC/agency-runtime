@@ -1,0 +1,26 @@
+{
+  "issue": "AR-419",
+  "reason": "Supplement isolated criterion3 absent verdict with the exact existing rejection regressions, without changing the assertions or production source",
+  "commands": [
+    {
+      "command": "python -m pytest tests/test_host_hooks.py -q -W error",
+      "output": "........................................................................ [ 76%]\n......................                                                   [100%]\n94 passed in 32.98s\n",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m pytest tests/test_terminal_finalization_atomicity.py tests/test_host_boundary_parity.py -q -W error",
+      "output": "................................................                         [100%]\n48 passed in 3.57s\n",
+      "exit_code": 0
+    }
+  ],
+  "source_identities": {
+    "tests/test_host_hooks.py": "6a501ca14fbf336177a3622696549b19614deb0f",
+    "tests/test_terminal_finalization_atomicity.py": "fd6c7c24b968f23fa23a8d53bcbbd44fd623d5d8",
+    "tests/test_host_boundary_parity.py": "172fd7cfa63464d818b056543520bf43463b272e",
+    "agency_runtime/adapters/openclaw": "286929ae551f7c6deaae5623a2093ace797d2f1f",
+    "agency_runtime/core/installer_payload_openclaw.py": "4d695d52e09ad8938e69d4e611577e2a9404825c"
+  },
+  "production_changed": false,
+  "test_assertions_changed": false,
+  "first_pass_retained": "AR-419-isolated-first-pass-20260909.json"
+}

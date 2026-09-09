@@ -1,0 +1,121 @@
+{
+  "steps": [
+    {
+      "step": "stop",
+      "command": [
+        "openclaw",
+        "gateway",
+        "stop",
+        "--force"
+      ],
+      "exit_code": 0
+    },
+    {
+      "step": "install",
+      "command": [
+        "openclaw",
+        "plugins",
+        "install",
+        "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909/openclaw-witness",
+        "--force",
+        "--accept-capabilities"
+      ],
+      "exit_code": 0
+    },
+    {
+      "step": "grant",
+      "command": [
+        "openclaw",
+        "config",
+        "set",
+        "plugins.entries.ar404-native-witness.hooks.allowConversationAccess",
+        "true",
+        "--strict-json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "step": "start",
+      "command": [
+        "openclaw",
+        "gateway",
+        "start"
+      ],
+      "exit_code": 0
+    },
+    {
+      "step": "health",
+      "command": [
+        "openclaw",
+        "gateway",
+        "status",
+        "--json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "step": "runtime",
+      "command": [
+        "openclaw",
+        "plugins",
+        "inspect",
+        "ar404-native-witness",
+        "--runtime",
+        "--json"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "non_plugin_sections_unchanged": {
+    "mcp": true,
+    "auth": true,
+    "commands": true,
+    "hooks": true,
+    "talk": true,
+    "gateway": true,
+    "agents": true,
+    "messages": true,
+    "acp": true,
+    "memory": true,
+    "session": true,
+    "tools": true,
+    "surfaces": true,
+    "skills": true,
+    "models": true,
+    "approvals": true,
+    "bindings": true,
+    "channels": true,
+    "wizard": true
+  },
+  "rpc_healthy": false,
+  "gateway_runtime": "running",
+  "native_plugin_imported": true,
+  "native_hook_count": 3,
+  "native_typed_hooks": [
+    {
+      "name": "agent_end",
+      "priority": -1000
+    },
+    {
+      "name": "before_agent_finalize",
+      "priority": -1000
+    },
+    {
+      "name": "llm_input",
+      "priority": -1000
+    }
+  ],
+  "native_conversation_access": true,
+  "subsequent_rpc_healthy": true,
+  "observer_sha256": "f80510ec4a03540117f2b4fd45bc92498005c1aeb61d0131c20ad95d0cf8b9f2",
+  "scope": [
+    "agent:openclaw:ar404-20260909-after_shared_staffing-review_followup",
+    "agent:openclaw:ar404-20260909-after_shared_staffing-multi_step"
+  ],
+  "bounds": {
+    "per_session_events": 16,
+    "per_event_bytes": 1048576,
+    "per_process_bytes": 8388608
+  },
+  "external_delivery": false
+}

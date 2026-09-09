@@ -2301,6 +2301,14 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2a8dc40f` | 2026-09-09 | docs(reliability): preserve Claude permission denials and exact whitespace proof | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
 | `a665c067` | 2026-09-09 | docs(reliability): close isolated card-byte scope and preserve operator gates | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
 | `0cc40aba` | 2026-09-09 | Merge pull request #814 from Holeshot-Software-LLC/codex/ar423-native-context-20260909 | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
+| `a18e556c` | 2026-09-09 | docs(reliability): apply approved shared staffing and verify Codex hook trust | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `07a2addf` | 2026-09-09 | docs(evidence): preserve Hermes shared staffing native outcomes | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `59e93d3c` | 2026-09-09 | docs(evidence): bind OpenClaw native cards and accepted CLI finalization | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `c823608c` | 2026-09-09 | docs(acceptance): freeze bounded OpenClaw evidence references | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `b62c31c7` | 2026-09-09 | docs(evidence): verify fresh trusted Codex native continuation | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `907c894e` | 2026-09-09 | docs(acceptance): add exact terminal rejection regression evidence | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `3a9e127b` | 2026-09-09 | docs(acceptance): freeze supplemented OpenClaw verification candidate | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
+| `b5beaabf` | 2026-09-09 | docs(acceptance): complete isolated OpenClaw CLI finalization scope | AR-404, AR-419, AR-423 | [Detail](2026-09-09-shared-staffing-native-verification.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

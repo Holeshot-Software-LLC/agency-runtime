@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-09
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/decisions/0242-align-hermes-openclaw-with-owner-shared-staffing.md
+  - docs/worklog/2026-09-09-shared-staffing-native-verification.md
   - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
   - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md
   - docs/worklog/2026-09-08-fresh-codex-activation.md
@@ -65,6 +67,61 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+PR816 scoped result: shared staffing is applied, Codex8/8trusted and fresh
+review/follow-up pass; AR-419 now has four satisfied isolated native-CLI criteria.
+The nine-case sample passes4/9, with every failure retained. AR-404 remains open.
+Claude still awaits the two exact native tool rules; Hermes upstream adoption and
+Zcode multi-step reliability remain unresolved. No all-host completion claim.
+
+
+### Fresh trusted Codex phase
+
+Ordinary review62.855s and same-session follow-up53.903s pass exact native cards,
+five Store fields and matching authoritative accepted response hashes. Both have
+classifier6; the fresh process now uses trusted hooks and current continuation.
+Multi-step100.324s fails staffing and remains rejected, without an outer retry.
+Full evidence: AR-404-codex-suite-after-shared-staffing-20260909.json. Native model
+context does not expose the exact executing projection hash; the fresh receipt
+and8/8trusted inspection are distinct from this parent's stale6e7dc299c23e runtime.
+The optional policy-availability check initially lacked PYTHONPATH and could not
+import the package; PYTHONPATH=. rerun passes without a source change.
+
+
+### Shared staffing native OpenClaw phase
+
+Fresh ordinary CLI follow-up7bdd5df5-248a-48a1-aa2b-3667c35a2200 returns the
+correct function in53.401s. Native llm_input with exact session/run contains the
+complete selected card; five fields match Store; one authoritative accepted terminal
+event binds response6d17389d102fb011d7aadc6d48f37a75a865f4f632d0b16513d55e314e3abbdf.
+No --deliver, external message or manual finalization. The initial57.109s review
+and95.268s multi-step fail staffing and stay in the same fixed-phase evidence.
+Exact focused91passed/1skipped; the first command named a nonexistent test file
+and ran no tests, retained in the packet. Isolated AR-419 verification follows;
+this candidate does not establish all-host or all-case reliability.
+
+
+### Shared staffing Hermes phase
+
+The unchanged three requests returned in86.111s,83.279s,87.094s. Ordinary review
+passes exact native card, five headers and matching authoritative accepted hash;
+routing56.290s versus268.702s in the prior299.269s total sample. An invalid recruiter
+candidate is retained before the existing bounded repair succeeds. Follow-up fails
+critic_wrong_neighbor_selection; multi-step staff succeeds but output becomes
+response_invalid. Neither is accepted or retried. Model receipt aliases are not
+proof of the deployed backend and zero persisted per-call durations are unreported,
+not instantaneous. All evidence is AR-404-hermes-suite-after-shared-staffing-20260909.json.
+AR-418 remains open: upstream PR106490 is still unmerged, default7cd91114 unchanged.
+OpenClaw and fresh trusted Codex are the next fixed phases; Claude grant is pending.
+
+
+The owner now authorizes shared staffing. Only Hermes/OpenClaw host overrides
+were removed; fresh resolution matches the existing global profiles on all five
+hosts. Answering models and unrelated configuration are unchanged. A fresh Codex
+hooks/list inspection confirms all eight hooks trusted/enabled. New native phase
+is pending. Claude permission guidance now uses /permissions with exact per-tool
+Allow rules; the native grant remains pending. See the September9 shared-staffing
+worklog and new configuration/trust evidence. Earlier checkpoints below are historical.
 
 PR810 merged at 3a921c61; AR-421/422 are closed with all three isolated verdicts
 satisfied each. Merge ledger PR813 is merged at b801c08f. The separate owned
