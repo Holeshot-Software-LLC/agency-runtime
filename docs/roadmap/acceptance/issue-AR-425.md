@@ -26,7 +26,7 @@ failed; this packet does not establish AR-404 all-host reliability.
 
 | Criterion | Kind | Artifact | Observed | Source |
 |---|---|---|---|---|
-| 4 | command-output | Exact compact check counts, source identity, native planner repair then critic approval and accepted hash, with limitations | 2026-09-09 | docs/roadmap/evidence/AR-425-bounded-verification-summary-20260909.json:1-65 |
+| 4 | command-output | Exact compact check counts, source identity, native planner repair then critic approval and accepted hash, with limitations | 2026-09-09 | docs/roadmap/evidence/AR-425-bounded-verification-summary-20260909.json:1-51 |
 | 2 | file | Rejected model data enters only the bounded planner repair field | 2026-09-09 | agency_runtime/core/workforce/inference.py:1701-1716 |
 | 2 | file | Every replacement goes back through parser before accepted; same two-attempt loop | 2026-09-09 | agency_runtime/core/workforce/inference.py:1950-1995 |
 | 2 | file | Rejected content has no worker or approval authority | 2026-09-09 | agency_runtime/core/workforce/intent.py:368-387 |

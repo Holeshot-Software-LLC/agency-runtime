@@ -114,3 +114,15 @@ remains open; two independent passes have been used. A compact corrected packet
 will be prepared without a third pass in this package. No failed verdict is
 overridden or relabeled. AR-425 receives focused line citations before its first
 isolated pass.
+
+## Acceptance packet preparation corrections
+
+Direct build_case inspection identifies the original-pointer row outside the
+contiguous Markdown table, so it never reached criterion1. Criterion2's whole
+file locator selected only the first120lines and omitted native card rows389-470.
+The prepared AR-423 packet now places the pointer row inside the table and cites
+those exact card lines. Its earlier verdicts remain in first/second evidence,
+with no third review in this package.
+AR-425's first attempted verification was refused before a model call because a
+new compact artifact locator exceeded its actual line count; corrected and
+structurally checked before starting its first real isolated pass.
