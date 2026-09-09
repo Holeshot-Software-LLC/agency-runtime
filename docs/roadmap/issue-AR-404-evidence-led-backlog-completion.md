@@ -68,6 +68,16 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+September9 candidate2b19cce6: Claude session545f5ca7-2937-412f-a9be-6b4e4c665204,
+tracedf374667-2599-4798-a852-1e6f972aed25, passes the fresh large-card probe in239.508s.
+Four exact selected full cards appear in same-session, exact-trace native MCP
+results; all five fields match Store; accepted terminal hash
+f9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b matches response.
+No permission bypass or manual selection. AR-423 isolated verification follows;
+AR-404 five-host fixed sample remains pending. Prior failures remain preserved.
+Evidence: AR-404-claude-large-context-after-planner-context-20260909.json.
+
+
 September9 planner package AR-425/#820: the first rejected planner answer is
 reproduced, but the new diagnostic's one repair succeeds. The original second
 semantic failure stays unknown. Candidate supplies missing rejected-plan data to

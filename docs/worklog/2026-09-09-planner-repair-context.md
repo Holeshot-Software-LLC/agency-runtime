@@ -74,3 +74,12 @@ review, requested once. Other native hosts proceed independently.
 First frozen conformance fails in baseline fixture setup because the shell002
 umask creates a nonprivate test directory;0mutations attempted. Preserve that
 failure. Rerun uses077 without changing source or directory trust policy.
+
+## Claude full-card native result
+
+Session545f5ca7-2937-412f-a9be-6b4e4c665204, tracedf374667-2599-4798-a852-1e6f972aed25,
+239.508s, exit0, no timeout:4exact selected full cards in native MCP results,
+all5Store fields match, accepted response hashf9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b.
+Source2b19cce6;12Claude context regressions pass. Isolated acceptance follows.
+Owner confirms Codex trusted; fresh inspection8/8trusted and0modified. Approved
+OpenClaw bounded observer imported3hooks; RPChealthy after normal warmup.

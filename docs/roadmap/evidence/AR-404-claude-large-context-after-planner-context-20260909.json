@@ -1,0 +1,540 @@
+{
+  "manifest": "AR-423-large-context-native-probe-20260909.json",
+  "phase": "after_planner_context",
+  "installed_source": "2b19cce6",
+  "host": "claude",
+  "cases": [
+    {
+      "case": "large_context_surface",
+      "invocation": {
+        "case": "large_context_surface",
+        "host": "claude",
+        "phase": "after_planner_context",
+        "command": [
+          "claude",
+          "--print",
+          "--output-format",
+          "stream-json",
+          "--verbose",
+          "--permission-mode",
+          "default",
+          "--session-id",
+          "545f5ca7-2937-412f-a9be-6b4e4c665204",
+          "Review this supplied Python download-path helper for correctness and input security:\n\nfrom pathlib import Path\n\ndef download_path(root, name):\n    return Path(root) / name\n\nRequirements: return a resolved path strictly inside the configured root; reject absolute names, parent-directory traversal and symlink escapes with ValueError. Explain the defects, provide a corrected function, and give focused pytest cases for valid nested paths, absolute names, traversal and symlink escapes. State filesystem assumptions and remaining race limitations. Work only from this supplied snippet; do not read or modify files or execute tests, and do not claim execution."
+        ],
+        "native_session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 239.508
+      },
+      "run": {
+        "id": "bb849b9f-1206-4ff7-86e7-2d9c9d72d926",
+        "trace_id": "df374667-2599-4798-a852-1e6f972aed25",
+        "session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+        "host": "claude",
+        "started_at": "2026-09-09T15:23:21.008623+00:00",
+        "last_activity_at": "2026-09-09T15:26:43.595000+00:00",
+        "turn_sequence": 1663,
+        "ended_at": "2026-09-09T15:26:43.594857+00:00",
+        "status": "completed",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "finalization": {
+        "id": "650d61f3-961a-4b26-863c-e254adbf660b",
+        "trace_id": "df374667-2599-4798-a852-1e6f972aed25",
+        "host": "claude",
+        "action": "accept",
+        "missing": null,
+        "response_hash": "f9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b",
+        "policy_response_hash": null,
+        "terminal_status": "completed",
+        "created_at": "2026-09-09T15:26:43.594857+00:00",
+        "session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+        "status": "completed",
+        "ended_at": "2026-09-09T15:26:43.594857+00:00",
+        "authoritative": true
+      },
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "37c5117dbedc29666a48d669a67658b25be89327c934e93619f15e03ebc4373a",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent"
+      },
+      "routing": {
+        "status": "accepted",
+        "selected_ids": [
+          "application-security-engineer",
+          "backend-service-engineer",
+          "technical-writer",
+          "code-reviewer",
+          "ai-generated-code-security-auditor"
+        ],
+        "latency_ms": 86426,
+        "receipt": {
+          "compatibility": {
+            "added_requirements": [],
+            "compatible": false,
+            "contract_version": 0,
+            "overflow_review_ids": [],
+            "rejected_count": 0,
+            "rejection_reason_counts": [],
+            "rejections": [],
+            "requested_ids": [],
+            "selected_ids": [],
+            "selected_root_ids": [],
+            "selection_limit": 0,
+            "separate_context_pairs": []
+          },
+          "effect_codes": [
+            "inference_attempted",
+            "eligibility_exclusions_applied",
+            "specialists_selected",
+            "hiring_not_attempted"
+          ],
+          "eligibility": {
+            "eligible_count": 74,
+            "evaluated_count": 293,
+            "rejected_count": 219,
+            "rejection_reason_counts": [
+              {
+                "count": 21,
+                "reason_code": "missing_capabilities"
+              }
+            ],
+            "rejections": [
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "application-observability-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:product-analytics-reader",
+                "slug": "behavioral-nudge-engine"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "cms-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "compliance-auditor"
+              },
+              {
+                "reason_code": "missing_capabilities:current-cultural-research",
+                "slug": "cultural-intelligence-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:database-access",
+                "slug": "database-optimizer"
+              },
+              {
+                "reason_code": "missing_capabilities:cross-platform-test-host",
+                "slug": "developer-tooling-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "feedback-synthesizer"
+              },
+              {
+                "reason_code": "missing_capabilities:jira",
+                "slug": "jira-workflow-steward"
+              },
+              {
+                "reason_code": "missing_capabilities:language-server-runtime",
+                "slug": "lsp-index-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:official-mcp-documentation",
+                "slug": "mcp-builder"
+              },
+              {
+                "reason_code": "missing_capabilities:orgscript-cli",
+                "slug": "orgscript-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "proposal-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "rapid-prototyper"
+              },
+              {
+                "reason_code": "missing_capabilities:roblox-studio",
+                "slug": "roblox-systems-scripter"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "security-architect"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "senior-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:security-analysis",
+                "slug": "senior-secops-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:media-processing",
+                "slug": "short-video-editing-coach"
+              },
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "threat-detection-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "ux-architect"
+              }
+            ],
+            "sample_truncated": true
+          },
+          "hiring": {
+            "attempted_count": 0,
+            "calls_used": 0,
+            "events": [],
+            "outcome": "no_attempt",
+            "truncated": false,
+            "workforce_changes": 0
+          },
+          "inference": {
+            "attempted": true,
+            "configured": true,
+            "mode": "inferred",
+            "provider_attempts": [
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-planner-v2",
+                "ordinal": 1,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-planner",
+                "provider_type": "litellm",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "task-agency-planner-v2",
+                "stage": "planner",
+                "status": "rejected"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-planner-v2",
+                "ordinal": 2,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-planner",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-planner-v2",
+                "stage": "planner",
+                "status": "applied"
+              },
+              {
+                "model_group": "",
+                "ordinal": 3,
+                "provider_name": "local-workforce-embedding",
+                "provider_type": "ollama",
+                "reason_code": "dense_recall_applied",
+                "requested_model": "qwen3-embedding:latest",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "",
+                "ordinal": 4,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "local-workforce-reranker",
+                "provider_type": "ollama",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "qwen3-14b-abliterated:latest",
+                "stage": "recall_reranker",
+                "status": "rejected"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2",
+                "ordinal": 5,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-recruiter-v2",
+                "stage": "recruiter",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-critic-v2",
+                "ordinal": 6,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter-critic",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-critic-v2",
+                "stage": "critic",
+                "status": "applied"
+              }
+            ],
+            "required": true
+          },
+          "reason_codes": [
+            "turn_kind:new_intent",
+            "routing_status:accepted",
+            "inference_mode:inferred",
+            "eligibility:missing_capabilities"
+          ],
+          "receipt_version": 1,
+          "retrieval": {
+            "candidate_union_count": 0,
+            "full_roster_count": 0,
+            "hard_negative_count": 0,
+            "lexical_count": 0,
+            "mode": "unavailable",
+            "semantic_count": 0
+          },
+          "staffing": {
+            "gap_count": 0,
+            "global_reason_codes": [],
+            "status": "accepted",
+            "truncated": false,
+            "units": [
+              {
+                "nominated_ids": [
+                  "application-security-engineer",
+                  "ai-generated-code-security-auditor",
+                  "senior-secops-engineer",
+                  "code-reviewer"
+                ],
+                "proposed_ids": [
+                  "application-security-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-defect-analysis"
+              },
+              {
+                "nominated_ids": [
+                  "backend-service-engineer",
+                  "technical-writer",
+                  "application-security-engineer"
+                ],
+                "proposed_ids": [
+                  "backend-service-engineer",
+                  "technical-writer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-corrected-doc"
+              },
+              {
+                "nominated_ids": [
+                  "code-reviewer",
+                  "silent-failure-hunter",
+                  "type-design-analyzer"
+                ],
+                "proposed_ids": [
+                  "code-reviewer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-correctness-review"
+              },
+              {
+                "nominated_ids": [
+                  "ai-generated-code-security-auditor",
+                  "application-security-engineer",
+                  "senior-secops-engineer"
+                ],
+                "proposed_ids": [
+                  "ai-generated-code-security-auditor"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-security-review"
+              }
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward, application-security-engineer, backend-service-engineer, technical-writer, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)\nRecruited via: inference\n\nWhy: the task is a security-focused correctness review of a path helper with a corrected implementation, tests, and written assumptions.\nHow it shaped outcome: findings are anchored to the supplied snippet only, the fix is presented as illustrative rather than production-certified, and race limitations are stated instead of implied away.\n\nThe supplied function meets none of the stated requirements. It performs no validation at all, so every one of the three required rejections is missing, and it never resolves the result. This review is based solely on the four-line snippet; nothing was read or executed.\n\n## Defects\n\n- **Absolute names replace the root.** The `/` operator on `pathlib` discards the left side when the right side is absolute. A name of `/etc/passwd` yields exactly `/etc/passwd`. On Windows, drive-relative names such as `C:x` and UNC names have the same effect.\n- **Parent-directory traversal passes through unchanged.** A name of `../../etc/passwd` produces a path that lexically contains the `..` segments. Nothing collapses or inspects them, so opening the result walks out of the root.\n- **Symlink escapes are invisible.** The path is never resolved, so a symlink inside the root that points outside it is followed at open time. This covers directory symlinks in the middle of the name, a file symlink as the final component, and dangling symlinks whose target does not yet exist.\n- **The root itself is not canonicalized.** If the configured root is relative or is a symlink, the returned path is not \"resolved\" in any sense, and any containment check a caller might add later would compare inconsistent forms.\n- **Empty and dot names return the root directory.** A name of `\"\"` or `.` yields the root itself, which a caller would then try to write to as a file.\n- **No guard against embedded null bytes or non-string input.** Both surface later as confusing errors from the operating system rather than as a clear rejection at the boundary.\n\n## Corrected function\n\nThe version below is a bounded rewrite of the supplied snippet. It is illustrative code that has not been run in this session.\n\n```python\nimport os\nfrom pathlib import Path, PurePosixPath, PureWindowsPath\n\n\ndef download_path(root, name):\n    \"\"\"Return a resolved absolute path for ``name`` strictly inside ``root``.\n\n    Raises ValueError for absolute names, any ``..`` segment, empty or\n    dot-only names, embedded NUL bytes, and symlinks that resolve outside\n    the root. Raises OSError subclasses if ``root`` is missing or not a\n    directory, since that is a configuration error rather than bad input.\n    \"\"\"\n    root_path = Path(root).resolve(strict=True)\n    if not root_path.is_dir():\n        raise NotADirectoryError(f\"download root is not a directory: {root_path}\")\n\n    if not isinstance(name, str):\n        raise TypeError(\"name must be a str\")\n    if \"\\x00\" in name:\n        raise ValueError(\"name contains an embedded NUL byte\")\n\n    # Lexical checks under both path flavours so that Windows-style\n    # separators, drives, and UNC prefixes are rejected even on POSIX hosts.\n    for flavour in (PurePosixPath, PureWindowsPath):\n        pure = flavour(name)\n        if pure.is_absolute() or pure.anchor:\n            raise ValueError(f\"absolute name is not allowed: {name!r}\")\n        if \"..\" in pure.parts:\n            raise ValueError(f\"parent-directory traversal is not allowed: {name!r}\")\n\n    # Follow symlinks in every existing component; nonexistent trailing\n    # components are appended lexically.\n    candidate = (root_path / name).resolve(strict=False)\n\n    if candidate == root_path:\n        raise ValueError(f\"name resolves to the root itself: {name!r}\")\n    if not candidate.is_relative_to(root_path):\n        raise ValueError(f\"name resolves outside the download root: {name!r}\")\n\n    return candidate\n```\n\nDesign notes on the fix:\n\n- **Any `..` segment is rejected**, even one such as `a/../b` that would lexically stay inside the root. This is a deliberate policy choice for a download path. If you need to accept it, drop the `parts` check and rely on the containment check alone.\n- **The containment check compares path components**, not string prefixes, so a root of `/srv/dl` does not accidentally accept `/srv/dl2/x`.\n- **Symlinks that stay inside the root are allowed.** A link from `root/alias` to `root/real` resolves to `root/real`, which is inside the root, and the resolved form is what gets returned.\n\n## Tests\n\nThe cases below use the `tmp_path` fixture and have not been executed here. Symlink cases skip cleanly on hosts where symlink creation is not permitted.\n\n```python\nimport os\nimport pytest\n\nfrom download_path import download_path\n\n\n@pytest.fixture\ndef root(tmp_path):\n    r = tmp_path / \"downloads\"\n    r.mkdir()\n    return r\n\n\n@pytest.fixture\ndef outside(tmp_path):\n    o = tmp_path / \"outside\"\n    o.mkdir()\n    (o / \"secret.txt\").write_text(\"secret\")\n    return o\n\n\ndef _symlink(target, link):\n    try:\n        os.symlink(target, link)\n    except (OSError, NotImplementedError, AttributeError) as exc:\n        pytest.skip(f\"symlinks unavailable: {exc}\")\n\n\n# valid nested paths\n\ndef test_nested_name_stays_inside_root(root):\n    result = download_path(root, \"a/b/c.bin\")\n    assert result == root.resolve() / \"a\" / \"b\" / \"c.bin\"\n    assert result.is_absolute()\n    assert result.is_relative_to(root.resolve())\n\n\ndef test_nested_name_with_dot_segments_is_normalized(root):\n    assert download_path(root, \"a/./b.bin\") == root.resolve() / \"a\" / \"b.bin\"\n\n\ndef test_nonexistent_intermediate_directories_are_allowed(root):\n    result = download_path(root, \"new/dir/file.bin\")\n    assert not (root / \"new\").exists()\n    assert result == root.resolve() / \"new\" / \"dir\" / \"file.bin\"\n\n\ndef test_relative_root_is_resolved(root, monkeypatch):\n    monkeypatch.chdir(root.parent)\n    assert download_path(\"downloads\", \"x.bin\") == root.resolve() / \"x.bin\"\n\n\ndef test_symlinked_root_is_resolved(root, tmp_path):\n    alias = tmp_path / \"alias\"\n    _symlink(root, alias)\n    assert download_path(alias, \"x.bin\") == root.resolve() / \"x.bin\"\n\n\ndef test_symlink_pointing_inside_root_is_allowed(root):\n    (root / \"real\").mkdir()\n    _symlink(root / \"real\", root / \"link\")\n    assert download_path(root, \"link/file.bin\") == root.resolve() / \"real\" / \"file.bin\"\n\n\n# absolute names\n\n@pytest.mark.parametrize(\n    \"name\",\n    [\"/etc/passwd\", \"/x\", \"\\\\x\", \"C:\\\\x\", \"C:x\", \"\\\\\\\\server\\\\share\\\\x\", \"//server/share/x\"],\n)\ndef test_absolute_names_are_rejected(root, name):\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\n# parent-directory traversal\n\n@pytest.mark.parametrize(\n    \"name\",\n    [\"..\", \"../x\", \"a/../../x\", \"..\\\\x\", \"a\\\\..\\\\..\\\\x\", \"a/../b\", \"a/b/../../../x\"],\n)\ndef test_traversal_is_rejected(root, name):\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\n@pytest.mark.parametrize(\"name\", [\"\", \".\", \"./\", \"./.\"])\ndef test_empty_and_dot_names_are_rejected(root, name):\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\ndef test_nul_byte_is_rejected(root):\n    with pytest.raises(ValueError):\n        download_path(root, \"a\\x00b\")\n\n\n# symlink escapes\n\ndef test_directory_symlink_escape_is_rejected(root, outside):\n    _symlink(outside, root / \"link\")\n    with pytest.raises(ValueError):\n        download_path(root, \"link/secret.txt\")\n\n\ndef test_final_component_file_symlink_escape_is_rejected(root, outside):\n    _symlink(outside / \"secret.txt\", root / \"evil.txt\")\n    with pytest.raises(ValueError):\n        download_path(root, \"evil.txt\")\n\n\ndef test_dangling_symlink_escape_is_rejected(root, outside):\n    _symlink(outside / \"not-yet-created.txt\", root / \"dangle.txt\")\n    with pytest.raises(ValueError):\n        download_path(root, \"dangle.txt\")\n\n\ndef test_nested_symlink_escape_is_rejected(root, outside):\n    (root / \"sub\").mkdir()\n    _symlink(outside, root / \"sub\" / \"link\")\n    with pytest.raises(ValueError):\n        download_path(root, \"sub/link/new.bin\")\n\n\ndef test_sibling_prefix_directory_is_not_treated_as_inside(root, tmp_path):\n    sibling = tmp_path / \"downloads2\"\n    sibling.mkdir()\n    _symlink(sibling, root / \"link\")\n    with pytest.raises(ValueError):\n        download_path(root, \"link/x.bin\")\n```\n\n## Assumptions and remaining race limitations\n\nFilesystem and runtime assumptions:\n\n- **Python 3.9 or newer** for `Path.is_relative_to`. On older versions, replace it with a `relative_to` call wrapped in a `try` block.\n- **The root exists and is a real directory** at call time. A missing root raises `FileNotFoundError` rather than `ValueError`, since that is a deployment error rather than untrusted input.\n- **POSIX-style resolution** is the primary target. The dual-flavour lexical check makes Windows separators, drive letters, and UNC prefixes rejected on every host, which also means a POSIX filename that happens to contain a backslash or `C:` is refused.\n- **Case handling is inherited from the operating system.** The candidate is built from the already-resolved root, so the prefix comparison is consistent, but no extra case folding is applied.\n- **Windows reserved device names** such as `CON` and `NUL`, and overlong path handling, are out of scope for this helper.\n\nRace limitations that path checking cannot close:\n\n- **Time-of-check to time-of-use.** The resolve step reflects the filesystem at one instant. Anyone who can write inside the root, or to any ancestor of it, can replace a directory or file with a symlink between this call and the later open, and the open will follow it outside the root.\n- **Nonexistent trailing components are not protected.** The nonstrict resolve appends missing components lexically. An attacker who creates a symlink at that location before the file is opened redirects the write.\n- **Hard links are undetectable by path.** A hard link inside the root to a file outside it resolves to an inside path, and writing through it modifies the outside file.\n\nMitigations belong at the open, not in this helper. Open with `O_NOFOLLOW` and `O_CREAT | O_EXCL` for the final component, use `dir_fd` relative opens from a file descriptor held on the root, or on Linux 5.6 and newer use `openat2` with `RESOLVE_BENEATH` for kernel-enforced containment. Ensuring that untrusted principals cannot write anywhere in the root's ancestor chain removes the attacker's ability to plant links in the first place.",
+      "response_sha256": "f9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b",
+      "accepted_hash_matches": true,
+      "terminal_hash_matches": true,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward, application-security-engineer, backend-service-engineer, technical-writer, code-reviewer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward, application-security-engineer, backend-service-engineer, technical-writer, code-reviewer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "all_five_match": true
+      },
+      "native_card_tool_results": [
+        {
+          "tool_use_id": "toolu_01V2TmyvbHLtoAjREpvz9xf8",
+          "slug": "application-security-engineer",
+          "session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+          "trace_id": "df374667-2599-4798-a852-1e6f972aed25",
+          "native_record_uuid": "3c40580f-a81f-4672-9594-765d719509c7",
+          "content_sha256": "47e08e909b7de4248513e7e275bec8713dfa79f8aec7b3ec61d126abf5b362fc"
+        },
+        {
+          "tool_use_id": "toolu_011LauxtfSex71KmZupMbGbr",
+          "slug": "backend-service-engineer",
+          "session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+          "trace_id": "df374667-2599-4798-a852-1e6f972aed25",
+          "native_record_uuid": "a9a2c5d1-e8b1-4ec5-8c8e-6638ef4f385b",
+          "content_sha256": "90855a3f8ea35ba397b183317ac518f840af3e36516bd3ec25849e3ea2646a37"
+        },
+        {
+          "tool_use_id": "toolu_016TrKrqS227Zxbx5w6Ej7Ym",
+          "slug": "technical-writer",
+          "session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+          "trace_id": "df374667-2599-4798-a852-1e6f972aed25",
+          "native_record_uuid": "6ceacd86-025c-4824-89b7-1cde301dfdeb",
+          "content_sha256": "7f6bb636efee0640de0acf6f925744eea4e50c625c922ac616708f8ef39db70f"
+        },
+        {
+          "tool_use_id": "toolu_018k3Dt2kji1GCzpqfqHzVy9",
+          "slug": "code-reviewer",
+          "session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+          "trace_id": "df374667-2599-4798-a852-1e6f972aed25",
+          "native_record_uuid": "3eecb09c-cad1-4343-b7d4-dde8cc5d0957",
+          "content_sha256": "6c6ea8ec1701f7a4bac6f17b11d73edecbd395b18ac97bf616b615cbea691815"
+        }
+      ],
+      "card_proofs": [
+        {
+          "slug": "application-security-engineer",
+          "version": "sha256:4d89d87f6a0d11e91984e4b3e29be8247b51fe214ac046428d4a85f0e2b11e77",
+          "store_hash": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+          "full_prompt_chars": 2645,
+          "prompt_bytes_sha256": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+          "exact_full_card_present": true,
+          "source": "native Claude hook with exact trace or native tool_result correlated to same-session agency_load_specialist tool_use with exact session/trace arguments"
+        },
+        {
+          "slug": "backend-service-engineer",
+          "version": "contractor-4-38fbaa01835e2843",
+          "store_hash": "sha256:38fbaa01835e2843853192cf9599e099b7dce2bf9a731e9b3cae75e059c12a9e",
+          "full_prompt_chars": 3488,
+          "prompt_bytes_sha256": "38fbaa01835e2843853192cf9599e099b7dce2bf9a731e9b3cae75e059c12a9e",
+          "exact_full_card_present": true,
+          "source": "native Claude hook with exact trace or native tool_result correlated to same-session agency_load_specialist tool_use with exact session/trace arguments"
+        },
+        {
+          "slug": "technical-writer",
+          "version": "sha256:ef659e8829fa22ea20bce996b658510b7673c1fac4aafaea5a11231258d02b68",
+          "store_hash": "80647cf2eb79e1d41db5d8cdc77c69f3ad4096aaa6e6827881931901951b08ad",
+          "full_prompt_chars": 2697,
+          "prompt_bytes_sha256": "80647cf2eb79e1d41db5d8cdc77c69f3ad4096aaa6e6827881931901951b08ad",
+          "exact_full_card_present": true,
+          "source": "native Claude hook with exact trace or native tool_result correlated to same-session agency_load_specialist tool_use with exact session/trace arguments"
+        },
+        {
+          "slug": "code-reviewer",
+          "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+          "store_hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "full_prompt_chars": 2379,
+          "prompt_bytes_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "exact_full_card_present": true,
+          "source": "native Claude hook with exact trace or native tool_result correlated to same-session agency_load_specialist tool_use with exact session/trace arguments"
+        }
+      ],
+      "exact_card_injection": true,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": {
+          "id": "2e55790e-8021-4582-a661-0954c9c2a594",
+          "trace_id": "df374667-2599-4798-a852-1e6f972aed25",
+          "session_id": "545f5ca7-2937-412f-a9be-6b4e4c665204",
+          "host": "claude",
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "wrapper",
+          "recorded_at": "2026-09-09T15:24:48.756000+00:00",
+          "started_at": "2026-09-09T15:24:48.755000+00:00",
+          "ended_at": "2026-09-09T15:24:48.755000+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "application-security-engineer",
+          "backend-service-engineer",
+          "technical-writer",
+          "code-reviewer"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "application-security-engineer",
+            "version": "sha256:4d89d87f6a0d11e91984e4b3e29be8247b51fe214ac046428d4a85f0e2b11e77",
+            "hash": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+            "description": "AppSec specialist who secures the software development lifecycle through threat modeling, secure code review, SAST/DAST integration, and developer security education that makes secure code the default.",
+            "capabilities": [
+              "review application attack surfaces",
+              "design secure implementation and test changes",
+              "produce evidence-backed threat models"
+            ]
+          },
+          {
+            "slug": "backend-service-engineer",
+            "version": "contractor-4-38fbaa01835e2843",
+            "hash": "sha256:38fbaa01835e2843853192cf9599e099b7dce2bf9a731e9b3cae75e059c12a9e",
+            "description": "Language-independent backend service implementation concerns",
+            "capabilities": [
+              "Reliable service boundaries",
+              "Operable request and persistence behavior",
+              "API execution paths",
+              "Persistence integration"
+            ]
+          },
+          {
+            "slug": "technical-writer",
+            "version": "sha256:ef659e8829fa22ea20bce996b658510b7673c1fac4aafaea5a11231258d02b68",
+            "hash": "80647cf2eb79e1d41db5d8cdc77c69f3ad4096aaa6e6827881931901951b08ad",
+            "description": "Expert technical writer specializing in developer documentation, API references, README files, and tutorials. Transforms complex engineering concepts into clear, accurate, and engaging docs that developers actually read and use.",
+            "capabilities": [
+              "create repository-grounded technical documentation",
+              "structure tutorials, references, and operational guides",
+              "review docs for accuracy and discoverability"
+            ]
+          },
+          {
+            "slug": "code-reviewer",
+            "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+            "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+            "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
+            "capabilities": [
+              "review diffs for correctness and regressions",
+              "identify security and maintainability defects",
+              "rank findings by impact and evidence"
+            ]
+          }
+        ],
+        "delegations": []
+      },
+      "status": "accepted native evidence"
+    }
+  ]
+}

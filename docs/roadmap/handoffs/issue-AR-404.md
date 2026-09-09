@@ -143,7 +143,9 @@ reproduces missing correctness review, but its repair succeeds in33.937s; origin
 second Claude error remains unknown. Focused143pass; required verification running.
 Basee3090882 is clean main after PR818/819; current owned branch is unmerged.
 Candidate2b19cce6 installed,615files match; normal refresh all5hosts. Codex
-8modified/0trusted requires fresh /hooks owner review, requested once. Conformance
+8/8trusted after owner review; no further approval pending. Claude large-card
+probe239.508s now passes exact4cards, five fields and accepted hash; isolated
+AR-423 verification and five-host fixed cases follow. Conformance
 first failed fixture privacy under002; fresh077 rerun in progress. Then Claude large-context and fixed
 five-host phase. Preserve every failure; no unchanged-condition retry or manual
 staffing. See issue-AR-425-preserve-planner-repair-context.md and its worklog.

@@ -49,14 +49,12 @@ card. All twelve new regression cases and 72 targeted MCP cases pass.
 
 ## Exact blocker
 
-The previous native full-card trial was blocked by Claude permission. Four selected
-cards total 11,604 UTF-16 units; the native hook is 4,741 with no pointer. All four
-agency_load_specialist calls were denied; loaded evidence stays empty. Native
-Stop accepts the exact truthful response. AR-423 full-card acceptance is absent. AR-424 all three isolated criteria are
-satisfied; its byte-preservation scope is done, with closure in PR814.
-Fast checks pass; fresh-source conformance passes 188/188.
-This Claude installation and routes are unchanged. Owner-approved Hermes/OpenClaw
-shared-route alignment is recorded separately; all failed suite outcomes remain.
+Native full-card gate now has a fresh successful candidate2b19cce6 probe:
+session545f5ca7-2937-412f-a9be-6b4e4c665204, tracedf374667-2599-4798-a852-1e6f972aed25,
+239.508s,4exact selected cards through normal approved MCP tools,5matching fields,
+accepted responsef9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b.
+Source delivery regressions12pass; isolated acceptance pending. Earlier denied
+and planner-failed probes stay preserved; no manual staffing or acceptance.
 
 ## Same-task continuity
 
@@ -67,13 +65,11 @@ other host evidence and pending owner actions. Do not recreate historical work.
 
 ## Next bounded work package
 
-The fixed sample retained review success, follow-up response_invalid and multi-step
-staffing failure; neither staffed case exercised the large-card MCP path. The separate probe (219.959s) is retained with four native permission denials.
-Both rules are saved; the one after_tool_permission probe failed staffing.
-Investigate this exact planner receipt under AR-404 before another native phase.
-Do not bypass native permissions or retry under the same condition. Bind full native
-MCP tool results to exact session/trace and selected version/hash. Do not claim
-card delivery from tool instructions alone. Build isolated acceptance afterward.
+Complete isolated AR-423 acceptance from the fresh exact native evidence in
+AR-404-claude-large-context-after-planner-context-20260909.json and required
+checks. AR-404 runs the fixed three-case sample on all five hosts separately.
+Current owned branchcodex/ar404-planner-contract-20260909, PR821; prior branch
+is historical and merged. Both Claude tool grants are applied, no operator wait.
 
 ## Verification
 
