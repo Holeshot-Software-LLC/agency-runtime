@@ -134,3 +134,32 @@ requests the exact existing call-budget enforcement and independent-assurance
 checks. The second packet cites those unchanged source guards and complete
 assertion ranges from the already passing focused suite. No source or criteria
 change; first verdict remains retained.
+
+## Final native sample and scoped disposition
+
+All15fixed cases run once, sequential host order Claude/Codex/Hermes/OpenClaw/Zcode.
+8pass: Claude2/3, Codex3/3, Hermes0/3, OpenClaw2/3, Zcode1/3. The separate Claude
+large-card probe passes. All source JSONs preserve session/trace, duration,
+headers, cards, response digest and terminal result; exit0 is never acceptance.
+Zcode review/follow-up have matching final headers/cards but an earlier invalid
+terminal; no manual reopening. Hermes review fails independent assurance and
+follow-up/multi-step omit all five fields. The native Hermes upstream PR106490
+remains open, default checkout7cd91114. Its version banner labels upstream and
+is not the executing checkout identity.
+
+OpenClaw observer is normally removed, files/permission gone, unchanged nonplugin
+configuration sections; gatewayRPChealthy after warmup. Claude's two grants stay
+present and deep semantic settings comparison is unchanged; its serialized file
+hash differs. Shared planner/recruiter/critic routes remain owner-controlled.
+All five native executables are available.
+
+AR-425 second isolated pass satisfies all4criteria8862f6fa/d5fb19d3/e006aacb/1c0fa05a;
+close only that issue on PR merge. AR-404/418/423 stay open. AR-423 full-card native
+success is proved but its corrected isolated packet awaits a separately authorized
+additional pass after two attempts in this package. The local eight-row acceptance
+limit also caught an overlong draft AR-425 packet before inference; it was reduced
+to the exact eight source/guard citations and validated before the second pass.
+
+Unrelated tracked scratchpad edits in another worktree were observed and left
+untouched. This package's commits and evidence will merge through PR821, followed
+by one exact merge-ledger PR. No exhaustive workflow or Windows work was dispatched.

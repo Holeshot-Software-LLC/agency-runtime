@@ -1,6 +1,6 @@
 ---
 title: "AR-425: Preserve rejected planner context and semantic failure identity"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -34,6 +34,13 @@ then an unknown semantic error; the exact second failure cannot be recovered.
 
 ## Current state
 
+All four second-pass isolated criteria are satisfied:
+8862f6fa/d5fb19d3/e006aacb/1c0fa05a. The first absent assurance/budget citation
+verdict is preserved. This completes bounded planner repair context and known
+semantic failure identity only. Native full-card Claude passes; fixed all-host
+sample passes8/15 and remains under AR-404. No broad reliability closure.
+
+
 A new two-call planner-only diagnostic reproduces the missing independent
 correctness review; its one repair succeeds in33.937s total. It uses the current
 roster and canonical Claude capabilities without the original correlated native
@@ -61,10 +68,10 @@ Their remaining gates cannot be closed from deterministic planner tests.
 
 ## Acceptance
 
-- [ ] Reproduce the missing rejected-plan context through real orchestration.
-- [ ] Supply bounded untrusted planner repair data while preserving rejection,
+- [x] Reproduce the missing rejected-plan context through real orchestration.
+- [x] Supply bounded untrusted planner repair data while preserving rejection,
       independent assurance, replacement validation and existing call limits.
-- [ ] Retain specific known semantic failure identities without rejected content
+- [x] Retain specific known semantic failure identities without rejected content
       in terminal receipts; unknown errors remain generic.
-- [ ] Pass focused and required production checks and record a bounded live
+- [x] Pass focused and required production checks and record a bounded live
       planner/native comparison with failures and exact limitations preserved.

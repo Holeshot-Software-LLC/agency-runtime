@@ -1,0 +1,39 @@
+{
+  "claude": {
+    "executable": "/home/holeshot/.local/bin/claude",
+    "available": true,
+    "exit_code": 0,
+    "version": "2.1.266 (Claude Code)",
+    "resolved_executable": "/home/holeshot/.local/share/claude/versions/2.1.266"
+  },
+  "codex": {
+    "executable": "/home/holeshot/.local/bin/codex",
+    "available": true,
+    "exit_code": 0,
+    "version": "codex-cli 0.153.4",
+    "resolved_executable": "/home/holeshot/.local/bin/codex"
+  },
+  "hermes": {
+    "executable": "/home/holeshot/.local/bin/hermes",
+    "available": true,
+    "exit_code": 0,
+    "version": "Hermes Agent v0.21.0 (2026.8.31) \u00b7 upstream bf53ff00\nInstall directory: /home/holeshot/apps/hermes-agent\nInstall method: git\nPython: 3.11.15\nOpenAI SDK: 2.24.0\nUpdate available: 6139 commits behind \u2014 run 'hermes update'",
+    "resolved_executable": "/home/holeshot/.local/bin/hermes",
+    "checkout_commit": "7cd91114b462b7af76e558cc4e97f82201d2e884",
+    "version_banner_scope": "The banner labels upstream; checkout_commit identifies the executing source."
+  },
+  "openclaw": {
+    "executable": "/home/holeshot/.npm-global/bin/openclaw",
+    "available": true,
+    "exit_code": 0,
+    "version": "OpenClaw 2026.8.2 (0965053)",
+    "resolved_executable": "/home/holeshot/.npm-global/lib/node_modules/openclaw/openclaw.mjs"
+  },
+  "zcode": {
+    "executable": "/home/holeshot/.local/bin/zcode",
+    "available": true,
+    "exit_code": 0,
+    "version": "0.16.5",
+    "resolved_executable": "/home/holeshot/.local/bin/zcode"
+  }
+}
