@@ -149,3 +149,10 @@ within101seconds, but5fail; this is not a reliability guarantee. Claude remains
 waiting_for_operator for two exact native rules; Hermes upstream adoption and
 Zcode multi-step gates remain open under AR-404. Gateway healthy, observer removed.
 No production Python, provider definitions, model overrides or validation bypass.
+
+## Merged delivery
+
+PR816 merged2026-09-09T14:17:38Z as271480fe21cb06d21c37889883613c86050657f0.
+Exact subject: `Merge pull request #816 from Holeshot-Software-LLC/codex/ar404-shared-staffing-20260909`.
+AR-419/#797 closed after all4isolated criteria passed. AR-404/418/423 remain open.
+The shared-staffing branch is historical; use a new owned worktree for new changes.
