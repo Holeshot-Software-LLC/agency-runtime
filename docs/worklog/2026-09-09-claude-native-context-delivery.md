@@ -155,3 +155,12 @@ AR-424 second-pass criteria1/2/3 are all satisfied: 04121983, 6dbff237 and
 Only AR-424 is marked done and closed by PR814. AR-423 and AR-404 remain open;
 normal attended Claude MCP permission, Codex hook trust, staffing-model choice,
 Hermes upstream adoption and unpassed native sample gates remain explicit.
+
+## Merge checkpoint
+
+PR814 merged at `0cc40aba74be8ce98b518f5b0a8e5bc12aa26dc2` on
+2026-09-09T13:08:08Z with exact subject
+Merge pull request #814 from Holeshot-Software-LLC/codex/ar423-native-context-20260909.
+AR-424/#812 is closed; AR-423/#811 remains open. Main was clean and synchronized
+after the merge. The implementation branch is historical and merged; any further
+production changes need a new owned worktree. No failed native receipt was reopened.
