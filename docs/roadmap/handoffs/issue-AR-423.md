@@ -14,7 +14,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-423
-branch: codex/ar423-acceptance-20260909
+branch: codex/ar423-native-priority-20260909
 evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
 minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
 hard_checkpoint_percent: 50
@@ -25,15 +25,14 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 
 ## Checkpoint
 
-Owner authorized one third isolated pass on 2026-09-09 ("go for it"). The new
-owned worktree starts at c6c3e7b5; the packet now includes all four exact native
-MCP results, immutable card hashes and appended delivery disclosures. No new
-native trial or permission change is needed for this retained acceptance scope.
+Owner now prioritizes OpenClaw, Hermes, Codex, Claude, with Zcode deferred.
+AR-428 planning repair merged in PR831 and closed with three isolated verdicts;
+Hermes staffing failures remain. Codex8/8 trust and651 projection files verify.
 
-Native full-card delivery now passes on PR821 candidate2b19cce6/source03a82c3b.
-The underlying recipe16 delivery implementation came from PR814/cd86e40a.
-615installed package files match the canonical wheel. Both exact Claude native
-MCP Allow rules are saved and semantically unchanged; no operator tool wait.
+Fresh owned branch starts at0839e158, with its exact merge ledger16ca1a0f. Claude
+refreshed from recipe20 artifact ecf8a584; both exact MCP Allow rules remain saved.
+One fresh large-context native trial will capture initial/repair planner replies
+and full native card/terminal evidence. No stale failed receipt is reopened.
 
 ## Completed evidence
 
@@ -73,8 +72,8 @@ continue in the same task. No pending Claude tool or Codex trust approval.
 
 ## Next bounded work package
 
-Resolve AR-427's High delivery finding, then prepare fresh complete-team evidence
-for the remaining independent-assurance gate. Close AR-423
+AR-427 is merged. Capture one fresh recipe20 Claude planner/native turn, then
+prepare fresh complete-team evidence for the remaining independent-assurance gate. Close AR-423
 only if all three criteria receive satisfied verdicts. AR-404 retains the
 separate five-host8/15fixed result and Hermes/Zcode/recruiter/critic failures.
 
