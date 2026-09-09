@@ -2348,6 +2348,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `b265f715` | 2026-09-09 | docs(reliability): record recipe 19 installed validation | [AR-427](../roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `23ae46bf` | 2026-09-09 | docs(acceptance): preserve fresh Hermes complete-team delivery proof | [AR-427](../roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `acdc9231` | 2026-09-09 | docs(acceptance): freeze bounded Hermes delivery verification packets | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `3d29e07b` | 2026-09-09 | docs(acceptance): complete Hermes context and inferred-team delivery scopes | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
