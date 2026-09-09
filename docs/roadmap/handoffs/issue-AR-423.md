@@ -15,8 +15,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-423
 branch: codex/ar423-native-priority-20260909
-evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
-minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
+evidence_commit: 5dbe612a7dd3bd7ecca1b2f60411a44b175d278f
+minimum_ledger_commit: adab07907448c152e5a214e8abd5150d535f282d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 ---
@@ -51,40 +51,32 @@ correlation. Native limit10,000UTF16; prior denied and planner-failed probes rem
 
 ## Exact blocker
 
-Fresh recipe20 native session `a5c13def-36a1-4a3e-9484-d0f09f105209` /
-trace `95f96215-d84b-4b4e-9628-c808e99b9d23` passed all4 inferred full cards,
+No remaining AR-423 gate: all three isolated criteria satisfied (`7371e07f`,
+`de031b6f`, `0e4e187d`) against candidate dc83cc40. Fresh native session
+`a5c13def-36a1-4a3e-9484-d0f09f105209` / trace
+`95f96215-d84b-4b4e-9628-c808e99b9d23` passed all4 inferred full cards,
 five Store headers and authoritative hash
 `1c5f87780ecf485d2f4ab4018b3a71a45c79522edd237707447667cfca638c1c`
-in264.750s. Planner/critic applied; distinct review bindings remain, staffing
-advisory codes empty. One captured planner packet; config restored byte-exact.
-
-No native delegated execution occurred. The owner's explicit AR-423 request
-supports one further isolated pass against this new complete-team and assurance
-packet. Prior C2 absent verdict remains historical; no closure before all satisfied.
+in264.750s. No delegated specialist execution occurred or is claimed.
+One planner packet captured; configuration restored byte-exact with no errors.
+Broader AR-404 and Hermes AR-418 reliability remain open.
 
 ## Same-task continuity
 
-PR821 owns this package and exact worklog. After merge the named branch is
-historical; create a new owned worktree. Do not recreate historical fixes or
-repeat native trials without changed conditions. At50percent checkpoint and
-continue in the same task. No pending Claude tool or Codex trust approval.
+PR832 is the owned delivery record; PR831 merge ledger is its first commit.
+At or below50percent keep a clean substantive/ledger checkpoint and continue.
+Both exact MCP Allow rules remain saved. No pending Codex trust or Claude tool grant.
 
 ## Next bounded work package
 
-AR-427 is merged. Capture one fresh recipe20 Claude planner/native turn, then
-prepare fresh complete-team evidence for the remaining independent-assurance gate. Close AR-423
-only if all three criteria receive satisfied verdicts. AR-404 retains the
-separate five-host8/15fixed result and Hermes/Zcode/recruiter/critic failures.
+Merge PR832, close AR-423 and record the merge ledger. Resume AR-404's bounded
+Hermes nomination-relevance diagnosis from its observed packet, preserving the
+critic veto. AR-418 upstream PR106490 remains open and unadopted. Zcode stays deferred.
 
 ## Verification
 
-Fresh Claude context12pass, planner focused143pass, production1151pass/3skip,
-UI224pass, frozen conformance188/188 and exact615file installed match. Full native
-card/headers/finalization proof passes. No broad reliability or Windows claim.
-
-## Constraints
-
-Inference-owned staffing, independent critic, caller scope, trust and finalization
-remain mandatory. No manual specialist choice, trust bypass, unbounded retries,
-file-read workaround or manual acceptance. Owned worktree -> PR -> merge, exact
-worklogs, preserved prior failures and isolated verdicts.
+Recipe20 focused164/1skip, production1151/3skip, UI224, routing, Ruff and frozen
+conformance188/188 passed; canonical artifact ecf8a584 matches616 installed files.
+Fresh Claude context12 passed, native4/4 complete cards and five headers/final hash
+passed. Documentation1381 and strict tracker419 passed before this evidence update.
+No exhaustive or Windows workflow ran; no all-host reliability claim.

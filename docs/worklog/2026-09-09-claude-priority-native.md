@@ -63,3 +63,12 @@ this preserves the criterion's independent assurance boundary.
 One planner packet was captured; observer errors empty; configuration restored
 byte-for-byte. The owner's explicit AR-423 request authorizes one additional
 isolated pass after this changed source and complete-team native evidence.
+
+## Isolated completion
+
+All three criteria satisfied: `7371e07f`, `de031b6f`, `0e4e187d`. The verifier
+accepted the actual complete native cards, active-turn/version guards, and preserved
+pre-execution assurance checks; it did not certify delegated specialist execution.
+AR-423 native context delivery is complete. AR-404/AR-418 remain open. All651 files
+of published Claude projection79138e80 match its manifest. Final OpenClaw RPC is
+healthy after observer removal. No exhaustive/Windows or all-host claim.
