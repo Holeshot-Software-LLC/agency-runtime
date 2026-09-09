@@ -2329,6 +2329,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f28b66d7` | 2026-09-09 | Merge pull request #821 from Holeshot-Software-LLC/codex/ar404-planner-contract-20260909 | AR-404, AR-423, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `38fa9e43` | 2026-09-09 | docs: prepare authorized AR-423 native acceptance packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
 | `b91225d7` | 2026-09-09 | docs: freeze authorized AR-423 isolated packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
+| `20cf3c64` | 2026-09-09 | docs: retain AR-423 third verdicts and complete-team blocker | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
