@@ -36,7 +36,7 @@ This input-context defect is distinct from AR-418 output truncation.
 
 All three isolated criteria are satisfied in `acceptance/issue-AR-426.md`.
 AR-426 used the owner-authorized third pass; AR-427 used its first pass.
-PR 824 is ready for the scoped merge. Earlier failed native receipts remain failed.
+PR 824 merged at `e81f8e00`; tracker closure is complete. Earlier failed native receipts remain failed.
 
 
 Recipe 19 source `176adc19`, artifact source `20c49e0d`, is installed; all 616

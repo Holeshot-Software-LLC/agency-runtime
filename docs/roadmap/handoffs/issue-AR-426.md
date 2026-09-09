@@ -13,9 +13,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-426
-branch: codex/ar404-terminal-reliability-20260909
-evidence_commit: 23ae46bf382e68f945cfaf90c83a00aa6c8c4f4c
-minimum_ledger_commit: 1c0e3c16921b38974b02280cf8334834a90ec0a3
+branch: codex/ar404-merge-record-20260909
+evidence_commit: e81f8e00d5d511e2c605192ff9c5a461aebe0cb2
+minimum_ledger_commit: 89d728aee6a897c036b5a369d459f154299a4a12
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823
 ---
@@ -27,7 +27,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823
 Owned PR 824 branch contains recipe 19 complete-team delivery and bounded Hermes
 callbacks. Source `176adc19`, canonical artifact `20c49e0d`; all 616 installed
 files match. PR 827 retained Claude audit evidence and merged into this branch;
-main remains at `c6c3e7b5` until PR 824's acceptance and merge checkpoint.
+PR 824 merged at `e81f8e00`; AR-426/#823 and AR-427/#825 are closed.
 
 ## Completed evidence
 
@@ -51,7 +51,7 @@ records that concern. The critic veto remains authoritative.
 ## Exact blocker
 
 AR-426 authorized third isolated pass and AR-427 first pass satisfied all three
-criteria each. Both scoped issues are done; PR 824 is ready for merge. AR-423 third pass satisfied criteria 1/3, left criterion 2 absent:
+criteria each. Both scoped issues are done; PR 824 is merged at `e81f8e00`. AR-423 third pass satisfied criteria 1/3, left criterion 2 absent:
 prior Claude routing selected five but native delivery retained four, omitting an
 independent security reviewer. Fresh Claude session `0a59da24` / trace `28c8db15`
 failed planner contracts in 118.255s before delivery. No unchanged retry is queued.
@@ -68,13 +68,15 @@ A fresh native Codex process and UserPromptSubmit hook run published projection
 
 ## Same-task continuity
 
-Continue in the owned branch and preserve unrelated scratchpad and Windows work.
+The implementation and acceptance branches are historical and merged. Preserve
+unrelated scratchpad and Windows work; create a new owned tree for the next repair.
 At or below 50 percent, keep a clean substantive/ledger checkpoint and continue.
 No empty recovery pair, forced transfer or failed-receipt reopening.
 
 ## Next bounded work package
 
-Merge PR 824, then record its exact merge ledger. Continue AR-428 planning repair from the captured packet; diagnose
+PR 824 and its exact ledger are recorded. Create a new owned worktree for
+AR-428 planning repair from the captured packet; diagnose
 Claude's exact second planner response before assigning its semantic failure.
 All five hosts remain in scope; original fixed sample 8/15 is historical only.
 
