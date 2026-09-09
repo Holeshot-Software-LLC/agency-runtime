@@ -2357,6 +2357,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7b263fb9` | 2026-09-09 | docs(reliability): merge PR830 OpenClaw priority evidence | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-openclaw-priority.md) |
 | `0ac9d78e` | 2026-09-09 | fix(planner): distinguish proposed tests from observed results | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 | `826fbf25` | 2026-09-09 | docs(reliability): retain AR-428 artifact and original boundary evidence | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `10df4e6b` | 2026-09-09 | docs(reliability): preserve failed recipe20 Hermes staffing receipt | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
