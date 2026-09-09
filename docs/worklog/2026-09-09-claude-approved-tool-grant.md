@@ -70,3 +70,10 @@ Evidence: AR-404-claude-suite-after-tool-permission-20260909.json.
 Grant package complete; the native full-card outcome remains blocked by inference.
 No new owner permission is pending for these two tools. Production and installed
 sources remain unchanged. Docs/metadata/policy/tracker and focused12 checks pass.
+
+## Merged delivery
+
+PR818 merged2026-09-09T14:50:27Z as68383aac6b67c97b433a753e5b16b65b625a7dd0.
+Exact subject: `Merge pull request #818 from Holeshot-Software-LLC/codex/ar423-claude-tool-grant-20260909`.
+The grant is complete. AR-423/AR-404 remain open after the native staffing failure.
+No owner approval remains pending for these two rules.
