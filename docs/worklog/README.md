@@ -2297,6 +2297,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3a921c61` | 2026-09-09 | Merge pull request #810 from Holeshot-Software-LLC/codex/ar404-reliability-suite-20260909 | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
 | `b801c08f` | 2026-09-09 | Merge pull request #813 from Holeshot-Software-LLC/codex/ar404-pr810-ledger-20260909 | AR-404 | — |
 | `cd86e40a` | 2026-09-09 | fix(claude): deliver large selected card sets through versioned MCP | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
+| `c3c47600` | 2026-09-09 | docs(reliability): record verified Claude artifact and retained native failures | AR-423, AR-424, AR-404 | [Detail](2026-09-09-claude-native-context-delivery.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
