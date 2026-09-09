@@ -181,3 +181,15 @@ Final metadata (1371 Markdown files), policy availability, exact worklog, docs
 with required trackers, strict tracker parity (417 items; 2 historical PR-tracked
 items skipped) and diff checks pass. Main remains clean at c6c3e7b5; the owned
 branch is preserved as draft PR 824 with no merge or issue closure.
+
+## Authorized continuation and bounded critic capture
+
+Owner's 2026-09-09 "go for it" authorizes continued reliability repairs and one
+additional isolated pass for each corrected AR-423/426 packet. AR-423 uses its
+own worktree. Before choosing a staffing repair, one fresh Hermes multi-step
+diagnostic captures the actual inference proposal and public critic response
+through the previously established loopback observer pattern. The observer
+forwards request/response bytes unchanged, forwards credentials without logging
+headers, and captures only the exact supplied-code request. Synthetic tests
+pass all three boundaries. The call is capped at 360 seconds and never loops;
+the owner config is restored in finally. No trust or staffing validator changes.

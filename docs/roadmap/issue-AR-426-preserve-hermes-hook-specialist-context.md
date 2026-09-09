@@ -57,7 +57,8 @@ output truncation limit and upstream adoption remain unproven.
 Two isolated passes accepted the guarded delivery criterion; the baseline
 preservation criterion remains absent in its frozen packet, and native acceptance
 is explicitly absent. Exact saved missing-context files are now retained for a
-future corrected packet. No third isolated pass is authorized or run.
+future corrected packet. The owner has now authorized one additional isolated pass; it is reserved until
+the next native evidence packet is ready.
 
 ## Approach
 

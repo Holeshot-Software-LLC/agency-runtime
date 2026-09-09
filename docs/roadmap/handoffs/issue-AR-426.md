@@ -24,6 +24,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823
 
 ## Checkpoint
 
+2026-09-09 owner continuation authorizes the next bounded repair and one extra
+isolated pass per corrected issue packet. One fresh Hermes multi-step diagnostic
+will capture the actual critic proposal/response through a byte-preserving
+loopback observer. It changes observability, not selection or verdicts. Cap360s,
+no retry; restore the original owner configuration in finally.
+
 PR 824 remains draft. Callback source faf5645a / artifact 22f24edd is installed;
 616 exact file matches. Focused 131, production 1151 / 3 skipped, UI 224 and
 conformance 188/188 pass. Only the Hermes native projection was refreshed.
@@ -69,8 +75,8 @@ AR-426 isolated passes both accepted criterion 2, but criterion 1 remains absent
 (pointer evidence lacks the missing context itself in its frozen packet) and
 criterion 3 lacks native acceptance. Exact missing-context files 535347/535352
 and their SHA-256 manifest are now retained in repository evidence for a future
-corrected packet. No third AR-426 pass is authorized. AR-423's third pass is a
-separate pending authorization. All five hosts stay in AR-404 scope.
+corrected packet. The owner authorized one additional AR-426 isolated pass on 2026-09-09;
+reserve it until the native evidence packet is ready. AR-423's separately authorized third pass runs in its owned acceptance worktree. All five hosts stay in AR-404 scope.
 
 ## Verification
 
