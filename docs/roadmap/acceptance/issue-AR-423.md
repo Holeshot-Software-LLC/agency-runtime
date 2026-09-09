@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-423
-candidate_commit: pending
+candidate_commit: dc83cc40d950d5c010a4074982a306567c254777
 evidence_cutoff: 2026-09-09
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 ---
@@ -30,7 +30,10 @@ four-of-five delivery gap and all failed native/isolated results remain historic
 
 The owner's explicit “go for ar423” authorizes this one further isolated pass with
 new source and native evidence. Complete source and packets exist in the candidate
-snapshot beyond excerpt limits. This is not an all-host reliability claim.
+snapshot beyond excerpt limits. In particular, staffing_verifier.py:1133-1164
+shows the assurance check invoked and all advisories retained before acceptance;
+the excerpt below supplies its disjoint-identity/context predicate. This is not an
+all-host reliability claim.
 
 | Criterion | Kind | Artifact | Observed | Source |
 |---|---|---|---|---|
@@ -44,8 +47,7 @@ snapshot beyond excerpt limits. This is not an all-host reliability claim.
 | 2 | file | Distinct inferred implementation/test/correctness/security bindings and dependency timing | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-plan-bindings-20260909.json:1-7 |
 | 2 | file | Exact selected version and active-turn guards remain enforced | 2026-09-09 | agency_runtime/server/mcp_tools.py:207-290 |
 | 2 | file | Assurance requires disjoint selected identities, contexts and independence classes | 2026-09-09 | agency_runtime/core/workforce/staffing_verifier.py:1030-1083 |
-| 2 | file | Assurance check runs and records every advisory before accepting the staffed team | 2026-09-09 | agency_runtime/core/workforce/staffing_verifier.py:1133-1164 |
-| 2 | file | Two exact native MCP Allow rules remain unchanged | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-allow-rules-20260909.json:1-7 |
+| 3 | file | Two exact native MCP Allow rules remain unchanged | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-allow-rules-20260909.json:1-7 |
 | 3 | command-output | Recipe20 focused/fast, canonical installed artifact and frozen conformance | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-validation-20260909.json:1-38 |
 | 3 | command-output | Claude context regression results | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-focused-20260909.txt:1-2 |
 | 3 | file | Fresh native complete team, five Store headers and authoritative accepted response hash | 2026-09-09 | docs/roadmap/evidence/AR-423-priority-terminal-20260909.json:1-78 |
