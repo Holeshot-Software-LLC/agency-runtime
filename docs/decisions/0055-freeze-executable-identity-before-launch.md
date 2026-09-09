@@ -6,6 +6,7 @@ created: 2026-07-16
 updated: 2026-08-12
 tags: [security, processes, executables, delegation, portability]
 related:
+  - docs/roadmap/issue-AR-422-preserve-claude-update-permissions.md
   - docs/decisions/0227-bind-executable-isolation-to-current-launch-surfaces.md
   - docs/roadmap/issue-AR-176-align-full-gate-contract-fixtures.md
   - docs/roadmap/issue-AR-60-frozen-executable-identity.md

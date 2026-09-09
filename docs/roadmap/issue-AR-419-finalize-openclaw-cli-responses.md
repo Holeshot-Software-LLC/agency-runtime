@@ -31,6 +31,24 @@ ok/completed status does not establish a centrally accepted response.
 
 ## Current state
 
+The declared observer probe returned in226.500s, native trace
+a24020c3-c3d0-43e2-bf10-230965702e21. Native llm_input, before_agent_finalize and
+agent_end callbacks are captured under the exact session/run. Staffing failed: primary
+recruiter timeout, then malformed/non-JSON bounded fallback responses. No specialists
+were selected and no accepted finalization exists. This is callback proof only;
+AR-419 stays open. No unchanged-condition retry was performed. Normal observer
+uninstall removes its permission and files; gateway RPC is healthy and every
+non-plugin/non-meta configuration section remains unchanged.
+
+September 9 refreshed sample: review 209.513s has accepted staffing, all five
+Store-matching headers and exact central accepted response hash. The observer
+captured no input because native registration explicitly rejected missing
+plugins.entries.ar404-native-witness.hooks.allowConversationAccess. Follow-up
+352.602s fails after separate recruiter/critic 120s timeouts; multi-step 361.217s
+hits the outer deadline. All remain in AR-404-openclaw-suite-after-repair-20260909.json.
+A documented per-plugin permission grant and one new ordinary review are prepared,
+with five exact allowed session keys, bounded local output and no delivery.
+
 September 8 continuation: the installed OpenClaw terminal callback is awaited
 before CLI delivery. Its native context identifies internal delivery as
 `channel=webchat`; the generated handler previously returned `allow_pending`

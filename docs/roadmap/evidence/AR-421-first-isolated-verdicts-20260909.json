@@ -1,0 +1,10 @@
+{
+  "issue": "AR-421",
+  "original_criterion_3": "Verify the repaired behavior with regression/native evidence and isolated verdicts.",
+  "original_verification_rows": [
+    "| 1 | satisfied | `AR-421.1-20260909-3bb202d1` | `e4c6e948888a60fc003075c7bccef2420cb3078ad753aea75c898ea558e14082` | 2026-09-09 | AR-404-followup-failure-20260909.json exists at the snapshot: exact receipt (trace IDs, preflight_failed, workforce_inference_failed, staffing_critic_rejected) with state showing classifier5 marking the completed-task follow-up new_intent; worklog Verification adds a 7fail/12pass control. |",
+    "| 2 | satisfied | `AR-421.2-20260909-92881924` | `aa856a386bcad332f365a5b2b5ef88cc6dde4f1e21d633ee8641ddda97207865` | 2026-09-09 | turn_intent.py:855-879 with the safe_for_bypass gate (:906) and correlate flag (:701) repairs completed follow-ups yet blocks untrusted correlation; always-true reroute makes the replay branch at preflight.py:543-548 unreachable, and tests/test_completed_task_followup.py:1-125 covers unrelated work. |",
+    "| 3 | absent | `AR-421.3-20260909-897fd370` | `10415f1dbb15110932b1e8c6d4d3b9feb1f1f338ab1ca4ea944d9c4f85fb7f56` | 2026-09-09 | The Claude/Zcode after-repair JSONs show classifier6 continuations tied to the exact review traces with accepted hashes, and the worklog #verification records the regression suites; but docs/roadmap/acceptance/issue-AR-421.md has an empty Verification table, so no isolated verdicts are evidenced. |"
+  ],
+  "disposition": "Retain the absent verdict. Remove the self-reference to already-completed isolated verdicts from the behavior criterion; repository-required isolated verification still governs closure. Rerun only changed criterion 3 against the unchanged source candidate."
+}

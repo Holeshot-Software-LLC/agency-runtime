@@ -1,0 +1,11 @@
+{
+  "action": "reuse enabled desktop Z.AI provider in native CLI configuration",
+  "provider": "builtin:zai-coding-plan",
+  "model": "GLM-5.3",
+  "baseURL": "https://api.z.ai/api/anthropic",
+  "credential_source": "existing desktop provider options; no new credentials",
+  "before_sha256": "c4296af709c8d2fee538787d4cbae0e24b023a21390e734d94cd17c425a7b6ca",
+  "after_sha256": "1cd67770f63d7b6acbdfc6ef3a10ab9736c7a5ca77c8d6238518f3d9f3c41b1f",
+  "hooks_unchanged": true,
+  "mode": "0600"
+}

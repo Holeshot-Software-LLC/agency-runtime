@@ -1,0 +1,8 @@
+{
+  "cause": "Config file requires provider/model reference strings; internal runtime model objects are not accepted.",
+  "before_sha256": "3998dbb42c20ba5c1db36c62298c75155fb993af94a1a7c2a26ad451881fb147",
+  "after_sha256": "2f4120110a850e1dca99b315ace3173e02da9132991aa3a093dbfc4b5b1f49e2",
+  "model_reference": "builtin:zai-coding-plan/GLM-5.3",
+  "hooks_unchanged": true,
+  "provider_and_credentials_unchanged": true
+}

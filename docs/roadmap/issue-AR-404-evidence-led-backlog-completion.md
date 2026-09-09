@@ -3,7 +3,7 @@ title: "AR-404: Complete the backlog through evidence-led delivery packages"
 status: in_progress
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-08
+updated: 2026-09-09
 tags: [backlog, review, acceptance, delivery]
 related:
   - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
@@ -65,6 +65,66 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+The refreshed fixed sample is complete; all-host reliability remains unproved.
+Hermes review passes full native evidence in299.269s, but both remaining cases
+time out. OpenClaw review209.513s passes central/header gates; missing documented
+observer permission prevents exact input proof, and follow-up/multi-step fail.
+Claude review passes all gates; follow-up preserves context but exceeds the native
+10,000UTF-16-unit hook ceiling, tracked by AR-423/#811. Zcode corrected configuration
+passes full review/follow-up evidence; multi-step staffing fails. Codex needs attended
+trust for8changed hooks. AR-421/422 isolated builders are prepared. Staffing-model
+alignment remains unapplied pending owner choice. See the current capsule and
+2026-09-09-completed-task-context.md for exact IDs and retained setup failures.
+
+Repair artifactdb1c642f is installed with exact614file equality and fresh isolated
+classifier6. Conformance188/188 passes. OpenClaw baseline adds three failed cases:
+review staffing timeout143.701s, follow-up native failure353.101s, multi-step process
+timeout361.216s. Initial observer lacked startup activation; corrected through
+normal maintenance for after-repair evidence. No success is inferred from installation.
+Read-only model info confirms Hermes/OpenClaw use Mistral Small3.2 24B instead of
+Codex's separate staffing pools; removing their overrides is prepared, awaiting
+owner choice because it changes backend models/cost. Claude native update-survival
+passes. Zcode now uses its existing enabled desktop Z.AI provider in CLI config,
+hooks unchanged. Next: fresh fixed after-repair sample, then isolated acceptance.
+
+
+Fixed baseline continues: Codex review and multi-step now have exact selected-card
+proof as well as accepted matching response hashes. Hermes normal review187.194s
+also passes exact card/hash; its follow-up and multi-step both hit the360second
+limit. Follow-up records120second recruiter and critic timeouts. Preserve these
+failed cases. OpenClaw observer now installed for exactly four suite sessions;
+normal confirmed stop/install/start succeeded, only plugins configuration changed,
+and RPC is healthy. Next: OpenClaw baseline before candidate installation.
+
+
+September9 implementation checkpoint: AR-421/#808 preserves completed-task
+follow-up context with fresh staffing. Focused152pass; original-source negative
+control7fail/12pass. Production1151pass/3skip, UI224pass, Ruff pass. Candidate
+not installed. Fixed Codex baseline has accepted review/multi-step terminal
+hashes but failed short follow-up; all outcomes retained. AR-422/#809 reproduces
+npm permission recurrence and moves Claude through its supported native installer;
+normal executable gate and Agency refresh now pass, fresh native turn pending.
+See the two issue records and2026-09-09-completed-task-context.md. Hermes baseline
+is running on the unchanged normal installation; OpenClaw and Zcode remain in scope.
+
+
+September9 package scoped: freeze three ordinary/native requests across all five
+hosts before baseline calls. The immutable prompts, per-phase one-attempt budget,
+360-second deadline, answer and lifecycle gates are in
+[evidence/AR-404-reliability-suite-20260909.json](evidence/AR-404-reliability-suite-20260909.json).
+Every failure and blocked gate stays visible; no all-host reliability claim follows
+from one successful example. Source baseline77f6773f; owned branch
+codex/ar404-reliability-suite-20260909.
+
+Current native trace01a08595-581c-7853-89e1-f1a8e2e9b50c failed. Its exact receipt
+and read-only same-state reconstruction are preserved in
+[evidence/AR-404-followup-failure-20260909.json](evidence/AR-404-followup-failure-20260909.json).
+The classifier treated "go for it" as executable new intent and discarded the
+available prior completed-task context. The state revision matches persisted
+metadata. The critic proposal is unavailable, so its veto remains unadjudicated.
+Reranker passed; cold embedding took39.653seconds. Claude trust gate still fails.
+
 
 Final September8 Claude gate: package replacement at22:38:08UTC restored775
 parent modes after the earlier permission repair and successful isolated
@@ -824,3 +884,8 @@ The older AR-152/298/348-first ordering above is historical and does not overrid
 the owner's oldest-first loop. Keep genuine live/operator and fixture gaps
 visible, exclude Windows execution, and do not close the full backlog until
 every baseline record has a reviewed disposition and remaining acceptance is met.
+
+Native projection checkpoint: normal refresh publishes1825059191a2/classifier6.
+Codex8modified hook approvals are pending; stale and unactivated attempts are
+retained. Claude fresh review has complete exact native evidence. The remaining
+four-host/follow-up gates remain open. See the active capsule and PR810 worklog.

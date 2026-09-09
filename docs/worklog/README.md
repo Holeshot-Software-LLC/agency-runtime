@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-09-08
+updated: 2026-09-09
 tags: []
 related: []
 supersedes: []
@@ -2279,6 +2279,21 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e36fc883` | 2026-09-08 | docs(staffing): merge PR804 AR420 recovery checkpoint | AR-404, AR-420 | [Detail](2026-09-08-reranker-membership-repair.md) |
 | `cbac00fd` | 2026-09-08 | docs(hosts): preserve recurring Claude executable rejection | AR-404 | [Detail](2026-09-08-reranker-membership-repair.md) |
 | `ad8b05de` | 2026-09-08 | docs(hosts): merge PR806 Claude recurrence evidence | AR-404 | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `c13f3b72` | 2026-09-09 | docs(AR-404): freeze native reliability sample and preserve follow-up failure | AR-404 | [Detail](2026-09-09-native-reliability-suite.md) |
+| `cf4ed77f` | 2026-09-09 | fix(routing): preserve completed-task context for fresh follow-up staffing | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `8aa72148` | 2026-09-09 | docs(AR-404): retain native follow-up failures and exact card evidence | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `963ae815` | 2026-09-09 | docs(AR-404): record installed repair and complete native baseline | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `ed83735e` | 2026-09-09 | docs(AR-404): preserve native projection and activation failures | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `6f933fc8` | 2026-09-09 | docs(AR-404): retain completed Claude reliability sample | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `345eaf51` | 2026-09-09 | docs(AR-404): record upstream Hermes repair and remaining native gates | AR-404, AR-418, AR-423 | [Detail](2026-09-09-completed-task-context.md) |
+| `73a127ac` | 2026-09-09 | docs(AR-404): preserve Zcode native evidence and prepare scoped acceptance | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `12138e8b` | 2026-09-09 | docs(AR-404): retain refreshed Hermes failures and Claude native limit | AR-404, AR-421, AR-423 | [Detail](2026-09-09-completed-task-context.md) |
+| `c4c12667` | 2026-09-09 | docs(AR-404): preserve OpenClaw sample and native observer permission gate | AR-404, AR-419 | [Detail](2026-09-09-completed-task-context.md) |
+| `e0162436` | 2026-09-09 | docs(AR-419): record native observer permission and runtime activation | AR-404, AR-419 | [Detail](2026-09-09-completed-task-context.md) |
+| `6bc4d62f` | 2026-09-09 | docs(AR-419): retain failed observer probe and restore gateway state | AR-404, AR-419 | [Detail](2026-09-09-completed-task-context.md) |
+| `8dc9277d` | 2026-09-09 | docs(acceptance): separate behavior criteria from isolated verification procedure | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `5036c467` | 2026-09-09 | docs(AR-421): record isolated acceptance of completed-task context repair | AR-404, AR-421 | [Detail](2026-09-09-completed-task-context.md) |
+| `916362c7` | 2026-09-09 | docs(AR-404): close isolated repairs and retain exact-card follow-up | AR-404, AR-421, AR-422, AR-424 | [Detail](2026-09-09-completed-task-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

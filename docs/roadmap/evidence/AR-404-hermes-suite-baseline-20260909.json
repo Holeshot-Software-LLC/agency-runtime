@@ -1,0 +1,335 @@
+{
+  "manifest": "AR-404-reliability-suite-20260909.json",
+  "phase": "baseline",
+  "installed_agency_source": "3fe3d7ba",
+  "cases": [
+    {
+      "case": "ordinary_review",
+      "invocation": {
+        "case": "ordinary_review",
+        "host": "hermes",
+        "phase": "baseline",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909",
+          "-q",
+          "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files."
+        ],
+        "native_session_id": "20260909_060840_824bbe",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 187.194
+      },
+      "run": {
+        "id": "69f0415b-aee7-4756-aecd-6c92ad6a5875",
+        "trace_id": "20260909_060840_824bbe:33533e8c-2f93-4a73-b3dd-552ffe2b01b0:eee5fbf0",
+        "session_id": "20260909_060840_824bbe",
+        "host": "hermes",
+        "started_at": "2026-09-09T10:08:49.524000+00:00",
+        "last_activity_at": "2026-09-09T10:11:38.705000+00:00",
+        "turn_sequence": 1621,
+        "ended_at": "2026-09-09T10:11:38.704877+00:00",
+        "status": "completed",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "native_stdout": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\nAgency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)\nRecruited via: inference\n\nFindings:\n- `average([1.0, 2.0])` returns `1.0`, but the required arithmetic mean is `1.5`. Defect: `//` performs floor division, so fractional means are truncated/floored instead of preserved.\n- `average([])` raises `ZeroDivisionError` from `len(values) == 0`, but the requirement says empty input must raise `ValueError`. Defect: no explicit empty-input guard.\n\nCorrection proposal:\n- Add an explicit emptiness check before dividing, raising `ValueError` for empty input.\n- Use true division (`/`) instead of floor division (`//`) so fractional numeric results are returned.\n\nResidual risks/test gaps:\n- Based only on the supplied one-line function, as requested; no repository or file evidence was inspected.\n- Minimal checks should cover `[1.0, 2.0] -> 1.5` and `[] -> ValueError` before writing the corrected function.\n",
+      "native_stdout_sha256": "552d82025ea0243e9b061210f22e94ab35160b3e9590c94cb7e654045fceaabc",
+      "finalization": {
+        "id": "74214700-0e91-4ae6-8486-e186b9b209bb",
+        "trace_id": "20260909_060840_824bbe:33533e8c-2f93-4a73-b3dd-552ffe2b01b0:eee5fbf0",
+        "host": "hermes",
+        "action": "accept",
+        "missing": null,
+        "response_hash": "ae5526644c6112f6fd936052726daccf2d494d2e659026f550738b03cc7f334e",
+        "policy_response_hash": null,
+        "terminal_status": "completed",
+        "created_at": "2026-09-09T10:11:38.704877+00:00",
+        "session_id": "20260909_060840_824bbe",
+        "status": "completed",
+        "ended_at": "2026-09-09T10:11:38.704877+00:00",
+        "authoritative": true
+      },
+      "status": "accepted scoped native turn",
+      "store_header_evidence": {
+        "model_receipt": {
+          "id": "b3aa247f-0266-454b-99ab-499cf1917512",
+          "trace_id": "20260909_060840_824bbe:33533e8c-2f93-4a73-b3dd-552ffe2b01b0:eee5fbf0",
+          "session_id": "20260909_060840_824bbe",
+          "host": "hermes",
+          "requested_model": "alias-hermes-chat",
+          "model_group": "alias-hermes-chat",
+          "resolved_provider": "",
+          "resolved_model": "alias-hermes-chat",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "host",
+          "recorded_at": "2026-09-09T10:11:38.361000+00:00",
+          "started_at": "2026-09-09T10:11:38.361442+00:00",
+          "ended_at": "2026-09-09T10:11:38.361446+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "code-reviewer"
+        ],
+        "resident_managers": [
+          "agency-steward"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "code-reviewer",
+            "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+            "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+            "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance \u2014 not style preferences.",
+            "capabilities": [
+              "review diffs for correctness and regressions",
+              "identify security and maintainability defects",
+              "rank findings by impact and evidence"
+            ]
+          }
+        ],
+        "delegations": []
+      },
+      "response": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)\nRecruited via: inference\n\nFindings:\n- `average([1.0, 2.0])` returns `1.0`, but the required arithmetic mean is `1.5`. Defect: `//` performs floor division, so fractional means are truncated/floored instead of preserved.\n- `average([])` raises `ZeroDivisionError` from `len(values) == 0`, but the requirement says empty input must raise `ValueError`. Defect: no explicit empty-input guard.\n\nCorrection proposal:\n- Add an explicit emptiness check before dividing, raising `ValueError` for empty input.\n- Use true division (`/`) instead of floor division (`//`) so fractional numeric results are returned.\n\nResidual risks/test gaps:\n- Based only on the supplied one-line function, as requested; no repository or file evidence was inspected.\n- Minimal checks should cover `[1.0, 2.0] -> 1.5` and `[] -> ValueError` before writing the corrected function.",
+      "exact_finalization_match": true,
+      "native_card_proofs": [
+        {
+          "slug": "code-reviewer",
+          "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+          "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "prompt_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "full_body_in_native_api_content": true
+        }
+      ],
+      "exact_card_injection": true
+    },
+    {
+      "case": "short_followup",
+      "invocation": {
+        "case": "short_followup",
+        "host": "hermes",
+        "phase": "baseline",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909",
+          "-q",
+          "go for it",
+          "--resume",
+          "20260909_060840_824bbe"
+        ],
+        "native_session_id": "20260909_060840_824bbe",
+        "exit_code": 130,
+        "timeout": true,
+        "elapsed_seconds": 363.486
+      },
+      "run": {
+        "id": "1eaf6fae-a275-4bf3-80c8-bcf69b2b3cf7",
+        "trace_id": "20260909_060840_824bbe:e41c85b7-5b1b-4d50-bd3c-7e769877ac35:c159f53c",
+        "session_id": "20260909_060840_824bbe",
+        "host": "hermes",
+        "started_at": "2026-09-09T10:11:56.207000+00:00",
+        "last_activity_at": "2026-09-09T10:17:42.444000+00:00",
+        "turn_sequence": 1622,
+        "ended_at": "2026-09-09T10:17:42.429000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "7f09b4fa-ad74-473f-8d7c-51fc6de07226",
+        "session_id": "20260909_060840_824bbe",
+        "trace_id": "20260909_060840_824bbe:e41c85b7-5b1b-4d50-bd3c-7e769877ac35:c159f53c",
+        "host": "hermes",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "actual_model": "task-agency-router",
+            "latency_ms": 4491,
+            "metadata_version": 1,
+            "model_group": "task-agency-router",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 1,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "linux-task-agency-router",
+            "provider_type": "litellm",
+            "reason_code": "provider_response_contract_invalid",
+            "requested_model": "task-agency-router",
+            "stage": "subject",
+            "status": "rejected",
+            "timeout_ms": 120000
+          },
+          {
+            "actual_model": "task-agency-router",
+            "latency_ms": 48925,
+            "metadata_version": 1,
+            "model_group": "task-agency-router",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 2,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "linux-task-agency-router",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-router",
+            "stage": "planner",
+            "status": "applied",
+            "timeout_ms": 120000
+          },
+          {
+            "actual_model": "qwen3-embedding:latest",
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107",
+            "input_count": 6,
+            "latency_ms": 6096,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "provider_call_count": 1,
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "reason_code": "dense_recall_applied",
+            "requested_model": "qwen3-embedding:latest",
+            "stage": "recall_embedding",
+            "status": "applied"
+          },
+          {
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "input_count": 0,
+            "latency_ms": 29100,
+            "metadata_version": 1,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 4,
+            "provider_call_attempted": true,
+            "provider_call_count": 1,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "reason_code": "structured_response_applied",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "stage": "recall_reranker",
+            "status": "applied",
+            "timeout_ms": 120000
+          },
+          {
+            "actual_model": "",
+            "latency_ms": 120135,
+            "metadata_version": 1,
+            "model_group": "task-agency-router",
+            "model_receipt_source": "unavailable",
+            "ordinal": 5,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "linux-task-agency-router",
+            "provider_type": "litellm",
+            "reason_code": "provider_call_timed_out",
+            "requested_model": "task-agency-router",
+            "stage": "recruiter",
+            "status": "failed",
+            "timeout_ms": 120000
+          },
+          {
+            "actual_model": "task-agency-recruiter-v2-content-fallback",
+            "latency_ms": 15721,
+            "metadata_version": 1,
+            "model_group": "task-agency-recruiter-v2-content-fallback",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 6,
+            "provider_call_attempted": true,
+            "provider_chain_index": 1,
+            "provider_fallback_count": 1,
+            "provider_name": "agency-recruiter-content-fallback",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-recruiter-v2-content-fallback",
+            "stage": "recruiter",
+            "status": "applied",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "",
+            "latency_ms": 120066,
+            "metadata_version": 1,
+            "model_group": "task-agency-router",
+            "model_receipt_source": "unavailable",
+            "ordinal": 7,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "linux-task-agency-router",
+            "provider_type": "litellm",
+            "reason_code": "provider_call_timed_out",
+            "requested_model": "task-agency-router",
+            "stage": "critic",
+            "status": "failed",
+            "timeout_ms": 120000
+          }
+        ],
+        "staffing_reason_codes": [
+          "workforce_inference_failed"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T10:17:42.432000+00:00"
+      },
+      "native_stdout": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\n",
+      "native_stdout_sha256": "23f68890ad1003b0748f518df3e7edb6a8fa5090552ab743f12aa91132fe148e",
+      "finalization": null,
+      "status": "timeout"
+    },
+    {
+      "case": "multi_step",
+      "invocation": {
+        "case": "multi_step",
+        "host": "hermes",
+        "phase": "baseline",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909",
+          "-q",
+          "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed."
+        ],
+        "native_session_id": "20260909_061751_27de0b",
+        "exit_code": 130,
+        "timeout": true,
+        "elapsed_seconds": 368.628
+      },
+      "run": {
+        "id": "83e769f3-dd14-45b8-a4ce-54d5dcda19d3",
+        "trace_id": "20260909_061751_27de0b:eb9841a2-bba2-4aba-b4e1-f5784dec4e99:b0ce6138",
+        "session_id": "20260909_061751_27de0b",
+        "host": "hermes",
+        "started_at": "2026-09-09T10:18:02.872000+00:00",
+        "last_activity_at": "2026-09-09T10:23:53.356000+00:00",
+        "turn_sequence": 1623,
+        "ended_at": "2026-09-09T10:23:53.351409+00:00",
+        "status": "interrupted",
+        "preflight_state": "in_progress"
+      },
+      "failure": null,
+      "native_stdout": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\n",
+      "native_stdout_sha256": "23f68890ad1003b0748f518df3e7edb6a8fa5090552ab743f12aa91132fe148e",
+      "finalization": null,
+      "status": "timeout"
+    }
+  ]
+}

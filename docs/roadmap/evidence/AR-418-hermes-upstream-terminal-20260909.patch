@@ -1,0 +1,319 @@
+diff --git a/agent/turn_failure.py b/agent/turn_failure.py
+new file mode 100644
+index 0000000000..e9f957b356
+--- /dev/null
++++ b/agent/turn_failure.py
+@@ -0,0 +1,45 @@
++"""Deliver diagnostics and lifecycle evidence for early failed turn returns."""
++
++import logging
++
++logger = logging.getLogger(__name__)
++
++
++def finalize_failed_turn(agent, result, *, task_id, turn_id, failure_reason, finish_reason):
++    """Preserve failure while allowing plugins to format its diagnostic text.
++
++    This path never runs the successful-output transform. A plugin can replace
++    diagnostic text but cannot change the failed result or the source reason.
++    """
++    from hermes_cli.lifecycle import invoke_hook
++    from agent.message_sanitization import _sanitize_surrogates
++
++    result = dict(result)
++    result.update(completed=False, failed=True, failure_reason=failure_reason)
++    result["turn_exit_reason"] = failure_reason
++    result["finish_reason"] = finish_reason
++    context = dict(
++        session_id=agent.session_id or "", task_id=task_id, turn_id=turn_id,
++        completed=False, failed=True, interrupted=False,
++        turn_exit_reason=failure_reason, finish_reason=finish_reason,
++        model=agent.model, platform=getattr(agent, "platform", None) or "",
++    )
++    text = result.get("final_response") or result.get("error") or "Turn failed"
++    try:
++        for replacement in invoke_hook(
++            "transform_turn_failure", response_text=text,
++            error=result.get("error"), **context,
++        ):
++            if isinstance(replacement, str) and replacement:
++                text = replacement
++                break
++    except Exception:
++        logger.warning("transform_turn_failure hook failed", exc_info=True)
++    result["final_response"] = _sanitize_surrogates(text)
++    try:
++        invoke_hook("on_session_end", **context)
++    except Exception:
++        logger.warning("on_session_end hook failed", exc_info=True)
++    agent._turn_preflight_display_snapshot = None
++    agent._turn_received_provider_response = False
++    return result
+diff --git a/agent/turn_response_check.py b/agent/turn_response_check.py
+index 07dab60ceb..6a72f72bf1 100644
+--- a/agent/turn_response_check.py
++++ b/agent/turn_response_check.py
+@@ -165,7 +165,7 @@ def check_api_response(
+             agent, response, finish_reason, _retry, messages=messages,
+             conversation_history=conversation_history, api_kwargs=api_kwargs,
+             api_call_count=api_call_count, effective_task_id=effective_task_id,
+-            current_turn_user_idx=current_turn_user_idx,
++            current_turn_user_idx=current_turn_user_idx, turn_id=turn_id,
+             length_continue_retries=length_continue_retries,
+             truncated_response_parts=truncated_response_parts,
+             truncated_tool_call_retries=truncated_tool_call_retries, retry_count=retry_count,
+diff --git a/agent/turn_tool_round.py b/agent/turn_tool_round.py
+index daa009ac80..57055f8656 100644
+--- a/agent/turn_tool_round.py
++++ b/agent/turn_tool_round.py
+@@ -47,7 +47,7 @@ def run_tool_round(
+     conversation_history: Any, api_call_count: Any, effective_task_id: Any, user_message: Any,
+     system_message: Any, active_system_prompt: Any, compression_attempts: Any,
+     max_compression_attempts: Any, final_response: Any, failed: Any, _turn_exit_reason: Any,
+-    truncated_tool_call_retries: Any,
++    truncated_tool_call_retries: Any, turn_id: Any = None,
+ ) -> ToolRoundVerdict:
+     """Execute one tool round in the exact original order. Persist-before-execute is a
+     durability invariant: resume must see the executed block if a destructive tool restarts
+@@ -75,7 +75,7 @@ def run_tool_round(
+     _tvv = validate_tool_calls(
+         agent, assistant_message, finish_reason, messages=messages,
+         conversation_history=conversation_history, api_call_count=api_call_count,
+-        effective_task_id=effective_task_id,
++        effective_task_id=effective_task_id, turn_id=turn_id,
+     )
+     if _tvv.action == "return":
+         return _verdict("return", _tvv.result)
+diff --git a/agent/turn_tool_validation.py b/agent/turn_tool_validation.py
+index db3e89334e..90bbe2e819 100644
+--- a/agent/turn_tool_validation.py
++++ b/agent/turn_tool_validation.py
+@@ -68,7 +68,7 @@ def _partial_exit(agent, messages, conversation_history, api_call_count, final_r
+ 
+ def validate_tool_calls(
+     agent: Any, assistant_message: Any, finish_reason: str, *, messages: List[Dict[str, Any]],
+-    conversation_history: Any, api_call_count: int, effective_task_id: Any,
++    conversation_history: Any, api_call_count: int, effective_task_id: Any, turn_id: Any = None,
+ ) -> ToolValidationVerdict:
+     """Validate ``assistant_message.tool_calls`` in place (ids uniquified, names
+     repaired, dict/empty args normalized to JSON strings). Strikes for invalid names
+@@ -175,10 +175,12 @@ def validate_tool_calls(
+             )
+             agent._invalid_json_retries = 0
+             agent._cleanup_task_resources(effective_task_id)
+-            return _verdict("return", _partial_exit(
++            from agent.turn_failure import finalize_failed_turn
++            return _verdict("return", finalize_failed_turn(agent, _partial_exit(
+                 agent, messages, conversation_history, api_call_count,
+                 "Response truncated due to output length limit",
+-            ))
++            ), task_id=effective_task_id, turn_id=turn_id,
++                failure_reason="incomplete_tool_arguments", finish_reason=finish_reason))
+ 
+         agent._invalid_json_retries += 1
+         tool_name, error_msg = invalid_json_args[0]
+diff --git a/agent/turn_truncation.py b/agent/turn_truncation.py
+index 6c81d581d3..fc7882bc80 100644
+--- a/agent/turn_truncation.py
++++ b/agent/turn_truncation.py
+@@ -20,6 +20,7 @@ from agent.message_sanitization import close_interrupted_tool_sequence
+ from agent.repetition_guard import is_repetition_dominated
+ from agent.turn_api_call import stop_thinking_spinner
+ from agent.turn_retry_state import TurnRetryState
++from agent.turn_failure import finalize_failed_turn
+ from hermes_constants import PARTIAL_STREAM_STUB_ID
+ 
+ logger = logging.getLogger("agent.conversation_loop")
+@@ -111,6 +112,7 @@ class _Trunc(TruncationVerdict):
+     api_call_count: int
+     effective_task_id: Any
+     current_turn_user_idx: Any
++    turn_id: Any = None
+     action: str = "fallthrough"
+     result: Optional[Dict[str, Any]] = None
+ 
+@@ -128,10 +130,11 @@ class _Trunc(TruncationVerdict):
+         if cleanup:
+             agent._cleanup_task_resources(self.effective_task_id)
+         agent._persist_session(self.messages, self.conversation_history)
+-        return self.done("return", partial_result(
++        return self.done("return", finalize_failed_turn(agent, partial_result(
+             self.messages if result_messages is None else result_messages, self.api_call_count,
+             final_response, error, failed=failed,
+-        ))
++        ), task_id=self.effective_task_id, turn_id=self.turn_id,
++            failure_reason="provider_finish_reason_length", finish_reason=self.finish_reason))
+ 
+     @property
+     def is_stub(self) -> bool:
+@@ -304,14 +307,14 @@ def recover_from_truncation(
+     messages: List[Dict[str, Any]], conversation_history: Any, api_kwargs: Any, api_call_count: int,
+     effective_task_id: Any, current_turn_user_idx: Any, length_continue_retries: int,
+     truncated_response_parts: List[str], truncated_tool_call_retries: int, retry_count: int,
+-    compression_attempts: int,
++    compression_attempts: int, turn_id: Any = None,
+ ) -> TruncationVerdict:
+     """Recover from a truncated response. Order is load-bearing: thinking exhaustion and
+     repetition abort BEFORE any continuation; a content-filter stall escalates to the
+     fallback chain BEFORE the primary is retried; text continuation (no tool calls) then
+     truncated tool-call retry; finally roll back to the last complete assistant turn."""
+     st = _Trunc(
+-        agent=agent, response=response, finish_reason=finish_reason,
++        agent=agent, response=response, finish_reason=finish_reason, turn_id=turn_id,
+         conversation_history=conversation_history, api_call_count=api_call_count,
+         effective_task_id=effective_task_id, current_turn_user_idx=current_turn_user_idx,
+         messages=messages, length_continue_retries=length_continue_retries,
+diff --git a/hermes_cli/oneshot.py b/hermes_cli/oneshot.py
+index a6ed16273c..50e1d02c0b 100644
+--- a/hermes_cli/oneshot.py
++++ b/hermes_cli/oneshot.py
+@@ -260,7 +260,7 @@ def run_oneshot(
+         real_stderr.write("hermes -z: no final response was produced; treating the run as failed.\n")
+         real_stderr.flush()
+         return 1
+-    return 0
++    return 2 if result.get("failed") or result.get("partial") or result.get("completed") is False else 0
+ 
+ 
+ def _create_session_db_for_oneshot():
+diff --git a/hermes_cli/plugins.py b/hermes_cli/plugins.py
+index da8d7e2c68..d39c20d1b3 100644
+--- a/hermes_cli/plugins.py
++++ b/hermes_cli/plugins.py
+@@ -107,7 +107,8 @@ _install_plugin_debug_handler()
+ VALID_HOOKS: Set[str] = {
+     "pre_tool_call", "post_tool_call", "transform_terminal_output", "transform_tool_result",
+     # transform_llm_output: return a replacement string (first non-None wins) or None.
+-    "transform_llm_output", "pre_llm_call", "post_llm_call",
++    "transform_llm_output",
++    "transform_turn_failure", "pre_llm_call", "post_llm_call",
+     # Streaming observers (agent.plugin_stream_hooks), off the token path; payloads are immutable
+     # normalized text/lifecycle and cannot transform the stream.
+     "on_stream_start", "on_stream_delta", "on_stream_end", "on_interim_message",
+diff --git a/hermes_cli/plugins_dispatch.py b/hermes_cli/plugins_dispatch.py
+index f21640821a..581cdff1a1 100644
+--- a/hermes_cli/plugins_dispatch.py
++++ b/hermes_cli/plugins_dispatch.py
+@@ -39,7 +39,7 @@ logger = logging.getLogger("hermes_cli.plugins")
+ # a daemon thread that may still mutate shared state — safer for value-returning observers than for
+ # gates/flushes.
+ _HOOK_TIMEOUT_BOUNDED_HOOKS: Set[str] = {
+-    "post_tool_call", "transform_terminal_output", "transform_tool_result", "transform_llm_output",
++    "post_tool_call", "transform_terminal_output", "transform_tool_result", "transform_llm_output", "transform_turn_failure",
+     "pre_llm_call", "post_llm_call", "pre_api_request", "post_api_request", "api_request_error",
+     "pre_verify", "on_session_start", "on_session_end",
+ }
+diff --git a/tests/hermes_cli/test_oneshot_surrogate.py b/tests/hermes_cli/test_oneshot_surrogate.py
+index 9039690a84..a419a88a25 100644
+--- a/tests/hermes_cli/test_oneshot_surrogate.py
++++ b/tests/hermes_cli/test_oneshot_surrogate.py
+@@ -7,6 +7,23 @@ import sys
+ import textwrap
+ from pathlib import Path
+ 
++import pytest
++
++
++@pytest.mark.parametrize("flags", [{"partial": True}, {"failed": True}, {"completed": False}])
++def test_printable_failure_exits_nonzero(flags):
++    program = (
++        "import hermes_cli.oneshot as oneshot\n"
++        f"oneshot._run_agent = lambda *a, **kw: ('Failure diagnostic', {flags!r})\n"
++        "raise SystemExit(oneshot.run_oneshot('hello'))\n"
++    )
++    result = subprocess.run(
++        [sys.executable, "-c", program], capture_output=True, timeout=30,
++        cwd=Path(__file__).resolve().parents[2], check=False,
++    )
++    assert result.returncode == 2
++    assert result.stdout == b"Failure diagnostic\n"
++
+ 
+ def test_oneshot_replaces_lone_surrogate_and_exits_zero():
+     """hermes -z must print U+FFFD and exit 0 when the model returns U+D800."""
+diff --git a/tests/run_agent/test_partial_stream_finish_reason.py b/tests/run_agent/test_partial_stream_finish_reason.py
+index 20ca79c575..c472ea2e73 100644
+--- a/tests/run_agent/test_partial_stream_finish_reason.py
++++ b/tests/run_agent/test_partial_stream_finish_reason.py
+@@ -410,6 +410,53 @@ def loop_agent():
+         return a
+ 
+ 
++@pytest.mark.parametrize("finish_reason", ["tool_calls", "length"])
++def test_truncated_turn_delivers_failure_and_session_end(loop_agent, tmp_path, monkeypatch, finish_reason):
++    import json
++    from hermes_cli import plugins
++    from tests.hermes_cli.test_plugins import _make_plugin_dir
++    from tests.run_agent.test_run_agent import _mock_response, _mock_tool_call
++
++    events = tmp_path / "failure-events.jsonl"
++    home = tmp_path / "failure-home"
++    _make_plugin_dir(
++        home / "plugins", "failure_observer", home=home,
++        register_body=(
++            "import json\n"
++            f"    path = {str(events)!r}\n"
++            "    def ended(**kw):\n"
++            "        with open(path, 'a') as f: f.write(json.dumps(kw) + '\\n')\n"
++            "    ctx.register_hook('on_session_end', ended)\n"
++            "    ctx.register_hook('transform_turn_failure', lambda **kw: 'Diagnostic: ' + kw['response_text'])"
++        ),
++    )
++    monkeypatch.setenv("HERMES_HOME", str(home))
++    manager = plugins.PluginManager()
++    manager.discover_and_load()
++    monkeypatch.setattr(plugins, "get_plugin_manager", lambda: manager)
++    loop_agent.valid_tool_names = {"web_search"}
++    loop_agent.client.chat.completions.create.return_value = _mock_response(
++        content=None, finish_reason=finish_reason,
++        tool_calls=[_mock_tool_call(arguments='{"query": "unfinished')],
++    )
++    with (
++        patch.object(loop_agent, "_persist_session"),
++        patch.object(loop_agent, "_save_trajectory"),
++        patch.object(loop_agent, "_cleanup_task_resources"),
++    ):
++        result = loop_agent.run_conversation("Find an example")
++    assert result["failed"] is True
++    assert result["completed"] is False
++    assert result["finish_reason"] == finish_reason
++    assert result["final_response"].startswith("Diagnostic: ")
++    assert result["error"] == "Response truncated due to output length limit"
++    records = [json.loads(line) for line in events.read_text().splitlines()]
++    assert len(records) == 1
++    assert records[0]["session_id"] == loop_agent.session_id
++    assert records[0]["failed"] is True
++    assert records[0]["completed"] is False
++
++
+ class TestConversationLoopPartialStreamContinuation:
+     """End-to-end: a partial-stream stub feeds the loop and the loop
+     asks for continuation instead of exiting with finish_reason=stop."""
+diff --git a/website/docs/developer-guide/plugins/index.md b/website/docs/developer-guide/plugins/index.md
+index 850070ad1d..534a423420 100644
+--- a/website/docs/developer-guide/plugins/index.md
++++ b/website/docs/developer-guide/plugins/index.md
+@@ -947,6 +947,7 @@ Each hook is documented in full on the **[Event Hooks reference](/user-guide/fea
+ | `pre_api_request` | Before each raw provider API request (several per turn when the model calls tools) | `session_id: str, model: str, provider: str, base_url: str, api_mode: str, api_call_count: int, message_count: int, tool_count: int, approx_input_tokens: int, max_tokens: int, request: dict` | ignored |
+ | `post_api_request` | After each raw provider API request returns | `pre_api_request` fields plus `api_duration: float, finish_reason: str, response_model: str \| None, usage: dict, response: dict, assistant_content_chars: int, assistant_tool_call_count: int` | ignored |
+ | `api_request_error` | A provider API call raised | correlation fields plus `status_code: int \| None, retry_count: int \| None, max_retries: int \| None, retryable: bool \| None, reason: str \| None, error: dict, request: dict` | ignored |
++| `transform_turn_failure` | A truncation exit returns before normal turn finalization | `response_text: str, error: str, session_id: str, task_id: str, turn_id: str, completed: bool, failed: bool, interrupted: bool, turn_exit_reason: str, finish_reason: str, model: str, platform: str` | first nonempty string replaces diagnostic text; failure state is immutable |
+ | [`on_session_start`](/user-guide/features/hooks#on_session_start) | New session created (first turn only) | `session_id: str, model: str, platform: str` | ignored |
+ | [`on_session_end`](/user-guide/features/hooks#on_session_end) | End of every `run_conversation` call + CLI exit | `session_id: str, completed: bool, interrupted: bool, model: str, platform: str` | ignored |
+ | [`on_session_finalize`](/user-guide/features/hooks#on_session_finalize) | CLI/gateway tears down an active session | `session_id: str \| None, platform: str` | ignored |
+@@ -960,6 +961,15 @@ Most hooks are fire-and-forget observers — their return values are ignored. Th
+ 
+ All callbacks should accept `**kwargs` for forward compatibility. If a hook callback crashes, it's logged and skipped. Other hooks and the agent continue normally.
+ 
++Truncation exits call `transform_turn_failure` followed by `on_session_end` with
++`completed=False` and `failed=True`. They never call the successful-output
++transform. `turn_exit_reason` distinguishes incomplete tool arguments from the
++provider length-handling branch; it does not infer a provider token cap. Failure
++diagnostics remain printable, but one-shot mode exits nonzero even when they are
++nonempty. A concrete consumer is the external Agency Runtime plugin, which needs
++to format failure diagnostics and close its correlated turn without accepting
++partial output.
++
+ The kanban lifecycle hooks fire **after** the board DB change commits, so a callback always sees durable state and can never hold the SQLite write lock. Because kanban workers run as separate `hermes -p <profile> chat -q` subprocesses, `kanban_task_claimed` fires in the **dispatcher** process while `kanban_task_completed` / `kanban_task_blocked` fire in the **worker** process — hook in the dispatcher to observe every transition centrally, or in the worker for per-task in-session context.
+ 
+ The **API request hooks** are observers for the raw provider request, one level below the per-turn `pre_llm_call` / `post_llm_call` pair: a single turn that calls tools makes several API requests, and these hooks fire around each one. They exist for observability plugins (tracing, cost accounting, latency dashboards). The `request` and `response` kwargs are sanitized, size-capped JSON views of the provider payload (sensitive keys redacted, long strings truncated, SDK objects normalized), and `usage` is a plain token-summary dict. Every payload carries the correlation fields `turn_id`, `api_request_id`, `task_id`, `session_id`, and `api_call_count`, so a plugin can stitch requests, tool calls, and turns together. `api_request_error` fires when a provider call raises and adds `status_code`, `retry_count` / `max_retries`, `retryable`, `reason`, and an `error` dict with `type` and `message`.

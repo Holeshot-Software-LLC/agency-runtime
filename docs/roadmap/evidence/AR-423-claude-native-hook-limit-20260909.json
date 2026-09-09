@@ -1,0 +1,14 @@
+{
+  "host": "claude",
+  "native_version": "2.1.266",
+  "observed": "2026-09-09",
+  "binary_sha256": "19842705e989393fce936804df6d2ab034860e24b8f8880357981d87ffd83fac",
+  "evidence_kind": "read-only installed native binary embedded JavaScript",
+  "default_limit_assignment": "Pdr=1e4",
+  "limiter_excerpt": "async function Gfe(e,n,r,{threshold:o=Pdr,storageV5:d}={}){if(e.length<=o)return e;let p=await aK(e,`hook-${n}-${r}`,Gb(),d);if(lK(p))return i(\"tengu_hook_output_persisted\",{source:u(r),originalSizeBytes:e.length,persistedSizeBytes:0,truncatedFallback:!0}),`${e.slice(0,o)}\n\n[Hook ${r} truncated at ${o} chars \\u2014 persist-to-disk failed: ${p.error}]`;let y=Ame(p);return i(\"tengu_hook_output_persisted\",{source:u(r),originalSizeBytes:p.originalSize,persistedSizeBytes:y.length,truncatedFallback:!1,truncatedAtCap:p.truncatedAtBytes!==void 0}),y}function AXe(e){let n=e.trim();if(!n.startsWith(\"{\"))return t(\"Hook output does not start with {, treating as plain text\"),{plainText:e};if(mwn(e))retur",
+  "native_string_limit": 10000,
+  "limit_units": "JavaScript string length (UTF-16 code units)",
+  "affected_surface": "UserPromptSubmit additionalContext",
+  "observed_followup_bytes_label": "15.7KB",
+  "note": "15.7KB is the observed oversized output, not the native threshold. No native binary, hook trust, provider configuration or selected card was changed. The excerpt identifies installed-version behavior only."
+}

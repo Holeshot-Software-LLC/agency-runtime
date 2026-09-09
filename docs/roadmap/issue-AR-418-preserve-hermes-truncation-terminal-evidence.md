@@ -32,6 +32,14 @@ Exit status and installation success therefore conceal an incomplete native turn
 
 ## Current state
 
+September9: native candidate is ported onto current upstreambf53ff00a7 as
+30f421ecce, with the patch retained in evidence/AR-418-hermes-upstream-terminal-20260909.patch.
+Five invariant variants fail on the base;31focused tests pass with the port,
+no retries. Compatibility scan2091pointers passes. Native
+PR106490 is ready for upstream review.
+Default installed Hermes remains7cd91114; upstream merge and installed adoption
+remain unproved. The original exact provider cap remains unknown.
+
 A concrete native candidate is preserved in
 `evidence/AR-418-hermes-native-terminal.patch` (native commit59e52e556a on
 base7cd91114b4). The two real conversation-loop regressions fail on the unchanged

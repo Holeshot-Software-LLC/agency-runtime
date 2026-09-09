@@ -1,0 +1,93 @@
+{
+  "baseline_blockers": [
+    {
+      "host": "claude",
+      "case": "ordinary_review",
+      "phase": "baseline",
+      "status": "blocked",
+      "reason": "Executable parent namespace is group-writable; observed before native installation repair."
+    },
+    {
+      "host": "claude",
+      "case": "short_followup",
+      "phase": "baseline",
+      "status": "blocked",
+      "reason": "Executable parent namespace is group-writable; observed before native installation repair."
+    },
+    {
+      "host": "claude",
+      "case": "multi_step",
+      "phase": "baseline",
+      "status": "blocked",
+      "reason": "Executable parent namespace is group-writable; observed before native installation repair."
+    },
+    {
+      "host": "zcode",
+      "case": "ordinary_review",
+      "phase": "baseline",
+      "status": "blocked",
+      "reason": "Native CLI installed, but answering model configuration missing; prior native gate reproduced and config still hooks-only."
+    },
+    {
+      "host": "zcode",
+      "case": "short_followup",
+      "phase": "baseline",
+      "status": "blocked",
+      "reason": "Native CLI installed, but answering model configuration missing; prior native gate reproduced and config still hooks-only."
+    },
+    {
+      "host": "zcode",
+      "case": "multi_step",
+      "phase": "baseline",
+      "status": "blocked",
+      "reason": "Native CLI installed, but answering model configuration missing; prior native gate reproduced and config still hooks-only."
+    }
+  ],
+  "openclaw_observer": {
+    "sessions": [
+      "agent:openclaw:ar404-20260909-baseline-review_followup",
+      "agent:openclaw:ar404-20260909-baseline-multi_step",
+      "agent:openclaw:ar404-20260909-after_repair-review_followup",
+      "agent:openclaw:ar404-20260909-after_repair-multi_step"
+    ],
+    "max_events_per_session": 16,
+    "max_event_bytes": 1048576,
+    "max_process_bytes": 8388608,
+    "native_capabilities_accepted": true,
+    "installation": [
+      {
+        "command": [
+          "openclaw",
+          "gateway",
+          "stop",
+          "--force"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "openclaw",
+          "plugins",
+          "install",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909/openclaw-witness",
+          "--force",
+          "--accept-capabilities"
+        ],
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "openclaw",
+          "gateway",
+          "start"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "rpc_healthy_after_restart": true,
+    "changed_config_sections": [
+      "plugins"
+    ],
+    "no_external_delivery": true
+  }
+}

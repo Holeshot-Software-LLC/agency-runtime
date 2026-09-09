@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-07-16
 tags: [finalization, sessions, evidence]
 related:
+  - docs/roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md
   - docs/roadmap/issue-AR-419-finalize-openclaw-cli-responses.md
   - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
   - docs/worklog/README.md
