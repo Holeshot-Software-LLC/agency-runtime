@@ -181,3 +181,9 @@ immutable card hashes from appended tool-availability disclosures. Full response
 and compact terminal evidence remain repository-local. No new native trial,
 permission change or failed receipt acceptance is used. The third isolated pass
 follows bounded packet inspection. AR-404 and AR-426 retain their separate gates.
+
+Third authorized AR-423 pass: criterion 1 satisfied (481b2034), criterion 2 absent
+(1cdde5fb), criterion 3 satisfied (c12f936f). The missing independent-assurance
+evidence led to a concrete High finding: inference selected five workers but
+only four prompt references survived, omitting the security reviewer. AR-427/#825
+owns that defect. AR-423 remains blocked; no closure or fourth pass occurred.

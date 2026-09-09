@@ -46,3 +46,6 @@ Earlier failed passes remain preserved; this is the third pass, not a retry loop
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-423.1-20260909-481b2034` | `0f3a6aa2b2703c07429e442b681d74eed136c134e77a67f441ced19bae56a0e1` | 2026-09-09 | AR-423-original-native-pointer-20260909.json captures the exact substitution, timestamp, size, hashes and session/trace correlation; AR-423-claude-native-hook-limit-20260909.json shows the native 10,000-unit limiter exceeded by the 16,067-unit output. |
+| 2 | absent | `AR-423.2-20260909-1cdde5fb` | `a876e3ce2df7354000345044c6f6362e0e08be2b171a6e42948353646c372d26` | 2026-09-09 | The full-card receipts and mcp_tools.py demonstrate native delivery and turn guards, but the terminal summary records no delegation and does not establish preservation of independent assurance. |
+| 3 | satisfied | `AR-423.3-20260909-c12f936f` | `3166cbf7b5a6b26bc784a8778e119b20689ea6961cf17883f3eb588944baa88e` | 2026-09-09 | The worklog records passing regression suites, the installed validation artifact reports 188/188 conformance mutations killed, and the native terminal summary records a fresh session with accepted authoritative completion and matching headers. |

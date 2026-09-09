@@ -1,6 +1,6 @@
 ---
 title: "AR-423: Preserve Claude specialist context across native hook output limits"
-status: open
+status: blocked
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -32,6 +32,14 @@ model-facing specialist delivery. A caller who prohibits file access cannot
 safely be worked around by reading that file automatically.
 
 ## Current state
+
+The owner-authorized third isolated pass satisfied criteria 1/3 and left criterion
+2 absent because independent assurance was not established. A subsequent exact
+Store comparison found five inference-selected identities but only four persisted
+prompt references: the independent security reviewer was omitted by a legacy
+hydration cap. AR-427/#825 now owns that High defect. The four native card bodies
+were delivered, but the earlier evidence does not prove the complete selected
+team. AR-423 stays open; no new verdict is invented or receipt reopened.
 
 Native large-card delivery now passes on candidate2b19cce6. Isolated acceptance
 is still open: two passes yielded absent criteria1/2, partly because the pointer

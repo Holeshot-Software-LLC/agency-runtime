@@ -47,7 +47,7 @@ bounded package are in AR-404's
 |---|---|---|---|---|---|
 | `AR-421` | [Preserve completed-task follow-up context](issue-AR-421-preserve-completed-task-followup-context.md) | done | p1 | host-integrations | [#808](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/808) |
 | `AR-422` | [Preserve Claude executable permissions across npm updates](issue-AR-422-preserve-claude-update-permissions.md) | done | p1 | host-integrations | [#809](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/809) |
-| `AR-423` | [Preserve Claude specialist context across native hook output limits](issue-AR-423-preserve-claude-hook-specialist-context.md) | open | p1 | host-integrations | [#811](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811) |
+| `AR-423` | [Preserve Claude specialist context across native hook output limits](issue-AR-423-preserve-claude-hook-specialist-context.md) | blocked | p1 | host-integrations | [#811](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811) |
 | `AR-425` | [Preserve rejected planner context and semantic failure identity](issue-AR-425-preserve-planner-repair-context.md) | done | p1 | reliability | [#820](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/820) |
 | `AR-424` | [Preserve the final specialist card bytes in native hook context](issue-AR-424-preserve-last-card-whitespace.md) | done | p1 | host-integrations | [#812](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/812) |
 | `AR-420` | [Bind reranker responses to per-unit candidate membership](issue-AR-420-bind-reranker-candidate-membership.md) | done | p1 | host-integrations | [#802](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/802) |
