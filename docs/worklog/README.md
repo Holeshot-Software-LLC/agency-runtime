@@ -2322,6 +2322,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `6ffeb9e8` | 2026-09-09 | docs(acceptance): supplement Claude packet with exact native pointer | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `5bda662c` | 2026-09-09 | docs(acceptance): retain bounded verifier outcomes and compact source evidence | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `9cbe08a3` | 2026-09-09 | docs(acceptance): bind planner verification to bounded decisive excerpts | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `6eb6916c` | 2026-09-09 | docs(acceptance): correct table placement and bounded evidence locators | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
