@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-terminal-reliability-20260909
-evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
-minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
+evidence_commit: ab924385dc8b1e7f0b2c218c2bebab55cb52b3db
+minimum_ledger_commit: aee01dc6e866671db3fdc1da97e9762249028ad7
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -34,7 +34,8 @@ Active owned branch codex/ar404-terminal-reliability-20260909 starts at clean
 synchronized c6c3e7b5. AR-426/#823 owns the new Hermes native hook-spill repair,
 separate from AR-418 output truncation. Recipe17 candidate preserves full cards
 through bounded selected-version native tool retrieval;75context tests pass.
-Required fast checks, canonical install and native demo follow the local checkpoint.
+Fast production1151/3skip, UI224, conformance188/188 and canonical616file
+installation pass. Hermes native demo follows; other host projections unchanged.
 Exact baseline: AR-426-exact-native-spill-and-terminal-audit-20260909.json.
 Fresh Codex8/8trusted; process2200222 runs published6db15efbecbe, MCP responds,
 classifier6,615installed files match prior wheel. Handoff trace01a086f4 is failed

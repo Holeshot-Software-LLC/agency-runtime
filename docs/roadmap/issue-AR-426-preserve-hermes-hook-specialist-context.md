@@ -34,8 +34,8 @@ This input-context defect is distinct from AR-418 output truncation.
 
 ## Current state
 
-Recipe17 candidate implemented;75context/terminal tests pass. Required fast checks,
-installed native proof and isolated acceptance remain pending. Exact baseline is
+Recipe17 candidate implemented;75context/terminal tests pass. Fast production1151/3skip, UI224, conformance188/188 and canonical616file install
+pass. Native proof and isolated acceptance remain pending. Exact baseline is
 evidence/AR-426-exact-native-spill-and-terminal-audit-20260909.json.
 
 Scoped from the exact retained AR-404 receipts. Installed native checkout is

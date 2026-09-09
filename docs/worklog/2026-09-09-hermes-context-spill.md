@@ -14,7 +14,7 @@ superseded_by: null
 type: worklog
 commit: ab924385dc8b1e7f0b2c218c2bebab55cb52b3db
 short: ab924385
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/824
 date: 2026-09-09
 related_issues:
   - docs/roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md
@@ -73,3 +73,17 @@ owner authorization for a third isolated pass. No all-host reliability claim.
 Finish the bounded AR-426 validation/install/demo/isolated acceptance package,
 merge through a PR and record exact implementation and merge worklogs. Preserve
 AR-404/418/423 and remaining Zcode/staffing failures until their own gates pass.
+
+## Installed demo checkpoint
+
+PR824 is draft. Sourceab924385/artifactaee01dc6: required production1151passed/3skipped,
+UI224passed, routing/Ruff/format/docs/strict tracker417pass. Focused75context and
+121wider/6skip pass. Frozen conformance188/188killed,0invalid/0survived, source
+unchanged. Canonical build, Twine, independent artifact validation and installed
+smoke pass;616files exactly match wheeldd6e13969f3d78e060945b949236290ffc6a77d021fdfc0c0c901d000cc6f59f.
+The shared-clone build hit the bounded Git-output limit; a private clone of the
+same immutable commit built successfully with no source or limit changes.
+Only Hermes native projection refreshed; other four native projections remain
+as previously verified. No native budget/settings/permission changes. Three
+unchanged Hermes manifest requests will each run once under360s, preserving
+all failures. The full-card native gate and isolated acceptance remain pending.
