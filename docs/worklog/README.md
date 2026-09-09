@@ -2364,6 +2364,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5b1632e6` | 2026-09-09 | docs(reliability): accept AR-428 planning boundary with isolated evidence | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 | `0839e158` | 2026-09-09 | fix(planner): merge PR831 observed test evidence boundary | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 | `ef124c50` | 2026-09-09 | docs(reliability): scope observed Claude native acceptance turn | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
+| `fb7e8a3a` | 2026-09-09 | docs(reliability): retain Claude refresh preconditions | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
