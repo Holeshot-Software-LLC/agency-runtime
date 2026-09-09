@@ -2294,6 +2294,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8dc9277d` | 2026-09-09 | docs(acceptance): separate behavior criteria from isolated verification procedure | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
 | `5036c467` | 2026-09-09 | docs(AR-421): record isolated acceptance of completed-task context repair | AR-404, AR-421 | [Detail](2026-09-09-completed-task-context.md) |
 | `916362c7` | 2026-09-09 | docs(AR-404): close isolated repairs and retain exact-card follow-up | AR-404, AR-421, AR-422, AR-424 | [Detail](2026-09-09-completed-task-context.md) |
+| `3a921c61` | 2026-09-09 | Merge pull request #810 from Holeshot-Software-LLC/codex/ar404-reliability-suite-20260909 | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
