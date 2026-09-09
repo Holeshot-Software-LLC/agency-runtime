@@ -153,7 +153,7 @@ class FakeHookContext:
         self.tools: dict[str, dict[str, Any]] = {}
 
     def register_hook(self, name: str, fn: Any) -> None:
-        self.hooks[name] = fn
+        self.hooks.setdefault(name, fn)
 
     def register_command(self, name: str, fn: Any, **_kwargs: Any) -> None:
         self.commands[name] = fn

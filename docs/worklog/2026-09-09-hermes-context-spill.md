@@ -87,3 +87,21 @@ Only Hermes native projection refreshed; other four native projections remain
 as previously verified. No native budget/settings/permission changes. Three
 unchanged Hermes manifest requests will each run once under360s, preserving
 all failures. The full-card native gate and isolated acceptance remain pending.
+
+## First native phase and bounded refinement
+
+Tool-only candidateaee01dc6 native phase returns95.801s/69.346s/99.422s, no timeouts.
+Review finalizes with matching headers but omits both pending cards. Follow-up
+omits cards and fails the first header; multi-step fails the critic with
+critic_wrong_neighbor_selection_code_reviewer. No case satisfies all native gates.
+The exact frame is no longer spilled, and no omitted card is counted loaded.
+No failed turn is reopened. This evidence motivates a source delivery refinement,
+not an unchanged-condition retry: use Hermes's documented ordered callback list
+and per-callback spill application to deliver full cards before model execution.
+Recipe18 candidate adds at most16card callbacks plus a current snapshot. Each
+card uses the existing exact selected-version native bridge, with no new inference,
+manual identity choice or budget/permission change. Native source excerpts and
+hashes are preserved in AR-426-native-fragment-contract-20260909.json.
+
+Refined callback/context/terminal focused suite131passed; Ruff and format pass.
+Revised production, conformance and native proof follow the source checkpoint.

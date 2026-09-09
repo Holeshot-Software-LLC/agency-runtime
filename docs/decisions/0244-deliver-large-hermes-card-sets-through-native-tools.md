@@ -47,3 +47,18 @@ never reopened. No owner budget, trust or staffing setting changes.
 Increasing or disabling the global spill budget affects other plugins. Reading
 spill files violates supplied-code-only requests. Trimming cards destroys exact
 version delivery. Relabeling failed terminal receipts would falsify evidence.
+
+## Native delivery refinement
+
+The first installed tool-only phase preserved the frame but the model skipped
+card retrieval;95.801s review finalized truthfully with no cards,69.346s follow-up
+failed its header and99.422s multi-step failed critic staffing. These remain
+in AR-426-hermes-native-after-ar426-20260909.json and are not acceptance.
+Native checkout7cd91114 explicitly supports multiple ordered callbacks per event
+and spills each callback result separately before joining model context. Recipe18
+therefore uses bounded native callbacks to retrieve each selected immutable card
+through the same correlation-checked bridge operation, then emits a fresh snapshot.
+Sixteen card slots plus one snapshot mirror the existing durable reference cap;
+empty slots do not dispatch. Card/version/turn guards and the result ceiling stay
+unchanged. The local tool remains a supported retrieval surface. No global native
+limit or model budget changes; loaded rows correspond to returned bounded fragments.

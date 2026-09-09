@@ -83,3 +83,69 @@ def test_native_tool_cannot_invent_loads_or_change_selected_version(tmp_path, mo
     else:
         assert "error" in result
         assert store.get_specialists_for_trace("context-session", trace) == []
+
+
+def test_native_callbacks_deliver_full_cards_before_model_and_refresh_headers(
+    tmp_path, monkeypatch
+):
+    store, trace, bodies, _context = _turn(tmp_path, monkeypatch, host="hermes")
+    module = _generated_plugin()
+    adapter = HermesAdapter(store)
+    module._invoke = lambda action, payload: handle({"action": action, **payload}, adapter=adapter)
+
+    class NativeContext:
+        def __init__(self):
+            self.callbacks = []
+
+        def register_hook(self, event, callback):
+            if event == "pre_llm_call":
+                self.callbacks.append(callback)
+
+        def register_tool(self, **kwargs):
+            pass
+
+        def register_command(self, *args, **kwargs):
+            pass
+
+    context = NativeContext()
+    module.register(context)
+    from agency_runtime.core.specialist_contracts import MAX_DURABLE_SPECIALIST_REFERENCES
+
+    assert len(context.callbacks) == MAX_DURABLE_SPECIALIST_REFERENCES + 2
+    pieces = []
+    for callback in context.callbacks:
+        result = callback(
+            session_id="context-session",
+            turn_id=trace,
+            user_message="Review the supplied Python average function for correctness.",
+        )
+        if result and result.get("context"):
+            # Native turn_context.py applies spilling separately to each callback
+            # result, then joins all pieces before entering the conversation loop.
+            assert len(result["context"]) <= 10_000
+            pieces.append(result["context"])
+    assert len(pieces) == len(bodies) + 2
+    assert all(any(body in piece for piece in pieces) for body in bodies.values())
+    assert set(store.get_specialists_for_trace("context-session", trace)) == set(bodies)
+    assert all(slug in pieces[-1] for slug in bodies)
+    module._forget_turn("context-session", trace)
+    assert module._CONTEXT_FRAGMENT_COUNTS == {}
+
+
+def test_native_fragment_callback_cannot_cross_a_turn(tmp_path, monkeypatch):
+    store, trace, _bodies, _context = _turn(tmp_path, monkeypatch, host="hermes")
+    module = _generated_plugin()
+    module._remember_preflight_result(
+        "context-session",
+        {
+            "session_id": "context-session",
+            "trace_id": trace,
+            "context_fragment_count": 5,
+        },
+    )
+    module._invoke = lambda *args: pytest.fail("Cross-turn native callback must not dispatch")
+    assert (
+        module._context_fragment_callback(0)(session_id="context-session", turn_id="another-turn")
+        is None
+    )
+    assert store.get_specialists_for_trace("context-session", trace) == []

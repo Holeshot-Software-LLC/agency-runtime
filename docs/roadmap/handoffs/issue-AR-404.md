@@ -32,8 +32,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 Active owned branch codex/ar404-terminal-reliability-20260909 starts at clean
 synchronized c6c3e7b5. AR-426/#823 owns the new Hermes native hook-spill repair,
-separate from AR-418 output truncation. Recipe17 candidate preserves full cards
-through bounded selected-version native tool retrieval;75context tests pass.
+separate from AR-418 output truncation. Recipe18 refinement follows a failed tool-only native phase: models skipped
+retrieval. Native ordered per-card callbacks now retrieve before the model runs;
+131focused tests pass. Revised fast validation and native proof are pending.
 Fast production1151/3skip, UI224, conformance188/188 and canonical616file
 installation pass. Hermes native demo follows; other host projections unchanged.
 Exact baseline: AR-426-exact-native-spill-and-terminal-audit-20260909.json.

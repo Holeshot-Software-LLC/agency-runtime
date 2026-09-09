@@ -24,7 +24,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823
 
 ## Checkpoint
 
-PR824 draft, sourceab924385/artifactaee01dc6. Recipe17 defers large selected
+PR824 draft, sourceab924385/artifactaee01dc6. Recipe18 defers large selected
 Hermes card sets to bounded local tool retrieval. Small inline path preserved.
 All616installed files match canonical wheel; only Hermes projection refreshed.
 Required fast validation passes; package demo_ready pending native proof.
@@ -40,8 +40,9 @@ Baseline and fast-install JSONs live under docs/roadmap/evidence/AR-426-*.
 
 ## Exact blocker
 
-Fresh installed native full cards, matching headers and accepted finalization
-are not yet demonstrated. Isolated acceptance must follow that proof. AR-418
+First native phase omitted card retrieval; all3full gates remain failed.
+Revised native callbacks deliver cards before model execution; fresh validation
+and native full-card/header/finalization demonstration are pending. Isolated acceptance must follow that proof. AR-418
 is a separate output-truncation issue: upstream PR106490 remains open, default
 native checkout7cd91114 unchanged, original provider output cap unknown.
 

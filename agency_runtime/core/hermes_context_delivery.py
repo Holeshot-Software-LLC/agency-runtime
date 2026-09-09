@@ -25,12 +25,12 @@ def selected_card_requests(references: Sequence[Mapping[str, Any]]) -> str:
     lines = [
         "[AGENCY SELECTED SPECIALIST CONTEXT]",
         "This turn's workforce inference selected the following immutable cards. "
-        "Selection is not loading. Before doing the task, retrieve each card with "
-        "the local agency_load_specialist tool using only its exact slug below. "
-        "If needed, discover it once with tool_search query=agency_load_specialist "
-        "or call tool_call name=agency_load_specialist. Native correlation binds "
-        "the tool to this active turn. Use every returned full card; do not choose, "
-        "substitute, or read files to obtain cards. Report only actual loads.",
+        "Selection is not loading. Subsequent native hook callbacks deliver each "
+        "full card and then the current header snapshot, before the model runs. "
+        "Use those delivered cards. If a card remains pending, the local "
+        "agency_load_specialist tool can retrieve its exact slug below; native "
+        "correlation binds retrieval to this active turn. Do not choose, substitute, "
+        "or read files to obtain cards. Report only actual loads.",
     ]
     lines.extend(json.dumps({"slug": row["slug"]}, separators=(",", ":")) for row in references)
     return "\n".join(lines)

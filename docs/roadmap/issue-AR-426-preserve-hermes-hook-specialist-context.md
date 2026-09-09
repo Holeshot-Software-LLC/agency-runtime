@@ -34,7 +34,12 @@ This input-context defect is distinct from AR-418 output truncation.
 
 ## Current state
 
-Recipe17 candidate implemented;75context/terminal tests pass. Fast production1151/3skip, UI224, conformance188/188 and canonical616file install
+First native tool-only phase failed all three full acceptance gates. Intact frames
+arrived, but the model skipped card retrieval. Recipe18 refines delivery through
+ordered per-card native callbacks and a final current snapshot; revised focused
+and fast validation/install/demo are pending. Prior failures are preserved.
+
+Recipe18 candidate implemented;75context/terminal tests pass. Fast production1151/3skip, UI224, conformance188/188 and canonical616file install
 pass. Native proof and isolated acceptance remain pending. Exact baseline is
 evidence/AR-426-exact-native-spill-and-terminal-audit-20260909.json.
 
