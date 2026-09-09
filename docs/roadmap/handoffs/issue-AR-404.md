@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-reliability-suite-20260909
-evidence_commit: 0540a5ad15b635ff227031a80831972f14a134d2
-minimum_ledger_commit: 86c99a36ec5fc2420f46cb57e70deda58e480e35
+evidence_commit: c13f3b72730d1790280e4696b7974742dd2eb722
+minimum_ledger_commit: f78878b2aba68d49e3716c3929eb34a3010baa6e
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -63,25 +63,26 @@ once. This is executable proof only.
 
 ## Exact blocker
 
-Final Claude recheck failed again after its package/executable were replaced at
-22:38:08UTC and the package/bin directories returned to775. Earlier replacement
-was22:24:43UTC. Repeated chmod is not a durable repair. The replacing process is
-unidentified; two old terminal processes use a deleted installation, but that
-alone does not prove responsibility. Owner asked about concurrent installers.
-No terminal was stopped or trust weakened. See
- evidence/AR-404-claude-install-recurrence-20260908.json. Prior native/verifier
-success remains historical evidence; current Claude executable gate is failing.
+AR-421/#808 candidate fixes completed-task context loss with fresh inference.
+Focused152pass; original version5 negative control7fail/12pass, including actual
+preflight handoff. Production1151pass/3skip, UI224, Ruff pass. Not installed yet.
+Codex frozen baseline: review73.147s and multi-step114.055s completed with exact
+accepted hashes; same-session "go for it"84.122s staffing failed. Native card
+inspection pending. See evidence/AR-404-codex-suite-baseline-20260909.json.
 
-Hermes native candidate59e52e556a is preserved as a repository patch;34native
-tests and94adapter tests pass. Candidate-source session20260908_172942_b70b9d passes exact card/headers/accept
-in194.347s. Normal native checkout is unchanged; upstream PR consent asked once.
-See evidence/AR-418-hermes-candidate-native-20260908.json. Original
-Hermes output-limit early returns bypass native finalizer/session-end callbacks;
-outer runner and CLI can misclassify printable partial output as success. No
-supported terminal-result hook covers those returns. AR-418 needs native-boundary
-repair, not fabricated adapter success. Original provider cause/token cap unproven.
-OpenClaw exact injection observer requires native capability consent, asked once;
-no observer was installed. Do not treat elapsed time as approval.
+AR-422/#809: latest Claude npm update receipt2.1.261to2.1.266 matches directory
+replacement. Process umask002/npmadditionalmask0 explains775parents. Offline
+fixture proves npm configmask022 alone leaves writable root/executable; no npm
+config changed. Supported native install2.1.266 under077 now owns native PATH
+launcher,700parents; normal executable gate and Agencyrefresh pass. Existing
+user terminals untouched. Native turn/update-survival gates pending.
+
+Hermes native candidate59e52e556a remains unpublished/default unadopted;
+34native/94adapter tests and one source-candidate success are historical. Baseline
+suite now uses normal `hermes chat --oneshot --quiet`, no approval bypass.
+Original truncation cause/token cap remains unproven. OpenClaw terminal fix
+is historical live-proven; exact input card remains pending bounded observer.
+Zcode native executable exists but its CLI answering model config is missing.
 
 ## Same-task continuity
 
@@ -109,8 +110,8 @@ proposal unavailable; critic veto unadjudicated. Reranker passed, cold embedding
 39.653s. See evidence/AR-404-followup-failure-20260909.json. Investigate context
 loss without weakening inference, critic or validator boundaries.
 AR-420 is scoped acceptance-closed; remaining reliability stays withAR-404.
-Claude executable trust remains failed. Resolve replacing actor; keep user
-terminals intact. Complete Hermes default adoption, OpenClaw exact injection,
+Claude native executable trust now passes; verify native turn and update survival.
+Keep user terminals intact. Complete Hermes default adoption, OpenClaw exact injection,
 and Zcode answering setup using existing authorization and supported native gates.
 
 ## Verification

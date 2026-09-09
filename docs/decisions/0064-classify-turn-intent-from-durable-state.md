@@ -6,6 +6,7 @@ created: 2026-07-18
 updated: 2026-07-18
 tags: [routing, lifecycle, correlation, inference]
 related:
+  - docs/roadmap/issue-AR-421-preserve-completed-task-followup-context.md
   - docs/roadmap/issue-AR-85-state-aware-turn-classification.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/roadmap/issue-AR-280-exclude-hermes-internal-post-response-preflight.md

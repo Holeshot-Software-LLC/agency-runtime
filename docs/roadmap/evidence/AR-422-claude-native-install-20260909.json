@@ -1,0 +1,71 @@
+{
+  "observed_date": "2026-09-09",
+  "latest_npm_update_receipt": {
+    "timestamp": "2026-09-09T10:08:08.787Z",
+    "path": "npm-global",
+    "outcome": "success",
+    "status": "success",
+    "version_from": "2.1.257",
+    "version_to": "2.1.266",
+    "error_code": null
+  },
+  "original_namespace": {
+    "package_mode": "0775",
+    "bin_mode": "0775",
+    "executable_mode": "0755",
+    "ctime_utc": "2026-09-09T09:54:43Z",
+    "npm_config_umask": 0,
+    "observed_claude_process_umasks": "0002"
+  },
+  "offline_npm_fixture": [
+    {
+      "npm_umask": "0",
+      "process_umask": "002",
+      "exit_code": 0,
+      "modes": {
+        "node_modules/ar404-permission-fixture": "0o775",
+        "node_modules/ar404-permission-fixture/bin": "0o775",
+        "node_modules/ar404-permission-fixture/bin/run.js": "0o775"
+      },
+      "stderr": "npm warn invalid config umask=\"0\" set in command line options\nnpm warn invalid config Must be octal number in range 0o000..0o777 (0..511)\n"
+    },
+    {
+      "npm_umask": "022",
+      "process_umask": "002",
+      "exit_code": 0,
+      "modes": {
+        "node_modules/ar404-permission-fixture": "0o775",
+        "node_modules/ar404-permission-fixture/bin": "0o755",
+        "node_modules/ar404-permission-fixture/bin/run.js": "0o775"
+      },
+      "stderr": ""
+    }
+  ],
+  "repair": {
+    "command": [
+      "claude",
+      "install",
+      "2.1.266"
+    ],
+    "process_umask": "0077",
+    "exit_code": 0,
+    "path": "/home/holeshot/.local/bin/claude",
+    "target": "/home/holeshot/.local/share/claude/versions/2.1.266",
+    "parent_modes": {
+      "/home/holeshot/.local/share/claude/versions": "0o700",
+      "/home/holeshot/.local/share/claude": "0o700",
+      "/home/holeshot/.local/share": "0o700",
+      "/home/holeshot/.local": "0o700"
+    },
+    "native_gate_executable": [
+      "/home/holeshot/.local/share/claude/versions/2.1.266"
+    ],
+    "native_gate_reason": "",
+    "agency_refresh_ok": true
+  },
+  "limits": [
+    "No npm user configuration changed: the config-mask-only fixture did not secure all launch-critical paths.",
+    "Individual updating process not attributed. Existing user terminals were preserved.",
+    "Fresh native answering/finalization and update-survival evidence still required."
+  ]
+}

@@ -66,6 +66,17 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+September9 implementation checkpoint: AR-421/#808 preserves completed-task
+follow-up context with fresh staffing. Focused152pass; original-source negative
+control7fail/12pass. Production1151pass/3skip, UI224pass, Ruff pass. Candidate
+not installed. Fixed Codex baseline has accepted review/multi-step terminal
+hashes but failed short follow-up; all outcomes retained. AR-422/#809 reproduces
+npm permission recurrence and moves Claude through its supported native installer;
+normal executable gate and Agency refresh now pass, fresh native turn pending.
+See the two issue records and2026-09-09-completed-task-context.md. Hermes baseline
+is running on the unchanged normal installation; OpenClaw and Zcode remain in scope.
+
+
 September9 package scoped: freeze three ordinary/native requests across all five
 hosts before baseline calls. The immutable prompts, per-phase one-attempt budget,
 360-second deadline, answer and lifecycle gates are in

@@ -6,6 +6,7 @@ created: 2026-08-24
 updated: 2026-08-24
 tags: [routing, classification, privacy, workforce, correlation]
 related:
+  - docs/roadmap/issue-AR-421-preserve-completed-task-followup-context.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/roadmap/handoffs/issue-AR-265.md
   - docs/decisions/0064-classify-turn-intent-from-durable-state.md

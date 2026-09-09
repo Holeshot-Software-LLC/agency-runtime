@@ -30,8 +30,8 @@ TurnKind = Literal[
 ]
 TurnStateStatus = Literal["current", "missing", "stale", "ambiguous", "corrupt"]
 
-TURN_CLASSIFIER_VERSION = 5
-SUPPORTED_TURN_CLASSIFIER_VERSIONS: Final[frozenset[int]] = frozenset({1, 2, 3, 4, 5})
+TURN_CLASSIFIER_VERSION = 6
+SUPPORTED_TURN_CLASSIFIER_VERSIONS: Final[frozenset[int]] = frozenset({1, 2, 3, 4, 5, 6})
 MAX_TURN_SIGNAL_CHARS = 16_384
 MAX_REASON_CODES = 8
 MAX_REASON_CODE_CHARS = 64
@@ -60,7 +60,7 @@ _PURE_CONVERSATION = re.compile(
     re.IGNORECASE,
 )
 _CONTEXTUAL_CONTINUATION = re.compile(
-    r"^(?:continue|do\s+it|go|go\s+ahead|hold|no|nope|proceed|"
+    r"^(?:continue|do\s+it|go(?:\s+ahead|\s+for\s+it)?|hold|no|nope|proceed|"
     r"retry|ship\s+it|skip|stop|sure|wait|yes|yep)\s*[!.]*$",
     re.IGNORECASE,
 )
@@ -852,6 +852,33 @@ def _untrusted_state_decision(
     )
 
 
+def _terminal_contextual_reply(text: str, state: TurnState, raw_message: str) -> TurnClassification:
+    completed_task = state.previous_status == "completed" and state.previous_turn_kind in {
+        "new_intent",
+        "continuation",
+        "revision",
+    }
+    # Completion ends execution, not the subject of a follow-up. Carry only
+    # its guarded subject to fresh inference, never replay completed workers.
+    kind: TurnKind = "new_intent"
+    if completed_task:
+        kind = "revision" if _REVISION_PREFIX.match(text) else "continuation"
+    return _decision(
+        kind,
+        state,
+        raw_message,
+        *(
+            ("completed_task_context", "continuation_reply_requires_reroute")
+            if completed_task
+            else ("ambiguous_reply_without_valid_state",)
+        ),
+        confidence=0.9 if completed_task else 0.5,
+        selection_required=True,
+        reroute_required=True,
+        execution_decision_required=True,
+    )
+
+
 def classify_turn_intent(
     message: str,
     state: TurnState | Mapping[str, Any] | None = None,
@@ -997,21 +1024,12 @@ def classify_turn_intent(
             execution_decision_required=False,
         )
 
-    if (
-        _CONTEXTUAL_CONTINUATION.fullmatch(text)
-        or _PURE_ACKNOWLEDGEMENT.fullmatch(text)
-        or _PURE_CONVERSATION.fullmatch(text)
+    if _CONTEXTUAL_CONTINUATION.fullmatch(text) or (
+        current_state.previous_status == "completed"
+        and current_state.previous_turn_kind in {"new_intent", "continuation", "revision"}
+        and _REVISION_PREFIX.match(text)
     ):
-        return _decision(
-            "new_intent",
-            current_state,
-            raw_message,
-            "ambiguous_reply_without_valid_state",
-            confidence=0.5,
-            selection_required=True,
-            reroute_required=True,
-            execution_decision_required=True,
-        )
+        return _terminal_contextual_reply(text, current_state, raw_message)
 
     return _decision(
         "new_intent",
