@@ -35,7 +35,7 @@ closed with isolated evidence; AR-404/418/423 open; AR-419 now isolated-complete
 codex/ar404-shared-staffing-20260909 applies the approved shared staffing config.
 Only Hermes/OpenClaw overrides removed; other settings/answering models unchanged.
 Fresh Codex inspection: all8hooks enabled/trusted, no modified/missing entries.
-Claude per-tool grant is approved, applied and read-back verified; native probe pending.
+Claude per-tool grant is approved, applied and read-back verified; native probe101.434s failed planner contract.
 Installed production cd86e40a/artifact0cd4f289 unchanged,615files match. Claude/Zcode
 projection07d88875a9e6; Codex/Hermes/OpenClaw1825059191a2. This parent has a stale
 long-lived integration and previously failed finalizer transport. Fresh processes
@@ -130,7 +130,7 @@ are proven on its follow-up; all4isolated criteria are satisfied.
 
 ## Same-task continuity
 
-PR816 owns this package. After merge, this branch is historical; create a new
+PR818 owns the Claude grant package. After merge, this branch is historical; create a new
 owned worktree for new changes. Continue the same task. At/below50percent,
 checkpoint the smallest substantive/ledger pair and continue. No transfer or
 empty continuation for telemetry. Preserve unrelated and Windows work.
@@ -141,7 +141,8 @@ Investigate the exact retained recruiter/critic and missing-header failures unde
 AR-404 before another bounded phase; no unchanged-condition retry.
 The shared-staffing phase is complete with every failed case retained.
 No observer remains; normal gateway RPC is healthy.
-Run the approved Claude after_tool_permission surface probe once.
+Claude grant probe failed both planner attempts; inspect exact trace
+be4757dc-c14f-4e39-b366-bdfa2ef0ae40 before another phase.
 Zcode review/follow-up passed but multi-step failed; retain that scope and evidence.
 No manual specialists, altered critic decisions or unchanged-condition retries.
 

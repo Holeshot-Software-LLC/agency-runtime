@@ -25,6 +25,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 
 ## Checkpoint
 
+PR818 grant applied; fresh probe101.434s fails both bounded planner attempts
+(provider_response_contract_invalid). No team/MCP calls or accepted finalization.
+Permission denials empty does not prove native card delivery. AR-423 stays open.
+
+
 Scoped outcome: exact selected full cards reach Claude despite its native hook
 limit, with truthful loaded evidence. Owner approved both exact Allow rules; they are applied and read-back verified.
 PR814 and merge ledger PR815 are merged; base main f013e63a. AR-421/422/424
@@ -55,7 +60,7 @@ shared-route alignment is recorded separately; all failed suite outcomes remain.
 
 ## Same-task continuity
 
-After PR816 merges, create a new owned worktree for further changes. At or below
+After PR818 merges, this grant branch is historical; create a new owned worktree. At or below
 50 percent, checkpoint the smallest safe
 source/ledger pair, then continue the same task. The umbrella capsule retains
 other host evidence and pending owner actions. Do not recreate historical work.
@@ -64,8 +69,8 @@ other host evidence and pending owner actions. Do not recreate historical work.
 
 The fixed sample retained review success, follow-up response_invalid and multi-step
 staffing failure; neither staffed case exercised the large-card MCP path. The separate probe (219.959s) is retained with four native permission denials.
-The owner has authorized and saved both exact rules. Run the prepared fresh
-after_tool_permission phase once, preserving the original request and timeout.
+Both rules are saved; the one after_tool_permission probe failed staffing.
+Investigate this exact planner receipt under AR-404 before another native phase.
 Do not bypass native permissions or retry under the same condition. Bind full native
 MCP tool results to exact session/trace and selected version/hash. Do not claim
 card delivery from tool instructions alone. Build isolated acceptance afterward.

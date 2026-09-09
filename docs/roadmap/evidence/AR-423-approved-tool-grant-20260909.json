@@ -11,5 +11,5 @@
   "before_sha256": "4600742bbb3926381e345ab88917c9a8d559be94a78b501a41bfa7bd818f94a2",
   "after_sha256": "85d20b9c911ef51c64cf4c01c6e62c451ce08e6d0f630146967f9cd57a432cc4",
   "private_backup_preserved": true,
-  "native_verification": "pending"
+  "native_verification": "Completed one fresh probe: planner contract invalid twice, no staffing, no MCP calls; full-card gate unproven"
 }

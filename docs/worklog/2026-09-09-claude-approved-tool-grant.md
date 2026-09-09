@@ -52,3 +52,21 @@ no specialist or successful parent finalization is claimed.
 The 12 focused Claude context-delivery tests pass in8.80s. The first docs check
 found missing related_issues front matter in this new worklog; added before final
 validation. No production source was changed.
+
+
+### Approved Claude permission probe outcome
+
+Native sessionf4897a2b-8ae1-4462-a692-8cd9b53808a6, trace
+be4757dc-c14f-4e39-b366-bdfa2ef0ae40, returns in101.434s, CLIexit0, no timeout.
+Both bounded planner attempts are provider_response_contract_invalid (18.977s,
+16.344s); staffing ends preflight_failed/inference_invalid. All five diagnostic
+headers match Store, no selected cards, no MCP calls and no authoritative accepted
+finalization. Native permission_denials is empty because no tool was attempted;
+it is not a card-delivery canary. Both approved Allow rules remain saved.
+No unchanged-condition retry. AR-423 stays open for exact native full-card and
+isolated evidence; AR-404 retains staffing failures and the Hermes/Zcode gates.
+Evidence: AR-404-claude-suite-after-tool-permission-20260909.json.
+
+Grant package complete; the native full-card outcome remains blocked by inference.
+No new owner permission is pending for these two tools. Production and installed
+sources remain unchanged. Docs/metadata/policy/tracker and focused12 checks pass.
