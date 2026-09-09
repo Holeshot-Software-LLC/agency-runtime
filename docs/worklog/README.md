@@ -2330,6 +2330,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ab924385` | 2026-09-09 | fix(hermes): preserve bounded native specialist context (AR-426) | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `d73eda4d` | 2026-09-09 | docs: record AR-426 installed demo checkpoint | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `faf5645a` | 2026-09-09 | fix(hermes): deliver selected cards through native context callbacks | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `8f81d89f` | 2026-09-09 | docs: record AR-426 callback candidate before native demo | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
