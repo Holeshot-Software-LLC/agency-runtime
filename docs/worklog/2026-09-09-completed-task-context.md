@@ -15,7 +15,7 @@ type: worklog
 commit: cf4ed77fb52a8355441fba7949d309a576ff86ee
 short: cf4ed77f
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/810
 related_issues:
   - docs/roadmap/issue-AR-421-preserve-completed-task-followup-context.md
   - docs/roadmap/issue-AR-422-preserve-claude-update-permissions.md

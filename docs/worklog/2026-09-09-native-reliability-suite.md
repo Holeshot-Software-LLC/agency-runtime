@@ -14,7 +14,7 @@ type: worklog
 commit: c13f3b72730d1790280e4696b7974742dd2eb722
 short: c13f3b72
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/810
 related_issues:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
 ---
