@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-426
-candidate_commit: pending
+candidate_commit: e67b70aef377e5a72bb47fdd84e3e7bad527280b
 evidence_cutoff: 2026-09-09
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823
 ---
@@ -28,7 +28,7 @@ No failed receipt is reopened. AR-426 remains blocked and its PR unmerged.
 
 | Criterion | Kind | Artifact | Observed | Source |
 |---|---|---|---|---|
-| 1 | file | Exact native spill pointers and head/tail output, session/message IDs, source hashes and missing-context comparison | 2026-09-09 | docs/roadmap/evidence/AR-426-exact-native-hook-pointers-20260909.json:1-71 |
+| 1 | file | Exact native message IDs, session IDs, spill notices, context hashes and missing contract/card markers | 2026-09-09 | docs/roadmap/evidence/AR-426-exact-native-spill-and-terminal-audit-20260909.json:1-32 |
 | 2 | file | Exact selected immutable version and whole-result size guard before recording a load | 2026-09-09 | agency_runtime/server/mcp_tools.py:207-294 |
 | 2 | file | Active Hermes session/trace guard and ordered exact selected-card fragments | 2026-09-09 | agency_runtime/adapters/hermes/bridge.py:633-685 |
 | 2 | test | Generated native tool regression and missing, cross-session, terminal, unselected, oversized and version-change cases | 2026-09-09 | tests/test_hermes_context_delivery.py:1-85 |
@@ -38,8 +38,10 @@ No failed receipt is reopened. AR-426 remains blocked and its PR unmerged.
 
 ## Verification
 
-Second and final default pass for AR-426 after preserving exact native pointers.
-The first record is retained in AR-426-isolated-pass1-record-20260909.txt.
+First isolated pass for AR-426; AR-423 is a separate pending authorization.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | absent | `AR-426.1-20260909-aa185f82` | `ba724ca481d6c9c600c51e231e9bde9bc573d147ecb75f40e16aa20935fdfd23` | 2026-09-09 | AR-426 audit lines 1-32 record missing-context flags and hashes, but spill notices replace native pointers with <native-session-spill-file> and provide no underlying content to verify exact preservation. |
+| 2 | satisfied | `AR-426.2-20260909-60a01d7b` | `522f09c1b654312f7d5bd60ba39dc72d2a750ac0250b970b66a8bb032cd56f65` | 2026-09-09 | mcp_tools.py:207-294 and bridge.py:633-685 guard selected versions and record loads only after size checks; test_hermes_context_delivery.py:1-151 verifies exact bounded delivery and rejection of missing, cross-turn, unselected and oversized requests. |
+| 3 | absent | `AR-426.3-20260909-6fef14be` | `d162c65ba66f4d30e78ab68fc891c09670db8ba7815992286e27779c64f518fa` | 2026-09-09 | builder evidence is absent; nothing to verify |

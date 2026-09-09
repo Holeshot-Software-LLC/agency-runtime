@@ -145,3 +145,11 @@ AR-426 is blocked by shared staffing; PR 824 remains draft and unmerged. The
 builder record cites exact source evidence for criteria 1/2 and explicitly absent
 native acceptance for criterion 3. AR-404/418/423 remain open; AR-423's third
 isolated pass still requires the pending explicit owner authorization.
+
+## Isolated evidence review
+
+First AR-426 pass: criterion 1 absent because native pointer paths were replaced
+with placeholders, criterion 2 satisfied, criterion 3 explicitly absent. The
+whole first record is retained. The corrected packet includes exact native
+head/tail output and historical pointers, with content hashes and missing-marker
+comparisons. One second default pass follows; no third pass is authorized.
