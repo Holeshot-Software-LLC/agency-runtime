@@ -81,3 +81,12 @@ validation passed for1381 maintained Markdown files; strict tracker validation
 passed for419 roadmap items. Metadata, policy, exact worklog and diff checks pass.
 The final ledger-only PR records the PR832 merge and removes AR-428's obsolete
 pending traceability marker. No substantive source remains unmerged.
+
+## Ledger merge reconciliation
+
+The first PR833 merge request wrote Git merge `3f18e568623370419c05842ef8e2237b6c7e0aa3`
+to remote main but returned a service error while the PR record remained open.
+The ledger head3e72a185 is an ancestor of that main commit; no source work was lost.
+A bounded REST reconciliation reported not-mergeable. This additional worklog-only
+checkpoint records that partial service result and gives PR833 a concrete final
+record delta for normal merge completion. No source or issue verdict changed.
