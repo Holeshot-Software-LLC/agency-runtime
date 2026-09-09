@@ -36,7 +36,10 @@ A four-card regression through the real Zcode hook bridge reproduces the issue:
 the first three complete bodies match; the last matches only after stripping.
 The AR-423 owned candidate removes this trim and tests full leading/trailing
 whitespace through the shared native bridge. PR810 is merged; this separate
-source candidate is not installed or accepted yet.
+source cd86e40a is installed from artifact 0cd4f289 with all 615 package files
+matching. Focused 166 passed/6 skipped, production 1151 passed/3 skipped, UI224
+and source conformance188/188. Its isolated builder cites only the byte-preservation
+scope; verdicts remain pending. AR-423 native large-card delivery stays open.
 
 ## Approach
 

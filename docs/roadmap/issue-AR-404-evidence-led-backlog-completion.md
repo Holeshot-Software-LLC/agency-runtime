@@ -69,8 +69,10 @@ repeat work and risk reintroducing superseded behavior.
 PR810 merged at 3a921c61; AR-421/422 are closed with all three isolated verdicts
 satisfied each. Merge ledger PR813 is merged at b801c08f. The separate owned
 AR-423/424 package on codex/ar423-native-context-20260909 implements bounded
-Claude MCP retrieval and exact final-card bytes. It is not installed or accepted
-yet. OpenClaw's documented observer permission was corrected; one bounded probe
+Claude MCP retrieval and exact final-card bytes. Artifact 0cd4f289 is installed, 615 files match and checks pass. Claude
+review passes; follow-up is response_invalid; multi-step staffing fails. A separate
+four-card probe keeps the hook below the native limit but MCP permission denies
+all cards. AR-423 waits for normal attended tool permission; no full-card claim. OpenClaw's documented observer permission was corrected; one bounded probe
 captured all callbacks but failed staffing. The observer is removed and native
 RPC is healthy. Staffing-route changes and Codex hook trust still await the owner.
 The paragraphs below retain the preceding package's historical checkpoints.

@@ -53,8 +53,12 @@ selected immutable version and exact active turn; pending cards do not appear
 loaded. The final emitted envelope is checked in UTF-16 units. Source cd86e40a and artifact 0cd4f289 are installed; all 615 package files match.
 Claude/Zcode normal refresh and packaged smoke pass. Draft PR814 owns the change.
 The fixed sample retains an accepted review, header-invalid follow-up and staffing-failed
-multi-step. Its staffed cases used inline single cards. One separately frozen native
-surface probe remains; isolated verdicts are pending.
+multi-step. Its staffed cases used inline single cards. A separately frozen four-card native probe emits 4,741 UTF-16 units for 11,604
+units of selected cards; no persisted pointer. All four MCP loads are denied by
+native tool permissions. Loaded evidence stays empty and the five headers remain
+truthful. The normal Stop hook accepts the exact final response, but card delivery
+is unproved. State: waiting_for_operator for normal agency_load_specialist permission.
+No permission override or trust bypass. Isolated acceptance remains pending.
 Original-source integration emits 15,076 units and fails the real-hook regression.
 
 ## Approach

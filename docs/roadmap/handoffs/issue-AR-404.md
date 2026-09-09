@@ -122,7 +122,9 @@ Never pause, create a new task or transfer for telemetry. Preserve Windows work.
 
 AR-423/424 fast checks and artifact verification pass; conformance passes 188/188.
 Claude fixed sample: review accepted; follow-up response_invalid; multi-step staffing
-failed. New MCP path unexercised. One separate bounded surface probe is frozen. No unchanged-condition staffing retries.
+failed. Separate four-card MCP probe: hook4741units versus cards11604, no pointer; all
+loads denied by native permissions. Truthful loaded:none, accepted Stop response.
+AR-423 waits for attended agency_load_specialist permission; no full-card proof. No unchanged-condition staffing retries.
 Keep AR-418/419/404 open; Hermes upstream default adoption, OpenClaw exact accepted
 input, Codex trust and the owner staffing-model decision remain unresolved.
 Zcode review/follow-up passed but multi-step staffing failed; keep it in scope.

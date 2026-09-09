@@ -108,3 +108,34 @@ path correctness/security review is the next native surface probe; it names no
 specialists and leaves selection to inference. Its result cannot replace any
 fixed-sample failure. Fresh-source conformance now passes 188/188, no survivors
 or invalid mutations, source unchanged. AR-424 isolated builder is next.
+
+## Large-context native permission boundary
+
+The separately frozen probe completes in 219.959s, session
+cecefbf5-1f0c-486b-8ee6-abc750958ed7, trace
+9341a1b3-0b7a-484e-a091-ade99e3f7157. Inference selects four cards totaling
+11,604 UTF-16 units. Recipe 16 emits a 4,741-unit native hook with no persisted
+pointer. Claude requests all four exact correlated cards; native permissions
+deny each agency_load_specialist call. No loaded row or full native card exists.
+The header truthfully contains only agency-steward and all five values match Store.
+Native agency_finalize permission is also denied, but the normal Stop hook centrally
+accepts the exact truthful final response. Central acceptance is not card proof.
+
+AR-423 enters waiting_for_operator for normal native MCP permission; no tool
+permission or trust override was applied. The owner has been asked to approve
+agency_load_specialist in an attended Claude session. Preserve this failed card
+gate and do not repeat the probe until the permission condition changes.
+The fixed sample's header-invalid follow-up and staffing-failed multi-step remain.
+
+## AR-424 isolated evidence refinement
+
+Initial isolated criteria 1 and 2 are satisfied (e5e1a845, 287ec303). Criterion 3
+is absent (f25218ff): the verifier could not establish the link from source
+cd86e40a checks to candidate e76c1477 and lacked an explicit AR-424 shared-host
+check in its packet. The original verdict is retained. A new dedicated evidence
+file records the exact production and tests tree identities, an empty source
+diff, and a fresh run of the named real Zcode bridge whitespace regression.
+The criterion and acceptance procedure remain unchanged; a second isolated pass
+will judge the strengthened packet. No broad tests are repeated because source
+and tests are unchanged. One initial builder schema check rejected bare file
+paths before any model call; corrected paths were used for the first pass.

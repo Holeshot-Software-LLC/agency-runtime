@@ -1,0 +1,38 @@
+{
+  "issue": "AR-424",
+  "observed": "2026-09-09",
+  "validated_base_commit": "e76c14770932f8cc3bc2079c2ecb6402d7cc2797",
+  "production_commit": "cd86e40a994bd7d6fad8699047140a8e369718a0",
+  "scope_identity": {
+    "agency_runtime": {
+      "production_tree": "2773f29cd3c97fea639804b795a5e143280a0536",
+      "validated_base_tree": "2773f29cd3c97fea639804b795a5e143280a0536"
+    },
+    "tests": {
+      "production_tree": "b958721c98f6ea49b84b5779e3405bb80a3a2cbb",
+      "validated_base_tree": "b958721c98f6ea49b84b5779e3405bb80a3a2cbb"
+    }
+  },
+  "production_and_test_diff": [],
+  "focused_command": "python -m pytest tests/test_claude_context_delivery.py::test_other_hosts_keep_inline_delivery -q -W error",
+  "focused_output": ".                                                                        [100%]\n1 passed in 1.74s\n",
+  "focused_log_sha256": "fee1b06fef83902f6c6dcfdcf736e2ed3fc88d11ce69548eee59757d9438f620",
+  "fixture": "Real Store and HookBridge(zcode), four bodies with leading and trailing whitespace, every exact body asserted in emitted native context.",
+  "required_checks": {
+    "production_spine": "1151 passed, 3 skipped",
+    "expanded_focused": "166 passed, 6 skipped",
+    "ui": "224 passed",
+    "ruff_check": "passed",
+    "ruff_format": "784 files already formatted",
+    "routing": "passed",
+    "decision_conformance": "188 killed, 0 survived, 0 invalid; source unchanged",
+    "docs": "1356 Markdown documents passed",
+    "tracker": "415 roadmap items passed"
+  },
+  "evidence": "AR-423-context-delivery-validation-20260909.json",
+  "limits": [
+    "The first isolated criterion3 verdict was absent because its production/candidate provenance was insufficiently explicit. The original verdict is retained.",
+    "Later evidence-only commits do not alter these production or test trees.",
+    "No all-host reliability or AR-423 native card acceptance is claimed."
+  ]
+}

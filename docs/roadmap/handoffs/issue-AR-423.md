@@ -26,7 +26,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 ## Checkpoint
 
 Scoped outcome: exact selected full cards reach Claude despite its native hook
-limit, with truthful loaded evidence. Live-demo checkpoint on the owned branch above; draft PR814.
+limit, with truthful loaded evidence. Waiting_for_operator after the live-demo checkpoint; draft PR814.
 PR810 and merge ledger PR813 are merged; main b801c08f. AR-421/422 closed only
 against their isolated gates. Source cd86e40a / artifact 0cd4f289 is installed; all 615 package files match.
 Claude/Zcode normal refresh and packaged smoke pass; gateway RPC healthy.
@@ -41,7 +41,10 @@ card. All twelve new regression cases and 72 targeted MCP cases pass.
 
 ## Exact blocker
 
-Fresh native full-card delivery and isolated AR-423/424 acceptance are absent.
+Fresh native full-card delivery is blocked by Claude tool permission. Four selected
+cards total 11,604 UTF-16 units; the native hook is 4,741 with no pointer. All four
+agency_load_specialist calls were denied; loaded evidence stays empty. Native
+Stop accepts the exact truthful response. AR-423 full-card acceptance is absent.
 Fast checks pass; fresh-source conformance passes 188/188.
 No staffing models or provider configuration changed; failed suite outcomes remain.
 
@@ -54,9 +57,9 @@ other host evidence and pending owner actions. Do not recreate historical work.
 ## Next bounded work package
 
 The fixed sample retained review success, follow-up response_invalid and multi-step
-staffing failure; neither staffed case exercised the large-card MCP path. Run the
-separately frozen one-attempt download-path surface probe, with inference selecting
-staff and the same normal permissions and 360-second limit. Bind full native
+staffing failure; neither staffed case exercised the large-card MCP path. The separate probe (219.959s) is retained with four native permission denials.
+Wait for normal attended approval of agency_load_specialist before a new phase.
+Do not change permissions or retry under the same condition. Bind full native
 MCP tool results to exact session/trace and selected version/hash. Do not claim
 card delivery from tool instructions alone. Build isolated acceptance afterward.
 
