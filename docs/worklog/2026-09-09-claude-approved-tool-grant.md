@@ -15,7 +15,10 @@ type: worklog
 commit: d0c431adade5ce44cdfb2c1beba55d4ebc8a656a
 short: d0c431ad
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/818
+related_issues:
+  - docs/roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
 ---
 
 # Apply approved Claude native tool permissions
@@ -45,3 +48,7 @@ AR-419 is closed only for its isolated native CLI boundary. Prior failed or deni
 receipts remain unchanged. This parent turn itself failed staffing with subject and
 recruiter contract rejections plus critic_wrong_neighbor_selection_discovery_coach;
 no specialist or successful parent finalization is claimed.
+
+The 12 focused Claude context-delivery tests pass in8.80s. The first docs check
+found missing related_issues front matter in this new worklog; added before final
+validation. No production source was changed.
