@@ -66,6 +66,17 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+The refreshed fixed sample is complete; all-host reliability remains unproved.
+Hermes review passes full native evidence in299.269s, but both remaining cases
+time out. OpenClaw review209.513s passes central/header gates; missing documented
+observer permission prevents exact input proof, and follow-up/multi-step fail.
+Claude review passes all gates; follow-up preserves context but exceeds the native
+10,000UTF-16-unit hook ceiling, tracked by AR-423/#811. Zcode corrected configuration
+passes full review/follow-up evidence; multi-step staffing fails. Codex needs attended
+trust for8changed hooks. AR-421/422 isolated builders are prepared. Staffing-model
+alignment remains unapplied pending owner choice. See the current capsule and
+2026-09-09-completed-task-context.md for exact IDs and retained setup failures.
+
 Repair artifactdb1c642f is installed with exact614file equality and fresh isolated
 classifier6. Conformance188/188 passes. OpenClaw baseline adds three failed cases:
 review staffing timeout143.701s, follow-up native failure353.101s, multi-step process

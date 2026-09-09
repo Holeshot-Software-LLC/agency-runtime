@@ -1,0 +1,36 @@
+{
+  "host": "openclaw",
+  "native_version": "2026.8.2",
+  "observed": "2026-09-09",
+  "plugin": "ar404-native-witness",
+  "blocked_native_hooks": [
+    {
+      "time": "2026-09-09T07:21:55.662-04:00",
+      "message": "[plugins] typed hook \"llm_input\" blocked because non-bundled plugins must set plugins.entries.ar404-native-witness.hooks.allowConversationAccess=true (plugin=ar404-native-witness, source=/home/holeshot/.openclaw/extensions/ar404-native-witness/index.js)"
+    },
+    {
+      "time": "2026-09-09T07:21:55.664-04:00",
+      "message": "[plugins] typed hook \"before_agent_finalize\" blocked because non-bundled plugins must set plugins.entries.ar404-native-witness.hooks.allowConversationAccess=true (plugin=ar404-native-witness, source=/home/holeshot/.openclaw/extensions/ar404-native-witness/index.js)"
+    },
+    {
+      "time": "2026-09-09T07:21:55.665-04:00",
+      "message": "[plugins] typed hook \"agent_end\" blocked because non-bundled plugins must set plugins.entries.ar404-native-witness.hooks.allowConversationAccess=true (plugin=ar404-native-witness, source=/home/holeshot/.openclaw/extensions/ar404-native-witness/index.js)"
+    }
+  ],
+  "reason": "Missing documented per-plugin hooks.allowConversationAccess permission. Native install capability acceptance alone did not grant it. Earlier suite attempts retain missing-input-evidence gates.",
+  "next_fixed_probe": {
+    "phase": "after_conversation_access",
+    "session_key": "agent:openclaw:ar419-input-20260909",
+    "case": "ordinary_review",
+    "attempts": 1,
+    "deadline_seconds": 360,
+    "external_delivery": false
+  },
+  "observer_bound": {
+    "exact_session_keys": 5,
+    "events_per_session": 16,
+    "event_bytes": 1048576,
+    "process_bytes": 8388608,
+    "output_mode": "0600 local only"
+  }
+}

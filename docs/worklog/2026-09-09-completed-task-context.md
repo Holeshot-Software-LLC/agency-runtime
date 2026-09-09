@@ -205,3 +205,22 @@ OpenClaw's observer now takes the native event runId with context fallback; norm
 stop/install/start completed and read-only RPC reports healthy. The unchanged-route
 fixed sample is running. Codex attended hook trust and staffing-route choice remain
 pending; no configuration alignment or repeated Codex provider turn was performed.
+
+## OpenClaw refreshed sample and observer correction
+
+September 9 refreshed sample: review 209.513s has accepted staffing, all five
+Store-matching headers and exact central accepted response hash. The observer
+captured no input because native registration explicitly rejected missing
+plugins.entries.ar404-native-witness.hooks.allowConversationAccess. Follow-up
+352.602s fails after separate recruiter/critic 120s timeouts; multi-step 361.217s
+hits the outer deadline. All remain in AR-404-openclaw-suite-after-repair-20260909.json.
+A documented per-plugin permission grant and one new ordinary review are prepared,
+with five exact allowed session keys, bounded local output and no delivery.
+
+Native plugin install capability acceptance did not grant conversation-hook access;
+metadata-only inspection also did not prove runtime import. The exact native log
+rejections and next one-attempt probe are retained in
+AR-419-openclaw-observer-permission-20260909.json. No earlier missing card proof
+is retroactively promoted. A transient remote internal-server-error rejected one
+push; a single retry published the same branch unchanged. Final policy-availability
+check needed explicit PYTHONPATH after a launcher import error; corrected check passes.

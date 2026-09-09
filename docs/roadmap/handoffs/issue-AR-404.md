@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-reliability-suite-20260909
-evidence_commit: 73a127ac100641050a558cac08b1fb76b2cca2ff
-minimum_ledger_commit: 5bd8e013720da7abefcb0c30fb73aa1503ad43e7
+evidence_commit: 12138e8b622c81b696f661198266b1d91d1271fd
+minimum_ledger_commit: 638dc4bc68657ebb98834c7c22661ca00465aa18
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -60,7 +60,10 @@ assistant hash in that session. Default native Hermes remains7cd91114.
 OpenClaw baseline review143.701s fails staffing after planner timeout; follow-up
 353.101s fails natively; multi361.216s process timeout. Corrected bounded observer
 has startup/hook activation and event.runId correlation. Normal maintenance exits0,
-RPC healthy. After-refresh sample on unchanged staffing routes is running.
+RPC healthy. After-refresh review209.513s has exact accepted hash/headers; follow-up352.602s
+fails staffing and multi361.217s times out. Missing per-plugin conversation-access
+permission, explicitly logged by native registration, explains absent observer events.
+One new ordinary probe after documented permission grant is prepared.
 No external delivery. Metadata alone is not callback/card proof.
 
 Claude native2.1.266 PATH repair uses its supported native installer, not npm.
@@ -111,8 +114,8 @@ Never pause, create a new task or transfer for telemetry. Preserve Windows work.
 
 ## Next bounded work package
 
-Finish OpenClaw fixed after-refresh sample; retain callbacks/cards/headers/hash or
-exact failed gates. Remove the temporary observer normally and restore gateway
+Grant the bounded observer its documented permission and run the declared one
+ordinary probe; retain callbacks/cards/headers/hash or exact failed gates. Remove the temporary observer normally and restore gateway
 health. Run isolated AR-421/422 verdicts, deliver PR810 with exact merge ledger.
 Continue remaining host repair: AR-423 delivery and Hermes normal upstream adoption;
 Codex trust and staffing-model choice remain pending owner actions. No all-host
