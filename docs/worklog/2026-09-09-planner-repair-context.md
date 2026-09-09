@@ -83,3 +83,12 @@ all5Store fields match, accepted response hashf9b78ee4a8b0fd116e18fcffa0a9328ba6
 Source2b19cce6;12Claude context regressions pass. Isolated acceptance follows.
 Owner confirms Codex trusted; fresh inspection8/8trusted and0modified. Approved
 OpenClaw bounded observer imported3hooks; RPChealthy after normal warmup.
+
+## Frozen conformance outcome
+
+Private077 rerun passes188/188 mutations,0invalid,0survived, source unchanged.
+The native Claude full-card result used one rejected planner answer followed by
+one applied repair and an applied independent critic; the retained successful
+routing projection does not expose the first rejection's semantic detail.
+Native hosts run sequentially. Isolated acceptance may overlap the fixed native
+round; wall times are observed durations, not a controlled speed benchmark.

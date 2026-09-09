@@ -146,7 +146,7 @@ Candidate2b19cce6 installed,615files match; normal refresh all5hosts. Codex
 8/8trusted after owner review; no further approval pending. Claude large-card
 probe239.508s now passes exact4cards, five fields and accepted hash; isolated
 AR-423 verification and five-host fixed cases follow. Conformance
-first failed fixture privacy under002; fresh077 rerun in progress. Then Claude large-context and fixed
+first failed fixture privacy under002; fresh077 rerun passes188/188. Continue fixed
 five-host phase. Preserve every failure; no unchanged-condition retry or manual
 staffing. See issue-AR-425-preserve-planner-repair-context.md and its worklog.
 No observer remains and no new Claude permission is needed. Codex's long-lived

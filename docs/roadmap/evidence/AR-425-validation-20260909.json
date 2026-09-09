@@ -145,6 +145,18 @@
   "ui_passed": 224,
   "docs_markdown": 1364,
   "tracker_items": 416,
-  "conformance": "pending frozen-source evaluation",
-  "exhaustive_workflow_dispatched": false
+  "conformance": {
+    "source_commit": "2b19cce623a846b5b96f6a3803f9c4b32a1a8abc",
+    "passed": true,
+    "killed": 188,
+    "invalid": 0,
+    "survived": 0,
+    "first_setup_failure_preserved": "AR-425-conformance-first-20260909.json",
+    "rerun_umask": "077"
+  },
+  "exhaustive_workflow_dispatched": false,
+  "claude_context_focused": {
+    "passed": 12,
+    "seconds": 8.59
+  }
 }
