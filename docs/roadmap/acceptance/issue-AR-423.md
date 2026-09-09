@@ -40,3 +40,5 @@ failed; this packet does not establish AR-404 all-host reliability.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | absent | `AR-423.1-20260909-fd20dd2c` | `f48fe1ea1ffff47a360599c67d472b91530981be7cf9a6fb8bbb6e90e85a2206` | 2026-09-09 | AR-423-claude-native-hook-limit-20260909.json:1-14 documents only the binary's 10,000-UTF16 limiter, with no session/trace and a 15.7KB label with no measurement; AR-404-claude-suite-after-repair-20260909.json shows exact_full_card_present false but no pointer, persisted path or output size. |
+| 3 | satisfied | `AR-423.3-20260909-28567142` | `2330a5e0f7cc44efe25a4123828772873344c7961c1090d39042bc1d8c155cc5` | 2026-09-09 | Worklog regression claims match AR-425-validation-20260909.json (12 Claude context tests, spine 1151/3 skipped, UI 224), and AR-404-claude-large-context-after-planner-context-20260909.json shows the fresh native run 545f5ca7, exit 0, four exact_full_card_present, five headers matching Store. |

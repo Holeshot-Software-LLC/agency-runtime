@@ -92,3 +92,15 @@ one applied repair and an applied independent critic; the retained successful
 routing projection does not expose the first rejection's semantic detail.
 Native hosts run sequentially. Isolated acceptance may overlap the fixed native
 round; wall times are observed durations, not a controlled speed benchmark.
+
+## First isolated Claude delivery pass
+
+Criterion1absent for insufficient direct pointer citation; criterion2verifier
+unavailable/outside vocabulary, no verdict; criterion3satisfied28567142. Preserve
+all three outcomes. Exact original native attachment81a967a9 now supplies the
+15.7KB pointer, saved16076bytes/16067UTF16units, exact prior trace in saved
+content, and same-session Store correlation. No new native retry occurred.
+The supplemented second packet uses the already available Codex verifier after
+the Claude verifier failed to return a criterion2 verdict. No third pass planned.
+An initial builder docs check rejected missing line locators; corrected before
+any verifier call, with no acceptance inferred from the failed command.
