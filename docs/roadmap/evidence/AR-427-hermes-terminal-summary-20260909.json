@@ -1,0 +1,97 @@
+{
+  "run": {
+    "id": "2a1a9b92-c399-4e8a-bb1c-77d72f1afcfa",
+    "trace_id": "20260909_143551_e08888:45c703e2-0088-416f-8bf5-3e6f6ce32883:f8090f31",
+    "session_id": "20260909_143551_e08888",
+    "host": "hermes",
+    "started_at": "2026-09-09T18:36:01.071000+00:00",
+    "last_activity_at": "2026-09-09T18:37:25.853000+00:00",
+    "turn_sequence": 1691,
+    "ended_at": "2026-09-09T18:37:25.852006+00:00",
+    "status": "completed",
+    "preflight_state": "ready"
+  },
+  "finalization": {
+    "id": "0a08dd13-dd65-414b-8ce0-83744f1e122c",
+    "trace_id": "20260909_143551_e08888:45c703e2-0088-416f-8bf5-3e6f6ce32883:f8090f31",
+    "host": "hermes",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968",
+    "policy_response_hash": null,
+    "terminal_status": "completed",
+    "created_at": "2026-09-09T18:37:25.852006+00:00",
+    "session_id": "20260909_143551_e08888",
+    "status": "completed",
+    "ended_at": "2026-09-09T18:37:25.852006+00:00",
+    "authoritative": true
+  },
+  "headers": {
+    "observed": {
+      "agencies_loaded": "agency-steward, python-application-engineer, silent-failure-hunter, software-test-engineer, code-reviewer, application-security-engineer",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)",
+      "recruited_via": "inference"
+    },
+    "store_projection": {
+      "agencies_loaded": "agency-steward, python-application-engineer, silent-failure-hunter, software-test-engineer, code-reviewer, application-security-engineer",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)",
+      "recruited_via": "inference"
+    },
+    "all_five_match": true
+  },
+  "complete_selected_team": {
+    "inferred": [
+      "python-application-engineer",
+      "silent-failure-hunter",
+      "software-test-engineer",
+      "code-reviewer",
+      "application-security-engineer"
+    ],
+    "retained": [
+      "python-application-engineer",
+      "silent-failure-hunter",
+      "software-test-engineer",
+      "code-reviewer",
+      "application-security-engineer"
+    ],
+    "missing": [],
+    "unexpected": [],
+    "exact_match": true
+  },
+  "native_hook_contexts": [
+    {
+      "native_message_id": 535391,
+      "api_content_chars": 27294,
+      "api_content_sha256": "7e8a030acede581c853e9d4e7c343256e8d123077e7f6f05e99f1c58dabafc3a",
+      "spill_pointer_present": false,
+      "contract_present": true,
+      "delivery_rules_present": true,
+      "native_card_tool_requested": true
+    }
+  ],
+  "accepted_hash_matches": true,
+  "finalization_event_count": 2,
+  "accepted_terminal_event_count": 1,
+  "invocation": {
+    "case": "large_context_surface",
+    "host": "hermes",
+    "phase": "after_complete_team",
+    "native_session_id": "20260909_143551_e08888",
+    "exit_code": 0,
+    "timeout": false,
+    "elapsed_seconds": 114.863
+  },
+  "response_artifact": "AR-427-hermes-accepted-response-20260909.txt",
+  "response_sha256": "6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968",
+  "first_five_lines": [
+    "Agency/Agencies loaded: agency-steward, python-application-engineer, silent-failure-hunter, software-test-engineer, code-reviewer, application-security-engineer",
+    "Agency/Agencies delegated: none",
+    "Skills loaded: none",
+    "Actual Model selected: observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)",
+    "Recruited via: inference"
+  ]
+}

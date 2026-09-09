@@ -19,102 +19,79 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-planner-contract-20260909
-evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
-minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
+branch: codex/ar404-terminal-reliability-20260909
+evidence_commit: 23ae46bf382e68f945cfaf90c83a00aa6c8c4f4c
+minimum_ledger_commit: 1c0e3c16921b38974b02280cf8334834a90ec0a3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
 
-# AR-404 native reliability checkpoint
+# AR-404 five-host reliability
 
 ## Checkpoint
 
-Owned PR821 package starts from synchronized clean maine3090882. Source03a82c3b
-repairs missing rejected-plan context and preserves five known semantic codes;
-artifact2b19cce6 is normally installed on all five hosts,615files match.
-Wheelcba264c1bdbd57730f7ba748af2b75a5971cd0c71e425ca6d9826c463fad2fcd.
-PR821 and its exact worklog/merge ledger own this package. After merge this
-branch is historical; create a new owned worktree for new changes.
-AR-425 is isolated-complete. AR-419 was already closed through PR816.
-AR-404/418/423 remain open. No all-host completion claim.
+Owned PR 824 branch contains recipe 19 complete-team delivery and bounded Hermes
+callbacks. Source `176adc19`, canonical artifact `20c49e0d`; all 616 installed
+files match. PR 827 retained Claude audit evidence and merged into this branch;
+main remains at `c6c3e7b5` until PR 824's acceptance and merge checkpoint.
 
 ## Completed evidence
 
-Fixed ordinary review, same-session "go for it", and multi-step correction run
-once each per host under360s cap. Full records are
-AR-404-{host}-suite-after-planner-context-20260909.json; summary is
-AR-404-planner-context-results-20260909.json. Result8/15:
-Codex3/3, Claude2/3, OpenClaw2/3, Zcode1/3, Hermes0/3. Every failure retained.
-Hosts ran sequentially; isolated acceptance could overlap, so durations are not
-a controlled speed benchmark. No delivery, external messages or manual finalization.
+Fresh Hermes session `20260909_143551_e08888` passed in 114.863s. Native message
+535391 contains all five inferred immutable cards, contract and delivery rules
+without a spill pointer. Five Store headers match; first authoritative response
+hash `6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968`.
+AR-427 evidence retains exact native context, each full card, terminal and request.
 
-Separate Claude full-card session545f5ca7-2937-412f-a9be-6b4e4c665204,
-tracedf374667-2599-4798-a852-1e6f972aed25,239.508s, passes4exact native MCP cards,
-five Store fields and authoritative accepted hash
-f9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b.
-First planner reply rejected, one repair applied, independent critic applied.
-Native proof: AR-404-claude-large-context-after-planner-context-20260909.json.
-The original two-rejection Claude tracebe4757dc remains failed; exact second
-semantic cause unknown. A new planner-only diagnostic reproduced the first
-missing correctness review but its repair succeeded before the source change.
+Corrected original-source regressions fail seven cases across all five host paths
+and both native retrieval paths; recipe 19 preserves the fifth selected worker
+or rejects incomplete delivery before any load. Host/context ceilings are unchanged.
+Focused 66 / 1 skipped, production 1151 / 3 skipped, UI 224, routing and frozen
+conformance 188/188 pass. Canonical build, independent artifact and installed smoke
+pass. Earlier permissive-umask and invalid-fixture failures remain recorded.
 
-Fresh Codex hooks/list after owner review:8/8trusted,0modified/missing/duplicate.
-Parent process still runs stale projection6e7dc299c23e; its MCP transport failed
-on prior turns. Reinstall does not refresh a running process. Fresh native Codex
-cases supply evidence, not the parent. Prior session01a08200-6530-79a3-a19c-4fb24b1983ae,
-trace01a082b9-e7df-70e2-b76c-b8be7e01ad5a remains a separate failed staffing receipt.
+The one critic observer diagnostic restored owner configuration byte-for-byte.
+Its real plan requested test-result interpretation without results; AR-428/#826
+records that concern. The critic veto remains authoritative.
 
 ## Exact blocker
 
-Hermes review fails independent assurance; follow-up and multi-step fail terminal
-validation with all five fields missing. Default native source7cd91114 unchanged;
-upstream PR106490 remains OPEN at30f421ecce, complete patch retained under AR-418.
-No upstream merge authority; installed adoption and original truncation cap remain
-unproved. A version banner naming upstreambf53ff00 is not the checkout identity.
+AR-426 authorized third isolated pass and AR-427 first pass satisfied all three
+criteria each. Both scoped issues are done; PR 824 is ready for merge. AR-423 third pass satisfied criteria 1/3, left criterion 2 absent:
+prior Claude routing selected five but native delivery retained four, omitting an
+independent security reviewer. Fresh Claude session `0a59da24` / trace `28c8db15`
+failed planner contracts in 118.255s before delivery. No unchanged retry is queued.
 
-Zcode0.16.5 is installed/available, uses normal build mode and existing answering
-configuration. Review/follow-up have exact cards and matching final headers but
-earlier invalid terminal receipts; multi-step passes. Do not reopen failures.
-Claude ordinary review and OpenClaw follow-up fail staffing; inspect exact receipts
-before choosing a repair, never assume a critic veto is erroneous.
+AR-418/#796 remains open: actual Hermes checkout `7cd91114`, upstream PR106490
+still OPEN at `30f421ecce`; default adoption and original output cap are unproven.
+Zcode first review/follow-up outputs put permission prose before headers and are
+valid terminal rejections; later headers cannot replace those failed receipts.
+Claude ordinary review and OpenClaw follow-up staffing failures remain retained.
 
-AR-423 native full-card gate passes but isolated closure is pending. Two review
-passes retained absent criteria1/2: an orphan builder row omitted the pointer and
-whole-file excerpts omitted later card rows. Corrected contiguous bounded packet
-is prepared; local build_case proves the needed excerpts are included. No third
-pass in this package under the repository's two-pass default.
+Codex's eight refreshed hooks are now trusted with no modified/missing entries.
+A fresh native Codex process and UserPromptSubmit hook run published projection
+`37c1bf7d5eb0`; the parent still runs `6db15efbecbe`. The fresh probe passed in 103.434s, five exact cards and authoritative finalization. OpenClaw refresh completed; subsequent gateway RPC is healthy.
 
 ## Same-task continuity
 
-Continue the same user task. Preserve unrelated work and Windows items. At or
-below50percent, commit the smallest substantive/ledger checkpoint and continue;
-no empty checkpoint or forced transfer. Main synchronization and exact PR merge
-records belong to this package, not a later optional cleanup.
+Continue in the owned branch and preserve unrelated scratchpad and Windows work.
+At or below 50 percent, keep a clean substantive/ledger checkpoint and continue.
+No empty recovery pair, forced transfer or failed-receipt reopening.
 
 ## Next bounded work package
 
-Use the corrected AR-423 packet when an additional isolated pass is explicitly
-authorized. Investigate the exact Hermes and Zcode invalid first-finalization
-receipts plus retained recruiter/critic failures before another fixed phase.
-AR-418 awaits upstream merge/adoption. No unchanged-condition native retries.
-OpenClaw observer was normally removed, permission/files gone, finalRPChealthy.
-Claude two exact Allow rules remain; semantic settings unchanged. All five hosts
-share planner/recruiter/critic routes. No pending tool or Codex trust approval.
+Merge PR 824, then record its exact merge ledger. Continue AR-428 planning repair from the captured packet; diagnose
+Claude's exact second planner response before assigning its semantic failure.
+All five hosts remain in scope; original fixed sample 8/15 is historical only.
 
 ## Verification
 
-Focused143pass, Claude context12pass, production1151pass/3skip, UI224pass,
-Ruff/metadata/policy/worklog/routing/docs/tracker checks pass. Frozen conformance
-188/188, no invalid/survived mutations. First baseline fixture failure under002
-umask retained; rerun077 passes with unchanged source. Canonical build and smoke
-pass, all615installed files match. No exhaustive workflow or Windows matrix.
-AR-425 second isolated verdicts8862f6fa/d5fb19d3/e006aacb/1c0fa05a all satisfied;
-first absent verdict retained. See 2026-09-09-planner-repair-context worklog.
+Metadata, policy availability, docs, exact worklog, strict tracker parity (419
+items), Ruff and diff checks pass at the prior checkpoint. Recheck changed records
+before handoff. No exhaustive or Windows workflow ran.
 
 ## Constraints
 
-Inference alone selects staff. Preserve independent critic, validators, caller
-scope and trust. No manual specialists, extra retries, manual failed-receipt
-acceptance or external messages. Keep Claude and Zcode explicitly in scope.
-Use owned worktree -> PR -> merge and exact worklogs. Close only evidenced scopes.
+Inference alone selects specialists. Preserve critic, validators, trust, caller
+scope and native limits. No manual selection, acceptance, external messages or
+unbounded retries. AR-419 and AR-425 stay closed; umbrella AR-404 stays open.

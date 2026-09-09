@@ -17,6 +17,8 @@ superseded_by: null
 
 # Active recovery capsules
 
+Current Hermes context delivery repair: [AR-426](issue-AR-426.md).
+
 Current optional-tool security refresh: [AR-412](issue-AR-412.md).
 
 An active recovery capsule is the bounded bootstrap projection for one
@@ -108,3 +110,5 @@ behavior.
 - [AR-289 native reranker transports](issue-AR-289.md)
 - [AR-290 end-to-end guided setup](issue-AR-290.md)
 - [AR-297 complete unattended container bootstrap](issue-AR-297.md)
+
+- [AR-427 complete-team delivery](issue-AR-427.md)

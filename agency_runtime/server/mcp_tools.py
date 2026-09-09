@@ -209,11 +209,14 @@ def _selected_or_active_prompt(
 ) -> dict[str, Any] | None:
     run_getter = getattr(store, "get_run", None)
     run = run_getter(trace_id) if callable(run_getter) else {}
-    if not isinstance(run, Mapping) or run.get("host") != "claude":
+    if not isinstance(run, Mapping) or run.get("host") not in {"claude", "hermes"}:
         return store.get_specialist_prompt(slug)
     getter = getattr(store, "get_completion_evidence_snapshot", None)
     snapshot = getter(session_id, trace_id) if callable(getter) else {}
-    if snapshot.get("specialist_context_via_mcp") is not True:
+    if (
+        snapshot.get("specialist_context_via_mcp") is not True
+        and snapshot.get("specialist_context_via_hermes_tool") is not True
+    ):
         return store.get_specialist_prompt(slug)
     matches = [row for row in snapshot["selected_specialists"] if row["slug"] == slug]
     if len(matches) != 1:
@@ -261,8 +264,7 @@ def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         # The card is the product the model reads; the disclosure rides inside
         # it so the degraded mode cannot be skimmed past (AR-356 scope note).
         prompt = f"{prompt}\n\n{degradation}"
-    store.record_specialist_loaded(session_id, slug, trace_id=trace_id)
-    return {
+    result = {
         "trace_id": trace_id,
         "session_id": session_id,
         "slug": slug,
@@ -274,6 +276,21 @@ def _load_specialist(arguments: dict[str, Any], store: Any) -> dict[str, Any]:
         "prompt_truncated": False,
         "tool_degradation": degradation,
     }
+    run = store.get_run(trace_id)
+    if run.get("host") == "hermes":
+        import json
+
+        from agency_runtime.core.hermes_context_delivery import HERMES_CARD_RESULT_CHARS
+
+        if (
+            len(json.dumps(result, ensure_ascii=True, separators=(",", ":")))
+            > HERMES_CARD_RESULT_CHARS
+        ):
+            return {
+                "error": "selected card exceeds Hermes exact-delivery ceiling; no load recorded"
+            }
+    store.record_specialist_loaded(session_id, slug, trace_id=trace_id)
+    return result
 
 
 def _tool_degradation_notice(store: Any, *, session_id: str, trace_id: str, slug: str) -> str:

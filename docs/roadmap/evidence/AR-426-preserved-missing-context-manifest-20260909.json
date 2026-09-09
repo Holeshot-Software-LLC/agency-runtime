@@ -1,0 +1,20 @@
+[
+  {
+    "native_message_id": 535347,
+    "artifact": "AR-426-original-missing-context-535347-20260909.txt",
+    "sha256": "7369979e7c70077a628076fd91f613ead5b2fdc84501374f8f77a810505ae56a",
+    "bytes": 12996,
+    "characters": 12992,
+    "lines": 237,
+    "scope": "Exact native saved file including terminal newline; no outside filesystem dependency."
+  },
+  {
+    "native_message_id": 535352,
+    "artifact": "AR-426-original-missing-context-535352-20260909.txt",
+    "sha256": "9899ad9295902d89088497b1c590848ef9c3fd37ea2f03305becab77a56117b1",
+    "bytes": 16592,
+    "characters": 16586,
+    "lines": 317,
+    "scope": "Exact native saved file including terminal newline; no outside filesystem dependency."
+  }
+]

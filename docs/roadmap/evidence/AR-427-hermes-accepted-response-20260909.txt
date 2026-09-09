@@ -1,0 +1,86 @@
+Agency/Agencies loaded: agency-steward, python-application-engineer, silent-failure-hunter, software-test-engineer, code-reviewer, application-security-engineer
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)
+Recruited via: inference
+
+Defects in the supplied helper:
+
+- `Path(root) / name` does not constrain the result to `root`; `../secret` can traverse out.
+- If `name` is absolute, pathlib discards the left side, so `Path('/safe') / '/etc/passwd'` becomes `/etc/passwd`.
+- It does not resolve symlinks, so `root/link/file` can escape when `link` points outside `root`.
+- It returns a relative path if `root` is relative, making later checks easy to get wrong.
+
+Corrected function:
+
+```python
+from pathlib import Path
+
+
+def download_path(root, name):
+    root_path = Path(root).resolve(strict=True)
+    name_path = Path(name)
+
+    if name_path.is_absolute():
+        raise ValueError("download name must be relative")
+
+    candidate = (root_path / name_path).resolve(strict=False)
+
+    try:
+        candidate.relative_to(root_path)
+    except ValueError as exc:
+        raise ValueError("download path escapes root") from exc
+
+    return candidate
+```
+
+Focused pytest cases:
+
+```python
+import pytest
+
+
+def test_download_path_allows_valid_nested_path(tmp_path):
+    root = tmp_path / "downloads"
+    root.mkdir()
+
+    assert download_path(root, "a/b/file.txt") == root.resolve() / "a/b/file.txt"
+
+
+def test_download_path_rejects_absolute_name(tmp_path):
+    root = tmp_path / "downloads"
+    root.mkdir()
+
+    with pytest.raises(ValueError, match="relative"):
+        download_path(root, tmp_path / "outside.txt")
+
+
+def test_download_path_rejects_parent_directory_traversal(tmp_path):
+    root = tmp_path / "downloads"
+    root.mkdir()
+
+    with pytest.raises(ValueError, match="escapes root"):
+        download_path(root, "../outside.txt")
+
+
+def test_download_path_rejects_symlink_escape(tmp_path):
+    root = tmp_path / "downloads"
+    outside = tmp_path / "outside"
+    root.mkdir()
+    outside.mkdir()
+    (root / "link").symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="escapes root"):
+        download_path(root, "link/file.txt")
+```
+
+Filesystem assumptions:
+
+- `root` is an existing directory; `resolve(strict=True)` intentionally fails if it is missing.
+- The platform supports the symlink test; on Windows this may require developer mode or symlink privileges.
+- Path containment uses Python's resolved path semantics for the local filesystem; case-folding edge cases on case-insensitive filesystems depend on OS/pathlib behavior.
+
+Remaining race limitations:
+
+- This validates a path at one point in time. If an attacker can modify `root` between validation and file creation, they can swap directories/symlinks after the check.
+- For hostile writable roots, pair this with safe open/create patterns: create files with directory file descriptors and `openat`-style APIs where available, avoid following final symlinks, use exclusive creation, and keep attacker-writable directories out of the trusted root.

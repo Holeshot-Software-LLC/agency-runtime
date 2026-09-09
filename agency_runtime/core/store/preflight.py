@@ -668,7 +668,10 @@ def _project_preflight_recipe(
     from agency_runtime.core.claude_context_delivery import mcp_context_enabled
 
     try:
+        from agency_runtime.core.hermes_context_delivery import hermes_context_enabled
+
         via_mcp = mcp_context_enabled(value)
+        via_hermes = hermes_context_enabled(value)
     except (TypeError, ValueError):
         return None
     refs = _project_specialist_refs(value.get("specialist_refs"))
@@ -796,8 +799,8 @@ def _project_preflight_recipe(
         "roster_size": _bounded_nonnegative_int(value.get("roster_size", 0), maximum=100_000),
         "roster_generation": roster_generation,
     }
-    if via_mcp:
-        projected["specialist_context_via_mcp"] = True
+    projected.update({"specialist_context_via_mcp": True} if via_mcp else {})
+    projected.update({"specialist_context_via_hermes_tool": True} if via_hermes else {})
     if turn_classification is not None:
         projected["turn_classification"] = turn_classification
     if resident_manager_kernel is not None:
@@ -2603,7 +2606,11 @@ class PreflightStoreMixin(ResidentManagerBindingStoreMixin):
                         receipt["status"],
                     ),
                 )
-            if delivery_mode == "direct" and not evidence.recipe.get("specialist_context_via_mcp"):
+            if (
+                delivery_mode == "direct"
+                and not evidence.recipe.get("specialist_context_via_mcp")
+                and not evidence.recipe.get("specialist_context_via_hermes_tool")
+            ):
                 for specialist in projected_refs:
                     conn.execute(
                         "INSERT INTO specialists_loaded "

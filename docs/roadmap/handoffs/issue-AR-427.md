@@ -1,0 +1,71 @@
+---
+title: "AR-427 complete-team delivery checkpoint"
+status: active
+category: roadmap
+created: 2026-09-09
+updated: 2026-09-09
+tags: [handoff, reliability, delivery]
+related:
+  - docs/roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md
+  - docs/worklog/2026-09-09-hermes-context-spill.md
+  - docs/decisions/0245-preserve-complete-inferred-teams-during-delivery.md
+supersedes: []
+superseded_by: null
+type: handoff
+issue_id: AR-427
+branch: codex/ar404-terminal-reliability-20260909
+evidence_commit: 176adc19c01139c370b43665cb593761a474686a
+minimum_ledger_commit: 20c49e0d42d95b90055d4f8916728a8bccad80fd
+hard_checkpoint_percent: 50
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825
+---
+
+# AR-427 complete inferred team
+
+## Checkpoint
+
+Recipe 19 complete-team hydration implemented in the existing owned PR 824 branch.
+The independent security reviewer was fifth in accepted Claude routing and absent
+from four persisted prompt references. AR-427 is a High delivery finding.
+
+## Completed evidence
+
+Exact Store routing and selected references are retained. Corrected regressions
+fail seven original-source cases across all five hosts and both native retrieval
+surfaces. Candidate focused 66 / 1 skipped, production 1151 / 3 skipped and UI 224
+pass. Existing sixteen-reference and host context limits remain unchanged.
+
+## Exact blocker
+
+Frozen conformance 188/188 and all 616 installed files match recipe 19 artifact
+source `20c49e0d`. Installed smoke and independent artifact verification pass.
+OpenClaw refresh complete; gateway RPC healthy. Codex eight modified hooks need
+native trust review and a fresh process (old process projection remains stale).
+Fresh Hermes native complete-team proof passes: session `20260909_143551_e08888`,
+114.863s, five exact cards, matching five headers and authoritative hash.
+The first AR-427 and authorized third AR-426 isolated passes satisfied all criteria. AR-423 third pass left criterion 2
+absent; the omitted reviewer invalidates a whole-team claim. AR-426 retains the
+separate Hermes callback proof. AR-428 records static test-result planning without
+observed results; its captured critic veto is preserved.
+
+## Same-task continuity
+
+Use this owned branch and preserve unrelated work. At 50 percent keep a clean
+substantive/ledger checkpoint and continue. No manual selection or receipt reopening.
+
+## Next bounded work package
+
+Merge PR 824 with the recorded all-satisfied AR-427/426 isolated verdicts. Fresh Claude trace `28c8db15` failed planner contracts before delivery;
+retain that failure without an unchanged retry.
+
+## Verification
+
+Focused 66 passed / 1 skipped; production 1151 passed / 3 skipped; UI 224 passed.
+Initial invalid fixture is retained separately from the causal seven-case baseline.
+No exhaustive or Windows workflow.
+
+## Constraints
+
+Inference owns staffing; independent critic, caller scope and trust remain intact.
+AR-423/426 additional isolated passes are owner-authorized; no acceptance by hand.
+All five hosts remain in AR-404 scope.

@@ -1,0 +1,49 @@
+{
+  "source_commit": "176adc19",
+  "artifact_source_commit": "20c49e0d42d95b90055d4f8916728a8bccad80fd",
+  "recipe": 19,
+  "installed_verification": {
+    "artifact_source_commit": "20c49e0d42d95b90055d4f8916728a8bccad80fd",
+    "wheel_sha256": "865f884097898e8c4423010795d94dbb24b292c089157ae4e7f537e7d106a80b",
+    "installed_package_files": 616,
+    "mismatches": [],
+    "fresh_isolated_recipe_version": 19
+  },
+  "installed_smoke": "{\"artifact_set\": \"portable\", \"assets\": 10, \"config\": \"passed\", \"dashboard\": {\"bind\": \"127.0.0.1\", \"health\": \"passed\"}, \"mcp\": {\"status_call\": \"passed\", \"tool_count\": 8}, \"roster\": {\"approved\": 265, \"quarantined\": 0, \"retired\": 0, \"total\": 265}, \"selection\": {\"cases\": {\"agency-runtime-dashboard\": [], \"ambiguous-help\": []}, \"forbidden_specialists\": [\"clinical-evidence-agent\", \"geographer\", \"language-translator\"], \"status\": \"passed\"}, \"version\": \"0.1.0\"}\n",
+  "limitations": [
+    "One fresh Hermes native turn passed; fresh Claude staffing failed.",
+    "Codex refreshed hook trust and fresh process pending.",
+    "No exhaustive or Windows workflow."
+  ],
+  "frozen_conformance": {
+    "counts": {
+      "invalid": 0,
+      "killed": 188,
+      "mutations": 188,
+      "survived": 0
+    },
+    "passed": true,
+    "source_unchanged": true,
+    "status": "passed"
+  },
+  "focused_log": ".................................................s.................      [100%]\n66 passed, 1 skipped in 53.28s\n",
+  "production_log": "........................................................................ [  6%]\n........................................................................ [ 12%]\n........................................................................ [ 18%]\n..................................s..................................... [ 24%]\n........................................................................ [ 31%]\n........................................................................ [ 37%]\n........................................................................ [ 43%]\n........................................................................ [ 49%]\n........................................................................ [ 56%]\n........................................................................ [ 62%]\n.................ss..................................................... [ 68%]\n........................................................................ [ 74%]\n........................................................................ [ 81%]\n........................................................................ [ 87%]\n........................................................................ [ 93%]\n........................................................................ [ 99%]\n..                                                                       [100%]\n1151 passed, 3 skipped in 71.43s (0:01:11)\n",
+  "ui_summary": [
+    "  ...",
+    "1..220",
+    "# tests 224",
+    "# suites 0",
+    "# pass 224",
+    "# fail 0",
+    "# cancelled 0",
+    "# skipped 0",
+    "# todo 0",
+    "# duration_ms 241.287061"
+  ],
+  "ruff": "All checks passed; 788 files already formatted",
+  "routing": {
+    "passed": true,
+    "status": null,
+    "summary": null
+  }
+}

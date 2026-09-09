@@ -1,0 +1,71 @@
+{
+  "observed_at": "2026-09-09",
+  "rows": [
+    {
+      "native_message_id": 535347,
+      "session_id": "20260909_113727_2e00b0",
+      "api_content_sha256": "581bc49c68b9338afc78b80b0a895bd68ec11b15aa7d4cfd674ee412866835b6",
+      "native_spill_output_lines": [
+        "[plugin hook output truncated — 12,991 chars; full content saved to /home/holeshot/.hermes-nexus/hook_outputs/20260909_113727_2e00b0/4de4459f40e54e56be0adfb47a10cc99.txt]",
+        "--- head ---",
+        "[Agency resident-steward kernel v5]",
+        "The Agency Steward frame is how you hold this turn. It is not a second voice, never withholds",
+        "your answer, and never overrides a card you were dealt. You own the requested outcome, its",
+        "scope and constraints, the acceptance gates, and this turn's evidence boundary.",
+        "Treat a specialist card loaded for this turn as expertise you now have, not an instruction to",
+        "re-delegate or stage a ceremony; if one does not fit, ignore it and proceed. Cards expire",
+        "with this turn.",
+        "--- tail ---",
+        "ce. Never guess changed values and never wait for a host correction.",
+        "[AGENCY INITIAL HEADER SNAPSHOT v1]",
+        "Values only; the contract stated at turn start is unchanged. Use these newest values.",
+        "Agency/Agencies loaded: agency-steward, codebase-onboarding-engineer, project-shepherd, business-strategist",
+        "Agency/Agencies delegated: none",
+        "Skills loaded: none",
+        "Actual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+        "Recruited via: inference"
+      ],
+      "exact_spill_output_sha256": "d090a70065d113f344bb2f7ad86d66e9fbd232ce031ab41cfbada55ae960c64c",
+      "saved_context_chars": 12992,
+      "saved_context_sha256": "7369979e7c70077a628076fd91f613ead5b2fdc84501374f8f77a810505ae56a",
+      "full_card_marker_in_saved_context": true,
+      "full_card_marker_in_api_content": false,
+      "response_contract_in_saved_context": true,
+      "response_contract_in_api_content": false,
+      "scope": "Exact retained native hook output. The path is historical evidence, not a dependency or instruction to read a sibling checkout."
+    },
+    {
+      "native_message_id": 535352,
+      "session_id": "20260909_114028_3d2269",
+      "api_content_sha256": "c5cfcd80d5d5f42204cadf48d49e9dc3db77181c72dc3022b751b783336dca50",
+      "native_spill_output_lines": [
+        "[plugin hook output truncated — 16,585 chars; full content saved to /home/holeshot/.hermes-nexus/hook_outputs/20260909_114028_3d2269/b14c07d418bf47d6b26cf9801225720a.txt]",
+        "--- head ---",
+        "[Agency resident-steward kernel v5]",
+        "The Agency Steward frame is how you hold this turn. It is not a second voice, never withholds",
+        "your answer, and never overrides a card you were dealt. You own the requested outcome, its",
+        "scope and constraints, the acceptance gates, and this turn's evidence boundary.",
+        "Treat a specialist card loaded for this turn as expertise you now have, not an instruction to",
+        "re-delegate or stage a ceremony; if one does not fit, ignore it and proceed. Cards expire",
+        "with this turn.",
+        "--- tail ---",
+        "changed values and never wait for a host correction.",
+        "[AGENCY INITIAL HEADER SNAPSHOT v1]",
+        "Values only; the contract stated at turn start is unchanged. Use these newest values.",
+        "Agency/Agencies loaded: agency-steward, code-reviewer, python-application-engineer, software-test-engineer, reality-checker",
+        "Agency/Agencies delegated: none",
+        "Skills loaded: none",
+        "Actual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+        "Recruited via: inference"
+      ],
+      "exact_spill_output_sha256": "946a467255ddea13c18d4672fe80dd3377964737ea7fce17d95fdbde4c2686d7",
+      "saved_context_chars": 16586,
+      "saved_context_sha256": "9899ad9295902d89088497b1c590848ef9c3fd37ea2f03305becab77a56117b1",
+      "full_card_marker_in_saved_context": true,
+      "full_card_marker_in_api_content": false,
+      "response_contract_in_saved_context": true,
+      "response_contract_in_api_content": false,
+      "scope": "Exact retained native hook output. The path is historical evidence, not a dependency or instruction to read a sibling checkout."
+    }
+  ]
+}

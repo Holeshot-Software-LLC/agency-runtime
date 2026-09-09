@@ -1,0 +1,235 @@
+{
+  "trust": {
+    "status": "trusted",
+    "expected_count": 8,
+    "observed_count": 8,
+    "trusted_count": 8,
+    "managed_count": 0,
+    "modified_count": 0,
+    "untrusted_count": 0,
+    "disabled_count": 0,
+    "missing_count": 0,
+    "unexpected_count": 0,
+    "duplicate_count": 0,
+    "warning_count": 0,
+    "error_count": 0,
+    "events": {
+      "sessionStart": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:5f374799cbe99ecfa8ff08283b90e498872bb49b61368ffbe3aae3c1b8f5be61"
+      },
+      "userPromptSubmit": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:6029a26f4a08683cc2bfe3cdef6a983ba00c95909252abc06aa7d348740fb825"
+      },
+      "preToolUse": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:276b8763f52029eb87661b60b5f6421562e1e6f5c424ef94cbc62baaabeca233"
+      },
+      "postToolUse": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:178bd8e084a3981e77e766e44209cf62d4a2790fec72460db1ece7ca577be977"
+      },
+      "subagentStart": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:0bf182ce593eb8735ed860ca6c81bbf389e041df83bb7be36b142122143fd290"
+      },
+      "subagentStop": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:9b63c3ccb00e8abf784ed21cf42dbe80637bb7c6fd8f4318c86b28847eb2ed3f"
+      },
+      "postCompact": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:5e6ed132fa9fa75f0e4fcd074c1c18d0d063c5dc4b56a9d0f508970dce6a74ba"
+      },
+      "stop": {
+        "enabled": true,
+        "trustStatus": "trusted",
+        "currentHash": "sha256:8800176929028b5177fd7f40195b2a09fba878b0476c544cecc86301817d80a4"
+      }
+    }
+  },
+  "published": {
+    "host": "codex",
+    "runtime_digest": "37c1bf7d5eb0625b32c0966845c5f4038b768febf535f7d9256b6339d6394ede",
+    "schema": "agency-runtime.installed-launcher-runtime",
+    "schema_version": 1,
+    "source_root": "/home/holeshot/.local/share/agency-runtime/venvs/ar348-20260905.qq1DjJ/lib/python3.12/site-packages/agency_runtime"
+  },
+  "processes": [
+    {
+      "pid": 2200222,
+      "projection_hashes": [
+        "6db15efbecbe532629157184ad7090dc0c1740d374ab4fb04e5d6c5bf657ce76"
+      ],
+      "mode": "other",
+      "event": null,
+      "ancestry": [
+        {
+          "pid": 2200222,
+          "ppid": 2199883,
+          "executable": "/usr/bin/python3",
+          "runtime_mode": []
+        },
+        {
+          "pid": 2199883,
+          "ppid": 2199873,
+          "executable": "/home/holeshot/.npm-global/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+          "runtime_mode": []
+        },
+        {
+          "pid": 2199873,
+          "ppid": 2198848,
+          "executable": "node",
+          "runtime_mode": []
+        },
+        {
+          "pid": 2198848,
+          "ppid": 484440,
+          "executable": "bash",
+          "runtime_mode": []
+        },
+        {
+          "pid": 484440,
+          "ppid": 3357,
+          "executable": "/usr/libexec/gnome-terminal-server",
+          "runtime_mode": []
+        }
+      ]
+    },
+    {
+      "pid": 2749856,
+      "projection_hashes": [
+        "37c1bf7d5eb0625b32c0966845c5f4038b768febf535f7d9256b6339d6394ede"
+      ],
+      "mode": "other",
+      "event": null,
+      "ancestry": [
+        {
+          "pid": 2749856,
+          "ppid": 2749577,
+          "executable": "/usr/bin/python3",
+          "runtime_mode": []
+        },
+        {
+          "pid": 2749577,
+          "ppid": 2749570,
+          "executable": "/home/holeshot/.npm-global/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+          "runtime_mode": [
+            "exec"
+          ]
+        },
+        {
+          "pid": 2749570,
+          "ppid": 2749568,
+          "executable": "node",
+          "runtime_mode": [
+            "exec"
+          ]
+        },
+        {
+          "pid": 2749568,
+          "ppid": 2749565,
+          "executable": "python",
+          "runtime_mode": [
+            "codex"
+          ]
+        },
+        {
+          "pid": 2749565,
+          "ppid": 2199883,
+          "executable": "/bin/bash",
+          "runtime_mode": []
+        }
+      ]
+    },
+    {
+      "pid": 2750290,
+      "projection_hashes": [
+        "37c1bf7d5eb0625b32c0966845c5f4038b768febf535f7d9256b6339d6394ede"
+      ],
+      "mode": "hook",
+      "event": "UserPromptSubmit",
+      "ancestry": [
+        {
+          "pid": 2750290,
+          "ppid": 2749577,
+          "executable": "/usr/bin/python3",
+          "runtime_mode": [
+            "agency_runtime.cli",
+            "hook",
+            "codex",
+            "UserPromptSubmit"
+          ]
+        },
+        {
+          "pid": 2749577,
+          "ppid": 2749570,
+          "executable": "/home/holeshot/.npm-global/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/bin/codex",
+          "runtime_mode": [
+            "exec"
+          ]
+        },
+        {
+          "pid": 2749570,
+          "ppid": 2749568,
+          "executable": "node",
+          "runtime_mode": [
+            "exec"
+          ]
+        },
+        {
+          "pid": 2749568,
+          "ppid": 2749565,
+          "executable": "python",
+          "runtime_mode": [
+            "codex"
+          ]
+        },
+        {
+          "pid": 2749565,
+          "ppid": 2199883,
+          "executable": "/bin/bash",
+          "runtime_mode": []
+        }
+      ]
+    },
+    {
+      "pid": 3832044,
+      "projection_hashes": [
+        "4d2934ddb59e70a94cab668077a84422a08cd1beb662adc2db578e39dd96e86b"
+      ],
+      "mode": "other",
+      "event": null,
+      "ancestry": [
+        {
+          "pid": 3832044,
+          "ppid": 3357,
+          "executable": "/usr/bin/python3",
+          "runtime_mode": []
+        },
+        {
+          "pid": 3357,
+          "ppid": 1,
+          "executable": "/usr/lib/systemd/systemd",
+          "runtime_mode": []
+        },
+        {
+          "pid": 1,
+          "ppid": 0,
+          "executable": "/usr/lib/systemd/systemd",
+          "runtime_mode": []
+        }
+      ]
+    }
+  ],
+  "native_evidence": "AR-427-codex-native-after-complete-team-20260909.json",
+  "scope": "Fresh child process verified; existing parent remains stale. No trust was granted by the agent."
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "native_source_commit": "7cd91114b462b7af76e558cc4e97f82201d2e884",
+    "path": "agent/turn_context.py",
+    "file_sha256": "c735ad3c7926104adc4ec8f2d5cbe1bac29f9fea54f005dc59a61dc0eb8776e4",
+    "line_start": 1400,
+    "line_end": 1455,
+    "excerpt": "        from hermes_cli.lifecycle import invoke_hook as _invoke_hook\n        _pre_results = _invoke_hook(\n            \"pre_llm_call\",\n            session_id=agent.session_id,\n            task_id=effective_task_id,\n            turn_id=turn_id,\n            user_message=original_user_message,\n            conversation_history=list(messages),\n            is_first_turn=(not bool(conversation_history)),\n            model=agent.model,\n            platform=getattr(agent, \"platform\", None) or \"\",\n            parent_session_id=getattr(agent, \"_parent_session_id\", None) or \"\",\n            sender_id=getattr(agent, \"_user_id\", None) or \"\",\n        )\n        _ctx_parts: list[str] = []\n        # Spill oversized per-hook context to disk so a runaway plugin\n        # can't inflate every subsequent turn's prompt. Ported from\n        # openai/codex PR #21069 (\"Spill large hook outputs from context\").\n        try:\n            from tools.hook_output_spill import (\n                get_spill_config as _spill_cfg,\n                spill_if_oversized as _spill_if_oversized,\n            )\n            _spill_config_cached = _spill_cfg()\n        except Exception:\n            _spill_if_oversized = None  # type: ignore[assignment]\n            _spill_config_cached = None\n        for r in _pre_results:\n            _piece: str = \"\"\n            if isinstance(r, dict) and r.get(\"context\"):\n                _piece = str(r[\"context\"])\n            elif isinstance(r, str) and r.strip():\n                _piece = r\n            else:\n                continue\n            if _spill_if_oversized is not None:\n                try:\n                    _piece = _spill_if_oversized(\n                        _piece,\n                        session_id=agent.session_id,\n                        source=\"plugin hook\",\n                        config=_spill_config_cached,\n                    )\n                except Exception as _spill_exc:\n                    logger.warning(\"hook context spill failed: %s\", _spill_exc)\n            _ctx_parts.append(_piece)\n        if _ctx_parts:\n            plugin_user_context = \"\\n\\n\".join(_ctx_parts)\n    except Exception as exc:\n        logger.warning(\"pre_llm_call hook failed: %s\", exc)\n\n    # Gateway must-deliver notes (auto-reset note, first-contact intro,\n    # voice-channel change) ride the same user-message injection channel as\n    # plugin context so the ephemeral system prompt can stay byte-stable.\n    # One-shot: staged by the gateway right before this turn, consumed here.\n    # Multimodal (list) content can't take the string sidecar \u2014 append a"
+  },
+  {
+    "native_source_commit": "7cd91114b462b7af76e558cc4e97f82201d2e884",
+    "path": "hermes_cli/plugins.py",
+    "file_sha256": "63cef01ae81a23c859170d36860c9ac257f320266a88640a8b9690952728bba6",
+    "line_start": 3387,
+    "line_end": 3411,
+    "excerpt": "    def register_hook(self, hook_name: str, callback: Callable) -> PluginRegistration:\n        \"\"\"Register a lifecycle hook callback.\n\n        Unknown hook names produce a warning but are still stored so\n        forward-compatible plugins don't break.\n        \"\"\"\n        if hook_name not in VALID_HOOKS:\n            logger.warning(\n                \"Plugin '%s' registered unknown hook '%s' \"\n                \"(valid: %s)\",\n                self.manifest.name,\n                hook_name,\n                \", \".join(sorted(VALID_HOOKS)),\n            )\n        callbacks = self._manager._hooks.setdefault(hook_name, [])\n        callbacks.append(callback)\n        handle = self._track(\n            \"hook\", hook_name,\n            lambda: self._manager._remove_callback(\n                self._manager._hooks, hook_name, callback\n            ),\n        )\n        logger.debug(\"Plugin %s registered hook: %s\", self.manifest.name, hook_name)\n        return handle\n"
+  },
+  {
+    "native_source_commit": "7cd91114b462b7af76e558cc4e97f82201d2e884",
+    "path": "tools/hook_output_spill.py",
+    "file_sha256": "e606dd1da74bb86a475ba4df79112e6e985f98038a985c0d040b1782f8c554e6",
+    "line_start": 20,
+    "line_end": 30,
+    "excerpt": "\nConfig (``config.yaml``)::\n\n    hooks:\n      output_spill:\n        enabled: true          # default: true; set false to disable spilling\n        max_chars: 10000       # default; context above this is spilled\n        preview_head: 500      # chars shown at the start of the preview\n        preview_tail: 500      # chars shown at the end of the preview\n        directory: null        # default: <HERMES_HOME>/hook_outputs\n"
+  }
+]

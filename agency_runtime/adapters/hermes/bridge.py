@@ -134,9 +134,21 @@ def _append_header_snapshot(
     current = result.get("context")
     base = current.rstrip() if isinstance(current, str) else ""
     combined = f"{base}\n\n{snapshot}" if base else snapshot
-    if len(combined.encode("utf-8")) > MAX_PREFLIGHT_CONTEXT_BYTES:
-        return result
-    return {**dict(result), "context": combined}
+    from agency_runtime.core.hermes_context_delivery import HERMES_NATIVE_HOOK_CHARS
+
+    if (
+        len(combined) > HERMES_NATIVE_HOOK_CHARS
+        or len(combined.encode("utf-8")) > MAX_PREFLIGHT_CONTEXT_BYTES
+    ):
+        adapter.store.close_turn_evidence(session_id, trace_id, status="failed")
+        raise ValueError("Hermes hook context exceeds the native delivery ceiling")
+    snapshot = adapter.store.get_completion_evidence_snapshot(session_id, trace_id)
+    fragments = (
+        len(snapshot["selected_specialists"]) + 1
+        if snapshot.get("specialist_context_via_hermes_tool") is True
+        else 0
+    )
+    return {**dict(result), "context": combined, "context_fragment_count": fragments}
 
 
 def _native_child_outcome(value: object) -> str:
@@ -542,6 +554,8 @@ def _runtime_disabled_result(payload: Mapping[str, Any], action: str) -> Any:
 
     if action in {"transform_llm_output", "transform_turn_failure"}:
         return _bounded_text(payload.get("response_text"))
+    if action == "load_specialist":
+        return {"error": "Agency Runtime is disabled; no card loaded"}
     if action == "finalize":
         return _bounded_text(payload.get("draft_text"))
     if action in {
@@ -553,6 +567,7 @@ def _runtime_disabled_result(payload: Mapping[str, Any], action: str) -> Any:
         "native_child_ended",
         "pre_verify",
         "on_session_end",
+        "context_fragment",
     }:
         return None
     raise ValueError("unknown Hermes bridge action")
@@ -613,6 +628,59 @@ def _pre_llm_call(
         trace_id=resolved_trace_id,
         model=str(handler_kwargs["model"]),
     )
+
+
+def _load_selected_specialist(adapter: HermesAdapter, payload: Mapping[str, Any]) -> dict[str, Any]:
+    from agency_runtime.server.mcp import handle_tool_call
+
+    session_id = _bounded_text(payload.get("session_id"), maximum_bytes=512)
+    trace_id = _bounded_text(payload.get("trace_id"), maximum_bytes=512)
+    run = adapter.store.get_run(trace_id)
+    if not run or run.get("host") != "hermes":
+        return {"error": "active Hermes turn required"}
+    from agency_runtime.core.turn_correlation import active_turn_error
+
+    if error := active_turn_error(adapter.store, session_id, trace_id):
+        return {"error": error}
+    snapshot = adapter.store.get_completion_evidence_snapshot(session_id, trace_id)
+    if snapshot.get("specialist_context_via_hermes_tool") is not True:
+        return {"error": "this turn has no pending native card delivery"}
+    return handle_tool_call(
+        "agency.load_specialist",
+        {"slug": payload.get("slug"), "session_id": session_id, "trace_id": trace_id},
+        store=adapter.store,
+    )
+
+
+def _context_fragment(adapter: HermesAdapter, payload: Mapping[str, Any]) -> dict[str, Any]:
+    from agency_runtime.core.turn_correlation import active_turn_error
+
+    session_id = _bounded_text(payload.get("session_id"), maximum_bytes=512)
+    trace_id = _bounded_text(payload.get("trace_id"), maximum_bytes=512)
+    if active_turn_error(adapter.store, session_id, trace_id):
+        return {}
+    snapshot = adapter.store.get_completion_evidence_snapshot(session_id, trace_id)
+    if snapshot.get("specialist_context_via_hermes_tool") is not True:
+        return {}
+    index = payload.get("fragment_index")
+    references = snapshot["selected_specialists"]
+    if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index <= len(references):
+        return {}
+    if index == len(references):
+        return {
+            "context": _header_snapshot_context(
+                adapter,
+                session_id=session_id,
+                trace_id=trace_id,
+                model=_bounded_text(payload.get("model"), maximum_bytes=512),
+            )
+        }
+    slug = references[index]["slug"]
+    result = _load_selected_specialist(adapter, {**payload, "slug": slug})
+    prompt = result.get("prompt")
+    if not isinstance(prompt, str) or result.get("prompt_truncated") is not False:
+        return {"context": "Agency could not deliver one selected full card; no load was recorded."}
+    return {"context": f"[AGENCY LOADED] Current-turn specialist {slug}:\n{prompt}"}
 
 
 def handle(
@@ -709,8 +777,13 @@ def handle(
         return None
     if action == "pre_verify":
         return _pre_verify(adapter, payload)
-    if action == "finalize":
-        return _finalize(adapter, payload)
+    if action in {"load_specialist", "finalize", "context_fragment"}:
+        handler = {
+            "load_specialist": _load_selected_specialist,
+            "finalize": _finalize,
+            "context_fragment": _context_fragment,
+        }[action]
+        return handler(adapter, payload)
     if action == "accepted_replay":
         return _accepted_replay(adapter, payload)
     if action in {"transform_llm_output", "transform_turn_failure"}:

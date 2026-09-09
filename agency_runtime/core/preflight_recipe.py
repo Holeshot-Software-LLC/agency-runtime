@@ -732,8 +732,16 @@ def _result_from_recipe(
         selected_card_requests,
         utf16_units,
     )
+    from agency_runtime.core.hermes_context_delivery import (
+        HERMES_RETRIEVAL_CONTEXT_CHARS,
+        hermes_context_enabled,
+    )
+    from agency_runtime.core.hermes_context_delivery import (
+        selected_card_requests as hermes_card_requests,
+    )
 
     via_mcp = mcp_context_enabled(recipe)
+    via_hermes = hermes_context_enabled(recipe)
     classification = _recipe_turn_classification(
         recipe,
         trivial=trivial,
@@ -837,13 +845,17 @@ def _result_from_recipe(
             maximum_chars=context_limit,
         )
         loaded_slugs = selected.slugs
-        if via_mcp:
+        if via_mcp or via_hermes:
             context = _combine_context(
                 manager_routing_context,
-                selected_card_requests(references, session_id, trace_id),
+                hermes_card_requests(references)
+                if via_hermes
+                else selected_card_requests(references, session_id, trace_id),
                 maximum_chars=context_limit,
             )
-            if utf16_units(context) > CLAUDE_RETRIEVAL_CONTEXT_UNITS:
+            if via_hermes and len(context) > HERMES_RETRIEVAL_CONTEXT_CHARS:
+                raise RuntimeError("Hermes retrieval context exceeds the native delivery ceiling")
+            if via_mcp and utf16_units(context) > CLAUDE_RETRIEVAL_CONTEXT_UNITS:
                 raise RuntimeError("Claude retrieval context exceeds the native delivery ceiling")
             getter = getattr(store, "get_specialists_for_trace", None)
             observed = set(getter(session_id, trace_id)) if callable(getter) else set()

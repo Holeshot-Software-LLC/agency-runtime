@@ -2327,6 +2327,28 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ef7805b8` | 2026-09-09 | docs(acceptance): cite bounded call and independent assurance enforcement | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `aa7284d9` | 2026-09-09 | docs(reliability): retain five-host results and accept bounded planner repair | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `f28b66d7` | 2026-09-09 | Merge pull request #821 from Holeshot-Software-LLC/codex/ar404-planner-contract-20260909 | AR-404, AR-423, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `ab924385` | 2026-09-09 | fix(hermes): preserve bounded native specialist context (AR-426) | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `d73eda4d` | 2026-09-09 | docs: record AR-426 installed demo checkpoint | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `faf5645a` | 2026-09-09 | fix(hermes): deliver selected cards through native context callbacks | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `8f81d89f` | 2026-09-09 | docs: record AR-426 callback candidate before native demo | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `843030cf` | 2026-09-09 | docs: preserve AR-426 callback staffing failures | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `e67b70ae` | 2026-09-09 | docs: checkpoint blocked AR-426 native acceptance | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `4186af41` | 2026-09-09 | docs: freeze AR-426 bounded acceptance packet | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `a6d8f8a2` | 2026-09-09 | docs: preserve exact AR-426 native hook pointers | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `a5b5caac` | 2026-09-09 | docs: freeze corrected AR-426 pointer evidence | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `abdb69aa` | 2026-09-09 | docs: record blocked AR-426 isolated verdicts and recovery | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `73ab49d2` | 2026-09-09 | docs: seal AR-426 blocked delivery checkpoint | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `38fa9e43` | 2026-09-09 | docs: prepare authorized AR-423 native acceptance packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
+| `b91225d7` | 2026-09-09 | docs: freeze authorized AR-423 isolated packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
+| `d8b7b418` | 2026-09-09 | docs: scope authorized Hermes critic capture | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `176adc19` | 2026-09-09 | fix(preflight): preserve every inferred specialist in the delivered team | [AR-427](../roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `20cf3c64` | 2026-09-09 | docs: retain AR-423 third verdicts and complete-team blocker | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
+| `5848f315` | 2026-09-09 | docs: integrate current reliability records into AR-423 audit | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
+| `4f2a1aee` | 2026-09-09 | docs(acceptance): merge PR827 retained Claude audit evidence | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
+| `b265f715` | 2026-09-09 | docs(reliability): record recipe 19 installed validation | [AR-427](../roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `23ae46bf` | 2026-09-09 | docs(acceptance): preserve fresh Hermes complete-team delivery proof | [AR-427](../roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `acdc9231` | 2026-09-09 | docs(acceptance): freeze bounded Hermes delivery verification packets | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `3d29e07b` | 2026-09-09 | docs(acceptance): complete Hermes context and inferred-team delivery scopes | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

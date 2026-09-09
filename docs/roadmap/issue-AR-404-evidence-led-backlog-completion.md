@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-09
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md
+  - docs/worklog/2026-09-09-hermes-context-spill.md
   - docs/decisions/0242-align-hermes-openclaw-with-owner-shared-staffing.md
   - docs/worklog/2026-09-09-shared-staffing-native-verification.md
   - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
@@ -67,6 +69,27 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+September 9 recipe 19 checkpoint: source `176adc19` preserves every inferred
+specialist during hydration; fresh Hermes native session `20260909_143551_e08888`
+passed five exact cards, five Store headers and authoritative completion. AR-426
+third and AR-427 first isolated acceptance satisfied all criteria; both scopes are done. AR-423 third criterion 2
+remains absent; fresh Claude trace `28c8db15` failed planner validation. AR-428
+records actual static test-result planning without observed results. Eight refreshed
+Codex hooks are now trusted and a fresh process runs published `37c1bf7d5eb0`;
+OpenClaw gateway RPC is healthy. See the active capsule for remaining five-host
+gates. Earlier sample results below remain historical, not a new all-host claim.
+
+
+Fresh continuation verifies Codex8/8trusted, current6db15efbecbe MCP process and
+615installed file matches. Exact handoff receipt retains classifier5 staffing
+failure and no finalization event; fresh parent records classifier6. Native Hermes
+12,991/16,585character hook spills remove full cards/contract: new AR-426/#823 owns
+bounded native tool delivery. Zcode first outputs have text before the headers;
+terminal rejection is correct despite later corrected output. Critic vetoes remain
+unjudged because rejected raw staffing selections are not persisted. AR-418 upstream
+PR106490 remains open; default checkout7cd91114 unchanged. All five hosts remain
+in scope; no new all-host sample or completion claim.
 
 PR821 installed candidate2b19cce6: fixed15native cases yield8passes: Codex3/3,
 Claude2/3, OpenClaw2/3, Zcode1/3, Hermes0/3. All failed cases remain preserved.

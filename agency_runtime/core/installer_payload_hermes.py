@@ -34,6 +34,7 @@ _ACTIVE_TURN_TRACES = OrderedDict()
 _ACTIVE_TURN_LOCK = threading.RLock()
 _ACTIVE_CHILD_TRACES = OrderedDict()
 _FINALIZER_RESULTS = OrderedDict()
+_CONTEXT_FRAGMENT_COUNTS = OrderedDict()
 _AMBIGUOUS_CHILD_BINDING = object()
 _FINALIZATION_BLOCK_RESPONSE = (
     "Agency Runtime blocked an unverified draft because turn-scoped finalization "
@@ -176,6 +177,9 @@ def _forget_turn(session_id, trace_id=""):
         current = _ACTIVE_TURN_TRACES.get(session_id)
         if current is not None and (not trace_id or current == trace_id):
             _ACTIVE_TURN_TRACES.pop(session_id, None)
+        for key in list(_CONTEXT_FRAGMENT_COUNTS):
+            if key[0] == session_id and (not trace_id or key[1] == trace_id):
+                _CONTEXT_FRAGMENT_COUNTS.pop(key, None)
         for key in list(_FINALIZER_RESULTS):
             if key[0] == session_id and (not trace_id or key[1] == trace_id):
                 _FINALIZER_RESULTS.pop(key, None)
@@ -226,6 +230,29 @@ def _remember_preflight_result(session_id, result):
     result_trace_id = _bounded_text(result.get("trace_id"), 512)
     if session_id and result_session_id == session_id and result_trace_id:
         _remember_turn(session_id, result_trace_id)
+        count = result.get("context_fragment_count", 0)
+        if isinstance(count, int) and not isinstance(count, bool) and 0 < count <= 17:
+            with _ACTIVE_TURN_LOCK:
+                _CONTEXT_FRAGMENT_COUNTS[(session_id, result_trace_id)] = count
+                while len(_CONTEXT_FRAGMENT_COUNTS) > _MAX_ACTIVE_TURNS:
+                    _CONTEXT_FRAGMENT_COUNTS.popitem(last=False)
+
+
+def _context_fragment_callback(index):
+    def callback(**kwargs):
+        session_id, trace_id = _correlation(kwargs)
+        with _ACTIVE_TURN_LOCK:
+            count = _CONTEXT_FRAGMENT_COUNTS.get((session_id, trace_id), 0)
+        if index >= count:
+            return None
+        try:
+            return _invoke("context_fragment", {
+                "session_id": session_id, "trace_id": trace_id,
+                "fragment_index": index, "model": kwargs.get("model"),
+            })
+        except Exception:
+            return None
+    return callback
 
 
 def _pre_llm_call(**kwargs):
@@ -622,6 +649,19 @@ def _finalize_tool_result(draft_text, missing):
     )
 
 
+def _agency_load_specialist(args=None, **kwargs):
+    arguments = args if isinstance(args, Mapping) else {}
+    session_id, trace_id = _correlation(kwargs)
+    try:
+        result = _invoke(
+            "load_specialist",
+            {"session_id": session_id, "trace_id": trace_id, "slug": arguments.get("slug")},
+        )
+    except Exception:
+        result = {"error": "Agency specialist delivery unavailable; no full card returned"}
+    return json.dumps(result, ensure_ascii=True, separators=(",", ":"))
+
+
 def _agency_finalize(args=None, **kwargs):
     arguments = args if isinstance(args, Mapping) else {}
     draft_text = _bounded_text(arguments.get("draft_text"))
@@ -712,6 +752,23 @@ def _agency_command(*args, **kwargs):
 
 def register(ctx):
     ctx.register_tool(
+        name="agency_load_specialist",
+        toolset="agency-runtime",
+        schema={
+            "name": "agency_load_specialist",
+            "description": "Retrieve one exact specialist card selected for this active turn.",
+            "parameters": {
+                "type": "object",
+                "properties": {"slug": {"type": "string"}},
+                "required": ["slug"],
+                "additionalProperties": False,
+            },
+        },
+        handler=_agency_load_specialist,
+        description="Load one bounded selected specialist card with native turn correlation.",
+        check_fn=lambda: True,
+    )
+    ctx.register_tool(
         name="agency_finalize",
         toolset="agency-runtime",
         schema={
@@ -740,6 +797,10 @@ def register(ctx):
         check_fn=lambda: True,
     )
     ctx.register_hook("pre_llm_call", _pre_llm_call)
+    # Hermes spills each callback result separately. Sixteen bounded immutable
+    # card slots plus the final Store snapshot fit the existing selection cap.
+    for index in range(17):
+        ctx.register_hook("pre_llm_call", _context_fragment_callback(index))
     ctx.register_hook("post_tool_call", _post_tool_call)
     ctx.register_hook("post_api_request", _post_api_request)
     ctx.register_hook("subagent_start", _subagent_start)
