@@ -31,6 +31,12 @@ ok/completed status does not establish a centrally accepted response.
 
 ## Current state
 
+First isolated pass satisfies criteria1/2/4; criterion3 is absent for a missing
+named boundary-test citation. The retained record is AR-419-isolated-first-pass-20260909.json.
+Existing host-hooks94 and terminal/boundary48 tests now pass; the second packet
+adds exact malformed/cross-run/first-invalid references. No criterion was weakened.
+
+
 ### Shared staffing native OpenClaw phase
 
 Fresh ordinary CLI follow-up7bdd5df5-248a-48a1-aa2b-3667c35a2200 returns the

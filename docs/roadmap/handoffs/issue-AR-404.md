@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-shared-staffing-20260909
-evidence_commit: 0cc40aba74be8ce98b518f5b0a8e5bc12aa26dc2
-minimum_ledger_commit: e93654c9cff0f906f5da25aebca8f43607eaba69
+evidence_commit: b62c31c7ea6fecae5bd407e9bd2e2730d055d4f4
+minimum_ledger_commit: 6a3dc1541da56d94426046b9a628a00c9187d130
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -47,7 +47,8 @@ Evidence: AR-404-hermes-suite-after-shared-staffing-20260909.json.
 
 OpenClaw shared phase: review57.109s and multi95.268s fail staffing; follow-up
 53.401s passes exact native card, five headers and one matching accepted terminal.
-AR-419 isolated verification follows; failures remain under AR-404.
+AR-419 first isolated1/2/4 satisfied,3absent: missing cited boundary tests.
+Existing host-hooks94 and terminal/boundary48 now pass; second packet prepared.
 
 Fresh Codex shared phase: review62.855s/follow-up53.903s pass all native gates;
 multi-step100.324s fails staffing. Classifier6; exact executing projection hash

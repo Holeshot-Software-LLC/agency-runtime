@@ -133,3 +133,9 @@ context does not expose the exact executing projection hash; the fresh receipt
 and8/8trusted inspection are distinct from this parent's stale6e7dc299c23e runtime.
 The optional policy-availability check initially lacked PYTHONPATH and could not
 import the package; PYTHONPATH=. rerun passes without a source change.
+
+First isolated AR-419 pass: criteria1/2/4 satisfied; criterion3 absent because
+the focused packet omitted named malformed/cross-run/first-invalid regressions.
+Retained the first record, ran existing host-hooks94 and terminal/boundary48 tests,
+all passed. Added their exact evidence and source references for a second pass;
+no production/test assertion changes or weakened acceptance.

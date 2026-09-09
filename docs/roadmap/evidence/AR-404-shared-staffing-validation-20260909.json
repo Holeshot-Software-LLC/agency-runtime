@@ -22,7 +22,7 @@
   },
   "documentation": {
     "passed": true,
-    "files": 1359,
+    "files": 1360,
     "require_tracker": true
   },
   "tracker": {
@@ -40,5 +40,16 @@
     "coverage gate",
     "Windows matrix",
     "workflow_dispatch"
-  ]
+  ],
+  "additional_openclaw_focused": {
+    "command": "pytest tests/test_openclaw_cli_terminal.py tests/test_openclaw_adapter.py tests/test_openclaw_streaming_policy.py -q -W error",
+    "passed": 91,
+    "skipped": 1,
+    "elapsed_seconds": 1.79
+  },
+  "routing": {
+    "passed": true,
+    "contract": "deterministic_candidate_recall_only",
+    "gate_count": 39
+  }
 }
