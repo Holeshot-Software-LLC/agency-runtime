@@ -46,7 +46,7 @@ bounded package are in AR-404's
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
 | `AR-427` | [Preserve the complete inferred specialist team during hydration](issue-AR-427-preserve-complete-inferred-specialist-team.md) | done | p1 | reliability | [#825](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825) |
-| `AR-428` | [Avoid test-result analysis units when no results exist](issue-AR-428-avoid-test-results-units-without-test-results.md) | in_progress | p1 | reliability | [#826](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/826) |
+| `AR-428` | [Avoid test-result analysis units when no results exist](issue-AR-428-avoid-test-results-units-without-test-results.md) | done | p1 | reliability | [#826](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/826) |
 | `AR-426` | [Preserve Hermes specialist context across native hook spilling](issue-AR-426-preserve-hermes-hook-specialist-context.md) | done | p1 | host-integrations | [#823](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823) |
 | `AR-421` | [Preserve completed-task follow-up context](issue-AR-421-preserve-completed-task-followup-context.md) | done | p1 | host-integrations | [#808](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/808) |
 | `AR-422` | [Preserve Claude executable permissions across npm updates](issue-AR-422-preserve-claude-update-permissions.md) | done | p1 | host-integrations | [#809](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/809) |

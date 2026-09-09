@@ -91,3 +91,12 @@ First isolated acceptance assesses the original planning criteria, not host reli
 Criteria1 and2 satisfied (`48f6c439`, `aaffa373`). Criterion3 returned no usable
 verifier result; no verdict was recorded. Use the second default pass for criterion3
 only, with unchanged isolated validator and pass-through transport result capture.
+
+## Completion scope
+
+Criterion3 satisfied on second default pass `c8068ebd`; the exact verifier result
+is retained. AR-428 is complete for planning boundaries only. Hermes staffing and
+terminal reliability remain open: both current native receipts failed independently.
+Codex priority checks show8/8 trusted hooks and651 matching published projection
+files; its prior fresh recipe19 proof is distinct from this stale parent and Hermes20.
+No exhaustive/Windows workflow, Zcode refresh, or all-host acceptance is claimed.

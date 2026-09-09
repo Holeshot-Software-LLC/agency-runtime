@@ -13,8 +13,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-428
 branch: codex/ar428-hermes-planner-evidence-20260909
-evidence_commit: 7b263fb9f6d0d8a422eb7d047a97d997e435942f
-minimum_ledger_commit: 16ae94261722c3ed4f35859a01db13caa2925a60
+evidence_commit: 0969646d5935493e178944f66c2e1a479ae6d5a2
+minimum_ledger_commit: 8157e2e47b8c6aaa682f2b4c8fe87765a309f672
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/826
 ---
@@ -40,7 +40,9 @@ Fresh Hermes session20260909_153129_1f3091 failed wrong-neighbor staffing in81.8
 Planner/recruiter applied; exact plan was not retained. Finalization absent.
 Observed session20260909_153433_eef6b8 also failed, but its exact critic packet
 shows four units, no invented test-evidence, and independent static review.
-First isolated planning acceptance remains pending; no whole-host pass.
+Isolated criteria1/2 satisfied; criterion3 satisfied on the second default pass
+(`c8068ebd`) after the first returned no usable result. AR-428 planning scope is
+complete. Hermes whole-host staffing/finalization remains open under AR-404.
 
 ## Same-task continuity
 
@@ -49,9 +51,9 @@ checkpoint and continue. Preserve unrelated work and failed receipts.
 
 ## Next bounded work package
 
-Run the first isolated AR-428 acceptance against the frozen original/new packets.
-Retain both failed receipts. Remaining nomination relevance needs separate diagnosis
-under AR-404; Codex and Claude follow in owner priority.
+Merge PR831 and close AR-428 with the three isolated verdicts. Remaining nomination
+relevance stays under AR-404. Codex trust and projection files verify; proceed
+Claude AR-423 with fresh native planner observation and complete-team evidence.
 
 ## Verification
 

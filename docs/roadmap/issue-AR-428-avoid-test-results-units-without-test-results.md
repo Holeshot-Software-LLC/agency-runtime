@@ -1,6 +1,6 @@
 ---
 title: "AR-428: Avoid test-result analysis units when no results exist"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -48,8 +48,10 @@ actual critic packet contains four units, no test-evidence unit, and independent
 static review of proposed code/tests. Type-design and silent-failure nominees
 remain in the rejected team; the critic code does not identify a sole cause.
 Owner configuration restored byte-for-byte, one packet captured, no observer errors.
-First isolated verification assesses only the unchanged AR-428 planning criteria;
-whole-host reliability and authoritative completion remain unproven.
+Isolated criteria1/2 satisfied on the first pass; criterion3 returned no usable
+result, then satisfied on the second default pass (`c8068ebd`). AR-428 is complete
+for the unchanged planning criteria. Whole-host reliability and authoritative
+completion remain unproven.
 
 ## Approach
 
@@ -62,6 +64,6 @@ native delivery and isolated acceptance gates.
 
 ## Acceptance
 
-- [ ] Exact native plan, selected contracts and critic rejection remain preserved.
-- [ ] Static test review and observed test evidence remain distinct without weakening independent assurance.
-- [ ] Focused and fast checks plus bounded native evidence verify the changed planning boundary.
+- [x] Exact native plan, selected contracts and critic rejection remain preserved.
+- [x] Static test review and observed test evidence remain distinct without weakening independent assurance.
+- [x] Focused and fast checks plus bounded native evidence verify the changed planning boundary.

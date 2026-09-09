@@ -31,10 +31,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ## Checkpoint
 
 Owner priority is now OpenClaw, Hermes, Codex, Claude; Zcode work is deferred.
-The AR-423 bootstrap was read-only before the owner reordered the work. Current
-package captures one fresh OpenClaw review/follow-up critic packet, with one
-360-second limit per turn and no retries. The old failed follow-up has no saved
-routing proposal and no authoritative finalization.
+The OpenClaw diagnostic passed review/follow-up headers and terminal hashes, with
+full card injection unobserved. Hermes AR-428 recipe20 now plans independent static
+review without invented test-evidence, but two fresh turns failed wrong-neighbor
+staffing. Exact original/new critic packets remain; no authoritative completion.
+AR-428 all three isolated planning criteria satisfied; PR831 is ready to merge.
+
+Codex current8/8 trust and all651 published projection files verify. Prior fresh
+recipe19 native proof remains scoped; current parent remains stale. Global recipe20
+installation refreshed Hermes only. Claude AR-423 is next; Zcode remains deferred.
 
 
 Owned PR 824 branch contains recipe 19 complete-team delivery and bounded Hermes
