@@ -2339,6 +2339,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `abdb69aa` | 2026-09-09 | docs: record blocked AR-426 isolated verdicts and recovery | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `73ab49d2` | 2026-09-09 | docs: seal AR-426 blocked delivery checkpoint | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `d8b7b418` | 2026-09-09 | docs: scope authorized Hermes critic capture | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `176adc19` | 2026-09-09 | fix(preflight): preserve every inferred specialist in the delivered team | [AR-427](../roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
