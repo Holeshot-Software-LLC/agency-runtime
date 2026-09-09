@@ -2333,6 +2333,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8f81d89f` | 2026-09-09 | docs: record AR-426 callback candidate before native demo | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `843030cf` | 2026-09-09 | docs: preserve AR-426 callback staffing failures | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `e67b70ae` | 2026-09-09 | docs: checkpoint blocked AR-426 native acceptance | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `4186af41` | 2026-09-09 | docs: freeze AR-426 bounded acceptance packet | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
