@@ -176,3 +176,8 @@ A final policy-availability invocation initially lacked PYTHONPATH and raised
 ModuleNotFoundError before checking; the same check passed with the source path
 and project interpreter. Packet preparation rejected an out-of-range line 36
 before any verifier call; corrected range 1-35 passed the dry-run checks.
+
+Final metadata (1371 Markdown files), policy availability, exact worklog, docs
+with required trackers, strict tracker parity (417 items; 2 historical PR-tracked
+items skipped) and diff checks pass. Main remains clean at c6c3e7b5; the owned
+branch is preserved as draft PR 824 with no merge or issue closure.

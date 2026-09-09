@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-terminal-reliability-20260909
-evidence_commit: e67b70aef377e5a72bb47fdd84e3e7bad527280b
-minimum_ledger_commit: bbe3d1b3d79384070af6856a3175ae5315a8513f
+evidence_commit: abdb69aa45e1235d810decaf202d8df82d65d18e
+minimum_ledger_commit: 0ee5f9052bd24184488452c21508ed4e2cf230ba
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -112,6 +112,11 @@ corrected packet. No third AR-426 pass is authorized. AR-423's third pass is a
 separate pending authorization. All five hosts stay in AR-404 scope.
 
 ## Verification
+
+Final metadata, policy availability, exact worklog, docs with required trackers,
+strict tracker parity (417 items) and diff checks pass. Owned branch is clean at
+this substantive/ledger checkpoint; main remains clean at c6c3e7b5. PR 824 remains
+draft. No merge, issue closure, exhaustive workflow or Windows workflow.
 
 Focused143pass, Claude context12pass, production1151pass/3skip, UI224pass,
 Ruff/metadata/policy/worklog/routing/docs/tracker checks pass. Frozen conformance
