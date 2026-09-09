@@ -155,3 +155,8 @@ and accepted matching hash. Its15.7KB hook output was replaced by Claude's nativ
 persisted-output pointer; full inline specialist cards are not proved. Multi-step
 104.114s fails staffing. These outcomes remain in the fixed sample. The context
 repair does not establish whole-system staffing reliability.
+
+Hermes native port30f421ecce onbf53ff00a7 passes31focused tests and the
+2091pointer compatibility scan. A partial first edit left a missing turn_id and
+three unmodified CLI assertions; that failed run is retained before the final
+31pass run. Native source is committed in its owned worktree; default unchanged.

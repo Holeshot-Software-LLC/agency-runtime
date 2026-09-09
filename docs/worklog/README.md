@@ -2293,3 +2293,4 @@ This registry connects repository history to the roadmap and to optional detail 
 - `56e7dee`, `410c1d1`, `66f62b9`, and `d38e08b` are published `docs(worklog):` commits that also updated `docs/roadmap/issue-AR-119-inference-first-workforce.md`. The mixed commits violate the narrow ledger exemption, but rewriting shared history would be destructive. AR-254 records their exact-SHA grandfathering; future mixed ledger commits still fail.
 | `963ae815` | 2026-09-09 | docs(AR-404): record installed repair and complete native baseline | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
 | `ed83735e` | 2026-09-09 | docs(AR-404): preserve native projection and activation failures | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `6f933fc8` | 2026-09-09 | docs(AR-404): retain completed Claude reliability sample | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
