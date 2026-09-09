@@ -52,6 +52,12 @@ correlation. Native limit10,000UTF16; prior denied and planner-failed probes rem
 
 ## Exact blocker
 
+Fresh recipe 19 Claude session `0a59da24-79ca-4bc5-afa2-b4f4e32ba5eb` / trace
+`28c8db15-403f-4d27-85c2-c660b4e16ae1` failed both planner contracts in 118.255s
+before card delivery. First reply missed correctness/security reviews; second
+reported semantic invalidity. No unchanged retry or fourth isolated pass.
+
+
 Authorized third pass: criteria 1/3 satisfied, criterion 2 absent because the
 packet did not establish independent assurance. Read-only routing evidence then
 found five selected workers but four persisted prompt references, omitting the

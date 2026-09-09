@@ -33,6 +33,14 @@ safely be worked around by reading that file automatically.
 
 ## Current state
 
+Fresh recipe 19 Claude session `0a59da24` / trace `28c8db15` failed two planner
+contracts before delivery in 118.255s. The first lacked correctness/security review;
+the second returned semantic-invalid. Full receipt is retained in
+`evidence/AR-427-claude-native-after-complete-team-20260909.json`. AR-427 fixes
+the prior omitted fifth card, but this failed fresh Claude turn cannot prove its
+complete native delivery or resolve absent independent assurance.
+
+
 The owner-authorized third isolated pass satisfied criteria 1/3 and left criterion
 2 absent because independent assurance was not established. A subsequent exact
 Store comparison found five inference-selected identities but only four persisted

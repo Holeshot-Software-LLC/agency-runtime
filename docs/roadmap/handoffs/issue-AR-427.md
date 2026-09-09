@@ -43,7 +43,7 @@ OpenClaw refresh complete; gateway RPC healthy. Codex eight modified hooks need
 native trust review and a fresh process (old process projection remains stale).
 Fresh Hermes native complete-team proof passes: session `20260909_143551_e08888`,
 114.863s, five exact cards, matching five headers and authoritative hash.
-The first AR-427 and authorized third AR-426 isolated passes are next. AR-423 third pass left criterion 2
+The first AR-427 and authorized third AR-426 isolated passes satisfied all criteria. AR-423 third pass left criterion 2
 absent; the omitted reviewer invalidates a whole-team claim. AR-426 retains the
 separate Hermes callback proof. AR-428 records static test-result planning without
 observed results; its captured critic veto is preserved.
@@ -55,8 +55,7 @@ substantive/ledger checkpoint and continue. No manual selection or receipt reope
 
 ## Next bounded work package
 
-Run isolated AR-427 and AR-426 acceptance on the retained complete-team Hermes
-proof. Fresh Claude trace `28c8db15` failed planner contracts before delivery;
+Merge PR 824 with the recorded all-satisfied AR-427/426 isolated verdicts. Fresh Claude trace `28c8db15` failed planner contracts before delivery;
 retain that failure without an unchanged retry.
 
 ## Verification

@@ -80,6 +80,11 @@ changes rather than duplicating every commit.
 
 ## Unreleased
 
+- Preserve the complete inference-selected specialist team during preflight; reject
+  incomplete delivery before recording loads. Hermes delivers large card sets
+  through bounded native callbacks so its hook spill limit cannot discard cards
+  or response instructions (AR-426, AR-427).
+
 - Preserve the full inferred team during preflight; incomplete delivery now fails before any load is recorded (AR-427).
 
 - Preserve large Hermes specialist selections through bounded native card retrieval

@@ -70,6 +70,17 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+September 9 recipe 19 checkpoint: source `176adc19` preserves every inferred
+specialist during hydration; fresh Hermes native session `20260909_143551_e08888`
+passed five exact cards, five Store headers and authoritative completion. AR-426
+third and AR-427 first isolated acceptance satisfied all criteria; both scopes are done. AR-423 third criterion 2
+remains absent; fresh Claude trace `28c8db15` failed planner validation. AR-428
+records actual static test-result planning without observed results. Eight refreshed
+Codex hooks are now trusted and a fresh process runs published `37c1bf7d5eb0`;
+OpenClaw gateway RPC is healthy. See the active capsule for remaining five-host
+gates. Earlier sample results below remain historical, not a new all-host claim.
+
+
 Fresh continuation verifies Codex8/8trusted, current6db15efbecbe MCP process and
 615installed file matches. Exact handoff receipt retains classifier5 staffing
 failure and no finalization event; fresh parent records classifier6. Native Hermes

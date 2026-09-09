@@ -1,6 +1,6 @@
 ---
 title: "AR-426: Preserve Hermes specialist context across native hook spilling"
-status: blocked
+status: done
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -34,41 +34,31 @@ This input-context defect is distinct from AR-418 output truncation.
 
 ## Current state
 
-Fresh recipe 19 Hermes turn `20260909_143551_e08888` completed in 114.863s
-with all five inference-selected cards present in native message 535391, five
-matching Store headers and authoritative response hash
+All three isolated criteria are satisfied in `acceptance/issue-AR-426.md`.
+AR-426 used the owner-authorized third pass; AR-427 used its first pass.
+PR 824 is ready for the scoped merge. Earlier failed native receipts remain failed.
+
+
+Recipe 19 source `176adc19`, artifact source `20c49e0d`, is installed; all 616
+package files match. Focused 66 passed / 1 skipped, production 1151 / 3 skipped,
+UI 224 and frozen conformance 188/188 pass. Existing source `faf5645a` delivers
+bounded fragments through ordered native callbacks before the model runs.
+
+Fresh Hermes session `20260909_143551_e08888` passed in 114.863s. Native message
+535391 retains all five inference-selected immutable cards, response contract and
+delivery rules without a spill pointer. All five headers match Store and the
+first authoritative accepted response hash is
 `6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968`.
-The exact context, full cards, terminal and installed validation are retained under
-AR-427 evidence. Isolated acceptance is now pending. Earlier failures below are
-historical and remain failed. Fresh Claude trace `28c8db15` failed planner validation
-before card delivery; it does not establish a Claude native gate.
+Exact context, cards and terminal receipts are in AR-427 evidence. The authorized
+third isolated pass satisfied all criteria; earlier two records are retained.
 
+The original tool-only and callback-phase failures, the post-timeout critic veto
+and the new captured critic veto remain failed. The last capture revealed a real
+planning concern recorded as AR-428; no critic is bypassed or treated as erroneous.
 
-Callback source faf5645a, canonical artifact source 22f24edd, is installed;
-616 package files match. Focused 131, production 1151 passed / 3 skipped,
-UI 224 and conformance 188/188 pass. Recipe 18 delivers bounded card fragments
-through ordered native callbacks before the model runs.
-
-The first tool-only phase failed all three full acceptance gates: models skipped
-retrieval. The second callback phase never reached card delivery: ordinary review
-failed coverage/confidence verification, follow-up received a critic veto, and
-multi-step timed out at the planner after 60 seconds. All six failed gates remain
-in the two native evidence JSONs; none is reopened or manually finalized.
-
-The one fresh post-timeout attempt took 91.605 seconds and failed a critic veto,
-with a rejected reranker contract also retained. It has no finalization events.
-No further attempt is scheduled. Native full-card/header/finalization proof is
-absent. AR-426 is blocked by shared staffing; PR 824 remains draft and unmerged.
-
-The actual Hermes checkout is 7cd91114b462b7af76e558cc4e97f82201d2e884;
-its default hook spill threshold remains 10,000 characters. AR-418's separate
-output truncation limit and upstream adoption remain unproven.
-
-Two isolated passes accepted the guarded delivery criterion; the baseline
-preservation criterion remains absent in its frozen packet, and native acceptance
-is explicitly absent. Exact saved missing-context files are now retained for a
-future corrected packet. The owner has now authorized one additional isolated pass; it is reserved until
-the next native evidence packet is ready.
+Hermes checkout remains `7cd91114b462b7af76e558cc4e97f82201d2e884` with its
+10,000-character per-callback spill threshold unchanged. AR-418's upstream
+terminal patch is still open and the original output cap remains unknown.
 
 ## Approach
 
@@ -87,8 +77,8 @@ AR-418 retains the separate upstream terminal lifecycle and original output cap.
 
 ## Acceptance
 
-- [ ] Exact native pointer substitution and missing context are preserved.
-- [ ] Bounded native delivery returns exact selected cards with truthful loads;
+- [x] Exact native pointer substitution and missing context are preserved.
+- [x] Bounded native delivery returns exact selected cards with truthful loads;
       missing, cross-turn, unselected and oversized requests cannot invent loads.
-- [ ] Focused and required fast checks plus fresh installed native evidence prove
+- [x] Focused and required fast checks plus fresh installed native evidence prove
       full cards, five matching headers and authoritative finalization.

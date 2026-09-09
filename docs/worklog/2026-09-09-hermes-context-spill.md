@@ -247,3 +247,17 @@ exact native cards and terminal proof. The old AR-426 second record is retained.
 Hermes checkout remains `7cd91114`; upstream PR106490 still open at `30f421ecce`.
 Zcode's first failed outputs still contain permission prose before the headers;
 later corrected responses cannot replace their terminal receipts.
+
+## Isolated scope acceptance and fresh Codex
+
+AR-426 third pass returned satisfied for all criteria: `bb4cf179`, `73ca814f`,
+`eaba9409`. AR-427 first pass returned satisfied: `d32ea9de`, `7cd12f81`,
+`653edb20`. Exact digests and reasons remain in their acceptance records. Those
+two scopes are done; AR-404, AR-418, AR-423 and AR-428 remain open.
+
+The owner completed Codex's refreshed trust review: eight trusted, zero modified.
+Fresh Codex PID 2749577 spawned runtime PID 2749856 and UserPromptSubmit
+PID 2750290 on published projection `37c1bf7d5eb0`. The parent PID 2200222
+remains stale at `6db15efbecbe`; no process was silently replaced. Fresh Codex
+session `01a0877b-45dd-7b01-b99d-92c03587393f` passed in 103.434s with all
+five selected cards and response hash `72f3a83528f0165e820684d23f3cd1b3394d2ae1b30c9805a4da06e81acc85e0`.

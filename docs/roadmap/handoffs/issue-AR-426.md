@@ -14,87 +14,78 @@ superseded_by: null
 type: handoff
 issue_id: AR-426
 branch: codex/ar404-terminal-reliability-20260909
-evidence_commit: abdb69aa45e1235d810decaf202d8df82d65d18e
-minimum_ledger_commit: 0ee5f9052bd24184488452c21508ed4e2cf230ba
+evidence_commit: 23ae46bf382e68f945cfaf90c83a00aa6c8c4f4c
+minimum_ledger_commit: 1c0e3c16921b38974b02280cf8334834a90ec0a3
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823
 ---
 
-# AR-426 Hermes selected-card delivery
+# AR-426 Hermes specialist context
 
 ## Checkpoint
 
-2026-09-09 owner continuation authorizes the next bounded repair and one extra
-isolated pass per corrected issue packet. One fresh Hermes multi-step diagnostic
-will capture the actual critic proposal/response through a byte-preserving
-loopback observer. It changes observability, not selection or verdicts. Cap360s,
-no retry; restore the original owner configuration in finally.
-
-PR 824 remains draft. Callback source faf5645a / artifact 22f24edd is installed;
-616 exact file matches. Focused 131, production 1151 / 3 skipped, UI 224 and
-conformance 188/188 pass. Only the Hermes native projection was refreshed.
-
-Both three-case native phases failed the full acceptance gate. The tool-only
-phase omitted card retrieval; the callback phase failed staffing before delivery.
-The second phase records review coverage/confidence rejection, follow-up critic
-veto, and a 60-second planner timeout. No failed receipt is reopened.
+Owned PR 824 branch contains recipe 19 complete-team delivery and bounded Hermes
+callbacks. Source `176adc19`, canonical artifact `20c49e0d`; all 616 installed
+files match. PR 827 retained Claude audit evidence and merged into this branch;
+main remains at `c6c3e7b5` until PR 824's acceptance and merge checkpoint.
 
 ## Completed evidence
 
-Exact native messages535347/535352 prove12,991/16,585character hook spilling
-removed full cards and contract. Old source regression emits15,578characters
-and counts4loaded cards before delivery; its native-limit assertion fails.
-Candidate native-tool regressions prove exact versions, pending/loaded split,
-wrong-session/terminal/unselected/oversized rejection and result ceilings.
-Baseline and fast-install JSONs live under docs/roadmap/evidence/AR-426-*.
+Fresh Hermes session `20260909_143551_e08888` passed in 114.863s. Native message
+535391 contains all five inferred immutable cards, contract and delivery rules
+without a spill pointer. Five Store headers match; first authoritative response
+hash `6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968`.
+AR-427 evidence retains exact native context, each full card, terminal and request.
+
+Corrected original-source regressions fail seven cases across all five host paths
+and both native retrieval paths; recipe 19 preserves the fifth selected worker
+or rejects incomplete delivery before any load. Host/context ceilings are unchanged.
+Focused 66 / 1 skipped, production 1151 / 3 skipped, UI 224, routing and frozen
+conformance 188/188 pass. Canonical build, independent artifact and installed smoke
+pass. Earlier permissive-umask and invalid-fixture failures remain recorded.
+
+The one critic observer diagnostic restored owner configuration byte-for-byte.
+Its real plan requested test-result interpretation without results; AR-428/#826
+records that concern. The critic veto remains authoritative.
 
 ## Exact blocker
 
-No callback candidate native turn has yet passed staffing, so native delivery,
-five-header and authoritative finalization proof remain absent. The single post-timeout attempt took 91.605 seconds and failed the critic,
-with no finalization events. No further attempt is scheduled. AR-426 is blocked
-by shared staffing; an isolated record separates source evidence from absent
-native acceptance.
+AR-426 authorized third isolated pass and AR-427 first pass satisfied all three
+criteria each. Both scoped issues are done; PR 824 is ready for merge. AR-423 third pass satisfied criteria 1/3, left criterion 2 absent:
+prior Claude routing selected five but native delivery retained four, omitting an
+independent security reviewer. Fresh Claude session `0a59da24` / trace `28c8db15`
+failed planner contracts in 118.255s before delivery. No unchanged retry is queued.
 
-AR-418 remains separate: upstream PR 106490 is open, default native checkout
-7cd91114 is unchanged, and the original provider output cap is unknown.
+AR-418/#796 remains open: actual Hermes checkout `7cd91114`, upstream PR106490
+still OPEN at `30f421ecce`; default adoption and original output cap are unproven.
+Zcode first review/follow-up outputs put permission prose before headers and are
+valid terminal rejections; later headers cannot replace those failed receipts.
+Claude ordinary review and OpenClaw follow-up staffing failures remain retained.
+
+Codex's eight refreshed hooks are now trusted with no modified/missing entries.
+A fresh native Codex process and UserPromptSubmit hook run published projection
+`37c1bf7d5eb0`; the parent still runs `6db15efbecbe`. The fresh probe passed in 103.434s, five exact cards and authoritative finalization. OpenClaw refresh completed; subsequent gateway RPC is healthy.
 
 ## Same-task continuity
 
-Keep working in this owned worktree. Do not reuse historical worktrees. At50percent
-ensure the smallest clean substantive/ledger checkpoint and continue this task.
-No manual selection, trust changes, global spill increases or failed-receipt reopening.
+Continue in the owned branch and preserve unrelated scratchpad and Windows work.
+At or below 50 percent, keep a clean substantive/ledger checkpoint and continue.
+No empty recovery pair, forced transfer or failed-receipt reopening.
 
 ## Next bounded work package
 
-Package is blocked; PR 824 stays draft and unmerged. Diagnose shared staffing
-with sufficient bounded evidence before choosing a repair. Content-free rejected
-receipts do not establish an erroneous critic veto. No unchanged native retries.
-
-AR-426 isolated passes both accepted criterion 2, but criterion 1 remains absent
-(pointer evidence lacks the missing context itself in its frozen packet) and
-criterion 3 lacks native acceptance. Exact missing-context files 535347/535352
-and their SHA-256 manifest are now retained in repository evidence for a future
-corrected packet. The owner authorized one additional AR-426 isolated pass on 2026-09-09;
-reserve it until the native evidence packet is ready. AR-423's separately authorized third pass runs in its owned acceptance worktree. All five hosts stay in AR-404 scope.
+Merge PR 824, then record its exact merge ledger. Continue AR-428 planning repair from the captured packet; diagnose
+Claude's exact second planner response before assigning its semantic failure.
+All five hosts remain in scope; original fixed sample 8/15 is historical only.
 
 ## Verification
 
-Final metadata, policy availability, exact worklog, docs with required trackers,
-strict tracker parity (417 items) and diff checks pass. Owned branch is clean at
-this substantive/ledger checkpoint; main remains clean at c6c3e7b5. PR 824 remains
-draft. No merge, issue closure, exhaustive workflow or Windows workflow.
-
-Context/terminal75pass, wider121pass/6skip, production1151pass/3skip, UI224pass.
-Routing/Ruff/format/metadata/docs/strict tracker417pass; conformance188/188,
-0invalid/0survived. Canonical build/Twine/artifact/installed smoke pass,616file
-match. Shared-clone build output-limit failure retained; private exact clone
-succeeds unchanged. No exhaustive or Windows workflow.
+Metadata, policy availability, docs, exact worklog, strict tracker parity (419
+items), Ruff and diff checks pass at the prior checkpoint. Recheck changed records
+before handoff. No exhaustive or Windows workflow ran.
 
 ## Constraints
 
-Inference selects staff; preserve independent critic, validators and trust.
-Codex current parent6db15efbecbe/8trusted; other native projections unchanged.
-AR-423 corrected third isolated packet awaits explicit authorization; no reply
-is not approval. Zcode first prefix rejection is valid, staffing critic veto
-correctness remains unknown without failed selection content.
+Inference alone selects specialists. Preserve critic, validators, trust, caller
+scope and native limits. No manual selection, acceptance, external messages or
+unbounded retries. AR-419 and AR-425 stay closed; umbrella AR-404 stays open.
