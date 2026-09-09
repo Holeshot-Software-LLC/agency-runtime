@@ -14,9 +14,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-423
-branch: codex/ar423-claude-tool-grant-20260909
-evidence_commit: cd86e40a994bd7d6fad8699047140a8e369718a0
-minimum_ledger_commit: 0cd4f2897b12f9a3de1f277303ba381dd6aa61d5
+branch: codex/ar404-planner-contract-20260909
+evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
+minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 ---
@@ -25,67 +25,59 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 
 ## Checkpoint
 
-PR818 grant applied; fresh probe101.434s fails both bounded planner attempts
-(provider_response_contract_invalid). No team/MCP calls or accepted finalization.
-Permission denials empty does not prove native card delivery. AR-423 stays open.
-
-
-Scoped outcome: exact selected full cards reach Claude despite its native hook
-limit, with truthful loaded evidence. Owner approved both exact Allow rules; they are applied and read-back verified.
-PR814 and merge ledger PR815 are merged; base main f013e63a. AR-421/422/424
-closed only against their isolated gates. Current owned branch is shared-staffing
-PR816. Source cd86e40a / artifact0cd4f289 remains installed;615files match.
-Claude/Zcode projection07d88875a9e6 is unchanged. The older native-context branch
-is historical. The new worklog documents normal /permissions Allow rules;
-startup alone does not prompt. The explicit yes authorizes this grant.
+Native full-card delivery now passes on PR821 candidate2b19cce6/source03a82c3b.
+The underlying recipe16 delivery implementation came from PR814/cd86e40a.
+615installed package files match the canonical wheel. Both exact Claude native
+MCP Allow rules are saved and semantically unchanged; no operator tool wait.
 
 ## Completed evidence
 
-Native Claude 2.1.266 hook ceiling is 10,000 UTF-16 units; the historical four-card
-follow-up became a persisted pointer. The real original-source negative control
-emits 15,076 units. Recipe 16 uses existing MCP retrieval of exact selected versions;
-loaded rows are written only on retrieval. Shared hook no longer trims the last
-card. All twelve new regression cases and 72 targeted MCP cases pass.
+Session545f5ca7-2937-412f-a9be-6b4e4c665204,
+tracedf374667-2599-4798-a852-1e6f972aed25,239.508s,4exact selected full cards
+through native MCP,5Store-matching fields, accepted matching response hash
+f9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b.
+AR-404-claude-large-context-after-planner-context-20260909.json records exact
+native tool-use/result correlation and card hashes. Planner repair and independent
+critic both apply. The fixed Claude sample separately passes2/3, not all cases.
+
+Original pointer evidence is now directly retained in
+AR-423-original-native-pointer-20260909.json: native attachment81a967a9, saved
+16076bytes/16067UTF16units, tracef725587c in the persisted body, same-session Store
+correlation. Native limit10,000UTF16; prior denied and planner-failed probes remain.
 
 ## Exact blocker
 
-The previous native full-card trial was blocked by Claude permission. Four selected
-cards total 11,604 UTF-16 units; the native hook is 4,741 with no pointer. All four
-agency_load_specialist calls were denied; loaded evidence stays empty. Native
-Stop accepts the exact truthful response. AR-423 full-card acceptance is absent. AR-424 all three isolated criteria are
-satisfied; its byte-preservation scope is done, with closure in PR814.
-Fast checks pass; fresh-source conformance passes 188/188.
-This Claude installation and routes are unchanged. Owner-approved Hermes/OpenClaw
-shared-route alignment is recorded separately; all failed suite outcomes remain.
+AR-423 remains open despite native success. First isolated pass:1absent,2verifier
+unavailable/no verdict,3satisfied. Second:1/2absent,3satisfied. Preserve both JSON
+records under AR-423-isolated-{first,second}-planner-pass-20260909.json.
+The builder's orphan pointer row was outside the parsed table; full-file excerpts
+also omitted native card rows389-470. The corrected packet is prepared with
+contiguous rows, exact line ranges and local build_case proof that decisive text
+is included. It has no new isolated verdict. No third review in this package.
 
 ## Same-task continuity
 
-After PR818 merges, this grant branch is historical; create a new owned worktree. At or below
-50 percent, checkpoint the smallest safe
-source/ledger pair, then continue the same task. The umbrella capsule retains
-other host evidence and pending owner actions. Do not recreate historical work.
+PR821 owns this package and exact worklog. After merge the named branch is
+historical; create a new owned worktree. Do not recreate historical fixes or
+repeat native trials without changed conditions. At50percent checkpoint and
+continue in the same task. No pending Claude tool or Codex trust approval.
 
 ## Next bounded work package
 
-The fixed sample retained review success, follow-up response_invalid and multi-step
-staffing failure; neither staffed case exercised the large-card MCP path. The separate probe (219.959s) is retained with four native permission denials.
-Both rules are saved; the one after_tool_permission probe failed staffing.
-Investigate this exact planner receipt under AR-404 before another native phase.
-Do not bypass native permissions or retry under the same condition. Bind full native
-MCP tool results to exact session/trace and selected version/hash. Do not claim
-card delivery from tool instructions alone. Build isolated acceptance afterward.
+Run the prepared corrected acceptance packet only when an additional isolated
+pass is explicitly authorized under AGENTS.md's two-pass default. Close AR-423
+only if all three criteria receive satisfied verdicts. AR-404 retains the
+separate five-host8/15fixed result and Hermes/Zcode/recruiter/critic failures.
 
 ## Verification
 
-Twelve regressions pass; 72 targeted MCP cases pass. Initial spine found one
-non-Claude recipe-less MCP regression (1150 pass, 3 skip), repaired and targeted
-checks pass. Ruff check/format pass. Final spine: 1151 passed, 3 skipped; expanded focused checks: 166 passed,
-6 skipped. UI: 224 passed.
-Fresh-source conformance passes 188/188, no survivors/invalid mutations, source unchanged.
+Fresh Claude context12pass, planner focused143pass, production1151pass/3skip,
+UI224pass, frozen conformance188/188 and exact615file installed match. Full native
+card/headers/finalization proof passes. No broad reliability or Windows claim.
 
 ## Constraints
 
-Inference alone selects staff; preserve critic, validators, trust, caller scope
-and finalization. No file-read workaround, model change, manual specialist,
-unbounded retry or manual failed-receipt acceptance. Keep all five hosts in scope.
-Owned worktree, PR, merge and exact worklog records are mandatory.
+Inference-owned staffing, independent critic, caller scope, trust and finalization
+remain mandatory. No manual specialist choice, trust bypass, unbounded retries,
+file-read workaround or manual acceptance. Owned worktree -> PR -> merge, exact
+worklogs, preserved prior failures and isolated verdicts.

@@ -33,6 +33,24 @@ safely be worked around by reading that file automatically.
 
 ## Current state
 
+Native large-card delivery now passes on candidate2b19cce6. Isolated acceptance
+is still open: two passes yielded absent criteria1/2, partly because the pointer
+row was outside the parsed table and full-file excerpts omitted later card rows.
+Exact pointer evidence and a corrected contiguous, bounded packet are prepared;
+local build_case verifies the pointer and native-card excerpts are included.
+No third independent review in this package. Historical failed verdicts remain.
+
+
+September9 candidate2b19cce6: Claude session545f5ca7-2937-412f-a9be-6b4e4c665204,
+tracedf374667-2599-4798-a852-1e6f972aed25, passes the fresh large-card probe in239.508s.
+Four exact selected full cards appear in same-session, exact-trace native MCP
+results; all five fields match Store; accepted terminal hash
+f9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b matches response.
+No permission bypass or manual selection. AR-423 isolated verification follows;
+AR-404 five-host fixed sample remains pending. Prior failures remain preserved.
+Evidence: AR-404-claude-large-context-after-planner-context-20260909.json.
+
+
 ### Approved Claude permission probe outcome
 
 Native sessionf4897a2b-8ae1-4462-a692-8cd9b53808a6, trace

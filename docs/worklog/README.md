@@ -2313,6 +2313,19 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d0c431ad` | 2026-09-09 | docs(claude): apply owner-approved exact Agency tool permissions | AR-404, AR-423 | [Detail](2026-09-09-claude-approved-tool-grant.md) |
 | `f22d6824` | 2026-09-09 | docs(evidence): retain Claude planner failure after approved permission grant | AR-404, AR-423 | [Detail](2026-09-09-claude-approved-tool-grant.md) |
 | `68383aac` | 2026-09-09 | Merge pull request #818 from Holeshot-Software-LLC/codex/ar423-claude-tool-grant-20260909 | AR-404, AR-423 | [Detail](2026-09-09-claude-approved-tool-grant.md) |
+| `03a82c3b` | 2026-09-09 | fix(workforce): retain rejected planner context for bounded repair | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `88b4f323` | 2026-09-09 | docs(reliability): checkpoint verified planner candidate installation | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `dde8b624` | 2026-09-09 | docs(reliability): prove Claude native full-card response completion | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `8792df1f` | 2026-09-09 | docs(reliability): record frozen planner conformance evidence | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `db1f6863` | 2026-09-09 | docs(acceptance): prepare isolated Claude delivery and planner repair packets | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `e7f9d166` | 2026-09-09 | docs(acceptance): preserve first verdicts and exact Claude pointer evidence | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `6ffeb9e8` | 2026-09-09 | docs(acceptance): supplement Claude packet with exact native pointer | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `5bda662c` | 2026-09-09 | docs(acceptance): retain bounded verifier outcomes and compact source evidence | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `9cbe08a3` | 2026-09-09 | docs(acceptance): bind planner verification to bounded decisive excerpts | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `6eb6916c` | 2026-09-09 | docs(acceptance): correct table placement and bounded evidence locators | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `c7f047da` | 2026-09-09 | docs(acceptance): preserve planner review and name missing guard citations | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `ef7805b8` | 2026-09-09 | docs(acceptance): cite bounded call and independent assurance enforcement | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `aa7284d9` | 2026-09-09 | docs(reliability): retain five-host results and accept bounded planner repair | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

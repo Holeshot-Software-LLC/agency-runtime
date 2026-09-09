@@ -266,6 +266,15 @@ _PLAN_REPAIR_REQUIREMENTS = {
         "Topologically order the complete plan and allow each depends_on entry to reference "
         "only an exact unit ID that appears earlier."
     ),
+    "plan_duplicate_unit_ids": (
+        "Give every unit a distinct unit_id and update dependencies to the correct earlier ID."
+    ),
+    "plan_unit_id_invalid": "Use unit- followed by a bounded lowercase identifier for every unit_id.",
+    "plan_artifact_kind_invalid": "Use an exact artifact_kind from the supplied schema.",
+    "plan_novel_capability_already_known": (
+        "Use the existing capability identifier and leave novel_capability empty."
+    ),
+    "plan_units_shape_invalid": "Return a nonempty units array within the supplied unit limit.",
     "plan_unit_required_tools_unproven": (
         "A unit needs a tool this host has not proven, so no worker can staff it. A unit's tools "
         "follow from its artifact_kind and are not authored directly, so change that unit to an "
@@ -333,6 +342,13 @@ def plan_semantic_validation_reason_codes(error: BaseException) -> tuple[str, ..
             "plan_capability_ids_outside_ontology"
         ),
         "work-unit dependencies must reference earlier units": ("plan_dependency_not_earlier"),
+        "work-unit plan contains duplicate unit ids": "plan_duplicate_unit_ids",
+        "unit_id is invalid": "plan_unit_id_invalid",
+        "artifact_kind is invalid": "plan_artifact_kind_invalid",
+        "novel_capability already exists in the workforce ontology": (
+            "plan_novel_capability_already_known"
+        ),
+        "compact intent units must be a nonempty bounded list": "plan_units_shape_invalid",
     }.get(str(error))
     return (code or PLAN_RESPONSE_SEMANTIC_INVALID,)
 

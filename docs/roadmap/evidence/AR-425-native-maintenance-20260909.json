@@ -1,0 +1,185 @@
+{
+  "install": {
+    "steps": [
+      {
+        "step": "stop",
+        "command": [
+          "openclaw",
+          "gateway",
+          "stop",
+          "--force"
+        ],
+        "exit_code": 0
+      },
+      {
+        "step": "install",
+        "command": [
+          "openclaw",
+          "plugins",
+          "install",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909/openclaw-witness",
+          "--force",
+          "--accept-capabilities"
+        ],
+        "exit_code": 0
+      },
+      {
+        "step": "grant",
+        "command": [
+          "openclaw",
+          "config",
+          "set",
+          "plugins.entries.ar404-native-witness.hooks.allowConversationAccess",
+          "true",
+          "--strict-json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "step": "start",
+        "command": [
+          "openclaw",
+          "gateway",
+          "start"
+        ],
+        "exit_code": 0
+      },
+      {
+        "step": "health",
+        "command": [
+          "openclaw",
+          "gateway",
+          "status",
+          "--json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "step": "runtime",
+        "command": [
+          "openclaw",
+          "plugins",
+          "inspect",
+          "ar404-native-witness",
+          "--runtime",
+          "--json"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "non_plugin_sections_unchanged": {
+      "memory": true,
+      "messages": true,
+      "hooks": true,
+      "approvals": true,
+      "agents": true,
+      "skills": true,
+      "gateway": true,
+      "acp": true,
+      "channels": true,
+      "commands": true,
+      "surfaces": true,
+      "wizard": true,
+      "auth": true,
+      "bindings": true,
+      "session": true,
+      "tools": true,
+      "talk": true,
+      "models": true,
+      "mcp": true
+    },
+    "rpc_healthy": false,
+    "gateway_runtime": "running",
+    "native_plugin_imported": true,
+    "native_hook_count": 3,
+    "native_typed_hooks": [
+      {
+        "name": "agent_end",
+        "priority": -1000
+      },
+      {
+        "name": "before_agent_finalize",
+        "priority": -1000
+      },
+      {
+        "name": "llm_input",
+        "priority": -1000
+      }
+    ],
+    "native_conversation_access": true
+  },
+  "cleanup": {
+    "steps": [
+      {
+        "step": "stop",
+        "command": [
+          "openclaw",
+          "gateway",
+          "stop",
+          "--force"
+        ],
+        "exit_code": 0
+      },
+      {
+        "step": "remove",
+        "command": [
+          "openclaw",
+          "plugins",
+          "uninstall",
+          "ar404-native-witness",
+          "--force"
+        ],
+        "exit_code": 0
+      },
+      {
+        "step": "start",
+        "command": [
+          "openclaw",
+          "gateway",
+          "start"
+        ],
+        "exit_code": 0
+      },
+      {
+        "step": "health",
+        "command": [
+          "openclaw",
+          "gateway",
+          "status",
+          "--json"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "non_plugin_sections_unchanged": {
+      "messages": true,
+      "skills": true,
+      "mcp": true,
+      "surfaces": true,
+      "gateway": true,
+      "bindings": true,
+      "memory": true,
+      "session": true,
+      "approvals": true,
+      "wizard": true,
+      "auth": true,
+      "tools": true,
+      "channels": true,
+      "agents": true,
+      "talk": true,
+      "commands": true,
+      "models": true,
+      "acp": true,
+      "hooks": true
+    },
+    "rpc_healthy": false,
+    "gateway_runtime": "running",
+    "observer_removed": true,
+    "observer_files_removed": true
+  },
+  "final_rpc_healthy": true,
+  "claude_approved_rules_preserved": true,
+  "claude_semantic_settings_unchanged_since_grant": true,
+  "claude_current_bytes_sha256": "f1b226cc81c7aa92dfc1823cd6052e8e6eda25f9f9bd1eacae888841a2185811",
+  "claude_byte_change_only": "JSON serialization differs; deep semantic comparison after reconstructing the approved two-rule grant is equal."
+}

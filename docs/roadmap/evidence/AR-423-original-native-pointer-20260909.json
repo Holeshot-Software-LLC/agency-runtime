@@ -1,0 +1,27 @@
+{
+  "scope": "Original native pointer substitution, read-only recapture of retained exact artifacts; not a new trial.",
+  "session_id": "3997acd8-f882-47ac-b4d2-e7a591193b10",
+  "trace_id": "f725587c-7478-4fdb-8f8b-ba1c58e57b73",
+  "native_record_uuid": "81a967a9-3a22-41f3-83ae-91e3addfb905",
+  "native_record_type": "attachment",
+  "native_attachment_type": "hook_additional_context",
+  "native_timestamp": "2026-09-09T11:04:53.908Z",
+  "native_transcript_sha256": "8400383550501347701fcdb474661f248a19fd1f8da48b0b345f954208017911",
+  "native_parent_uuid": "0d9486d0-8cbe-411a-a228-22f0f6ea9980",
+  "native_parent_type": "attachment",
+  "native_parent_message": null,
+  "model_facing_pointer": "<persisted-output>\nOutput too large (15.7KB). Full output saved to: /home/holeshot/.claude/projects/-home-holeshot--agency-runtime-ephemeral-ar404-reliability-20260909/3997acd8-f882-47ac-b4d2-e7a591193b10/tool-results/hook-ccea585c-83e4-4d2e-af6b-b668e4f0410c-1-additionalContext.txt\n\nPreview (first 2KB):\n[Agency resident-steward kernel v5]\nThe Agency Steward frame is how you hold this turn. It is not a second voice, never withholds\nyour answer, and never overrides a card you were dealt. You own the requested outcome, its\nscope and constraints, the acceptance gates, and this turn's evidence boundary.\nTreat a specialist card loaded for this turn as expertise you now have, not an instruction to\nre-delegate or stage a ceremony; if one does not fit, ignore it and proceed. Cards expire\nwith this turn.\nCards never change whether you delegate. Spawn, or do not, exactly as you would without\nAgency; any child the host spawns is staffed on its own.\nA governed workforce of specialists exists. When this turn's capsule names specialists,\ntreat them as present expertise; when it names none, the turn is honestly unstaffed.\nYou never staff yourself: never select, rank, hire, or schedule specialists. Specialist\nidentities come only from recorded inference staffing; missing or invalid evidence fails\nloudly. The native host alone decides whether to spawn and alone owns worker lifecycle.\nClaim only work actually done; report only this turn's receipts. Never load this frame as a\nspecialist.\n\n[Agency resident managers active; binding=rmb-64826741024a7fb3e653ceaf42dcf81b; turn=rmt-c408fa7ee352ada201c08df212b9a44a; host=claude; host_mode=persistent; delivery=injected; epoch=6:1:2:1; kernel=v5:62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6; managers=agency-steward]\n\n[AGENCY PREFLIGHT] Specialist routing suggestion (confidence=1.0, source=workforce_inference): codebase-onboarding-engineer, minimal-change-engineer, software-test-engineer, code-reviewer, application-security-engineer, reality-checker\n\n...\n</persisted-output>",
+  "persisted_output_basename": "hook-ccea585c-83e4-4d2e-af6b-b668e4f0410c-1-additionalContext.txt",
+  "persisted_output_bytes": 16076,
+  "persisted_output_utf16_units": 16067,
+  "persisted_output_sha256": "303ab1d74506697add988c997afe53c7bab1c31605c247b40f8c5ac2a20559e9",
+  "persisted_output_exact_trace_present": true,
+  "persisted_output_trace_lines": [
+    "Agency finalizer correlation: {\"session_id\":\"3997acd8-f882-47ac-b4d2-e7a591193b10\",\"trace_id\":\"f725587c-7478-4fdb-8f8b-ba1c58e57b73\"}"
+  ],
+  "store_correlation": {
+    "session_id": "3997acd8-f882-47ac-b4d2-e7a591193b10",
+    "host": "claude",
+    "status": "completed"
+  }
+}

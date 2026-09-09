@@ -68,6 +68,37 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+PR821 installed candidate2b19cce6: fixed15native cases yield8passes: Codex3/3,
+Claude2/3, OpenClaw2/3, Zcode1/3, Hermes0/3. All failed cases remain preserved.
+Separate Claude large-card239.508s passes4exact cards, five fields and accepted
+hash. AR-425 has4satisfied isolated criteria; AR-423 stays open after two isolated
+passes because its builder table and line ranges omitted decisive excerpts.
+The corrected packet is prepared and locally checked; no third pass was run.
+OpenClaw observer normally removed; finalRPChealthy. All five executables present.
+Zcode's first two native final responses have matching headers/cards but prior
+invalid terminal receipts; they are not accepted. Hermes has one staffing failure
+and two missing-header terminal failures. Upstream truncation PR106490 remains
+open, default native checkout7cd91114 unchanged. AR-404 remains open.
+Evidence: AR-404-planner-context-results-20260909.json.
+
+
+September9 candidate2b19cce6: Claude session545f5ca7-2937-412f-a9be-6b4e4c665204,
+tracedf374667-2599-4798-a852-1e6f972aed25, passes the fresh large-card probe in239.508s.
+Four exact selected full cards appear in same-session, exact-trace native MCP
+results; all five fields match Store; accepted terminal hash
+f9b78ee4a8b0fd116e18fcffa0a9328ba67ff1b102586bf387f94845583f423b matches response.
+No permission bypass or manual selection. AR-423 isolated verification follows;
+AR-404 five-host fixed sample remains pending. Prior failures remain preserved.
+Evidence: AR-404-claude-large-context-after-planner-context-20260909.json.
+
+
+September9 planner package AR-425/#820: the first rejected planner answer is
+reproduced, but the new diagnostic's one repair succeeds. The original second
+semantic failure stays unknown. Candidate supplies missing rejected-plan data to
+the stateless repair and adds closed semantic reason codes; focused143pass.
+Native Claude full-card and five-host fixed cases follow required verification.
+
+
 ### Approved Claude permission probe outcome
 
 Native sessionf4897a2b-8ae1-4462-a692-8cd9b53808a6, trace
