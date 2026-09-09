@@ -2313,6 +2313,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d0c431ad` | 2026-09-09 | docs(claude): apply owner-approved exact Agency tool permissions | AR-404, AR-423 | [Detail](2026-09-09-claude-approved-tool-grant.md) |
 | `f22d6824` | 2026-09-09 | docs(evidence): retain Claude planner failure after approved permission grant | AR-404, AR-423 | [Detail](2026-09-09-claude-approved-tool-grant.md) |
 | `68383aac` | 2026-09-09 | Merge pull request #818 from Holeshot-Software-LLC/codex/ar423-claude-tool-grant-20260909 | AR-404, AR-423 | [Detail](2026-09-09-claude-approved-tool-grant.md) |
+| `03a82c3b` | 2026-09-09 | fix(workforce): retain rejected planner context for bounded repair | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
