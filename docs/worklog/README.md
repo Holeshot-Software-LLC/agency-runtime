@@ -2367,6 +2367,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fb7e8a3a` | 2026-09-09 | docs(reliability): retain Claude refresh preconditions | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
 | `5dbe612a` | 2026-09-09 | docs(reliability): retain complete Claude native context evidence | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
 | `c272b1cd` | 2026-09-09 | docs(reliability): freeze bounded AR-423 assurance packet | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
+| `e6acb2d4` | 2026-09-09 | docs(reliability): accept AR-423 native context delivery | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
