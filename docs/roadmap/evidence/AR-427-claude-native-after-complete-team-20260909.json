@@ -1,0 +1,182 @@
+{
+  "manifest": "unchanged large_context_surface request; full invocation retained",
+  "phase": "after_complete_team",
+  "installed_source": "20c49e0d42d95b90055d4f8916728a8bccad80fd",
+  "host": "claude",
+  "cases": [
+    {
+      "case": "large_context_surface",
+      "invocation": {
+        "case": "large_context_surface",
+        "host": "claude",
+        "phase": "after_complete_team",
+        "command": [
+          "claude",
+          "--print",
+          "--output-format",
+          "stream-json",
+          "--verbose",
+          "--permission-mode",
+          "default",
+          "--session-id",
+          "0a59da24-79ca-4bc5-afa2-b4f4e32ba5eb",
+          "Review this supplied Python download-path helper for correctness and input security:\n\nfrom pathlib import Path\n\ndef download_path(root, name):\n    return Path(root) / name\n\nRequirements: return a resolved path strictly inside the configured root; reject absolute names, parent-directory traversal and symlink escapes with ValueError. Explain the defects, provide a corrected function, and give focused pytest cases for valid nested paths, absolute names, traversal and symlink escapes. State filesystem assumptions and remaining race limitations. Work only from this supplied snippet; do not read or modify files or execute tests, and do not claim execution."
+        ],
+        "native_session_id": "0a59da24-79ca-4bc5-afa2-b4f4e32ba5eb",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 118.255
+      },
+      "run": {
+        "id": "18c6d4be-1c7d-4f11-a123-96ada9a1350f",
+        "trace_id": "28c8db15-403f-4d27-85c2-c660b4e16ae1",
+        "session_id": "0a59da24-79ca-4bc5-afa2-b4f4e32ba5eb",
+        "host": "claude",
+        "started_at": "2026-09-09T18:35:51.032608+00:00",
+        "last_activity_at": "2026-09-09T18:36:29.473000+00:00",
+        "turn_sequence": 1690,
+        "ended_at": "2026-09-09T18:36:29.471000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "c8f8ec5a-d27e-4245-a199-19e6d5741244",
+        "session_id": "0a59da24-79ca-4bc5-afa2-b4f4e32ba5eb",
+        "trace_id": "28c8db15-403f-4d27-85c2-c660b4e16ae1",
+        "host": "claude",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "stage": "planner",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "rejected",
+            "reason_code": "provider_response_contract_invalid",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 1,
+            "latency_ms": 14746,
+            "timeout_ms": 60000,
+            "validation_reason_codes": [
+              "plan_missing_code_correctness_review",
+              "plan_missing_security_review"
+            ]
+          },
+          {
+            "stage": "planner",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "rejected",
+            "reason_code": "provider_response_contract_invalid",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 2,
+            "latency_ms": 22742,
+            "timeout_ms": 60000,
+            "validation_reason_codes": [
+              "plan_response_semantic_invalid"
+            ]
+          }
+        ],
+        "staffing_reason_codes": [
+          "inference_invalid"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T18:36:29.472000+00:00",
+        "schema_version": "agency.preflight.failure.v3"
+      },
+      "finalization": null,
+      "model_receipts": [],
+      "finalization_event_count": 0,
+      "accepted_terminal_event_count": 0,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "37c5117dbedc29666a48d669a67658b25be89327c934e93619f15e03ebc4373a",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent",
+        "failed_resident_manager_binding": {
+          "version": 2,
+          "binding_id": "rmb-402f469c841ff9cbd5fab919bc7c9d49",
+          "host": "claude",
+          "host_mode": "persistent",
+          "delivery_mode": "injected",
+          "control_epoch": {
+            "master_generation": 6,
+            "master_materialized": true,
+            "host_generation": 2,
+            "host_materialized": true
+          },
+          "kernel": {
+            "version": 5,
+            "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+            "slugs": [
+              "agency-steward"
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: none observed\nRecruited via: failed; workforce_inference_failed; planner:provider_response_contract_invalid; inference_invalid\n\nThe supplied function meets none of the stated requirements. It does no validation, so any caller-controlled name can point anywhere on the filesystem. This review is from reading the snippet only. Nothing was executed.\n\n## Defects\n\n- **Absolute names replace the root.** In pathlib, joining an absolute right-hand operand discards the left one. A name of `/etc/passwd` yields exactly `/etc/passwd`, with no error.\n- **Parent traversal passes through untouched.** The join is purely lexical and never normalises. A name of `../../etc/passwd` produces a path the operating system will happily resolve outside the root.\n- **Symlinks are never followed at check time.** A symlink inside the root that targets `/` lets a name like `link/etc/passwd` escape while looking like a nested path. Nothing calls resolve, so no comparison against the real root is possible.\n- **The root itself is not resolved.** A relative root, or a root that is a symlink, gives a path whose textual prefix means nothing. Any naive string-prefix check layered on top would also confuse `/srv/dl` with `/srv/dl2`.\n- **Degenerate names return the root directory.** An empty name or `.` returns the root itself rather than something strictly inside it, violating the \"strictly inside\" requirement.\n- **Platform-specific forms are unhandled.** On Windows, a drive-relative name such as `C:file` or a name starting with a lone slash is not caught by an `is_absolute` check alone. Embedded NUL bytes are also passed through and only fail later at open time.\n\n## Corrected function\n\n```python\nfrom pathlib import Path\n\n\ndef download_path(root, name) -> Path:\n    \"\"\"Return the resolved path of `name` strictly inside `root`.\n\n    Raises ValueError for absolute names, drive-relative names, parent\n    traversal, empty or root-equivalent names, NUL bytes, and any path\n    that resolves (through symlinks) outside the real root directory.\n    \"\"\"\n    if not isinstance(name, str) or not name:\n        raise ValueError(\"name must be a non-empty string\")\n    if \"\\x00\" in name:\n        raise ValueError(\"name contains a NUL byte\")\n\n    # Resolve the root first so symlinked or relative roots do not break the\n    # containment check. strict=True: a missing root is a configuration error.\n    real_root = Path(root).resolve(strict=True)\n    if not real_root.is_dir():\n        raise ValueError(\"root is not a directory\")\n\n    rel = Path(name)\n    # anchor covers POSIX \"/x\", Windows \"\\\\x\", \"C:\\\\x\", \"C:x\" and UNC forms.\n    if rel.anchor or rel.is_absolute():\n        raise ValueError(\"absolute or drive-relative name is not allowed\")\n\n    parts = rel.parts  # pathlib already drops \".\" components\n    if not parts:\n        raise ValueError(\"name does not designate a file inside root\")\n    if \"..\" in parts:\n        raise ValueError(\"parent-directory traversal is not allowed\")\n\n    # Follow symlinks for every component that exists; the remaining\n    # non-existent tail is appended lexically (and contains no \"..\" by now).\n    resolved = (real_root / rel).resolve(strict=False)\n\n    # Strict containment: the real root must be a proper ancestor.\n    if real_root not in resolved.parents:\n        raise ValueError(\"path escapes the download root\")\n\n    return resolved\n```\n\nDesign notes on the choices above:\n\n- **Lexical rejection happens before resolution.** A name such as `a/../b` is rejected outright even though it would lexically land inside the root. This is deliberate. Accepting it would require trusting that `a` is not a symlink at the time of the check.\n- **Containment uses the parents collection, not string prefixes.** This avoids the `/srv/dl` versus `/srv/dl2` confusion and needs no Python 3.9 `is_relative_to`.\n- **The returned path is the resolved one.** Callers should open exactly what is returned, not rebuild the path from root and name.\n\n## Tests\n\n```python\nimport os\nimport sys\n\nimport pytest\n\nfrom download_path import download_path  # adjust to the real module name\n\n\n@pytest.fixture\ndef root(tmp_path):\n    r = tmp_path / \"downloads\"\n    r.mkdir()\n    return r\n\n\ndef _symlink_or_skip(target, link):\n    try:\n        os.symlink(target, link, target_is_directory=target.is_dir())\n    except (OSError, NotImplementedError):\n        pytest.skip(\"symlinks not supported or not permitted here\")\n\n\n# --- valid nested paths -----------------------------------------------------\n\n@pytest.mark.parametrize(\n    \"name\",\n    [\"file.bin\", \"sub/file.bin\", \"a/b/c/deep.bin\", \"sub/./file.bin\"],\n)\ndef test_valid_nested_path_stays_inside_root(root, name):\n    result = download_path(root, name)\n    assert result.is_absolute()\n    assert root.resolve() in result.parents\n    assert result.name == \"file.bin\" or result.name == \"deep.bin\"\n\n\ndef test_valid_path_need_not_exist_yet(root):\n    result = download_path(root, \"not/created/yet.bin\")\n    assert result == root.resolve() / \"not\" / \"created\" / \"yet.bin\"\n\n\ndef test_existing_file_resolves_to_itself(root):\n    (root / \"sub\").mkdir()\n    target = root / \"sub\" / \"existing.bin\"\n    target.write_bytes(b\"x\")\n    assert download_path(root, \"sub/existing.bin\") == target.resolve()\n\n\ndef test_relative_root_is_resolved(root, monkeypatch):\n    monkeypatch.chdir(root.parent)\n    result = download_path(\"downloads\", \"file.bin\")\n    assert result == root.resolve() / \"file.bin\"\n\n\ndef test_symlinked_root_uses_real_root(tmp_path, root):\n    alias = tmp_path / \"alias\"\n    _symlink_or_skip(root, alias)\n    result = download_path(alias, \"file.bin\")\n    assert result == root.resolve() / \"file.bin\"\n\n\n# --- absolute names ---------------------------------------------------------\n\ndef test_absolute_name_is_rejected(root, tmp_path):\n    outside = tmp_path / \"outside.bin\"\n    with pytest.raises(ValueError):\n        download_path(root, str(outside))\n\n\ndef test_absolute_name_inside_root_is_still_rejected(root):\n    # Even an absolute path that happens to point inside root violates the\n    # \"relative name\" contract and must be rejected.\n    with pytest.raises(ValueError):\n        download_path(root, str(root / \"file.bin\"))\n\n\n@pytest.mark.parametrize(\"name\", [\"/etc/passwd\", \"/file.bin\"])\ndef test_posix_style_absolute_is_rejected(root, name):\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\n@pytest.mark.skipif(sys.platform != \"win32\", reason=\"Windows path forms\")\n@pytest.mark.parametrize(\"name\", [r\"C:\\file.bin\", \"C:file.bin\", r\"\\file.bin\", r\"\\\\server\\share\\f\"])\ndef test_windows_absolute_and_drive_relative_are_rejected(root, name):\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\n# --- parent-directory traversal ---------------------------------------------\n\n@pytest.mark.parametrize(\n    \"name\",\n    [\"..\", \"../file.bin\", \"../../etc/passwd\", \"sub/../../file.bin\",\n     \"sub/..\", \"./../file.bin\", \"a/../b\"],\n)\ndef test_traversal_is_rejected(root, name):\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\n@pytest.mark.parametrize(\"name\", [\"\", \".\", \"./\"])\ndef test_root_equivalent_name_is_rejected(root, name):\n    with pytest.raises(ValueError):\n        download_path(root, name)\n\n\ndef test_nul_byte_is_rejected(root):\n    with pytest.raises(ValueError):\n        download_path(root, \"file\\x00.bin\")\n\n\ndef test_non_string_name_is_rejected(root):\n    with pytest.raises(ValueError):\n        download_path(root, None)\n\n\n# --- symlink escapes --------------------------------------------------------\n\ndef test_symlinked_directory_escape_is_rejected(root, tmp_path):\n    outside_dir = tmp_path / \"outside\"\n    outside_dir.mkdir()\n    (outside_dir / \"secret.bin\").write_bytes(b\"s\")\n    _symlink_or_skip(outside_dir, root / \"link\")\n    with pytest.raises(ValueError):\n        download_path(root, \"link/secret.bin\")\n\n\ndef test_symlinked_file_escape_is_rejected(root, tmp_path):\n    outside_file = tmp_path / \"secret.bin\"\n    outside_file.write_bytes(b\"s\")\n    _symlink_or_skip(outside_file, root / \"linkfile\")\n    with pytest.raises(ValueError):\n        download_path(root, \"linkfile\")\n\n\ndef test_symlink_to_root_itself_is_rejected(root):\n    # Resolves to root, which is not *strictly* inside root.\n    _symlink_or_skip(root, root / \"self\")\n    with pytest.raises(ValueError):\n        download_path(root, \"self\")\n\n\ndef test_symlink_that_stays_inside_root_is_allowed(root):\n    (root / \"real\").mkdir()\n    _symlink_or_skip(root / \"real\", root / \"alias\")\n    result = download_path(root, \"alias/file.bin\")\n    assert result == root.resolve() / \"real\" / \"file.bin\"\n\n\n# --- root validation --------------------------------------------------------\n\ndef test_missing_root_raises(tmp_path):\n    with pytest.raises(FileNotFoundError):\n        download_path(tmp_path / \"nope\", \"file.bin\")\n\n\ndef test_file_as_root_is_rejected(tmp_path):\n    f = tmp_path / \"file\"\n    f.write_bytes(b\"\")\n    with pytest.raises(ValueError):\n        download_path(f, \"x.bin\")\n```\n\n## Assumptions and remaining limitations\n\nFilesystem and runtime assumptions:\n\n- **Python 3.6 or later** for `resolve(strict=...)`. The parents-based check avoids needing 3.9.\n- **The root exists and is a real directory** when the function runs. A missing root raises `FileNotFoundError` from resolve, which is treated as a configuration error rather than bad input.\n- **Backslashes are ordinary filename characters on POSIX.** A name like `a\\..\\b` on Linux is one odd filename inside the root, not traversal. If names may originate from Windows clients and you want uniform behaviour, reject backslashes explicitly.\n- **Case-insensitive filesystems are handled by construction.** Both sides of the containment check derive from the same resolved root, so casing differences cannot cause a false rejection or false acceptance.\n- **Bind mounts and hard links are not escapes in the path sense.** The function cannot detect that a directory inside the root is a bind mount of somewhere else. Hard links to files outside the root are indistinguishable from ordinary files. Neither can be solved at the path layer.\n\nRemaining race limitations:\n\n- **Time-of-check to time-of-use is not eliminated.** Between `resolve()` and the caller's later `open()`, an attacker with write access inside the root can replace an intermediate directory with a symlink and redirect the open outside the root. Returning the resolved path narrows but does not close this window, because the resolved path is itself re-walked at open time.\n- **Closing the window requires OS support at open time.** On Linux use `openat2` with `RESOLVE_BENEATH` or `RESOLVE_IN_ROOT`, which the standard library does not expose directly. A weaker portable mitigation is opening with `O_NOFOLLOW` on the final component and, for downloads, creating the file with `O_CREAT | O_EXCL`. Neither is done by this function, which only validates paths.\n- **The write-access precondition matters.** If nothing untrusted can create entries inside the root, the race is not exploitable and the function above is sufficient. If untrusted code or users can write there, treat the returned path as advisory and enforce containment at the descriptor level as well.",
+      "response_sha256": "71a2327cd356f852fcdca91dc089d441c05fc5dab14f1575623b8602498ce066",
+      "accepted_hash_matches": false,
+      "terminal_hash_matches": false,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "failed; workforce_inference_failed; planner:provider_response_contract_invalid; inference_invalid"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "failed; workforce_inference_failed; planner:provider_response_contract_invalid; inference_invalid"
+        },
+        "all_five_match": true
+      },
+      "native_card_tool_results": [],
+      "card_proofs": [],
+      "complete_selected_team": {
+        "inferred": [],
+        "retained": [],
+        "missing": [],
+        "unexpected": [],
+        "exact_match": false
+      },
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    }
+  ]
+}

@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-426
-candidate_commit: a6d8f8a20ff92b27ce4919e179f1913a42110a58
+candidate_commit: pending
 evidence_cutoff: 2026-09-09
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823
 ---
@@ -21,28 +21,31 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823
 
 ## Builder evidence
 
-The builder cites evidence and does not judge criteria. Native acceptance for
-criterion 3 is absent: both fixed phases and the single post-timeout attempt
-failed full gates. Required fast checks passed, but cannot replace native proof.
-No failed receipt is reopened. AR-426 remains blocked and its PR unmerged.
+The builder cites evidence and does not judge. This third pass is explicitly
+owner-authorized on 2026-09-09. Both prior records remain retained. Exact original
+missing-context files and complete new native cards are present in the candidate
+snapshot; inspect those cited files when excerpts end. No failed receipt is reopened.
 
 | Criterion | Kind | Artifact | Observed | Source |
 |---|---|---|---|---|
-| 1 | file | Exact native spill pointers and head/tail output, session/message IDs, source hashes and missing-context comparison | 2026-09-09 | docs/roadmap/evidence/AR-426-exact-native-hook-pointers-20260909.json:1-71 |
-| 2 | file | Exact selected immutable version and whole-result size guard before recording a load | 2026-09-09 | agency_runtime/server/mcp_tools.py:207-294 |
-| 2 | file | Active Hermes session/trace guard and ordered exact selected-card fragments | 2026-09-09 | agency_runtime/adapters/hermes/bridge.py:633-685 |
-| 2 | test | Generated native tool regression and missing, cross-session, terminal, unselected, oversized and version-change cases | 2026-09-09 | tests/test_hermes_context_delivery.py:1-85 |
-| 2 | test | Ordered callback regression checks full bodies, per-result native ceilings, current snapshot and cross-turn rejection | 2026-09-09 | tests/test_hermes_context_delivery.py:88-151 |
-| 2 | command-output | Focused execution, required fast checks and immutable installed artifact identity; source checks only | 2026-09-09 | docs/roadmap/evidence/AR-426-compact-validation-20260909.json:1-35 |
-| 3 | absent | none | 2026-09-09 | none |
+| 1 | file | Original native pointer substitutions with exact head and tail | 2026-09-09 | docs/roadmap/evidence/AR-426-exact-native-hook-pointers-20260909.json:1-71 |
+| 1 | file | Full saved missing context for native message 535347; remainder available in the candidate snapshot | 2026-09-09 | docs/roadmap/evidence/AR-426-original-missing-context-535347-20260909.txt:1-100 |
+| 1 | file | Full saved missing context for native message 535352; remainder available in the candidate snapshot | 2026-09-09 | docs/roadmap/evidence/AR-426-original-missing-context-535352-20260909.txt:1-100 |
+| 1 | file | Exact byte lengths and hashes for both saved files | 2026-09-09 | docs/roadmap/evidence/AR-426-preserved-missing-context-manifest-20260909.json:1-20 |
+| 2 | file | Selected immutable version and whole-result bound before load recording | 2026-09-09 | agency_runtime/server/mcp_tools.py:207-294 |
+| 2 | file | Hermes active session/trace guard and ordered full-card callback delivery | 2026-09-09 | agency_runtime/adapters/hermes/bridge.py:633-685 |
+| 2 | test | Missing, cross-turn, unselected, oversized and version-change rejection | 2026-09-09 | tests/test_hermes_context_delivery.py:1-85 |
+| 2 | test | Exact ordered callbacks, bounded results and truthful loads | 2026-09-09 | tests/test_hermes_context_delivery.py:88-151 |
+| 2 | command-output | Focused checks and native installed identity | 2026-09-09 | docs/roadmap/evidence/AR-427-compact-validation-20260909.json:1-49 |
+| 3 | file | Full native card text with exact selected immutable reference, native message and context offsets | 2026-09-09 | docs/roadmap/evidence/AR-427-hermes-full-card-application-security-engineer-20260909.json:1-22 |
+| 3 | file | Full native card text with exact selected immutable reference, native message and context offsets | 2026-09-09 | docs/roadmap/evidence/AR-427-hermes-full-card-code-reviewer-20260909.json:1-22 |
+| 3 | file | Full native card text with exact selected immutable reference, native message and context offsets | 2026-09-09 | docs/roadmap/evidence/AR-427-hermes-full-card-python-application-engineer-20260909.json:1-23 |
+| 3 | file | Full native card text with exact selected immutable reference, native message and context offsets | 2026-09-09 | docs/roadmap/evidence/AR-427-hermes-full-card-silent-failure-hunter-20260909.json:1-23 |
+| 3 | file | Full native card text with exact selected immutable reference, native message and context offsets | 2026-09-09 | docs/roadmap/evidence/AR-427-hermes-full-card-software-test-engineer-20260909.json:1-23 |
+| 3 | file | Native session, complete inferred and retained team, exact five Store headers and authoritative finalization | 2026-09-09 | docs/roadmap/evidence/AR-427-hermes-terminal-summary-20260909.json:1-97 |
+| 3 | command-output | Focused and required fast results, canonical installed artifact and 616 matching files | 2026-09-09 | docs/roadmap/evidence/AR-427-compact-validation-20260909.json:1-49 |
 
 ## Verification
 
-Second and final default pass for AR-426 after preserving exact native pointers.
-The first record is retained in AR-426-isolated-pass1-record-20260909.txt.
-
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | absent | `AR-426.1-20260909-ecd5e56b` | `8052eb321877ee82645b35ef48b1d2221cbb9391847bb41cac0e75af19dc3c41` | 2026-09-09 | AR-426-exact-native-hook-pointers-20260909.json preserves pointer and head/tail text, but provides only hashes and boolean claims for missing context, insufficient to verify its preservation. |
-| 2 | satisfied | `AR-426.2-20260909-70b7864b` | `7fc694af4a1d019cf7158c501fddf13fb334126a277eeab3aafc38c6381a7dc3` | 2026-09-09 | mcp_tools.py:207-294 enforces selected versions and size limits before recording loads; bridge.py:633-685 guards active turns; test_hermes_context_delivery.py:1-151 checks exact bodies and rejection of missing, cross-turn, unselected and oversized requests. |
-| 3 | absent | `AR-426.3-20260909-6352f32a` | `d8b372632d005787435e5534df44bf55a3c2385a06627cccf124a87fe999d1ae` | 2026-09-09 | builder evidence is absent; nothing to verify |

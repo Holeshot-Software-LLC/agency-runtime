@@ -1,0 +1,637 @@
+{
+  "manifest": "unchanged large_context_surface request; full invocation retained",
+  "phase": "after_complete_team",
+  "installed_source": "20c49e0d42d95b90055d4f8916728a8bccad80fd",
+  "host": "hermes",
+  "cases": [
+    {
+      "case": "large_context_surface",
+      "invocation": {
+        "case": "large_context_surface",
+        "host": "hermes",
+        "phase": "after_complete_team",
+        "command": [
+          "hermes",
+          "chat",
+          "--oneshot",
+          "--quiet",
+          "--in",
+          "/home/holeshot/.agency-runtime/ephemeral/ar426-native-20260909",
+          "-q",
+          "Review this supplied Python download-path helper for correctness and input security:\n\nfrom pathlib import Path\n\ndef download_path(root, name):\n    return Path(root) / name\n\nRequirements: return a resolved path strictly inside the configured root; reject absolute names, parent-directory traversal and symlink escapes with ValueError. Explain the defects, provide a corrected function, and give focused pytest cases for valid nested paths, absolute names, traversal and symlink escapes. State filesystem assumptions and remaining race limitations. Work only from this supplied snippet; do not read or modify files or execute tests, and do not claim execution."
+        ],
+        "native_session_id": "20260909_143551_e08888",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 114.863
+      },
+      "run": {
+        "id": "2a1a9b92-c399-4e8a-bb1c-77d72f1afcfa",
+        "trace_id": "20260909_143551_e08888:45c703e2-0088-416f-8bf5-3e6f6ce32883:f8090f31",
+        "session_id": "20260909_143551_e08888",
+        "host": "hermes",
+        "started_at": "2026-09-09T18:36:01.071000+00:00",
+        "last_activity_at": "2026-09-09T18:37:25.853000+00:00",
+        "turn_sequence": 1691,
+        "ended_at": "2026-09-09T18:37:25.852006+00:00",
+        "status": "completed",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "finalization": {
+        "id": "0a08dd13-dd65-414b-8ce0-83744f1e122c",
+        "trace_id": "20260909_143551_e08888:45c703e2-0088-416f-8bf5-3e6f6ce32883:f8090f31",
+        "host": "hermes",
+        "action": "accept",
+        "missing": null,
+        "response_hash": "6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968",
+        "policy_response_hash": null,
+        "terminal_status": "completed",
+        "created_at": "2026-09-09T18:37:25.852006+00:00",
+        "session_id": "20260909_143551_e08888",
+        "status": "completed",
+        "ended_at": "2026-09-09T18:37:25.852006+00:00",
+        "authoritative": true
+      },
+      "model_receipts": [
+        {
+          "requested_model": "task-agency-planner-v2",
+          "model_group": "task-agency-planner-v2",
+          "resolved_provider": "agency-planner",
+          "resolved_model": "task-agency-planner-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-recruiter-v2",
+          "model_group": "task-agency-recruiter-v2",
+          "resolved_provider": "agency-recruiter",
+          "resolved_model": "task-agency-recruiter-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "qwen3-14b-abliterated:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-reranker",
+          "resolved_model": "qwen3-14b-abliterated:latest",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "qwen3-embedding:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-embedding",
+          "resolved_model": "qwen3-embedding:latest",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "alias-hermes-chat",
+          "model_group": "alias-hermes-chat",
+          "resolved_provider": "",
+          "resolved_model": "alias-hermes-chat",
+          "source": "host",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "alias-hermes-chat",
+          "model_group": "alias-hermes-chat",
+          "resolved_provider": "",
+          "resolved_model": "alias-hermes-chat",
+          "source": "host",
+          "status": "success",
+          "latency_ms": 0
+        }
+      ],
+      "finalization_event_count": 2,
+      "accepted_terminal_event_count": 1,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "37c5117dbedc29666a48d669a67658b25be89327c934e93619f15e03ebc4373a",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent"
+      },
+      "routing": {
+        "status": "accepted",
+        "selected_ids": [
+          "python-application-engineer",
+          "silent-failure-hunter",
+          "software-test-engineer",
+          "code-reviewer",
+          "application-security-engineer"
+        ],
+        "latency_ms": 60007,
+        "receipt": {
+          "compatibility": {
+            "added_requirements": [],
+            "compatible": false,
+            "contract_version": 0,
+            "overflow_review_ids": [],
+            "rejected_count": 0,
+            "rejection_reason_counts": [],
+            "rejections": [],
+            "requested_ids": [],
+            "selected_ids": [],
+            "selected_root_ids": [],
+            "selection_limit": 0,
+            "separate_context_pairs": []
+          },
+          "effect_codes": [
+            "inference_attempted",
+            "eligibility_exclusions_applied",
+            "specialists_selected",
+            "hiring_not_attempted"
+          ],
+          "eligibility": {
+            "eligible_count": 72,
+            "evaluated_count": 293,
+            "rejected_count": 221,
+            "rejection_reason_counts": [
+              {
+                "count": 21,
+                "reason_code": "missing_capabilities"
+              },
+              {
+                "count": 2,
+                "reason_code": "unsupported_execution_host"
+              }
+            ],
+            "rejections": [
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "application-observability-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:product-analytics-reader",
+                "slug": "behavioral-nudge-engine"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "cms-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "compliance-auditor"
+              },
+              {
+                "reason_code": "missing_capabilities:current-cultural-research",
+                "slug": "cultural-intelligence-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:database-access",
+                "slug": "database-optimizer"
+              },
+              {
+                "reason_code": "missing_capabilities:cross-platform-test-host",
+                "slug": "developer-tooling-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "feedback-synthesizer"
+              },
+              {
+                "reason_code": "unsupported_execution_host:hermes",
+                "slug": "finance-security-snapshot-review-specialist"
+              },
+              {
+                "reason_code": "missing_capabilities:jira",
+                "slug": "jira-workflow-steward"
+              },
+              {
+                "reason_code": "missing_capabilities:language-server-runtime",
+                "slug": "lsp-index-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:official-mcp-documentation",
+                "slug": "mcp-builder"
+              },
+              {
+                "reason_code": "unsupported_execution_host:hermes",
+                "slug": "network-diagnostic-explanation-specialist"
+              },
+              {
+                "reason_code": "missing_capabilities:orgscript-cli",
+                "slug": "orgscript-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "proposal-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "rapid-prototyper"
+              },
+              {
+                "reason_code": "missing_capabilities:roblox-studio",
+                "slug": "roblox-systems-scripter"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "security-architect"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "senior-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:security-analysis",
+                "slug": "senior-secops-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:media-processing",
+                "slug": "short-video-editing-coach"
+              },
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "threat-detection-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "ux-architect"
+              }
+            ],
+            "sample_truncated": true
+          },
+          "hiring": {
+            "attempted_count": 0,
+            "calls_used": 0,
+            "events": [],
+            "outcome": "no_attempt",
+            "truncated": false,
+            "workforce_changes": 0
+          },
+          "inference": {
+            "attempted": true,
+            "configured": true,
+            "mode": "inferred",
+            "provider_attempts": [
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-planner-v2",
+                "ordinal": 1,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-planner",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-planner-v2",
+                "stage": "planner",
+                "status": "applied"
+              },
+              {
+                "model_group": "",
+                "ordinal": 2,
+                "provider_name": "local-workforce-embedding",
+                "provider_type": "ollama",
+                "reason_code": "dense_recall_applied",
+                "requested_model": "qwen3-embedding:latest",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "",
+                "ordinal": 3,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "local-workforce-reranker",
+                "provider_type": "ollama",
+                "reason_code": "structured_response_applied",
+                "requested_model": "qwen3-14b-abliterated:latest",
+                "stage": "recall_reranker",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2",
+                "ordinal": 4,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-recruiter-v2",
+                "stage": "recruiter",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-critic-v2",
+                "ordinal": 5,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter-critic",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-critic-v2",
+                "stage": "critic",
+                "status": "applied"
+              }
+            ],
+            "required": true
+          },
+          "reason_codes": [
+            "turn_kind:new_intent",
+            "routing_status:accepted",
+            "inference_mode:inferred",
+            "eligibility:missing_capabilities",
+            "eligibility:unsupported_execution_host"
+          ],
+          "receipt_version": 1,
+          "retrieval": {
+            "candidate_union_count": 0,
+            "full_roster_count": 0,
+            "hard_negative_count": 0,
+            "lexical_count": 0,
+            "mode": "unavailable",
+            "semantic_count": 0
+          },
+          "staffing": {
+            "gap_count": 0,
+            "global_reason_codes": [],
+            "status": "accepted",
+            "truncated": false,
+            "units": [
+              {
+                "nominated_ids": [
+                  "python-application-engineer",
+                  "silent-failure-hunter",
+                  "type-design-analyzer",
+                  "codebase-archaeologist"
+                ],
+                "proposed_ids": [
+                  "python-application-engineer",
+                  "silent-failure-hunter"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-defect-analysis"
+              },
+              {
+                "nominated_ids": [
+                  "software-test-engineer",
+                  "python-application-engineer",
+                  "test-automation-engineer",
+                  "api-tester"
+                ],
+                "proposed_ids": [
+                  "software-test-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-pytest-authoring"
+              },
+              {
+                "nominated_ids": [
+                  "code-reviewer",
+                  "silent-failure-hunter",
+                  "type-design-analyzer",
+                  "reality-checker"
+                ],
+                "proposed_ids": [
+                  "code-reviewer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-correctness-review"
+              },
+              {
+                "nominated_ids": [
+                  "application-security-engineer",
+                  "ai-generated-code-security-auditor",
+                  "senior-secops-engineer",
+                  "penetration-tester"
+                ],
+                "proposed_ids": [
+                  "application-security-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-security-review"
+              }
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward, python-application-engineer, silent-failure-hunter, software-test-engineer, code-reviewer, application-security-engineer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)\nRecruited via: inference\n\nDefects in the supplied helper:\n\n- `Path(root) / name` does not constrain the result to `root`; `../secret` can traverse out.\n- If `name` is absolute, pathlib discards the left side, so `Path('/safe') / '/etc/passwd'` becomes `/etc/passwd`.\n- It does not resolve symlinks, so `root/link/file` can escape when `link` points outside `root`.\n- It returns a relative path if `root` is relative, making later checks easy to get wrong.\n\nCorrected function:\n\n```python\nfrom pathlib import Path\n\n\ndef download_path(root, name):\n    root_path = Path(root).resolve(strict=True)\n    name_path = Path(name)\n\n    if name_path.is_absolute():\n        raise ValueError(\"download name must be relative\")\n\n    candidate = (root_path / name_path).resolve(strict=False)\n\n    try:\n        candidate.relative_to(root_path)\n    except ValueError as exc:\n        raise ValueError(\"download path escapes root\") from exc\n\n    return candidate\n```\n\nFocused pytest cases:\n\n```python\nimport pytest\n\n\ndef test_download_path_allows_valid_nested_path(tmp_path):\n    root = tmp_path / \"downloads\"\n    root.mkdir()\n\n    assert download_path(root, \"a/b/file.txt\") == root.resolve() / \"a/b/file.txt\"\n\n\ndef test_download_path_rejects_absolute_name(tmp_path):\n    root = tmp_path / \"downloads\"\n    root.mkdir()\n\n    with pytest.raises(ValueError, match=\"relative\"):\n        download_path(root, tmp_path / \"outside.txt\")\n\n\ndef test_download_path_rejects_parent_directory_traversal(tmp_path):\n    root = tmp_path / \"downloads\"\n    root.mkdir()\n\n    with pytest.raises(ValueError, match=\"escapes root\"):\n        download_path(root, \"../outside.txt\")\n\n\ndef test_download_path_rejects_symlink_escape(tmp_path):\n    root = tmp_path / \"downloads\"\n    outside = tmp_path / \"outside\"\n    root.mkdir()\n    outside.mkdir()\n    (root / \"link\").symlink_to(outside, target_is_directory=True)\n\n    with pytest.raises(ValueError, match=\"escapes root\"):\n        download_path(root, \"link/file.txt\")\n```\n\nFilesystem assumptions:\n\n- `root` is an existing directory; `resolve(strict=True)` intentionally fails if it is missing.\n- The platform supports the symlink test; on Windows this may require developer mode or symlink privileges.\n- Path containment uses Python's resolved path semantics for the local filesystem; case-folding edge cases on case-insensitive filesystems depend on OS/pathlib behavior.\n\nRemaining race limitations:\n\n- This validates a path at one point in time. If an attacker can modify `root` between validation and file creation, they can swap directories/symlinks after the check.\n- For hostile writable roots, pair this with safe open/create patterns: create files with directory file descriptors and `openat`-style APIs where available, avoid following final symlinks, use exclusive creation, and keep attacker-writable directories out of the trusted root.",
+      "response_sha256": "6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968",
+      "accepted_hash_matches": true,
+      "terminal_hash_matches": true,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward, python-application-engineer, silent-failure-hunter, software-test-engineer, code-reviewer, application-security-engineer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)",
+          "recruited_via": "inference"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward, python-application-engineer, silent-failure-hunter, software-test-engineer, code-reviewer, application-security-engineer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)",
+          "recruited_via": "inference"
+        },
+        "all_five_match": true
+      },
+      "native_message_ids": [
+        535391,
+        535392,
+        535393,
+        535394,
+        535395,
+        535396
+      ],
+      "native_card_tool_results": [],
+      "native_final_bound": true,
+      "native_hook_contexts": [
+        {
+          "native_message_id": 535391,
+          "api_content_chars": 27294,
+          "api_content_sha256": "7e8a030acede581c853e9d4e7c343256e8d123077e7f6f05e99f1c58dabafc3a",
+          "spill_pointer_present": false,
+          "contract_present": true,
+          "delivery_rules_present": true,
+          "native_card_tool_requested": true
+        }
+      ],
+      "card_proofs": [
+        {
+          "slug": "python-application-engineer",
+          "version": "contractor-4-7fc606fc0e5dda5b",
+          "store_hash": "sha256:7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+          "full_prompt_chars": 3072,
+          "prompt_bytes_sha256": "7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+          "exact_full_card_present": true,
+          "source": "native Hermes exact-request user api_content bound to same-turn assistant final hash, or native tool_result with matching session/trace and same-session preceding tool_call_id"
+        },
+        {
+          "slug": "silent-failure-hunter",
+          "version": "sha256:baa298f7e741f6c0ab6042c4c232c4f158ac758fa6542a1548146f88a79d6087",
+          "store_hash": "e85eea6b703152d9370916be7269cb2dba9ff4cc3842b6c1d0ddf39722263672",
+          "full_prompt_chars": 2743,
+          "prompt_bytes_sha256": "e85eea6b703152d9370916be7269cb2dba9ff4cc3842b6c1d0ddf39722263672",
+          "exact_full_card_present": true,
+          "source": "native Hermes exact-request user api_content bound to same-turn assistant final hash, or native tool_result with matching session/trace and same-session preceding tool_call_id"
+        },
+        {
+          "slug": "software-test-engineer",
+          "version": "contractor-4-336f7dccc2212825",
+          "store_hash": "sha256:336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+          "full_prompt_chars": 3193,
+          "prompt_bytes_sha256": "336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+          "exact_full_card_present": true,
+          "source": "native Hermes exact-request user api_content bound to same-turn assistant final hash, or native tool_result with matching session/trace and same-session preceding tool_call_id"
+        },
+        {
+          "slug": "code-reviewer",
+          "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+          "store_hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "full_prompt_chars": 2379,
+          "prompt_bytes_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "exact_full_card_present": true,
+          "source": "native Hermes exact-request user api_content bound to same-turn assistant final hash, or native tool_result with matching session/trace and same-session preceding tool_call_id"
+        },
+        {
+          "slug": "application-security-engineer",
+          "version": "sha256:4d89d87f6a0d11e91984e4b3e29be8247b51fe214ac046428d4a85f0e2b11e77",
+          "store_hash": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+          "full_prompt_chars": 2645,
+          "prompt_bytes_sha256": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+          "exact_full_card_present": true,
+          "source": "native Hermes exact-request user api_content bound to same-turn assistant final hash, or native tool_result with matching session/trace and same-session preceding tool_call_id"
+        }
+      ],
+      "complete_selected_team": {
+        "inferred": [
+          "python-application-engineer",
+          "silent-failure-hunter",
+          "software-test-engineer",
+          "code-reviewer",
+          "application-security-engineer"
+        ],
+        "retained": [
+          "python-application-engineer",
+          "silent-failure-hunter",
+          "software-test-engineer",
+          "code-reviewer",
+          "application-security-engineer"
+        ],
+        "missing": [],
+        "unexpected": [],
+        "exact_match": true
+      },
+      "exact_card_injection": true,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": {
+          "id": "029ec9a5-1bb5-4692-93bd-a0a048b5d6f3",
+          "trace_id": "20260909_143551_e08888:45c703e2-0088-416f-8bf5-3e6f6ce32883:f8090f31",
+          "session_id": "20260909_143551_e08888",
+          "host": "hermes",
+          "requested_model": "alias-hermes-chat",
+          "model_group": "alias-hermes-chat",
+          "resolved_provider": "",
+          "resolved_model": "alias-hermes-chat",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "host",
+          "recorded_at": "2026-09-09T18:37:25.554000+00:00",
+          "started_at": "2026-09-09T18:37:25.554692+00:00",
+          "ended_at": "2026-09-09T18:37:25.554696+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "python-application-engineer",
+          "silent-failure-hunter",
+          "software-test-engineer",
+          "code-reviewer",
+          "application-security-engineer"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "python-application-engineer",
+            "version": "contractor-4-7fc606fc0e5dda5b",
+            "hash": "sha256:7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+            "description": "Production Python applications, services, and CLIs",
+            "capabilities": [
+              "Maintainable production Python behavior",
+              "Portable Python packaging",
+              "Async Python design",
+              "Typing and tests"
+            ]
+          },
+          {
+            "slug": "silent-failure-hunter",
+            "version": "sha256:baa298f7e741f6c0ab6042c4c232c4f158ac758fa6542a1548146f88a79d6087",
+            "hash": "e85eea6b703152d9370916be7269cb2dba9ff4cc3842b6c1d0ddf39722263672",
+            "description": "Reviews code for silent failures: swallowed exceptions, dangerous fallbacks, lost stack traces, and missing error propagation, and reports each as a located, rated finding",
+            "capabilities": [
+              "find empty or swallowed exception handlers and errors turned int",
+              "flag default values and fallbacks that hide a real failure from",
+              "trace lost stack traces, generic rethrows, and unhandled async p",
+              "spot missing timeout, error, and rollback handling around networ"
+            ]
+          },
+          {
+            "slug": "software-test-engineer",
+            "version": "contractor-4-336f7dccc2212825",
+            "hash": "sha256:336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+            "description": "Implementation of software test suites and failure-path harnesses",
+            "capabilities": [
+              "Meaningful executable test coverage",
+              "Reproducible failure detection",
+              "Unit tests",
+              "Integration tests"
+            ]
+          },
+          {
+            "slug": "code-reviewer",
+            "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+            "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+            "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
+            "capabilities": [
+              "review diffs for correctness and regressions",
+              "identify security and maintainability defects",
+              "rank findings by impact and evidence"
+            ]
+          },
+          {
+            "slug": "application-security-engineer",
+            "version": "sha256:4d89d87f6a0d11e91984e4b3e29be8247b51fe214ac046428d4a85f0e2b11e77",
+            "hash": "02bc3b097c9e691d9bd4443a3a4517e76a857161f14fcecd89c54f5c2ea76582",
+            "description": "AppSec specialist who secures the software development lifecycle through threat modeling, secure code review, SAST/DAST integration, and developer security education that makes secure code the default.",
+            "capabilities": [
+              "review application attack surfaces",
+              "design secure implementation and test changes",
+              "produce evidence-backed threat models"
+            ]
+          }
+        ],
+        "delegations": []
+      },
+      "status": "accepted native evidence"
+    }
+  ]
+}

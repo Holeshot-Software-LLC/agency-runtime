@@ -230,3 +230,20 @@ the immediate RPC startup probe failed, and the subsequent read-only probe is
 healthy. No observer remains. Eight refreshed Codex hooks are modified; owner
 trust review and fresh process are pending. PR 827 retained Claude evidence and
 its absent criterion 2; no issue closure or whole-team acceptance is claimed.
+
+## Fresh complete-team native checkpoint
+
+One unchanged large-context request ran once each in fresh Hermes and Claude
+processes with 360-second limits. Hermes session `20260909_143551_e08888`
+passed in 114.863s: native message 535391 contains all five inferred immutable
+cards and the response contract without a spill pointer; first authoritative
+response hash is `6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968`.
+Claude session `0a59da24-79ca-4bc5-afa2-b4f4e32ba5eb` failed both planner
+contracts in 118.255s; first reply missed correctness/security review, second
+reported semantic invalidity. No unchanged retry or acceptance claim.
+
+AR-426's owner-authorized third isolated pass and AR-427's first pass now have
+exact native cards and terminal proof. The old AR-426 second record is retained.
+Hermes checkout remains `7cd91114`; upstream PR106490 still open at `30f421ecce`.
+Zcode's first failed outputs still contain permission prose before the headers;
+later corrected responses cannot replace their terminal receipts.

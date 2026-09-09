@@ -28,6 +28,16 @@ Inference selected five workers in Claude trace df374667, including an independe
 
 ## Current state
 
+Fresh recipe 19 Hermes turn `20260909_143551_e08888` completed in 114.863s
+with all five inference-selected cards present in native message 535391, five
+matching Store headers and authoritative response hash
+`6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968`.
+The exact context, full cards, terminal and installed validation are retained under
+AR-427 evidence. Isolated acceptance is now pending. Earlier failures below are
+historical and remain failed. Fresh Claude trace `28c8db15` failed planner validation
+before card delivery; it does not establish a Claude native gate.
+
+
 Recipe 19 complete-team hydration is implemented. Corrected original-source
 regressions fail seven cases for the omitted fifth card. Candidate focused checks
 pass 66 / 1 skipped; production 1151 / 3 skipped and UI 224 pass. Frozen

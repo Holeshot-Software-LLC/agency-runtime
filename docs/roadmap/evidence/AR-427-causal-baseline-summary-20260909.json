@@ -1,0 +1,26 @@
+{
+  "baseline_source": "pre-repair source before 176adc19; corrected fixtures copied into private archive",
+  "baseline_last_lines": [
+    "        snapshot = store.get_completion_evidence_snapshot(\"team-session\", trace)",
+    ">       assert {row[\"slug\"] for row in snapshot[\"selected_specialists\"]} == set(bodies)",
+    "E       AssertionError: assert {'team-worker...eam-worker-3'} == {'team-worker...eam-worker-4'}",
+    "E         ",
+    "E         Extra items in the right set:",
+    "E         'team-worker-4'",
+    "E         Use -v to get more diff",
+    "",
+    "tests/test_complete_selected_team.py:93: AssertionError",
+    "=========================== short test summary info ============================",
+    "FAILED tests/test_complete_selected_team.py::test_every_host_preserves_the_fifth_selected_worker[codex]",
+    "FAILED tests/test_complete_selected_team.py::test_every_host_preserves_the_fifth_selected_worker[claude]",
+    "FAILED tests/test_complete_selected_team.py::test_every_host_preserves_the_fifth_selected_worker[openclaw]",
+    "FAILED tests/test_complete_selected_team.py::test_every_host_preserves_the_fifth_selected_worker[hermes]",
+    "FAILED tests/test_complete_selected_team.py::test_every_host_preserves_the_fifth_selected_worker[zcode]",
+    "FAILED tests/test_complete_selected_team.py::test_native_retrieval_preserves_five_exact_selected_references[claude]",
+    "FAILED tests/test_complete_selected_team.py::test_native_retrieval_preserves_five_exact_selected_references[hermes]",
+    "7 failed, 3 deselected in 9.76s"
+  ],
+  "candidate_focused": ".................................................s.................      [100%]\n66 passed, 1 skipped in 53.28s\n",
+  "full_retained_log_artifact": "AR-427-initial-validation-20260909.json",
+  "scope": "Initial invalid fixture logs are preserved separately; only corrected fixture baseline used for causal comparison."
+}

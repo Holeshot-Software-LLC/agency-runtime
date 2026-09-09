@@ -34,6 +34,16 @@ This input-context defect is distinct from AR-418 output truncation.
 
 ## Current state
 
+Fresh recipe 19 Hermes turn `20260909_143551_e08888` completed in 114.863s
+with all five inference-selected cards present in native message 535391, five
+matching Store headers and authoritative response hash
+`6546ecb6525a7f1237f47e519b7971574e9d7424862bf50e23ee364f9a980968`.
+The exact context, full cards, terminal and installed validation are retained under
+AR-427 evidence. Isolated acceptance is now pending. Earlier failures below are
+historical and remain failed. Fresh Claude trace `28c8db15` failed planner validation
+before card delivery; it does not establish a Claude native gate.
+
+
 Callback source faf5645a, canonical artifact source 22f24edd, is installed;
 616 package files match. Focused 131, production 1151 passed / 3 skipped,
 UI 224 and conformance 188/188 pass. Recipe 18 delivers bounded card fragments
