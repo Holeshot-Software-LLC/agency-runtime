@@ -473,7 +473,7 @@ not stable internal identifiers.
 
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
-| [AR-426](issue-AR-426-preserve-hermes-hook-specialist-context.md) | `ab924385`, `d73eda4d`, `faf5645a`, `8f81d89f`, `843030cf`, `e67b70ae`, `4186af41`, `a6d8f8a2`, `a5b5caac`, `abdb69aa` | [ADR-0244](../decisions/0244-deliver-large-hermes-card-sets-through-native-tools.md) |
+| [AR-426](issue-AR-426-preserve-hermes-hook-specialist-context.md) | `ab924385`, `d73eda4d`, `faf5645a`, `8f81d89f`, `843030cf`, `e67b70ae`, `4186af41`, `a6d8f8a2`, `a5b5caac`, `abdb69aa`, `73ab49d2` | [ADR-0244](../decisions/0244-deliver-large-hermes-card-sets-through-native-tools.md) |
 | [AR-421](issue-AR-421-preserve-completed-task-followup-context.md) | `cf4ed77f` | [ADR-0064](../decisions/0064-classify-turn-intent-from-durable-state.md), [ADR-0163](../decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md) |
 | [AR-422](issue-AR-422-preserve-claude-update-permissions.md) | `cf4ed77f` | [ADR-0055](../decisions/0055-freeze-executable-identity-before-launch.md) |
 | [AR-423](issue-AR-423-preserve-claude-hook-specialist-context.md) | `345eaf51`, `cd86e40a`, `c3c47600`, `2a8dc40f`, `a665c067`, `0cc40aba` (PR814 merge), `a18e556c`, `07a2addf`, `59e93d3c`, `c823608c`, `b62c31c7`, `907c894e`, `3a9e127b`, `b5beaabf`, `271480fe`, `d0c431ad`, `f22d6824`, `68383aac`, `f28b66d7` (PR821 merge) | [ADR-0016](../decisions/0016-central-finalization-and-session-correlation.md), [ADR-0241](../decisions/0241-deliver-large-claude-card-sets-through-versioned-mcp.md) |

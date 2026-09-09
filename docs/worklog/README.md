@@ -2337,6 +2337,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a6d8f8a2` | 2026-09-09 | docs: preserve exact AR-426 native hook pointers | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `a5b5caac` | 2026-09-09 | docs: freeze corrected AR-426 pointer evidence | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `abdb69aa` | 2026-09-09 | docs: record blocked AR-426 isolated verdicts and recovery | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `73ab49d2` | 2026-09-09 | docs: seal AR-426 blocked delivery checkpoint | [AR-426](../roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
