@@ -1,6 +1,6 @@
 ---
 title: "AR-426: Preserve Hermes specialist context across native hook spilling"
-status: in_progress
+status: blocked
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -45,9 +45,10 @@ failed coverage/confidence verification, follow-up received a critic veto, and
 multi-step timed out at the planner after 60 seconds. All six failed gates remain
 in the two native evidence JSONs; none is reopened or manually finalized.
 
-One fresh multi-step attempt is bounded to 360 seconds following the provider
-timeout. No further attempt is scheduled. Native full-card/header/finalization
-proof and isolated acceptance remain outstanding. AR-426 remains open.
+The one fresh post-timeout attempt took 91.605 seconds and failed a critic veto,
+with a rejected reranker contract also retained. It has no finalization events.
+No further attempt is scheduled. Native full-card/header/finalization proof is
+absent. AR-426 is blocked by shared staffing; PR 824 remains draft and unmerged.
 
 The actual Hermes checkout is 7cd91114b462b7af76e558cc4e97f82201d2e884;
 its default hook spill threshold remains 10,000 characters. AR-418's separate

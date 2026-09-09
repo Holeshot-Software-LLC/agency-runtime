@@ -118,7 +118,7 @@ AR-404/418/423/426 remain open before native and isolated proof.
 
 ## Callback native phase
 
-The second fixed phase exercised recipe 18 once per case and failed 0/3 full
+The second fixed phase exercised recipe 18 once per case and passed 0/3 full
 acceptance gates. Ordinary review failed recruiter coverage and confidence;
 follow-up received `critic_wrong_neighbor_selection`; multi-step timed out at
 the planner after 60,071 ms. All have zero finalization events. The native
@@ -129,3 +129,19 @@ installed checks. Exact receipts are in
 One fresh multi-step attempt is bounded to 360 seconds after the provider
 timeout; there is no retry loop or manual staffing. AR-426 remains open and
 PR 824 remains draft pending native and isolated acceptance evidence.
+
+## Final bounded native attempt
+
+The single fresh attempt after the planner timeout ran 91.605 seconds, session
+20260909_130400_c24d85, trace
+20260909_130400_c24d85:f1369f31-b3e1-43f1-845b-8e3fabde18a1:4e6a81af.
+The planner and recruiter applied; reranker contract rejection and independent
+critic_wrong_neighbor_selection remain recorded. No finalization event exists.
+The native user context contains the contract without a spill pointer, but
+staffing failed before any selected-card callback path. This does not establish
+full-card delivery. No further native attempt is scheduled.
+
+AR-426 is blocked by shared staffing; PR 824 remains draft and unmerged. The
+builder record cites exact source evidence for criteria 1/2 and explicitly absent
+native acceptance for criterion 3. AR-404/418/423 remain open; AR-423's third
+isolated pass still requires the pending explicit owner authorization.

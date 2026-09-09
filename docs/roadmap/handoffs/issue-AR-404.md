@@ -34,8 +34,8 @@ AR-426 / PR 824 callback source faf5645a, artifact 22f24edd, is installed with
 616 exact file matches. Focused 131, production 1151 / 3 skipped, UI 224 and
 conformance 188/188 pass. Both Hermes three-case phases failed full acceptance.
 The callback phase stopped before delivery: review coverage/confidence failure,
-follow-up critic veto, multi-step planner timeout. One fresh multi-step attempt
-follows the timeout; no further retry is scheduled. AR-426 remains open and its
+follow-up critic veto, multi-step planner timeout. The single post-timeout attempt also failed a critic veto; no further native
+attempt is scheduled. AR-426 remains open and its
 PR remains draft until native delivery and isolated acceptance are evidenced.
 
 The owned branch starts at clean synchronized c6c3e7b5. Only Hermes's native
@@ -100,8 +100,9 @@ records belong to this package, not a later optional cleanup.
 
 ## Next bounded work package
 
-Inspect the single post-timeout Hermes attempt, then record bounded acceptance
-or the remaining blocker. PR 824 stays draft if native proof is absent.
+Record the blocked AR-426 native gate, isolated evidence and clean owned PR
+checkpoint. Next diagnose shared staffing before choosing a repair; no unchanged
+native retries or manual verdicts. PR 824 stays draft while native proof is absent.
 No native spill/output budget changes. Zcode first outputs put permission prose
 before headers; old terminal rejection is valid. No raw failed staffing selection
 is retained, so critic correctness is unknown and its authority stays unchanged.

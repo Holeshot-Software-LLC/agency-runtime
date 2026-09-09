@@ -45,9 +45,10 @@ Baseline and fast-install JSONs live under docs/roadmap/evidence/AR-426-*.
 ## Exact blocker
 
 No callback candidate native turn has yet passed staffing, so native delivery,
-five-header and authoritative finalization proof remain absent. One fresh
-multi-step attempt follows the provider timeout, with a 360-second cap and no
-further retry scheduled. Isolated acceptance has not run for AR-426.
+five-header and authoritative finalization proof remain absent. The single post-timeout attempt took 91.605 seconds and failed the critic,
+with no finalization events. No further attempt is scheduled. AR-426 is blocked
+by shared staffing; an isolated record separates source evidence from absent
+native acceptance.
 
 AR-418 remains separate: upstream PR 106490 is open, default native checkout
 7cd91114 is unchanged, and the original provider output cap is unknown.
@@ -60,10 +61,11 @@ No manual selection, trust changes, global spill increases or failed-receipt reo
 
 ## Next bounded work package
 
-Run the one bounded post-timeout attempt, retain its outcome, and inspect exact
-native card bodies against immutable selected versions and Store finalization.
-If native proof is absent, keep AR-426 open and PR 824 draft. Do not weaken
-staffing to obtain a demonstration. AR-404 retains all five hosts and residuals.
+Complete the isolated evidence record and read-only tracker/document checks,
+push the clean owned branch and keep PR 824 draft. The next implementation
+package must diagnose shared staffing with sufficient bounded evidence before
+choosing a repair; retained content-free veto receipts do not prove a critic bug.
+Do not schedule another unchanged native attempt or weaken staffing for a demo.
 
 ## Verification
 

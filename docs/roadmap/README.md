@@ -45,7 +45,7 @@ bounded package are in AR-404's
 
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
-| `AR-426` | [Preserve Hermes specialist context across native hook spilling](issue-AR-426-preserve-hermes-hook-specialist-context.md) | in_progress | p1 | host-integrations | [#823](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823) |
+| `AR-426` | [Preserve Hermes specialist context across native hook spilling](issue-AR-426-preserve-hermes-hook-specialist-context.md) | blocked | p1 | host-integrations | [#823](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823) |
 | `AR-421` | [Preserve completed-task follow-up context](issue-AR-421-preserve-completed-task-followup-context.md) | done | p1 | host-integrations | [#808](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/808) |
 | `AR-422` | [Preserve Claude executable permissions across npm updates](issue-AR-422-preserve-claude-update-permissions.md) | done | p1 | host-integrations | [#809](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/809) |
 | `AR-423` | [Preserve Claude specialist context across native hook output limits](issue-AR-423-preserve-claude-hook-specialist-context.md) | open | p1 | host-integrations | [#811](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811) |

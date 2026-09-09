@@ -1,0 +1,35 @@
+{
+  "observed_at": "2026-09-09",
+  "source_artifact": "AR-426-fragments-fast-installed-validation-20260909.json",
+  "source_sha256": "726ef6920bce1d0419a08df745e3f3cb909605459a99a2d0a0001fc30a030b33",
+  "focused_result": "131 passed in 42.25s",
+  "production_result": "1151 passed, 3 skipped in 72.60s (0:01:12)",
+  "ui_totals": [
+    "# tests 224",
+    "# pass 224",
+    "# fail 0",
+    "# skipped 0"
+  ],
+  "conformance": {
+    "counts": {
+      "invalid": 0,
+      "killed": 188,
+      "mutations": 188,
+      "survived": 0
+    },
+    "passed": true,
+    "source_unchanged": true,
+    "status": "passed"
+  },
+  "routing_passed": true,
+  "installed_verification": {
+    "artifact_source_commit": "22f24eddeb5fc43a017c7d774f2fd14d1b727988",
+    "wheel_sha256": "73cf18d6e49156fd736a62eed6de582b9d4d23f705fda67d4436f5c86f26479f",
+    "installed_package_files": 616,
+    "mismatches": [],
+    "fresh_isolated_recipe_version": 18
+  },
+  "installed_smoke": "{\"artifact_set\": \"portable\", \"assets\": 10, \"config\": \"passed\", \"dashboard\": {\"bind\": \"127.0.0.1\", \"health\": \"passed\"}, \"mcp\": {\"status_call\": \"passed\", \"tool_count\": 8}, \"roster\": {\"approved\": 265, \"quarantined\": 0, \"retired\": 0, \"total\": 265}, \"selection\": {\"cases\": {\"agency-runtime-dashboard\": [], \"ambiguous-help\": []}, \"forbidden_specialists\": [\"clinical-evidence-agent\", \"geographer\", \"language-translator\"], \"status\": \"passed\"}, \"version\": \"0.1.0\"}\n",
+  "selected_refresh_hosts": "explicit",
+  "scope": "Source and installed verification only. Native acceptance is separate; no exhaustive or Windows workflow."
+}
