@@ -2292,6 +2292,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e0162436` | 2026-09-09 | docs(AR-419): record native observer permission and runtime activation | AR-404, AR-419 | [Detail](2026-09-09-completed-task-context.md) |
 | `6bc4d62f` | 2026-09-09 | docs(AR-419): retain failed observer probe and restore gateway state | AR-404, AR-419 | [Detail](2026-09-09-completed-task-context.md) |
 | `8dc9277d` | 2026-09-09 | docs(acceptance): separate behavior criteria from isolated verification procedure | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `5036c467` | 2026-09-09 | docs(AR-421): record isolated acceptance of completed-task context repair | AR-404, AR-421 | [Detail](2026-09-09-completed-task-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
