@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-terminal-reliability-20260909
-evidence_commit: faf5645a6e7b9c86b15d6caad52b7ddbea6f032a
-minimum_ledger_commit: 22f24eddeb5fc43a017c7d774f2fd14d1b727988
+evidence_commit: e67b70aef377e5a72bb47fdd84e3e7bad527280b
+minimum_ledger_commit: bbe3d1b3d79384070af6856a3175ae5315a8513f
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
