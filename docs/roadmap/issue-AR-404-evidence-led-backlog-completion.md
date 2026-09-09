@@ -68,6 +68,19 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+### Fresh trusted Codex phase
+
+Ordinary review62.855s and same-session follow-up53.903s pass exact native cards,
+five Store fields and matching authoritative accepted response hashes. Both have
+classifier6; the fresh process now uses trusted hooks and current continuation.
+Multi-step100.324s fails staffing and remains rejected, without an outer retry.
+Full evidence: AR-404-codex-suite-after-shared-staffing-20260909.json. Native model
+context does not expose the exact executing projection hash; the fresh receipt
+and8/8trusted inspection are distinct from this parent's stale6e7dc299c23e runtime.
+The optional policy-availability check initially lacked PYTHONPATH and could not
+import the package; PYTHONPATH=. rerun passes without a source change.
+
+
 ### Shared staffing native OpenClaw phase
 
 Fresh ordinary CLI follow-up7bdd5df5-248a-48a1-aa2b-3667c35a2200 returns the

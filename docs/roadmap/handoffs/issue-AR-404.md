@@ -49,6 +49,10 @@ OpenClaw shared phase: review57.109s and multi95.268s fail staffing; follow-up
 53.401s passes exact native card, five headers and one matching accepted terminal.
 AR-419 isolated verification follows; failures remain under AR-404.
 
+Fresh Codex shared phase: review62.855s/follow-up53.903s pass all native gates;
+multi-step100.324s fails staffing. Classifier6; exact executing projection hash
+not exposed in native context. Observer removed and gateway RPC healthy.
+
 ## Completed evidence
 
 Frozen evidence/AR-404-reliability-suite-20260909.json fixes ordinary review,
@@ -128,9 +132,9 @@ empty continuation for telemetry. Preserve unrelated and Windows work.
 
 ## Next bounded work package
 
-Run phase after_shared_staffing on Hermes/OpenClaw and fresh trusted Codex, one
-attempt per original fixed case, unchanged360s deadline. The bounded OpenClaw
-observer covers only the new exact suite keys and will be removed normally.
+Complete AR-419 isolated acceptance for its accepted native CLI follow-up.
+The shared-staffing phase is complete with every failed case retained.
+No observer remains; normal gateway RPC is healthy.
 Wait for Claude's exact per-tool grant before repeating its card surface probe.
 Zcode review/follow-up passed but multi-step failed; retain that scope and evidence.
 No manual specialists, altered critic decisions or unchanged-condition retries.

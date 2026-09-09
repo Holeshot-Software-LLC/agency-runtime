@@ -1,0 +1,1094 @@
+{
+  "manifest": "AR-404-reliability-suite-20260909.json",
+  "phase": "after_shared_staffing",
+  "installed_source": "db1c642f",
+  "host": "codex",
+  "cases": [
+    {
+      "case": "ordinary_review",
+      "invocation": {
+        "case": "ordinary_review",
+        "host": "codex",
+        "phase": "after_shared_staffing",
+        "command": [
+          "codex",
+          "exec",
+          "--sandbox",
+          "read-only",
+          "--skip-git-repo-check",
+          "--json",
+          "-C",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909",
+          "-o",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909/after_shared_staffing/codex/ordinary_review/response.txt",
+          "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files."
+        ],
+        "native_session_id": "01a08676-e801-7f83-a9bd-6040c6b3a9a1",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 62.855
+      },
+      "run": {
+        "id": "ed90995c-5596-4749-a8fa-53a35ba7d8e1",
+        "trace_id": "01a08676-e85b-7120-bc4d-829492b37f5c",
+        "session_id": "01a08676-e801-7f83-a9bd-6040c6b3a9a1",
+        "host": "codex",
+        "started_at": "2026-09-09T13:58:57.761254+00:00",
+        "last_activity_at": "2026-09-09T13:59:56.742000+00:00",
+        "turn_sequence": 1655,
+        "ended_at": "2026-09-09T13:59:56.741391+00:00",
+        "status": "completed",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "finalization": {
+        "id": "d81b74c4-3ed7-4f12-93c7-4639b7e17d49",
+        "trace_id": "01a08676-e85b-7120-bc4d-829492b37f5c",
+        "host": "codex",
+        "action": "accept",
+        "missing": null,
+        "response_hash": "49d3b9b9fcca4e8c4184b6b324df69f7e68367aa38e361271252b9cb3dd50cae",
+        "policy_response_hash": null,
+        "terminal_status": "completed",
+        "created_at": "2026-09-09T13:59:56.741391+00:00",
+        "session_id": "01a08676-e801-7f83-a9bd-6040c6b3a9a1",
+        "status": "completed",
+        "ended_at": "2026-09-09T13:59:56.741391+00:00",
+        "authoritative": true
+      },
+      "model_receipts": [
+        {
+          "requested_model": "qwen3-embedding:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-embedding",
+          "resolved_model": "qwen3-embedding:latest",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-planner-v2",
+          "model_group": "task-agency-planner-v2",
+          "resolved_provider": "agency-planner",
+          "resolved_model": "task-agency-planner-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-recruiter-v2",
+          "model_group": "task-agency-recruiter-v2",
+          "resolved_provider": "agency-recruiter",
+          "resolved_model": "task-agency-recruiter-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "qwen3-14b-abliterated:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-reranker",
+          "resolved_model": "qwen3-14b-abliterated:latest",
+          "source": "wrapper",
+          "status": "failed",
+          "latency_ms": 0
+        }
+      ],
+      "finalization_event_count": 1,
+      "accepted_terminal_event_count": 1,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent"
+      },
+      "routing": {
+        "status": "accepted",
+        "selected_ids": [
+          "code-reviewer"
+        ],
+        "latency_ms": 48214,
+        "receipt": {
+          "compatibility": {
+            "added_requirements": [],
+            "compatible": false,
+            "contract_version": 0,
+            "overflow_review_ids": [],
+            "rejected_count": 0,
+            "rejection_reason_counts": [],
+            "rejections": [],
+            "requested_ids": [],
+            "selected_ids": [],
+            "selected_root_ids": [],
+            "selection_limit": 0,
+            "separate_context_pairs": []
+          },
+          "effect_codes": [
+            "inference_attempted",
+            "eligibility_exclusions_applied",
+            "specialists_selected",
+            "hiring_not_attempted"
+          ],
+          "eligibility": {
+            "eligible_count": 74,
+            "evaluated_count": 293,
+            "rejected_count": 219,
+            "rejection_reason_counts": [
+              {
+                "count": 21,
+                "reason_code": "missing_capabilities"
+              }
+            ],
+            "rejections": [
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "application-observability-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:product-analytics-reader",
+                "slug": "behavioral-nudge-engine"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "cms-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "compliance-auditor"
+              },
+              {
+                "reason_code": "missing_capabilities:current-cultural-research",
+                "slug": "cultural-intelligence-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:database-access",
+                "slug": "database-optimizer"
+              },
+              {
+                "reason_code": "missing_capabilities:cross-platform-test-host",
+                "slug": "developer-tooling-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "feedback-synthesizer"
+              },
+              {
+                "reason_code": "missing_capabilities:jira",
+                "slug": "jira-workflow-steward"
+              },
+              {
+                "reason_code": "missing_capabilities:language-server-runtime",
+                "slug": "lsp-index-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:official-mcp-documentation",
+                "slug": "mcp-builder"
+              },
+              {
+                "reason_code": "missing_capabilities:orgscript-cli",
+                "slug": "orgscript-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "proposal-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "rapid-prototyper"
+              },
+              {
+                "reason_code": "missing_capabilities:roblox-studio",
+                "slug": "roblox-systems-scripter"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "security-architect"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "senior-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:security-analysis",
+                "slug": "senior-secops-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:media-processing",
+                "slug": "short-video-editing-coach"
+              },
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "threat-detection-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "ux-architect"
+              }
+            ],
+            "sample_truncated": true
+          },
+          "hiring": {
+            "attempted_count": 0,
+            "calls_used": 0,
+            "events": [],
+            "outcome": "no_attempt",
+            "truncated": false,
+            "workforce_changes": 0
+          },
+          "inference": {
+            "attempted": true,
+            "configured": true,
+            "mode": "inferred",
+            "provider_attempts": [
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-planner-v2",
+                "ordinal": 1,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-planner",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-planner-v2",
+                "stage": "planner",
+                "status": "applied"
+              },
+              {
+                "model_group": "",
+                "ordinal": 2,
+                "provider_name": "local-workforce-embedding",
+                "provider_type": "ollama",
+                "reason_code": "dense_recall_applied",
+                "requested_model": "qwen3-embedding:latest",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "",
+                "ordinal": 3,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "local-workforce-reranker",
+                "provider_type": "ollama",
+                "reason_code": "provider_response_contract_invalid",
+                "requested_model": "qwen3-14b-abliterated:latest",
+                "stage": "recall_reranker",
+                "status": "rejected"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2",
+                "ordinal": 4,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-recruiter-v2",
+                "stage": "recruiter",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-critic-v2",
+                "ordinal": 5,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter-critic",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-critic-v2",
+                "stage": "critic",
+                "status": "applied"
+              }
+            ],
+            "required": true
+          },
+          "reason_codes": [
+            "turn_kind:new_intent",
+            "routing_status:accepted",
+            "inference_mode:inferred",
+            "eligibility:missing_capabilities"
+          ],
+          "receipt_version": 1,
+          "retrieval": {
+            "candidate_union_count": 0,
+            "full_roster_count": 0,
+            "hard_negative_count": 0,
+            "lexical_count": 0,
+            "mode": "unavailable",
+            "semantic_count": 0
+          },
+          "staffing": {
+            "gap_count": 0,
+            "global_reason_codes": [],
+            "status": "accepted",
+            "truncated": false,
+            "units": [
+              {
+                "nominated_ids": [
+                  "code-reviewer",
+                  "silent-failure-hunter",
+                  "type-design-analyzer"
+                ],
+                "proposed_ids": [
+                  "code-reviewer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-defect-analysis"
+              },
+              {
+                "nominated_ids": [
+                  "code-reviewer",
+                  "silent-failure-hunter",
+                  "type-design-analyzer"
+                ],
+                "proposed_ids": [
+                  "code-reviewer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-review-report"
+              }
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)\nRecruited via: inference\n\nWhy: Review the supplied function against its requirements.\nHow it shaped outcome: Identify concrete defects and propose fixes without editing code.\n\n1. **Fractional results are lost.** For `[1.0, 2.0]`, floor division (`//`) returns `1.0`; the arithmetic mean is `1.5`. Replace floor division with true division (`/`).\n2. **Empty input raises the wrong exception.** For `[]`, the expression evaluates to `0 // 0`, raising `ZeroDivisionError`. Check for empty input first and explicitly raise `ValueError`.\n\nValidation gap: These conclusions follow from the supplied code; no tests were run. Verify both examples after correction.",
+      "response_sha256": "49d3b9b9fcca4e8c4184b6b324df69f7e68367aa38e361271252b9cb3dd50cae",
+      "accepted_hash_matches": true,
+      "terminal_hash_matches": true,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward, code-reviewer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward, code-reviewer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "all_five_match": true
+      },
+      "card_proofs": [
+        {
+          "slug": "code-reviewer",
+          "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+          "store_hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "full_prompt_chars": 2379,
+          "prompt_bytes_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+          "exact_full_card_present": true,
+          "source": "native Codex response_item developer context between this exact turn task_started and the next task_started"
+        }
+      ],
+      "exact_card_injection": true,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": {
+          "id": "62b94576-b27d-4104-87e5-52bfc6aeca75",
+          "trace_id": "01a08676-e85b-7120-bc4d-829492b37f5c",
+          "session_id": "01a08676-e801-7f83-a9bd-6040c6b3a9a1",
+          "host": "codex",
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "wrapper",
+          "recorded_at": "2026-09-09T13:59:47.088000+00:00",
+          "started_at": "2026-09-09T13:59:47.085000+00:00",
+          "ended_at": "2026-09-09T13:59:47.085000+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "code-reviewer"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "code-reviewer",
+            "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+            "hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+            "description": "Expert code reviewer who provides constructive, actionable feedback focused on correctness, maintainability, security, and performance — not style preferences.",
+            "capabilities": [
+              "review diffs for correctness and regressions",
+              "identify security and maintainability defects",
+              "rank findings by impact and evidence"
+            ]
+          }
+        ],
+        "delegations": []
+      },
+      "status": "accepted native evidence"
+    },
+    {
+      "case": "short_followup",
+      "invocation": {
+        "case": "short_followup",
+        "host": "codex",
+        "phase": "after_shared_staffing",
+        "command": [
+          "codex",
+          "exec",
+          "resume",
+          "--skip-git-repo-check",
+          "--json",
+          "-o",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909/after_shared_staffing/codex/short_followup/response.txt",
+          "01a08676-e801-7f83-a9bd-6040c6b3a9a1",
+          "go for it"
+        ],
+        "native_session_id": "01a08676-e801-7f83-a9bd-6040c6b3a9a1",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 53.903
+      },
+      "run": {
+        "id": "a12db51e-0f70-4436-855e-4a32ccb72414",
+        "trace_id": "01a08677-ddd4-7602-9a13-38c65e6730ee",
+        "session_id": "01a08676-e801-7f83-a9bd-6040c6b3a9a1",
+        "host": "codex",
+        "started_at": "2026-09-09T14:00:00.252527+00:00",
+        "last_activity_at": "2026-09-09T14:00:50.253000+00:00",
+        "turn_sequence": 1656,
+        "ended_at": "2026-09-09T14:00:50.253612+00:00",
+        "status": "completed",
+        "preflight_state": "ready"
+      },
+      "failure": null,
+      "finalization": {
+        "id": "972c4b99-d2d3-431d-821e-896b456f9dfc",
+        "trace_id": "01a08677-ddd4-7602-9a13-38c65e6730ee",
+        "host": "codex",
+        "action": "accept",
+        "missing": null,
+        "response_hash": "d23559cb7796c8cfc895b6fc606024efdb30bee15ca70571a63e10a611db95be",
+        "policy_response_hash": null,
+        "terminal_status": "completed",
+        "created_at": "2026-09-09T14:00:50.253612+00:00",
+        "session_id": "01a08676-e801-7f83-a9bd-6040c6b3a9a1",
+        "status": "completed",
+        "ended_at": "2026-09-09T14:00:50.253612+00:00",
+        "authoritative": true
+      },
+      "model_receipts": [
+        {
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-recruiter-v2",
+          "model_group": "task-agency-recruiter-v2",
+          "resolved_provider": "agency-recruiter",
+          "resolved_model": "task-agency-recruiter-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "qwen3-14b-abliterated:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-reranker",
+          "resolved_model": "qwen3-14b-abliterated:latest",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "qwen3-embedding:latest",
+          "model_group": "",
+          "resolved_provider": "local-workforce-embedding",
+          "resolved_model": "qwen3-embedding:latest",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        },
+        {
+          "requested_model": "task-agency-planner-v2",
+          "model_group": "task-agency-planner-v2",
+          "resolved_provider": "agency-planner",
+          "resolved_model": "task-agency-planner-v2",
+          "source": "wrapper",
+          "status": "success",
+          "latency_ms": 0
+        }
+      ],
+      "finalization_event_count": 1,
+      "accepted_terminal_event_count": 1,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "continuation_of": "01a08676-e85b-7120-bc4d-829492b37f5c",
+        "execution_decision_required": true,
+        "request_fingerprint": "cf97d012ecc86f377b7d8e87fbe81109c2e7d7596fbed57340f373d76504b7e6",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "b15d6e2d61e3fd6effba1b5acaac5257cfe31fdbfde7662791047e33b0b22a76",
+        "turn_kind": "continuation"
+      },
+      "routing": {
+        "status": "accepted",
+        "selected_ids": [
+          "codebase-onboarding-engineer"
+        ],
+        "latency_ms": 38425,
+        "receipt": {
+          "compatibility": {
+            "added_requirements": [],
+            "compatible": false,
+            "contract_version": 0,
+            "overflow_review_ids": [],
+            "rejected_count": 0,
+            "rejection_reason_counts": [],
+            "rejections": [],
+            "requested_ids": [],
+            "selected_ids": [],
+            "selected_root_ids": [],
+            "selection_limit": 0,
+            "separate_context_pairs": []
+          },
+          "effect_codes": [
+            "inference_attempted",
+            "turn_context_applied",
+            "eligibility_exclusions_applied",
+            "specialists_selected",
+            "hiring_not_attempted"
+          ],
+          "eligibility": {
+            "eligible_count": 74,
+            "evaluated_count": 293,
+            "rejected_count": 219,
+            "rejection_reason_counts": [
+              {
+                "count": 21,
+                "reason_code": "missing_capabilities"
+              }
+            ],
+            "rejections": [
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "application-observability-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:product-analytics-reader",
+                "slug": "behavioral-nudge-engine"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "cms-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "compliance-auditor"
+              },
+              {
+                "reason_code": "missing_capabilities:current-cultural-research",
+                "slug": "cultural-intelligence-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:database-access",
+                "slug": "database-optimizer"
+              },
+              {
+                "reason_code": "missing_capabilities:cross-platform-test-host",
+                "slug": "developer-tooling-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "feedback-synthesizer"
+              },
+              {
+                "reason_code": "missing_capabilities:jira",
+                "slug": "jira-workflow-steward"
+              },
+              {
+                "reason_code": "missing_capabilities:language-server-runtime",
+                "slug": "lsp-index-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:official-mcp-documentation",
+                "slug": "mcp-builder"
+              },
+              {
+                "reason_code": "missing_capabilities:orgscript-cli",
+                "slug": "orgscript-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:web-research",
+                "slug": "proposal-strategist"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "rapid-prototyper"
+              },
+              {
+                "reason_code": "missing_capabilities:roblox-studio",
+                "slug": "roblox-systems-scripter"
+              },
+              {
+                "reason_code": "missing_capabilities:current-policy-research",
+                "slug": "security-architect"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "senior-developer"
+              },
+              {
+                "reason_code": "missing_capabilities:security-analysis",
+                "slug": "senior-secops-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:media-processing",
+                "slug": "short-video-editing-coach"
+              },
+              {
+                "reason_code": "missing_capabilities:monitoring-observability",
+                "slug": "threat-detection-engineer"
+              },
+              {
+                "reason_code": "missing_capabilities:browser-interaction",
+                "slug": "ux-architect"
+              }
+            ],
+            "sample_truncated": true
+          },
+          "hiring": {
+            "attempted_count": 0,
+            "calls_used": 0,
+            "events": [],
+            "outcome": "no_attempt",
+            "truncated": false,
+            "workforce_changes": 0
+          },
+          "inference": {
+            "attempted": true,
+            "configured": true,
+            "mode": "inferred",
+            "provider_attempts": [
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-planner-v2",
+                "ordinal": 1,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-planner",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-planner-v2",
+                "stage": "planner",
+                "status": "applied"
+              },
+              {
+                "model_group": "",
+                "ordinal": 2,
+                "provider_name": "local-workforce-embedding",
+                "provider_type": "ollama",
+                "reason_code": "dense_recall_applied",
+                "requested_model": "qwen3-embedding:latest",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "",
+                "ordinal": 3,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "local-workforce-reranker",
+                "provider_type": "ollama",
+                "reason_code": "structured_response_applied",
+                "requested_model": "qwen3-14b-abliterated:latest",
+                "stage": "recall_reranker",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-recruiter-v2",
+                "ordinal": 4,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-recruiter-v2",
+                "stage": "recruiter",
+                "status": "applied"
+              },
+              {
+                "metadata_version": 1,
+                "model_group": "task-agency-critic-v2",
+                "ordinal": 5,
+                "provider_call_attempted": true,
+                "provider_chain_index": 0,
+                "provider_fallback_count": 0,
+                "provider_name": "agency-recruiter-critic",
+                "provider_type": "litellm",
+                "reason_code": "structured_response_applied",
+                "requested_model": "task-agency-critic-v2",
+                "stage": "critic",
+                "status": "applied"
+              }
+            ],
+            "required": true
+          },
+          "reason_codes": [
+            "turn_kind:continuation",
+            "routing_status:accepted",
+            "inference_mode:inferred",
+            "eligibility:missing_capabilities"
+          ],
+          "receipt_version": 1,
+          "retrieval": {
+            "candidate_union_count": 0,
+            "full_roster_count": 0,
+            "hard_negative_count": 0,
+            "lexical_count": 0,
+            "mode": "unavailable",
+            "semantic_count": 0
+          },
+          "staffing": {
+            "gap_count": 0,
+            "global_reason_codes": [],
+            "status": "accepted",
+            "truncated": false,
+            "units": [
+              {
+                "nominated_ids": [
+                  "codebase-onboarding-engineer",
+                  "codebase-archaeologist",
+                  "silent-failure-hunter",
+                  "code-reviewer"
+                ],
+                "proposed_ids": [
+                  "codebase-onboarding-engineer"
+                ],
+                "reason_codes": [],
+                "unit_id": "unit-discovery-scope"
+              }
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward, codebase-onboarding-engineer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)\nRecruited via: inference\n\nWhy: Apply the two corrections to the supplied function.\nHow it shaped outcome: Kept the correction inline; no files accessed.\n\n```python\ndef average(values):\n    if len(values) == 0:\n        raise ValueError(\"Cannot average an empty sequence\")\n    return sum(values) / len(values)\n```\n\n`[1.0, 2.0]` returns `1.5`; `[]` raises `ValueError`.",
+      "response_sha256": "d23559cb7796c8cfc895b6fc606024efdb30bee15ca70571a63e10a611db95be",
+      "accepted_hash_matches": true,
+      "terminal_hash_matches": true,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward, codebase-onboarding-engineer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward, codebase-onboarding-engineer",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+          "recruited_via": "inference"
+        },
+        "all_five_match": true
+      },
+      "card_proofs": [
+        {
+          "slug": "codebase-onboarding-engineer",
+          "version": "sha256:36a665df48c915f15ba2447e871d510aac1141e677a8bcc3b6f16562c473d23b",
+          "store_hash": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+          "full_prompt_chars": 2496,
+          "prompt_bytes_sha256": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+          "exact_full_card_present": true,
+          "source": "native Codex response_item developer context between this exact turn task_started and the next task_started"
+        }
+      ],
+      "exact_card_injection": true,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": {
+          "id": "b67555f6-f823-4a4e-b0c5-fce6131e8343",
+          "trace_id": "01a08677-ddd4-7602-9a13-38c65e6730ee",
+          "session_id": "01a08676-e801-7f83-a9bd-6040c6b3a9a1",
+          "host": "codex",
+          "requested_model": "task-agency-critic-v2",
+          "model_group": "task-agency-critic-v2",
+          "resolved_provider": "agency-recruiter-critic",
+          "resolved_model": "task-agency-critic-v2",
+          "attempted_fallbacks": 0,
+          "model_id": "",
+          "source": "wrapper",
+          "recorded_at": "2026-09-09T14:00:39.706000+00:00",
+          "started_at": "2026-09-09T14:00:39.704000+00:00",
+          "ended_at": "2026-09-09T14:00:39.704000+00:00",
+          "status": "success"
+        },
+        "skills": [],
+        "specialists": [
+          "codebase-onboarding-engineer"
+        ],
+        "selected_specialists": [
+          {
+            "slug": "codebase-onboarding-engineer",
+            "version": "sha256:36a665df48c915f15ba2447e871d510aac1141e677a8bcc3b6f16562c473d23b",
+            "hash": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+            "description": "Expert developer onboarding specialist who helps new engineers understand unfamiliar codebases fast by reading source code, tracing code paths, and stating only facts grounded in the code.",
+            "capabilities": [
+              "map repository structure and execution flow",
+              "trace concepts to concrete files",
+              "produce evidence-only onboarding guides"
+            ]
+          }
+        ],
+        "delegations": []
+      },
+      "status": "accepted native evidence"
+    },
+    {
+      "case": "multi_step",
+      "invocation": {
+        "case": "multi_step",
+        "host": "codex",
+        "phase": "after_shared_staffing",
+        "command": [
+          "codex",
+          "exec",
+          "--sandbox",
+          "read-only",
+          "--skip-git-repo-check",
+          "--json",
+          "-C",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909",
+          "-o",
+          "/home/holeshot/.agency-runtime/ephemeral/ar404-reliability-20260909/after_shared_staffing/codex/multi_step/response.txt",
+          "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed."
+        ],
+        "native_session_id": "01a08678-b004-76e0-986b-1dada308fd97",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 100.324
+      },
+      "run": {
+        "id": "64af2969-0c21-43b2-af33-4081fcbf5e95",
+        "trace_id": "01a08678-b050-7310-bcb7-43b86126f4c6",
+        "session_id": "01a08678-b004-76e0-986b-1dada308fd97",
+        "host": "codex",
+        "started_at": "2026-09-09T14:00:54.145829+00:00",
+        "last_activity_at": "2026-09-09T14:02:18.745000+00:00",
+        "turn_sequence": 1657,
+        "ended_at": "2026-09-09T14:02:18.743000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": ""
+      },
+      "failure": {
+        "id": "08870fcd-ba5c-4671-a268-4570c30c6b7c",
+        "session_id": "01a08678-b004-76e0-986b-1dada308fd97",
+        "trace_id": "01a08678-b050-7310-bcb7-43b86126f4c6",
+        "host": "codex",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "stage": "planner",
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-planner-v2",
+            "model_group": "task-agency-planner-v2",
+            "actual_model": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 1,
+            "latency_ms": 15999,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "recall_embedding",
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-embedding:latest",
+            "model_group": "",
+            "actual_model": "qwen3-embedding:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "dense_recall_applied",
+            "latency_ms": 3162,
+            "input_count": 5,
+            "provider_call_count": 1,
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107"
+          },
+          {
+            "stage": "recall_reranker",
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "model_group": "",
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 3,
+            "latency_ms": 23778,
+            "timeout_ms": 120000,
+            "input_count": 0,
+            "provider_call_count": 1
+          },
+          {
+            "stage": "recruiter",
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-recruiter-v2",
+            "model_group": "task-agency-recruiter-v2",
+            "actual_model": "glm-5.3-flash",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 4,
+            "latency_ms": 30562,
+            "timeout_ms": 60000
+          },
+          {
+            "stage": "critic",
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "requested_model": "task-agency-critic-v2",
+            "model_group": "task-agency-critic-v2",
+            "actual_model": "task-agency-critic-v2",
+            "model_receipt_source": "response.body.model",
+            "status": "applied",
+            "reason_code": "structured_response_applied",
+            "metadata_version": 1,
+            "provider_chain_index": 0,
+            "provider_call_attempted": true,
+            "provider_fallback_count": 0,
+            "ordinal": 5,
+            "latency_ms": 9828,
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_wrong_neighbor_selection"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T14:02:18.744000+00:00",
+        "schema_version": "agency.preflight.failure.v3"
+      },
+      "finalization": null,
+      "model_receipts": [],
+      "finalization_event_count": 0,
+      "accepted_terminal_event_count": 0,
+      "model_receipt_timing_note": "Zero latency values are unreported here; do not interpret as instantaneous inference.",
+      "classification_metadata": {
+        "classifier_version": 6,
+        "execution_decision_required": true,
+        "request_fingerprint": "4b0a04c6bfb20e80ea924bd5bb8af567af4e81c55d48820d3c5bae7e2771df33",
+        "request_kind": "nontrivial",
+        "reroute_required": true,
+        "selection_required": true,
+        "source": "preflight_attempt",
+        "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+        "turn_kind": "new_intent",
+        "failed_resident_manager_binding": {
+          "version": 2,
+          "binding_id": "rmb-d408af059be7b7f8de2c0e69f1a19926",
+          "host": "codex",
+          "host_mode": "request_scoped",
+          "delivery_mode": "request",
+          "control_epoch": {
+            "master_generation": 6,
+            "master_materialized": true,
+            "host_generation": 2,
+            "host_materialized": true
+          },
+          "kernel": {
+            "version": 5,
+            "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+            "slugs": [
+              "agency-steward"
+            ]
+          }
+        }
+      },
+      "response": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: requested execution alias: gpt-6-astra\nRecruited via: failed; workforce_inference_failed; staffing_critic_rejected; critic_wrong_neighbor_selection\n\nThe function has two correctness defects:\n\n- `//` floors the result, losing fractional values and rounding negative results toward negative infinity.\n- Empty input raises `ZeroDivisionError` instead of the required `ValueError`.\n\nCorrected function:\n\n```python\ndef average(values):\n    if len(values) == 0:\n        raise ValueError(\"average requires nonempty input\")\n    return sum(values) / len(values)\n```\n\nThree focused regression tests using `pytest`:\n\n```python\nimport pytest\n\n\ndef test_fractional_mean():\n    assert average([1.0, 2.0]) == 1.5\n\n\ndef test_negative_mean():\n    assert average([-1, -2]) == -1.5\n\n\ndef test_empty_input():\n    with pytest.raises(ValueError):\n        average([])\n```\n\nThese tests have not been executed.",
+      "response_sha256": "faed972493190a7f595ec6d7a5919b18ead3dc8a3fde6bff8f5008752e03d7a9",
+      "accepted_hash_matches": false,
+      "terminal_hash_matches": false,
+      "headers": {
+        "observed": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "requested execution alias: gpt-6-astra",
+          "recruited_via": "failed; workforce_inference_failed; staffing_critic_rejected; critic_wrong_neighbor_selection"
+        },
+        "store_projection": {
+          "agencies_loaded": "agency-steward",
+          "agencies_delegated": "none",
+          "skills_loaded": "none",
+          "actual_model_selected": "none observed",
+          "recruited_via": "failed; workforce_inference_failed; staffing_critic_rejected; critic_wrong_neighbor_selection"
+        },
+        "all_five_match": false
+      },
+      "card_proofs": [],
+      "exact_card_injection": false,
+      "completion_snapshot": {
+        "request_kind": "nontrivial",
+        "model_receipt": null,
+        "skills": [],
+        "specialists": [],
+        "selected_specialists": [],
+        "delegations": []
+      },
+      "status": "acceptance gates incomplete"
+    }
+  ]
+}
