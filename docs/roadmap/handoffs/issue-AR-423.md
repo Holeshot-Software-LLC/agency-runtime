@@ -69,8 +69,7 @@ Both exact MCP Allow rules remain saved. No pending Codex trust or Claude tool g
 
 ## Next bounded work package
 
-Merge PR832, close AR-423 and record the merge ledger. Resume AR-404's bounded
-Hermes nomination-relevance diagnosis from its observed packet, preserving the
+Resume AR-404's bounded Hermes nomination-relevance diagnosis from its observed packet, preserving the
 critic veto. AR-418 upstream PR106490 remains open and unadopted. Zcode stays deferred.
 
 ## Verification

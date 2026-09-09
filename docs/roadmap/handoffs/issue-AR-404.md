@@ -84,8 +84,7 @@ and continue. No empty recovery commits, forced transfer, or failed-receipt reop
 
 ## Next bounded work package
 
-Finish PR832 merge/closure and its exact ledger, then inspect Hermes's observed
-nomination packet against selected contracts and eligible neighbours. Choose a
+Inspect Hermes's observed nomination packet against selected contracts and eligible neighbours. Choose a
 bounded repair only from that evidence; do not assume a critic mistake. Preserve
 the separate AR-418 upstream terminal gate. Keep the owner's host order and Zcode deferral.
 
@@ -101,4 +100,4 @@ handoff. No exhaustive or Windows workflow ran.
 Inference alone selects specialists. Preserve independent critic, validators,
 trust, native limits and caller scope. No manual selection, acceptance, external
 messages or unbounded retries. No pending Codex trust or Claude tool approval.
-AR-419/425/426/427/428 remain closed; umbrella AR-404 stays open.
+AR-419/423/425/426/427/428 have satisfied their scoped acceptance gates; umbrella AR-404 stays open.
