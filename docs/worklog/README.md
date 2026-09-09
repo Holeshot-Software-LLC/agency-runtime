@@ -2319,6 +2319,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8792df1f` | 2026-09-09 | docs(reliability): record frozen planner conformance evidence | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `db1f6863` | 2026-09-09 | docs(acceptance): prepare isolated Claude delivery and planner repair packets | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `e7f9d166` | 2026-09-09 | docs(acceptance): preserve first verdicts and exact Claude pointer evidence | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `6ffeb9e8` | 2026-09-09 | docs(acceptance): supplement Claude packet with exact native pointer | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
