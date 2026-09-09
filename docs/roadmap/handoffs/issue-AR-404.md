@@ -117,7 +117,10 @@ Never pause, create a new task or transfer for telemetry. Preserve Windows work.
 
 ## Next bounded work package
 
-Run isolated AR-421/422 verdicts, deliver PR810 with exact merge ledger.
+AR-421 criteria1/2 satisfied; first criterion3 absent due self-referential request
+for existing isolated verdicts. Original verdict retained; changed criterion3
+now judges observable regression/native evidence, isolated closure gate unchanged.
+Run changed AR-421 criterion3 and initial AR-422 verdicts, deliver PR810 with ledger.
 The observer probe is retained as failed staffing, not AR-419 acceptance; the
 observer is removed and gateway healthy. Further H/O trials await the model choice.
 Continue remaining host repair: AR-423 delivery and Hermes normal upstream adoption;

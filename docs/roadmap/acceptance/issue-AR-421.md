@@ -40,3 +40,5 @@ The independent verifier supplies each criterion verdict.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-421.1-20260909-3bb202d1` | `e4c6e948888a60fc003075c7bccef2420cb3078ad753aea75c898ea558e14082` | 2026-09-09 | AR-404-followup-failure-20260909.json exists at the snapshot: exact receipt (trace IDs, preflight_failed, workforce_inference_failed, staffing_critic_rejected) with state showing classifier5 marking the completed-task follow-up new_intent; worklog Verification adds a 7fail/12pass control. |
+| 2 | satisfied | `AR-421.2-20260909-92881924` | `aa856a386bcad332f365a5b2b5ef88cc6dde4f1e21d633ee8641ddda97207865` | 2026-09-09 | turn_intent.py:855-879 with the safe_for_bypass gate (:906) and correlate flag (:701) repairs completed follow-ups yet blocks untrusted correlation; always-true reroute makes the replay branch at preflight.py:543-548 unreachable, and tests/test_completed_task_followup.py:1-125 covers unrelated work. |

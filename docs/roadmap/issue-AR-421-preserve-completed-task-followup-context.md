@@ -56,6 +56,9 @@ AR-404 retains the complete five-host reliability sample and all-host gates.
 
 ## Acceptance
 
+The repository-mandated isolated verdicts gate closure after these observable
+criteria are judged; a criterion does not require its own verdict to pre-exist.
+
 - [ ] Reproduce the observed failure with exact, bounded evidence.
 - [ ] Repair its cause while preserving trust, inference authority and unrelated work.
-- [ ] Verify the repaired behavior with regression/native evidence and isolated verdicts.
+- [ ] Verify the repaired behavior with regression and fresh native evidence.

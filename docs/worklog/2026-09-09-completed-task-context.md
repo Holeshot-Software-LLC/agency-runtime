@@ -241,3 +241,15 @@ were selected and no accepted finalization exists. This is callback proof only;
 AR-419 stays open. No unchanged-condition retry was performed. Normal observer
 uninstall removes its permission and files; gateway RPC is healthy and every
 non-plugin/non-meta configuration section remains unchanged.
+
+## Isolated criterion refinement
+
+AR-421 criteria1/2 are satisfied. Criterion3 is absent: the verifier recognizes
+Claude/Zcode native correlation and regression evidence, but its text also asks
+for already-completed isolated verdicts, while the frozen builder has an empty
+Verification table. The exact first verdicts are preserved in
+AR-421-first-isolated-verdicts-20260909.json. The behavior criterion now asks for
+regression and fresh native evidence; AGENTS.md still requires all isolated
+verdicts before closure. The same self-reference is removed from AR-422 before its
+first verification. Only AR-421's changed criterion3 will rerun; candidate/source
+and the satisfied criteria1/2 stay unchanged.
