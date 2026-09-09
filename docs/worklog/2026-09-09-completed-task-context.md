@@ -160,3 +160,15 @@ Hermes native port30f421ecce onbf53ff00a7 passes31focused tests and the
 2091pointer compatibility scan. A partial first edit left a missing turn_id and
 three unmodified CLI assertions; that failed run is retained before the final
 31pass run. Native source is committed in its owned worktree; default unchanged.
+
+Hermes port is published for upstream review asPR106490 (NousResearch/hermes-agent),
+commit30f421ecce; no upstream merge permission is available. AR-423/#811 records
+the Claude native hook-output finding. Zcode initially received the runtime object
+instead of the file-schema model reference, so both native launches failed before
+provider execution. The corrected file uses the same existing provider/credentials
+and leaves hooks unchanged; exact before/after hashes and failures are retained.
+
+Native PR106490 is now ready for upstream review; fork rights do not grant
+permission to merge NousResearch/main. Documentation checks caught an external
+repository URL and invalid status names in the new local record; corrected to
+a self-contained patch reference and canonical open status.

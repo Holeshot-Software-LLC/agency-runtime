@@ -139,3 +139,7 @@ Claude suite ended: review57.602s complete evidence; follow-up190.045s classifie
 continuation with exact previous trace/fresh staffing, but native15.7KB hook
 output became a persisted-output pointer (full inline cards unproved); multi-step
 104.114s failed staffing. Zcode fixed native sample is next.
+
+Hermes port30f421ecce:31tests pass, nativePR106490 ready for review; default unchanged.
+AR-423/#811 tracks Claude hook pointer substitution. Zcode schema corrected from
+runtime object to provider/model reference; first invalid launches retained.
