@@ -72,3 +72,12 @@ pre-execution assurance checks; it did not certify delegated specialist executio
 AR-423 native context delivery is complete. AR-404/AR-418 remain open. All651 files
 of published Claude projection79138e80 match its manifest. Final OpenClaw RPC is
 healthy after observer removal. No exhaustive/Windows or all-host claim.
+
+## Merge and record validation
+
+PR832 merged at `2cd6413a38bc3b26d1431f19e6fe08fef379040c`; tracker811 is
+closed. PR831 merged at0839e158 and tracker826 is closed. Final documentation
+validation passed for1381 maintained Markdown files; strict tracker validation
+passed for419 roadmap items. Metadata, policy, exact worklog and diff checks pass.
+The final ledger-only PR records the PR832 merge and removes AR-428's obsolete
+pending traceability marker. No substantive source remains unmerged.
