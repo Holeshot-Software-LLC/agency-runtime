@@ -36,7 +36,7 @@ artifact source db1c642f. Wheel SHA256
 9592253ba3d90d362d1ed05daaf641243f2cf598b6d87d5a0a9df28e96c7face:
 all614package files match; fresh isolated interpreter classifier6. Native refresh
 publishes1825059191a2; Codex plugin64c34689b8a1. No all-host completion.
-AR-404/418/419/421/422/423 open; AR-414/415/420 closed only against isolated scopes.
+AR-404/418/419/423/424 open; AR-421/422 have all3isolated verdicts satisfied; AR-414/415/420 closed only against isolated scopes.
 
 ## Completed evidence
 
@@ -121,7 +121,10 @@ AR-421 criteria1/2 satisfied; first criterion3 absent due self-referential reque
 for existing isolated verdicts. Original verdict retained; changed criterion3
 now judges observable regression/native evidence, isolated closure gate unchanged.
 Refined AR-421 criterion3 now satisfied (fa88f927); all3current verdicts pass.
-Run initial AR-422 verdicts, then deliver PR810 with exact ledger.
+AR-422 all3initial verdicts also satisfied. Deliver PR810 with exact merge ledger
+and close only AR-421/422. AR-423/424 candidate worktree is
+branch codex/ar423-native-context-20260909 (not installed); source repairs native
+large-card retrieval and final-card whitespace, initial104focused tests pass.
 The observer probe is retained as failed staffing, not AR-419 acceptance; the
 observer is removed and gateway healthy. Further H/O trials await the model choice.
 Continue remaining host repair: AR-423 delivery and Hermes normal upstream adoption;

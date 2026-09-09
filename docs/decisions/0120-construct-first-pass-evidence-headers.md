@@ -6,6 +6,7 @@ created: 2026-07-30
 updated: 2026-08-22
 tags: [evidence, finalization, headers, native-hosts, openclaw, hermes]
 related:
+  - docs/roadmap/issue-AR-424-preserve-last-card-whitespace.md
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md

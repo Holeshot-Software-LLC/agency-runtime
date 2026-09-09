@@ -1,6 +1,6 @@
 ---
 title: "AR-421: Preserve completed-task follow-up context"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -28,23 +28,25 @@ The classifier drops available bounded same-session context for executable follo
 
 ## Current state
 
-Phase live_demo. Version6 correlates completed-task replies/revisions
-with fresh staffing; version1-5 receipts remain readable. Focused152pass;
-seven new regressions fail against original version5, including real preflight
-context handoff. Production spine1151pass/3skip, UI224pass, Ruff pass.
-Native baseline review73.147s and multi-step114.055s complete with matching
-accepted hashes; same-session "go for it"84.122s fails staffing. See
-[evidence/AR-404-codex-suite-baseline-20260909.json](evidence/AR-404-codex-suite-baseline-20260909.json).
-Verified artifactdb1c642f is installed; all614package files match and a fresh
-isolated interpreter reports classifier6. Conformance188/188 passes. After-repair
-native sample and isolated acceptance remain. Native refresh is now published as
-1825059191a2/classifier6; Codex requires attended approval of8modified hooks.
-The first post-wheel sample still ran classifier5 and the next had no Agency
-receipt; neither is repair acceptance. Claude review now proves fresh classifier6
-and accepted exact native evidence. Claude and Zcode follow-ups correlate the
-exact completed review and require fresh staffing. Zcode additionally proves full
-cards, all five headers and accepted hashes on both review and follow-up. Its
-multi-step staffing failure remains in AR-404; isolated AR-421 verdicts are pending.
+Done for completed-task subject correlation. Classifier6 (cf4ed77f) preserves
+the bounded source of a completed task for contextual replies/revisions while
+requiring fresh staffing and execution decisions. Failed/untrusted state, new
+explicit work, independent critic and validators retain their guards.
+
+Focused152 tests and selector/context43 tests pass; the original classifier
+negative control is7failed/12passed. The installed artifact is db1c642f, native
+projection1825059191a2. Fresh Claude and Zcode follow-ups point to their exact
+completed reviews; Zcode also proves full cards, all five headers and accepted
+response hashes. Evidence is retained in the fixed AR-404 suite.
+
+All three current isolated criteria are satisfied. The first criterion3 absent
+verdict is retained in AR-421-first-isolated-verdicts-20260909.json; its circular
+requirement for existing isolated verdicts was separated from the observable
+behavior check. Mandatory isolated verification still governs closure.
+
+This does not establish all-host reliability. Codex needs native hook trust,
+Hermes/OpenClaw still time out, Claude has AR-423 delivery limits, and Zcode's
+multi-step staffing failed. Those remain under AR-404.
 
 ## Approach
 
@@ -59,6 +61,6 @@ AR-404 retains the complete five-host reliability sample and all-host gates.
 The repository-mandated isolated verdicts gate closure after these observable
 criteria are judged; a criterion does not require its own verdict to pre-exist.
 
-- [ ] Reproduce the observed failure with exact, bounded evidence.
-- [ ] Repair its cause while preserving trust, inference authority and unrelated work.
-- [ ] Verify the repaired behavior with regression and fresh native evidence.
+- [x] Reproduce the observed failure with exact, bounded evidence.
+- [x] Repair its cause while preserving trust, inference authority and unrelated work.
+- [x] Verify the repaired behavior with regression and fresh native evidence.

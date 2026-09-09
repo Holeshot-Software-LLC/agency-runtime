@@ -257,3 +257,16 @@ and the satisfied criteria1/2 stay unchanged.
 AR-421 refined criterion3 is satisfied by isolated runAR-421.3-20260909-fa88f927.
 All three current criteria now have satisfied isolated verdicts. The original
 absent verdict remains preserved; AR-422 initial isolated checks follow.
+
+## Scoped delivery ready
+
+AR-422 initial isolated criteria1/2/3 are satisfied (5c1ffbd2, cf39abc7,07011029).
+AR-421's three current criteria are also satisfied; its original absent verdict
+is retained. The two scoped issue records are done, with closure attached to PR810.
+AR-404/418/419/423 remain open. The temporary OpenClaw observer is removed and
+gateway RPC healthy. No staffing model change or Codex trust bypass occurred.
+
+AR-423 work continues in a separate owned worktree. Its initial four-card native
+bridge regression exposes a separate rstrip() mismatch on the final card, now
+tracked as AR-424/#812. PR810 records that finding only; its production source
+remains cf4ed77f. The adjacent candidate is not installed or accepted by this PR.
