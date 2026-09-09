@@ -1,6 +1,6 @@
 ---
 title: "AR-428: Avoid test-result analysis units when no results exist"
-status: open
+status: in_progress
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -28,8 +28,17 @@ A fresh Hermes supplied-code-only request explicitly forbids execution. The plan
 
 ## Current state
 
-Exact retained evidence has been inspected. No validator or critic verdict has
-been overridden. Source repair and acceptance remain pending.
+The active compact planner and its bounded repairer now share an explicit rule:
+proposed, unexecuted tests require static review rather than invented test-result
+analysis. Actual supplied results and permitted execution remain valid evidence
+sources; mandatory execution gates and independent review are not waived.
+Recipe 20 separates this planning context from older immutable receipts.
+
+The original native packet and critic veto remain unchanged. Final recipe20 focused
+164 / 1 skipped and production 1151 / 3 skipped pass; UI224, routing, Ruff788,
+docs1379 and strict tracker419 pass. Frozen conformance, installed native evidence
+and isolated acceptance are pending.
+No critic veto is assumed erroneous and no worker is selected by this repair.
 
 ## Approach
 
