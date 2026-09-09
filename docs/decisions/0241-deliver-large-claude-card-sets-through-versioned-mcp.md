@@ -41,6 +41,8 @@ session checks apply. Record loaded evidence only when the full card is returned
 The initial header therefore excludes pending cards. Preserve every inline card
 byte when appending bridge segments, including trailing whitespace.
 
+Implementation commit `cd86e40a` and its exact worklog follow this decision.
+
 ## Consequences
 
 Large Claude selections require one bounded tool retrieval per selected card.

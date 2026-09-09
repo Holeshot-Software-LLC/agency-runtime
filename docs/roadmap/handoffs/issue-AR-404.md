@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar423-native-context-20260909
-evidence_commit: 3a921c61ab8f909f4630ca9fc60a4e9fbb0d04a2
-minimum_ledger_commit: 855c20785989dcb0fb6d74a108f4a4ad9e576b85
+evidence_commit: cd86e40a994bd7d6fad8699047140a8e369718a0
+minimum_ledger_commit: 0cd4f2897b12f9a3de1f277303ba381dd6aa61d5
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -90,7 +90,7 @@ binds CLI session/native trace and Agency trace; their trace IDs differ.
 
 ## Exact blocker
 
-AR-423/424 candidate is implementing, not installed. Recipe 16 supplies a bounded
+AR-423/424 source cd86e40a / artifact 0cd4f289 is installed, draft PR814. Recipe 16 supplies a bounded
 Claude hook and exact selected-version MCP retrieval; pending cards are not
 reported loaded. Shared bridge preserves trailing card bytes. Native delivery
 and isolated acceptance remain pending. See the AR-423 capsule and worklog.
@@ -120,9 +120,9 @@ Never pause, create a new task or transfer for telemetry. Preserve Windows work.
 
 ## Next bounded work package
 
-Finish AR-423/424 focused and required production checks, record the source and
-ledger pair, open its PR, build a verified artifact, refresh Claude and capture
-full exact native tool-result cards. No unchanged-condition staffing retries.
+AR-423/424 fast checks and artifact verification pass; conformance passes 188/188.
+Claude fixed sample: review accepted; follow-up response_invalid; multi-step staffing
+failed. New MCP path unexercised. One separate bounded surface probe is frozen. No unchanged-condition staffing retries.
 Keep AR-418/419/404 open; Hermes upstream default adoption, OpenClaw exact accepted
 input, Codex trust and the owner staffing-model decision remain unresolved.
 Zcode review/follow-up passed but multi-step staffing failed; keep it in scope.

@@ -50,8 +50,11 @@ No supported threshold override has been established.
 The owned candidate uses recipe 16 to keep a bounded hook frame and retrieve
 large card sets through the existing MCP tool. Retrieval is restricted to the
 selected immutable version and exact active turn; pending cards do not appear
-loaded. The final emitted envelope is checked in UTF-16 units. Candidate source
-is not installed yet; fresh native delivery and isolated verdicts remain pending.
+loaded. The final emitted envelope is checked in UTF-16 units. Source cd86e40a and artifact 0cd4f289 are installed; all 615 package files match.
+Claude/Zcode normal refresh and packaged smoke pass. Draft PR814 owns the change.
+The fixed sample retains an accepted review, header-invalid follow-up and staffing-failed
+multi-step. Its staffed cases used inline single cards. One separately frozen native
+surface probe remains; isolated verdicts are pending.
 Original-source integration emits 15,076 units and fails the real-hook regression.
 
 ## Approach

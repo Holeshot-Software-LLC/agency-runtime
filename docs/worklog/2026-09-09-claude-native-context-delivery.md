@@ -16,7 +16,7 @@ type: worklog
 commit: cd86e40a994bd7d6fad8699047140a8e369718a0
 short: cd86e40a
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/814
 related_issues:
   - docs/roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md
   - docs/roadmap/issue-AR-424-preserve-last-card-whitespace.md
@@ -73,3 +73,38 @@ artifact, refresh Claude normally, and test the fixed requests with full native
 MCP response evidence. Keep AR-423/424 open until isolated gates pass. AR-404
 still includes Hermes, OpenClaw, Codex and Zcode; its pending operator choices
 and failures remain in the umbrella capsule.
+
+## Verified artifact and live checkpoint
+
+Source cd86e40a and ledger/artifact source 0cd4f289 are on draft PR814. Canonical
+build and independent distribution verification pass. Wheel SHA256
+3cea5770b896f788b790675db8dda8ea1321638e899bb57633198ab7266c211e
+matches all 615 installed package files; a fresh isolated interpreter reports
+recipe 16. Packaged MCP, roster, configuration, dashboard and asset smoke passes.
+Normal Claude/Zcode refresh completes; gateway stop/start exits zero and RPC is
+healthy. No answering/staffing configuration or trust hashes changed.
+
+The fixed Claude three-case sample runs once in phase after_context_delivery,
+with the original requests, normal permissions, 360-second case deadline and
+retained failure output. Source conformance is running in parallel with private
+umask 077. New native full-card/terminal evidence is not claimed before collection.
+The third AR-423 criterion names observable regression/native evidence; the separate
+repository-mandated isolated procedure remains required, avoiding a circular demand
+that the verifier find its own verdict before issuing it.
+
+## First native sample retained
+
+Claude review 68.932s completes with full selected card, all five headers and
+accepted hash (session 68924d99-0e43-4336-aea3-9c522cbe6150, trace
+466affa6-154a-4966-8fce-22d4b60dd930). Same-session follow-up 51.823s has the selected
+card and correct function but omits all headers: terminal response_invalid, trace
+52f38ef1-e52c-49db-8324-3f405a1f4a80. Native Bash verification was denied; no tests
+executed. Multi-step 75.196s fails staffing with critic_wrong_neighbor_selection,
+trace 78c65d99-bcef-4e93-9f83-0d24592c3924. These are retained failures.
+
+Both staffed cases selected one card and used the inline path, so this fixed
+sample does not prove the new MCP path. A separately frozen one-attempt download
+path correctness/security review is the next native surface probe; it names no
+specialists and leaves selection to inference. Its result cannot replace any
+fixed-sample failure. Fresh-source conformance now passes 188/188, no survivors
+or invalid mutations, source unchanged. AR-424 isolated builder is next.
