@@ -76,3 +76,12 @@ returned after81.860s. Planner/recruiter applied, independent critic vetoed
 wrong-neighbor selection. No saved routing plan or authoritative finalization.
 Frozen conformance passed188/188. No native acceptance or sole-cause claim.
 One new diagnostic packet capture is required before another repair can be chosen.
+
+## Observed diagnostic
+
+Session `20260909_153433_eef6b8` failed wrong-neighbor staffing in78.821s. The
+byte-preserving observer captured its exact plan, proposal, contracts and veto:
+four units, no test-evidence, and downstream independent static review. Type-design
+and silent-failure nominations remain; no sole veto cause is established. The
+owner configuration restored byte-for-byte, with one captured packet and no errors.
+First isolated acceptance assesses the original planning criteria, not host reliability.

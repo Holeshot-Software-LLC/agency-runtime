@@ -42,9 +42,14 @@ verify; Hermes refreshed on recipe20.
 Fresh exact-request session `20260909_153129_1f3091` failed in81.860s with
 `staffing_critic_rejected; critic_wrong_neighbor_selection`. Planner and recruiter
 applied, but no routing decision/plan was retained and finalization is absent.
-The response is not acceptance evidence. A single pass-through observation of a
-new diagnostic turn is next; it will capture the actual critic packet and cannot
-reconstruct or accept the failed receipt. Isolated acceptance remains pending.
+The response is not acceptance evidence. Observed diagnostic session
+`20260909_153433_eef6b8` also failed wrong-neighbor staffing in78.821s. Its captured
+actual critic packet contains four units, no test-evidence unit, and independent
+static review of proposed code/tests. Type-design and silent-failure nominees
+remain in the rejected team; the critic code does not identify a sole cause.
+Owner configuration restored byte-for-byte, one packet captured, no observer errors.
+First isolated verification assesses only the unchanged AR-428 planning criteria;
+whole-host reliability and authoritative completion remain unproven.
 
 ## Approach
 

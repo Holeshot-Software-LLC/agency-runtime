@@ -38,7 +38,9 @@ PR830 merged; its exact ledger is the first commit on this owned branch.
 
 Fresh Hermes session20260909_153129_1f3091 failed wrong-neighbor staffing in81.860s.
 Planner/recruiter applied; exact plan was not retained. Finalization absent.
-Native acceptance and isolated verification remain pending.
+Observed session20260909_153433_eef6b8 also failed, but its exact critic packet
+shows four units, no invented test-evidence, and independent static review.
+First isolated planning acceptance remains pending; no whole-host pass.
 
 ## Same-task continuity
 
@@ -47,15 +49,15 @@ checkpoint and continue. Preserve unrelated work and failed receipts.
 
 ## Next bounded work package
 
-Capture one new diagnostic native critic packet through a byte-preserving observer.
-Retain the failed receipt; do not infer the veto was erroneous. Choose any next
-repair only from the captured plan, nominees and contracts.
+Run the first isolated AR-428 acceptance against the frozen original/new packets.
+Retain both failed receipts. Remaining nomination relevance needs separate diagnosis
+under AR-404; Codex and Claude follow in owner priority.
 
 ## Verification
 
 Final recipe20 focused164/1skip and production1151/3skip pass. UI224, routing,
-Ruff788, docs1379 and strict tracker419 pass. Frozen conformance and native evidence
-passed188/188 and canonical artifact/616 installed files verify. Fresh native failed;
+Ruff788, docs1379 and strict tracker419 pass. Frozen conformance passed188/188;
+canonical artifact and616 installed files verify. Fresh native failed;
 no exhaustive/Windows run.
 
 ## Constraints

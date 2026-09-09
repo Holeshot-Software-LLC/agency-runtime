@@ -1,0 +1,32 @@
+import importlib.util,json,os,subprocess,copy
+from pathlib import Path
+os.umask(0o077)
+spec=importlib.util.spec_from_file_location('observer','/tmp/ar404-openclaw-critic-observer.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+m.smoke()
+r=Path('/home/holeshot/.agency-runtime/ephemeral/ar428-native-20260909');runner=r/'run.py'
+request=json.loads((r/'complete-team-manifest.json').read_text())['cases'][0]['request']
+m.matches_packet=lambda v:'critic_contract' in v and v.get('request')==request
+assert m.matches_packet({'critic_contract':{},'request':request})
+assert not m.matches_packet({'critic_contract':{},'request':'unrelated'})
+capture=r/'diagnostic-packets';capture.mkdir(exist_ok=False)
+proxy=m.server(('127.0.0.1',4000),capture);base='http://127.0.0.1:'+str(proxy.server_port)
+config=Path.home()/'.agency-runtime/agency.yaml';original_raw=None;patched_raw=None
+result={'scope':'One new native Hermes diagnostic, exact original request, packet observation only; does not reconstruct the preceding failed receipt.','observer_errors':proxy.errors}
+script=runner.read_text().replace("phase='after_planner_boundary'","phase='observed_planner_boundary'")
+(r/'run_observed.py').write_text(script)
+try:
+ with m._config_lock(config):
+  original_raw=config.read_bytes();changed=copy.deepcopy(m.yaml.safe_load(original_raw));entry=changed['inference']['profiles'][m.PROFILE]
+  assert entry['base_url']=='http://127.0.0.1:4000' and entry['model']==m.MODEL
+  entry['base_url']=base;m._atomic_write_yaml(config,changed);patched_raw=config.read_bytes()
+ result['runner_exit']=subprocess.run(['python',str(r/'run_observed.py'),'hermes'],timeout=390).returncode
+finally:
+ if original_raw is not None and patched_raw is not None:
+  with m._config_lock(config):
+   current=config.read_bytes()
+   if current==patched_raw:m.atomic_raw(config,original_raw);result['owner_config_restored_byte_exact']=config.read_bytes()==original_raw
+   else:
+    data=m.yaml.safe_load(current);assert data['inference']['profiles'][m.PROFILE]['base_url']==base
+    data['inference']['profiles'][m.PROFILE]['base_url']='http://127.0.0.1:4000';m._atomic_write_yaml(config,data);result['owner_config_restored_preserving_concurrent_edits']=True
+ proxy.shutdown();proxy.server_close();result['captured_packets']=len(list(capture.glob('*.json')))
+ (r/'diagnostic-observer-result.json').write_text(json.dumps(result,indent=2));print(json.dumps(result),flush=True)
