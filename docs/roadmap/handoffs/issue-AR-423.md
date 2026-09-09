@@ -14,7 +14,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-423
-branch: codex/ar404-planner-contract-20260909
+branch: codex/ar423-acceptance-20260909
 evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
 minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
 hard_checkpoint_percent: 50
@@ -24,6 +24,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 # AR-423 Claude native context delivery
 
 ## Checkpoint
+
+Owner authorized one third isolated pass on 2026-09-09 ("go for it"). The new
+owned worktree starts at c6c3e7b5; the packet now includes all four exact native
+MCP results, immutable card hashes and appended delivery disclosures. No new
+native trial or permission change is needed for this retained acceptance scope.
 
 Native full-card delivery now passes on PR821 candidate2b19cce6/source03a82c3b.
 The underlying recipe16 delivery implementation came from PR814/cd86e40a.
@@ -47,13 +52,11 @@ correlation. Native limit10,000UTF16; prior denied and planner-failed probes rem
 
 ## Exact blocker
 
-AR-423 remains open despite native success. First isolated pass:1absent,2verifier
-unavailable/no verdict,3satisfied. Second:1/2absent,3satisfied. Preserve both JSON
-records under AR-423-isolated-{first,second}-planner-pass-20260909.json.
-The builder's orphan pointer row was outside the parsed table; full-file excerpts
-also omitted native card rows389-470. The corrected packet is prepared with
-contiguous rows, exact line ranges and local build_case proof that decisive text
-is included. It has no new isolated verdict. No third review in this package.
+Authorized third pass: criteria 1/3 satisfied, criterion 2 absent because the
+packet did not establish independent assurance. Read-only routing evidence then
+found five selected workers but four persisted prompt references, omitting the
+security reviewer. AR-427/#825 repairs that High delivery defect in PR 824.
+AR-423 remains blocked until fresh complete-team proof and isolated evidence.
 
 ## Same-task continuity
 
@@ -64,8 +67,8 @@ continue in the same task. No pending Claude tool or Codex trust approval.
 
 ## Next bounded work package
 
-Run the prepared corrected acceptance packet only when an additional isolated
-pass is explicitly authorized under AGENTS.md's two-pass default. Close AR-423
+Resolve AR-427's High delivery finding, then prepare fresh complete-team evidence
+for the remaining independent-assurance gate. Close AR-423
 only if all three criteria receive satisfied verdicts. AR-404 retains the
 separate five-host8/15fixed result and Hermes/Zcode/recruiter/critic failures.
 

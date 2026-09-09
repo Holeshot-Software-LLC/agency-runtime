@@ -1,0 +1,227 @@
+Agency/Agencies loaded: agency-steward, application-security-engineer, backend-service-engineer, technical-writer, code-reviewer
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)
+Recruited via: inference
+
+Why: the task is a security-focused correctness review of a path helper with a corrected implementation, tests, and written assumptions.
+How it shaped outcome: findings are anchored to the supplied snippet only, the fix is presented as illustrative rather than production-certified, and race limitations are stated instead of implied away.
+
+The supplied function meets none of the stated requirements. It performs no validation at all, so every one of the three required rejections is missing, and it never resolves the result. This review is based solely on the four-line snippet; nothing was read or executed.
+
+## Defects
+
+- **Absolute names replace the root.** The `/` operator on `pathlib` discards the left side when the right side is absolute. A name of `/etc/passwd` yields exactly `/etc/passwd`. On Windows, drive-relative names such as `C:x` and UNC names have the same effect.
+- **Parent-directory traversal passes through unchanged.** A name of `../../etc/passwd` produces a path that lexically contains the `..` segments. Nothing collapses or inspects them, so opening the result walks out of the root.
+- **Symlink escapes are invisible.** The path is never resolved, so a symlink inside the root that points outside it is followed at open time. This covers directory symlinks in the middle of the name, a file symlink as the final component, and dangling symlinks whose target does not yet exist.
+- **The root itself is not canonicalized.** If the configured root is relative or is a symlink, the returned path is not "resolved" in any sense, and any containment check a caller might add later would compare inconsistent forms.
+- **Empty and dot names return the root directory.** A name of `""` or `.` yields the root itself, which a caller would then try to write to as a file.
+- **No guard against embedded null bytes or non-string input.** Both surface later as confusing errors from the operating system rather than as a clear rejection at the boundary.
+
+## Corrected function
+
+The version below is a bounded rewrite of the supplied snippet. It is illustrative code that has not been run in this session.
+
+```python
+import os
+from pathlib import Path, PurePosixPath, PureWindowsPath
+
+
+def download_path(root, name):
+    """Return a resolved absolute path for ``name`` strictly inside ``root``.
+
+    Raises ValueError for absolute names, any ``..`` segment, empty or
+    dot-only names, embedded NUL bytes, and symlinks that resolve outside
+    the root. Raises OSError subclasses if ``root`` is missing or not a
+    directory, since that is a configuration error rather than bad input.
+    """
+    root_path = Path(root).resolve(strict=True)
+    if not root_path.is_dir():
+        raise NotADirectoryError(f"download root is not a directory: {root_path}")
+
+    if not isinstance(name, str):
+        raise TypeError("name must be a str")
+    if "\x00" in name:
+        raise ValueError("name contains an embedded NUL byte")
+
+    # Lexical checks under both path flavours so that Windows-style
+    # separators, drives, and UNC prefixes are rejected even on POSIX hosts.
+    for flavour in (PurePosixPath, PureWindowsPath):
+        pure = flavour(name)
+        if pure.is_absolute() or pure.anchor:
+            raise ValueError(f"absolute name is not allowed: {name!r}")
+        if ".." in pure.parts:
+            raise ValueError(f"parent-directory traversal is not allowed: {name!r}")
+
+    # Follow symlinks in every existing component; nonexistent trailing
+    # components are appended lexically.
+    candidate = (root_path / name).resolve(strict=False)
+
+    if candidate == root_path:
+        raise ValueError(f"name resolves to the root itself: {name!r}")
+    if not candidate.is_relative_to(root_path):
+        raise ValueError(f"name resolves outside the download root: {name!r}")
+
+    return candidate
+```
+
+Design notes on the fix:
+
+- **Any `..` segment is rejected**, even one such as `a/../b` that would lexically stay inside the root. This is a deliberate policy choice for a download path. If you need to accept it, drop the `parts` check and rely on the containment check alone.
+- **The containment check compares path components**, not string prefixes, so a root of `/srv/dl` does not accidentally accept `/srv/dl2/x`.
+- **Symlinks that stay inside the root are allowed.** A link from `root/alias` to `root/real` resolves to `root/real`, which is inside the root, and the resolved form is what gets returned.
+
+## Tests
+
+The cases below use the `tmp_path` fixture and have not been executed here. Symlink cases skip cleanly on hosts where symlink creation is not permitted.
+
+```python
+import os
+import pytest
+
+from download_path import download_path
+
+
+@pytest.fixture
+def root(tmp_path):
+    r = tmp_path / "downloads"
+    r.mkdir()
+    return r
+
+
+@pytest.fixture
+def outside(tmp_path):
+    o = tmp_path / "outside"
+    o.mkdir()
+    (o / "secret.txt").write_text("secret")
+    return o
+
+
+def _symlink(target, link):
+    try:
+        os.symlink(target, link)
+    except (OSError, NotImplementedError, AttributeError) as exc:
+        pytest.skip(f"symlinks unavailable: {exc}")
+
+
+# valid nested paths
+
+def test_nested_name_stays_inside_root(root):
+    result = download_path(root, "a/b/c.bin")
+    assert result == root.resolve() / "a" / "b" / "c.bin"
+    assert result.is_absolute()
+    assert result.is_relative_to(root.resolve())
+
+
+def test_nested_name_with_dot_segments_is_normalized(root):
+    assert download_path(root, "a/./b.bin") == root.resolve() / "a" / "b.bin"
+
+
+def test_nonexistent_intermediate_directories_are_allowed(root):
+    result = download_path(root, "new/dir/file.bin")
+    assert not (root / "new").exists()
+    assert result == root.resolve() / "new" / "dir" / "file.bin"
+
+
+def test_relative_root_is_resolved(root, monkeypatch):
+    monkeypatch.chdir(root.parent)
+    assert download_path("downloads", "x.bin") == root.resolve() / "x.bin"
+
+
+def test_symlinked_root_is_resolved(root, tmp_path):
+    alias = tmp_path / "alias"
+    _symlink(root, alias)
+    assert download_path(alias, "x.bin") == root.resolve() / "x.bin"
+
+
+def test_symlink_pointing_inside_root_is_allowed(root):
+    (root / "real").mkdir()
+    _symlink(root / "real", root / "link")
+    assert download_path(root, "link/file.bin") == root.resolve() / "real" / "file.bin"
+
+
+# absolute names
+
+@pytest.mark.parametrize(
+    "name",
+    ["/etc/passwd", "/x", "\\x", "C:\\x", "C:x", "\\\\server\\share\\x", "//server/share/x"],
+)
+def test_absolute_names_are_rejected(root, name):
+    with pytest.raises(ValueError):
+        download_path(root, name)
+
+
+# parent-directory traversal
+
+@pytest.mark.parametrize(
+    "name",
+    ["..", "../x", "a/../../x", "..\\x", "a\\..\\..\\x", "a/../b", "a/b/../../../x"],
+)
+def test_traversal_is_rejected(root, name):
+    with pytest.raises(ValueError):
+        download_path(root, name)
+
+
+@pytest.mark.parametrize("name", ["", ".", "./", "./."])
+def test_empty_and_dot_names_are_rejected(root, name):
+    with pytest.raises(ValueError):
+        download_path(root, name)
+
+
+def test_nul_byte_is_rejected(root):
+    with pytest.raises(ValueError):
+        download_path(root, "a\x00b")
+
+
+# symlink escapes
+
+def test_directory_symlink_escape_is_rejected(root, outside):
+    _symlink(outside, root / "link")
+    with pytest.raises(ValueError):
+        download_path(root, "link/secret.txt")
+
+
+def test_final_component_file_symlink_escape_is_rejected(root, outside):
+    _symlink(outside / "secret.txt", root / "evil.txt")
+    with pytest.raises(ValueError):
+        download_path(root, "evil.txt")
+
+
+def test_dangling_symlink_escape_is_rejected(root, outside):
+    _symlink(outside / "not-yet-created.txt", root / "dangle.txt")
+    with pytest.raises(ValueError):
+        download_path(root, "dangle.txt")
+
+
+def test_nested_symlink_escape_is_rejected(root, outside):
+    (root / "sub").mkdir()
+    _symlink(outside, root / "sub" / "link")
+    with pytest.raises(ValueError):
+        download_path(root, "sub/link/new.bin")
+
+
+def test_sibling_prefix_directory_is_not_treated_as_inside(root, tmp_path):
+    sibling = tmp_path / "downloads2"
+    sibling.mkdir()
+    _symlink(sibling, root / "link")
+    with pytest.raises(ValueError):
+        download_path(root, "link/x.bin")
+```
+
+## Assumptions and remaining race limitations
+
+Filesystem and runtime assumptions:
+
+- **Python 3.9 or newer** for `Path.is_relative_to`. On older versions, replace it with a `relative_to` call wrapped in a `try` block.
+- **The root exists and is a real directory** at call time. A missing root raises `FileNotFoundError` rather than `ValueError`, since that is a deployment error rather than untrusted input.
+- **POSIX-style resolution** is the primary target. The dual-flavour lexical check makes Windows separators, drive letters, and UNC prefixes rejected on every host, which also means a POSIX filename that happens to contain a backslash or `C:` is refused.
+- **Case handling is inherited from the operating system.** The candidate is built from the already-resolved root, so the prefix comparison is consistent, but no extra case folding is applied.
+- **Windows reserved device names** such as `CON` and `NUL`, and overlong path handling, are out of scope for this helper.
+
+Race limitations that path checking cannot close:
+
+- **Time-of-check to time-of-use.** The resolve step reflects the filesystem at one instant. Anyone who can write inside the root, or to any ancestor of it, can replace a directory or file with a symlink between this call and the later open, and the open will follow it outside the root.
+- **Nonexistent trailing components are not protected.** The nonstrict resolve appends missing components lexically. An attacker who creates a symlink at that location before the file is opened redirects the write.
+- **Hard links are undetectable by path.** A hard link inside the root to a file outside it resolves to an inside path, and writing through it modifies the outside file.
+
+Mitigations belong at the open, not in this helper. Open with `O_NOFOLLOW` and `O_CREAT | O_EXCL` for the final component, use `dir_fd` relative opens from a file descriptor held on the root, or on Linux 5.6 and newer use `openat2` with `RESOLVE_BENEATH` for kernel-enforced containment. Ensuring that untrusted principals cannot write anywhere in the root's ancestor chain removes the attacker's ability to plant links in the first place.
