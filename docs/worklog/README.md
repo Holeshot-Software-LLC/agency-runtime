@@ -2316,6 +2316,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `03a82c3b` | 2026-09-09 | fix(workforce): retain rejected planner context for bounded repair | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `88b4f323` | 2026-09-09 | docs(reliability): checkpoint verified planner candidate installation | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 | `dde8b624` | 2026-09-09 | docs(reliability): prove Claude native full-card response completion | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
+| `8792df1f` | 2026-09-09 | docs(reliability): record frozen planner conformance evidence | AR-404, AR-425 | [Detail](2026-09-09-planner-repair-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
