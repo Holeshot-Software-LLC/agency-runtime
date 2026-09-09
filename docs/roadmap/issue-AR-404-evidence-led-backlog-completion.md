@@ -70,6 +70,14 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+Owner priority update: OpenClaw, Hermes, Codex, Claude; defer Zcode changes.
+The next bounded package starts with OpenClaw trace
+`bdf2e524-1b4e-4214-8db0-b58733e83b08`: planner/recruiter applied, critic vetoed
+wrong-neighbor selection, zero saved routing proposals and no accepted finalization.
+One fresh observed review/follow-up sequence will preserve the actual critic
+packet before deciding a repair. No old receipt is reopened.
+
+
 PR 824 merged at `e81f8e00` on September 9. AR-426/#823 and AR-427/#825
 are closed with all-satisfied isolated acceptance. Exact merge ledger follows.
 AR-404/#672, AR-418/#796, AR-423/#811 and AR-428/#826 remain open.

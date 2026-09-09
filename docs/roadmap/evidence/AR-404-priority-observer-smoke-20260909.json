@@ -1,0 +1,1 @@
+{"observer_tests": "passed", "cases": ["request_response_bytes_preserved", "authorization_forwarded_not_recorded", "unrelated_request_not_captured"]}
