@@ -116,3 +116,7 @@ this candidate does not establish all-host or all-case reliability.
 Observer cleanup: stop/uninstall/start exits0; files, entry and permission removed.
 Initial RPC warmup retained; subsequent read-only RPC check passes. Non-plugin
 configuration sections unchanged. See the cleanup evidence JSON.
+
+The first AR-419 builder record failed documentation validation for bare source
+paths and one range beyond EOF; corrected to bounded path/line references before
+isolated verification. No verdict was produced from the malformed record.
