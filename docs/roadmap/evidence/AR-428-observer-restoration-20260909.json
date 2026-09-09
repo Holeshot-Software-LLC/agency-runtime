@@ -1,0 +1,7 @@
+{
+  "scope": "One new native Hermes diagnostic, exact original request, packet observation only; does not reconstruct the preceding failed receipt.",
+  "observer_errors": [],
+  "runner_exit": 0,
+  "owner_config_restored_byte_exact": true,
+  "captured_packets": 1
+}

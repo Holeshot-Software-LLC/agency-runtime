@@ -1,0 +1,3 @@
+AR-428 criterion 1: satisfied (AR-428.1-20260909-48f6c439)
+AR-428 criterion 2: satisfied (AR-428.2-20260909-aaffa373)
+AR-428 criterion 3: verifier unavailable or outside the vocabulary; nothing recorded

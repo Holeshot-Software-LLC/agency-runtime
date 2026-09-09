@@ -1,0 +1,4 @@
+{
+  "verdict": "satisfied",
+  "reason": "Validation JSON (focused 164/1, production 1151/3, conformance 188/188) matches the focused/production/conformance files in the snapshot; observed-plan (four units, static review, no test-evidence unit), the failed receipt with exact invocation, and byte-exact observer restoration show the boundary."
+}

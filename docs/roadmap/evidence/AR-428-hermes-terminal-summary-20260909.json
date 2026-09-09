@@ -1,0 +1,173 @@
+{
+  "run": {
+    "id": "12cd823a-cf66-46f1-9eb1-2909004e2a86",
+    "trace_id": "20260909_153129_1f3091:a49b3460-b988-4716-b31b-e3ba26b04e38:90199598",
+    "session_id": "20260909_153129_1f3091",
+    "host": "hermes",
+    "started_at": "2026-09-09T19:31:38.829000+00:00",
+    "last_activity_at": "2026-09-09T19:32:27.396000+00:00",
+    "turn_sequence": 1697,
+    "ended_at": "2026-09-09T19:32:27.395000+00:00",
+    "status": "preflight_failed",
+    "preflight_state": ""
+  },
+  "failure": {
+    "id": "1fc3417a-a1c1-4e32-aec8-13db49b4346c",
+    "session_id": "20260909_153129_1f3091",
+    "trace_id": "20260909_153129_1f3091:a49b3460-b988-4716-b31b-e3ba26b04e38:90199598",
+    "host": "hermes",
+    "stage": "routing",
+    "reason_code": "workforce_inference_failed",
+    "invariant_code": "",
+    "exception_category": "runtime_error",
+    "provider_attempts": [
+      {
+        "stage": "planner",
+        "provider_name": "agency-planner",
+        "provider_type": "litellm",
+        "requested_model": "task-agency-planner-v2",
+        "model_group": "task-agency-planner-v2",
+        "actual_model": "task-agency-planner-v2",
+        "model_receipt_source": "response.body.model",
+        "status": "applied",
+        "reason_code": "structured_response_applied",
+        "metadata_version": 1,
+        "provider_chain_index": 0,
+        "provider_call_attempted": true,
+        "provider_fallback_count": 0,
+        "ordinal": 1,
+        "latency_ms": 11776,
+        "timeout_ms": 60000
+      },
+      {
+        "stage": "recall_embedding",
+        "provider_name": "local-workforce-embedding",
+        "provider_type": "ollama",
+        "requested_model": "qwen3-embedding:latest",
+        "model_group": "",
+        "actual_model": "qwen3-embedding:latest",
+        "model_receipt_source": "response.body.model",
+        "status": "applied",
+        "reason_code": "dense_recall_applied",
+        "latency_ms": 2942,
+        "input_count": 4,
+        "provider_call_count": 1,
+        "catalog_cache_hit": true,
+        "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107"
+      },
+      {
+        "stage": "recall_reranker",
+        "provider_name": "local-workforce-reranker",
+        "provider_type": "ollama",
+        "requested_model": "qwen3-14b-abliterated:latest",
+        "model_group": "",
+        "actual_model": "qwen3-14b-abliterated:latest",
+        "model_receipt_source": "response.body.model",
+        "status": "applied",
+        "reason_code": "structured_response_applied",
+        "metadata_version": 1,
+        "provider_chain_index": 0,
+        "provider_call_attempted": true,
+        "provider_fallback_count": 0,
+        "ordinal": 3,
+        "latency_ms": 23004,
+        "timeout_ms": 120000,
+        "input_count": 0,
+        "provider_call_count": 1
+      },
+      {
+        "stage": "recruiter",
+        "provider_name": "agency-recruiter",
+        "provider_type": "litellm",
+        "requested_model": "task-agency-recruiter-v2",
+        "model_group": "task-agency-recruiter-v2",
+        "actual_model": "task-agency-recruiter-v2",
+        "model_receipt_source": "response.body.model",
+        "status": "applied",
+        "reason_code": "structured_response_applied",
+        "metadata_version": 1,
+        "provider_chain_index": 0,
+        "provider_call_attempted": true,
+        "provider_fallback_count": 0,
+        "ordinal": 4,
+        "latency_ms": 4120,
+        "timeout_ms": 60000
+      },
+      {
+        "stage": "critic",
+        "provider_name": "agency-recruiter-critic",
+        "provider_type": "litellm",
+        "requested_model": "task-agency-critic-v2",
+        "model_group": "task-agency-critic-v2",
+        "actual_model": "task-agency-critic-v2",
+        "model_receipt_source": "response.body.model",
+        "status": "applied",
+        "reason_code": "structured_response_applied",
+        "metadata_version": 1,
+        "provider_chain_index": 0,
+        "provider_call_attempted": true,
+        "provider_fallback_count": 0,
+        "ordinal": 5,
+        "latency_ms": 5638,
+        "timeout_ms": 60000
+      }
+    ],
+    "staffing_reason_codes": [
+      "staffing_critic_rejected",
+      "critic_wrong_neighbor_selection"
+    ],
+    "hiring_reason_codes": [],
+    "eligibility_reason_codes": [],
+    "recorded_at": "2026-09-09T19:32:27.395000+00:00",
+    "schema_version": "agency.preflight.failure.v3"
+  },
+  "finalization": null,
+  "headers": {
+    "observed": {
+      "agencies_loaded": "agency-steward",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "requested execution alias: alias-hermes-chat"
+    },
+    "store_projection": {
+      "agencies_loaded": "agency-steward",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "none observed",
+      "recruited_via": "failed; workforce_inference_failed; staffing_critic_rejected; critic_wrong_neighbor_selection"
+    },
+    "all_five_match": false
+  },
+  "complete_selected_team": {
+    "inferred": [],
+    "retained": [],
+    "missing": [],
+    "unexpected": [],
+    "exact_match": false
+  },
+  "native_hook_contexts": [
+    {
+      "native_message_id": 535397,
+      "api_content_chars": 9399,
+      "api_content_sha256": "392f7a59f23b562cfacb06cde0d80520a12ce886931f19b6ab1ecf06f80e9fb9",
+      "spill_pointer_present": false,
+      "contract_present": true,
+      "delivery_rules_present": true,
+      "native_card_tool_requested": false
+    }
+  ],
+  "accepted_hash_matches": false,
+  "finalization_event_count": 0,
+  "accepted_terminal_event_count": 0,
+  "status": "acceptance gates incomplete",
+  "invocation": {
+    "case": "multi_step",
+    "host": "hermes",
+    "phase": "after_planner_boundary",
+    "native_session_id": "20260909_153129_1f3091",
+    "exit_code": 0,
+    "timeout": false,
+    "elapsed_seconds": 81.86
+  },
+  "response_sha256": "be0531445ad6ee1d6a423e075c32e63c1e63de9cb8eb87764b6f8ae047cf8333"
+}

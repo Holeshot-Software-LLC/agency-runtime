@@ -405,6 +405,9 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- AR-428: distinguish static review of proposed tests from observed test results in
+  initial and repair planning, preserving independent review and execution gates.
+
 - Preserve full Claude specialist cards across native hook context limits using
   exact selected-version MCP retrieval, with loaded headers based on actual calls.
 - Preserve the final inline specialist card's trailing whitespace across hosts.

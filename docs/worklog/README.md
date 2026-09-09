@@ -2354,6 +2354,14 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c6e5940b` | 2026-09-09 | docs(reliability): merge PR828 exact delivery recovery checkpoint | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 | `24ddd4a0` | 2026-09-09 | docs(reliability): scope OpenClaw-first critic diagnosis | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-openclaw-priority.md) |
 | `7b04584a` | 2026-09-09 | docs(reliability): retain accepted OpenClaw priority diagnostics | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-openclaw-priority.md) |
+| `7b263fb9` | 2026-09-09 | docs(reliability): merge PR830 OpenClaw priority evidence | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-openclaw-priority.md) |
+| `0ac9d78e` | 2026-09-09 | fix(planner): distinguish proposed tests from observed results | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `826fbf25` | 2026-09-09 | docs(reliability): retain AR-428 artifact and original boundary evidence | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `10df4e6b` | 2026-09-09 | docs(reliability): preserve failed recipe20 Hermes staffing receipt | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `7ff8e5bc` | 2026-09-09 | docs(reliability): prepare isolated AR-428 planning evidence | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `817e6722` | 2026-09-09 | docs(reliability): freeze AR-428 isolated acceptance candidate | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `0969646d` | 2026-09-09 | docs(reliability): retain AR-428 partial isolated verification | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `5b1632e6` | 2026-09-09 | docs(reliability): accept AR-428 planning boundary with isolated evidence | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

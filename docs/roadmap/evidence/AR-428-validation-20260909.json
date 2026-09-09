@@ -1,0 +1,32 @@
+{
+  "source_commit": "0ac9d78e",
+  "artifact_source_commit": "ecf8a584e51d7cfcfd6c888881f62736e44262ae",
+  "scope": "Recipe20 candidate, Hermes refresh only; no all-host or Windows reliability claim",
+  "focused_result": "164 passed, 1 skipped in 33.93s",
+  "production_result": "1151 passed, 3 skipped in 68.89s (0:01:08)",
+  "ui_passed": 224,
+  "routing": true,
+  "ruff": "check and format pass, 788 files",
+  "documentation": "metadata, policy, worklog, docs1379 and strict tracker419 passed before evidence additions",
+  "artifact_checks": "canonical build, Twine --strict, independent artifact verification and installed portable smoke passed",
+  "installed": {
+    "artifact_source_commit": "ecf8a584e51d7cfcfd6c888881f62736e44262ae",
+    "wheel_sha256": "83b71a41a44bbc832e7e102f2ea3fb28d0310504445667d8833f59a4e9a16ba6",
+    "installed_package_files": 616,
+    "mismatches": [],
+    "fresh_isolated_recipe_version": 20
+  },
+  "frozen_conformance": {
+    "counts": {
+      "invalid": 0,
+      "killed": 188,
+      "mutations": 188,
+      "survived": 0
+    },
+    "passed": true,
+    "source_unchanged": true,
+    "evidence_boundary": "Curated decision sensitivity only; no coverage, superiority, or exhaustive mutation claim."
+  },
+  "exhaustive_workflow_run": false,
+  "windows_workflow_run": false
+}

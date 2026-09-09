@@ -1,6 +1,6 @@
 ---
 title: "AR-428: Avoid test-result analysis units when no results exist"
-status: open
+status: done
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -28,8 +28,30 @@ A fresh Hermes supplied-code-only request explicitly forbids execution. The plan
 
 ## Current state
 
-Exact retained evidence has been inspected. No validator or critic verdict has
-been overridden. Source repair and acceptance remain pending.
+The active compact planner and its bounded repairer now share an explicit rule:
+proposed, unexecuted tests require static review rather than invented test-result
+analysis. Actual supplied results and permitted execution remain valid evidence
+sources; mandatory execution gates and independent review are not waived.
+Recipe 20 separates this planning context from older immutable receipts.
+
+The original native packet and critic veto remain unchanged. Final recipe20 focused
+164 / 1 skipped, production1151 / 3 skipped, UI224, routing, Ruff788 and frozen
+conformance188/188 pass. Canonical artifact `ecf8a584` and all616 installed files
+verify; Hermes refreshed on recipe20.
+
+Fresh exact-request session `20260909_153129_1f3091` failed in81.860s with
+`staffing_critic_rejected; critic_wrong_neighbor_selection`. Planner and recruiter
+applied, but no routing decision/plan was retained and finalization is absent.
+The response is not acceptance evidence. Observed diagnostic session
+`20260909_153433_eef6b8` also failed wrong-neighbor staffing in78.821s. Its captured
+actual critic packet contains four units, no test-evidence unit, and independent
+static review of proposed code/tests. Type-design and silent-failure nominees
+remain in the rejected team; the critic code does not identify a sole cause.
+Owner configuration restored byte-for-byte, one packet captured, no observer errors.
+Isolated criteria1/2 satisfied on the first pass; criterion3 returned no usable
+result, then satisfied on the second default pass (`c8068ebd`). AR-428 is complete
+for the unchanged planning criteria. Whole-host reliability and authoritative
+completion remain unproven.
 
 ## Approach
 
@@ -42,6 +64,6 @@ native delivery and isolated acceptance gates.
 
 ## Acceptance
 
-- [ ] Exact native plan, selected contracts and critic rejection remain preserved.
-- [ ] Static test review and observed test evidence remain distinct without weakening independent assurance.
-- [ ] Focused and fast checks plus bounded native evidence verify the changed planning boundary.
+- [x] Exact native plan, selected contracts and critic rejection remain preserved.
+- [x] Static test review and observed test evidence remain distinct without weakening independent assurance.
+- [x] Focused and fast checks plus bounded native evidence verify the changed planning boundary.
