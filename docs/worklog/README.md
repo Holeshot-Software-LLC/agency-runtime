@@ -2282,6 +2282,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `c13f3b72` | 2026-09-09 | docs(AR-404): freeze native reliability sample and preserve follow-up failure | AR-404 | [Detail](2026-09-09-native-reliability-suite.md) |
 | `cf4ed77f` | 2026-09-09 | fix(routing): preserve completed-task context for fresh follow-up staffing | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
 | `8aa72148` | 2026-09-09 | docs(AR-404): retain native follow-up failures and exact card evidence | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `963ae815` | 2026-09-09 | docs(AR-404): record installed repair and complete native baseline | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `ed83735e` | 2026-09-09 | docs(AR-404): preserve native projection and activation failures | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `6f933fc8` | 2026-09-09 | docs(AR-404): retain completed Claude reliability sample | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
+| `345eaf51` | 2026-09-09 | docs(AR-404): record upstream Hermes repair and remaining native gates | AR-404, AR-418, AR-423 | [Detail](2026-09-09-completed-task-context.md) |
+| `73a127ac` | 2026-09-09 | docs(AR-404): preserve Zcode native evidence and prepare scoped acceptance | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
@@ -2291,8 +2296,3 @@ This registry connects repository history to the roadmap and to optional detail 
 - `8f6d320` records a handoff document that was later removed. The subject remains part of the immutable commit record; no deleted document was restored for this worklog.
 - `a183594` is a `docs(worklog):` ledger commit that also updated `docs/roadmap/handoffs/issue-AR-235.md`. The worklog-ledger exemption allows only `docs/worklog/**` and the reciprocal roadmap README cell. The capsule refresh should have been a separate `docs(roadmap):` commit. Retained as-is; no history rewrite.
 - `56e7dee`, `410c1d1`, `66f62b9`, and `d38e08b` are published `docs(worklog):` commits that also updated `docs/roadmap/issue-AR-119-inference-first-workforce.md`. The mixed commits violate the narrow ledger exemption, but rewriting shared history would be destructive. AR-254 records their exact-SHA grandfathering; future mixed ledger commits still fail.
-| `963ae815` | 2026-09-09 | docs(AR-404): record installed repair and complete native baseline | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
-| `ed83735e` | 2026-09-09 | docs(AR-404): preserve native projection and activation failures | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
-| `6f933fc8` | 2026-09-09 | docs(AR-404): retain completed Claude reliability sample | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
-| `345eaf51` | 2026-09-09 | docs(AR-404): record upstream Hermes repair and remaining native gates | AR-404, AR-418, AR-423 | [Detail](2026-09-09-completed-task-context.md) |
-| `73a127ac` | 2026-09-09 | docs(AR-404): preserve Zcode native evidence and prepare scoped acceptance | AR-404, AR-421, AR-422 | [Detail](2026-09-09-completed-task-context.md) |
