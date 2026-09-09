@@ -2355,6 +2355,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `24ddd4a0` | 2026-09-09 | docs(reliability): scope OpenClaw-first critic diagnosis | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-openclaw-priority.md) |
 | `7b04584a` | 2026-09-09 | docs(reliability): retain accepted OpenClaw priority diagnostics | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-openclaw-priority.md) |
 | `7b263fb9` | 2026-09-09 | docs(reliability): merge PR830 OpenClaw priority evidence | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-openclaw-priority.md) |
+| `0ac9d78e` | 2026-09-09 | fix(planner): distinguish proposed tests from observed results | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
