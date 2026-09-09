@@ -2290,6 +2290,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `12138e8b` | 2026-09-09 | docs(AR-404): retain refreshed Hermes failures and Claude native limit | AR-404, AR-421, AR-423 | [Detail](2026-09-09-completed-task-context.md) |
 | `c4c12667` | 2026-09-09 | docs(AR-404): preserve OpenClaw sample and native observer permission gate | AR-404, AR-419 | [Detail](2026-09-09-completed-task-context.md) |
 | `e0162436` | 2026-09-09 | docs(AR-419): record native observer permission and runtime activation | AR-404, AR-419 | [Detail](2026-09-09-completed-task-context.md) |
+| `6bc4d62f` | 2026-09-09 | docs(AR-419): retain failed observer probe and restore gateway state | AR-404, AR-419 | [Detail](2026-09-09-completed-task-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
