@@ -100,14 +100,16 @@ records belong to this package, not a later optional cleanup.
 
 ## Next bounded work package
 
-Record the blocked AR-426 native gate, isolated evidence and clean owned PR
-checkpoint. Next diagnose shared staffing before choosing a repair; no unchanged
-native retries or manual verdicts. PR 824 stays draft while native proof is absent.
-No native spill/output budget changes. Zcode first outputs put permission prose
-before headers; old terminal rejection is valid. No raw failed staffing selection
-is retained, so critic correctness is unknown and its authority stays unchanged.
-AR-423 third isolated pass question is pending; elapsed time is not authorization.
-Hermes upstream PR106490 remains open at30f421ecce, default checkout7cd91114.
+Package is blocked; PR 824 stays draft and unmerged. Diagnose shared staffing
+with sufficient bounded evidence before choosing a repair. Content-free rejected
+receipts do not establish an erroneous critic veto. No unchanged native retries.
+
+AR-426 isolated passes both accepted criterion 2, but criterion 1 remains absent
+(pointer evidence lacks the missing context itself in its frozen packet) and
+criterion 3 lacks native acceptance. Exact missing-context files 535347/535352
+and their SHA-256 manifest are now retained in repository evidence for a future
+corrected packet. No third AR-426 pass is authorized. AR-423's third pass is a
+separate pending authorization. All five hosts stay in AR-404 scope.
 
 ## Verification
 

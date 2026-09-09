@@ -43,3 +43,6 @@ The first record is retained in AR-426-isolated-pass1-record-20260909.txt.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | absent | `AR-426.1-20260909-ecd5e56b` | `8052eb321877ee82645b35ef48b1d2221cbb9391847bb41cac0e75af19dc3c41` | 2026-09-09 | AR-426-exact-native-hook-pointers-20260909.json preserves pointer and head/tail text, but provides only hashes and boolean claims for missing context, insufficient to verify its preservation. |
+| 2 | satisfied | `AR-426.2-20260909-70b7864b` | `7fc694af4a1d019cf7158c501fddf13fb334126a277eeab3aafc38c6381a7dc3` | 2026-09-09 | mcp_tools.py:207-294 enforces selected versions and size limits before recording loads; bridge.py:633-685 guards active turns; test_hermes_context_delivery.py:1-151 checks exact bodies and rejection of missing, cross-turn, unselected and oversized requests. |
+| 3 | absent | `AR-426.3-20260909-6352f32a` | `d8b372632d005787435e5534df44bf55a3c2385a06627cccf124a87fe999d1ae` | 2026-09-09 | builder evidence is absent; nothing to verify |

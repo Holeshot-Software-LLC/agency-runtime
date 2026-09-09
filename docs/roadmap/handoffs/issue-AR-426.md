@@ -61,11 +61,16 @@ No manual selection, trust changes, global spill increases or failed-receipt reo
 
 ## Next bounded work package
 
-Complete the isolated evidence record and read-only tracker/document checks,
-push the clean owned branch and keep PR 824 draft. The next implementation
-package must diagnose shared staffing with sufficient bounded evidence before
-choosing a repair; retained content-free veto receipts do not prove a critic bug.
-Do not schedule another unchanged native attempt or weaken staffing for a demo.
+Package is blocked; PR 824 stays draft and unmerged. Diagnose shared staffing
+with sufficient bounded evidence before choosing a repair. Content-free rejected
+receipts do not establish an erroneous critic veto. No unchanged native retries.
+
+AR-426 isolated passes both accepted criterion 2, but criterion 1 remains absent
+(pointer evidence lacks the missing context itself in its frozen packet) and
+criterion 3 lacks native acceptance. Exact missing-context files 535347/535352
+and their SHA-256 manifest are now retained in repository evidence for a future
+corrected packet. No third AR-426 pass is authorized. AR-423's third pass is a
+separate pending authorization. All five hosts stay in AR-404 scope.
 
 ## Verification
 

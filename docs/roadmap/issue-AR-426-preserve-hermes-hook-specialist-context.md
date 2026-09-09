@@ -54,6 +54,11 @@ The actual Hermes checkout is 7cd91114b462b7af76e558cc4e97f82201d2e884;
 its default hook spill threshold remains 10,000 characters. AR-418's separate
 output truncation limit and upstream adoption remain unproven.
 
+Two isolated passes accepted the guarded delivery criterion; the baseline
+preservation criterion remains absent in its frozen packet, and native acceptance
+is explicitly absent. Exact saved missing-context files are now retained for a
+future corrected packet. No third isolated pass is authorized or run.
+
 ## Approach
 
 Keep a bounded hook frame and deliver large selected card sets through ordered

@@ -153,3 +153,26 @@ with placeholders, criterion 2 satisfied, criterion 3 explicitly absent. The
 whole first record is retained. The corrected packet includes exact native
 head/tail output and historical pointers, with content hashes and missing-marker
 comparisons. One second default pass follows; no third pass is authorized.
+
+## Blocked package checkpoint
+
+Second isolated AR-426 pass: criterion 1 remains absent because the verifier
+requires preserved missing context itself in addition to native pointer/head/tail
+text; criterion 2 is satisfied; criterion 3 is explicitly absent. Both passes
+remain recorded. The two exact saved native context files are now copied into
+repository evidence with a SHA-256 manifest for a future corrected packet. The
+saved files include a terminal newline beyond each native-reported hook length.
+No third isolated pass is run or authorized; the current verdicts are unchanged.
+
+Package exits blocked, not done. PR 824 stays draft/unmerged. No issue closes.
+Native acceptance is blocked by shared staffing, and failed content-free receipts
+cannot establish that a critic veto was erroneous. Next bounded implementation
+must diagnose that boundary before choosing a repair. AR-423's third pass remains
+separately pending. Main stays clean at c6c3e7b5; this owned branch retains all
+substantive/ledger checkpoints. Required source checks pass; final docs/tracker
+parity follows. No exhaustive or Windows workflow.
+
+A final policy-availability invocation initially lacked PYTHONPATH and raised
+ModuleNotFoundError before checking; the same check passed with the source path
+and project interpreter. Packet preparation rejected an out-of-range line 36
+before any verifier call; corrected range 1-35 passed the dry-run checks.
