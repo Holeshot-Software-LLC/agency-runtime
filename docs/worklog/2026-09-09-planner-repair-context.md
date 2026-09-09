@@ -16,7 +16,7 @@ type: worklog
 commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
 short: 03a82c3b
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/821
 related_issues:
   - docs/roadmap/issue-AR-425-preserve-planner-repair-context.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
