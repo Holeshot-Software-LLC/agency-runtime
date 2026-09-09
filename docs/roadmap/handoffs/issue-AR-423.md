@@ -14,7 +14,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-423
-branch: codex/ar404-shared-staffing-20260909
+branch: codex/ar423-claude-tool-grant-20260909
 evidence_commit: cd86e40a994bd7d6fad8699047140a8e369718a0
 minimum_ledger_commit: 0cd4f2897b12f9a3de1f277303ba381dd6aa61d5
 hard_checkpoint_percent: 50
@@ -25,14 +25,19 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 
 ## Checkpoint
 
+PR818 grant applied; fresh probe101.434s fails both bounded planner attempts
+(provider_response_contract_invalid). No team/MCP calls or accepted finalization.
+Permission denials empty does not prove native card delivery. AR-423 stays open.
+
+
 Scoped outcome: exact selected full cards reach Claude despite its native hook
-limit, with truthful loaded evidence. Waiting_for_operator: exact tool grant pending.
+limit, with truthful loaded evidence. Owner approved both exact Allow rules; they are applied and read-back verified.
 PR814 and merge ledger PR815 are merged; base main f013e63a. AR-421/422/424
 closed only against their isolated gates. Current owned branch is shared-staffing
 PR816. Source cd86e40a / artifact0cd4f289 remains installed;615files match.
 Claude/Zcode projection07d88875a9e6 is unchanged. The older native-context branch
 is historical. The new worklog documents normal /permissions Allow rules;
-startup alone does not prompt. No rule was written without the pending grant.
+startup alone does not prompt. The explicit yes authorizes this grant.
 
 ## Completed evidence
 
@@ -44,7 +49,7 @@ card. All twelve new regression cases and 72 targeted MCP cases pass.
 
 ## Exact blocker
 
-Fresh native full-card delivery is blocked by Claude tool permission. Four selected
+The previous native full-card trial was blocked by Claude permission. Four selected
 cards total 11,604 UTF-16 units; the native hook is 4,741 with no pointer. All four
 agency_load_specialist calls were denied; loaded evidence stays empty. Native
 Stop accepts the exact truthful response. AR-423 full-card acceptance is absent. AR-424 all three isolated criteria are
@@ -55,7 +60,7 @@ shared-route alignment is recorded separately; all failed suite outcomes remain.
 
 ## Same-task continuity
 
-After PR816 merges, create a new owned worktree for further changes. At or below
+After PR818 merges, this grant branch is historical; create a new owned worktree. At or below
 50 percent, checkpoint the smallest safe
 source/ledger pair, then continue the same task. The umbrella capsule retains
 other host evidence and pending owner actions. Do not recreate historical work.
@@ -64,8 +69,8 @@ other host evidence and pending owner actions. Do not recreate historical work.
 
 The fixed sample retained review success, follow-up response_invalid and multi-step
 staffing failure; neither staffed case exercised the large-card MCP path. The separate probe (219.959s) is retained with four native permission denials.
-Wait for the owner to grant the exact agency_load_specialist and agency_finalize
-Allow rules through /permissions or authorize their normal user-settings write.
+Both rules are saved; the one after_tool_permission probe failed staffing.
+Investigate this exact planner receipt under AR-404 before another native phase.
 Do not bypass native permissions or retry under the same condition. Bind full native
 MCP tool results to exact session/trace and selected version/hash. Do not claim
 card delivery from tool instructions alone. Build isolated acceptance afterward.

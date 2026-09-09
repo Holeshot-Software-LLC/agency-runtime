@@ -33,6 +33,25 @@ safely be worked around by reading that file automatically.
 
 ## Current state
 
+### Approved Claude permission probe outcome
+
+Native sessionf4897a2b-8ae1-4462-a692-8cd9b53808a6, trace
+be4757dc-c14f-4e39-b366-bdfa2ef0ae40, returns in101.434s, CLIexit0, no timeout.
+Both bounded planner attempts are provider_response_contract_invalid (18.977s,
+16.344s); staffing ends preflight_failed/inference_invalid. All five diagnostic
+headers match Store, no selected cards, no MCP calls and no authoritative accepted
+finalization. Native permission_denials is empty because no tool was attempted;
+it is not a card-delivery canary. Both approved Allow rules remain saved.
+No unchanged-condition retry. AR-423 stays open for exact native full-card and
+isolated evidence; AR-404 retains staffing failures and the Hermes/Zcode gates.
+Evidence: AR-404-claude-suite-after-tool-permission-20260909.json.
+
+
+September9 owner-approved Claude grant: the two exact native MCP Allow rules
+are now saved and read-back verified; every other setting is preserved. A fresh
+one-attempt large-context probe is pending. See AR-423-approved-tool-grant-20260909.json.
+
+
 Claude2.1.266 session3997acd8-f882-47ac-b4d2-e7a591193b10, follow-up trace
 f725587c-7478-4fdb-8f8b-ba1c58e57b73: classifier6 preserves completed-task context,
 fresh inference selects four specialists and the response finalizes. Native
