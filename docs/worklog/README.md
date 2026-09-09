@@ -2346,6 +2346,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5848f315` | 2026-09-09 | docs: integrate current reliability records into AR-423 audit | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
 | `4f2a1aee` | 2026-09-09 | docs(acceptance): merge PR827 retained Claude audit evidence | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-planner-repair-context.md) |
 | `b265f715` | 2026-09-09 | docs(reliability): record recipe 19 installed validation | [AR-427](../roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md) | [Detail](2026-09-09-hermes-context-spill.md) |
+| `23ae46bf` | 2026-09-09 | docs(acceptance): preserve fresh Hermes complete-team delivery proof | [AR-427](../roadmap/issue-AR-427-preserve-complete-inferred-specialist-team.md) | [Detail](2026-09-09-hermes-context-spill.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
