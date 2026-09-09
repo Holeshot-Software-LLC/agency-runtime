@@ -16,7 +16,7 @@ type: worklog
 commit: a18e556c3b3de7b513f3e71a457f6e4430b1f076
 short: a18e556c
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/816
 related_issues:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-419-finalize-openclaw-cli-responses.md
