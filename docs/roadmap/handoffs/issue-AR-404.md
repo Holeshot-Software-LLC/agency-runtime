@@ -143,3 +143,9 @@ output became a persisted-output pointer (full inline cards unproved); multi-ste
 Hermes port30f421ecce:31tests pass, nativePR106490 ready for review; default unchanged.
 AR-423/#811 tracks Claude hook pointer substitution. Zcode schema corrected from
 runtime object to provider/model reference; first invalid launches retained.
+
+Zcode corrected-schema review81.564s/follow-up71.652s have exact native cards,
+headers and accepted hashes; classifier6 correlation proved. Multi-step86.877s
+fails staffing (critic_wrong_neighbor_selection). AR421/422 isolated builder
+records prepared. Next: H/O after-refresh sample on unchanged routes, then
+isolated scoped verdicts/PR810 delivery. Codex trust/model choice still pending.

@@ -172,3 +172,18 @@ Native PR106490 is now ready for upstream review; fork rights do not grant
 permission to merge NousResearch/main. Documentation checks caught an external
 repository URL and invalid status names in the new local record; corrected to
 a self-contained patch reference and canonical open status.
+
+## Zcode corrected-schema sample
+
+Review81.564s and follow-up71.652s have all five Store-matching headers, exact
+accepted output hashes and full selected cards in native model_io requests.
+Native CLI trace IDs differ from Agency trace IDs: the extraction binds the exact
+CLI session/native trace and requires the Agency trace in that request context.
+Classifier6 continuation points to the exact review and preserves fresh routing.
+Multi-step86.877s returns exit0 but fails staffing with critic_wrong_neighbor_selection;
+that failure is retained, not called a successful sample.
+
+AR-421/422 builder records are prepared for isolated verdicts, scoped respectively
+to completed-task context and native executable permissions. Initial dry-run
+caught an out-of-range test citation; corrected references pass. No verdict is
+authored by the builder.

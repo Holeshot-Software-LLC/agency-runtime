@@ -27,13 +27,16 @@ Claude npm-global updates repeatedly recreate group-writable executable parents.
 
 ## Current state
 
-Phase implementing. The offline npm fixture reproduces writable package parents;
+Phase focused_review. The offline npm fixture reproduces writable package parents;
 config mask022 alone still leaves the package root and executable775. No npm
 user configuration was changed. Supported `claude install 2.1.266` under umask077
 now provides the native launcher and versioned binary; parent directories700,
 normal Agency executable gate passes and normal refresh returnsok. Existing npm
 processes and user terminals remain intact. A second supported same-version install under process002 preserves the exact
-binary and normal trust. Native answering and isolated acceptance remain. Evidence:
+binary and normal trust. Fresh native review57.602s now has exact code-reviewer
+card delivery, five Store-matching headers and accepted response hash. Isolated
+acceptance remains. Claude follow-up hook-output limits are separately tracked
+as AR-423; multi-step staffing failure remains under AR-404. Evidence:
 [evidence/AR-422-claude-native-install-20260909.json](evidence/AR-422-claude-native-install-20260909.json).
 
 ## Approach
