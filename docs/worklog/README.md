@@ -3,7 +3,7 @@ title: Worklog
 status: active
 category: worklog
 created: 2026-07-10
-updated: 2026-09-08
+updated: 2026-09-09
 tags: []
 related: []
 supersedes: []
@@ -2279,6 +2279,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e36fc883` | 2026-09-08 | docs(staffing): merge PR804 AR420 recovery checkpoint | AR-404, AR-420 | [Detail](2026-09-08-reranker-membership-repair.md) |
 | `cbac00fd` | 2026-09-08 | docs(hosts): preserve recurring Claude executable rejection | AR-404 | [Detail](2026-09-08-reranker-membership-repair.md) |
 | `ad8b05de` | 2026-09-08 | docs(hosts): merge PR806 Claude recurrence evidence | AR-404 | [Detail](2026-09-08-reranker-membership-repair.md) |
+| `c13f3b72` | 2026-09-09 | docs(AR-404): freeze native reliability sample and preserve follow-up failure | AR-404 | [Detail](2026-09-09-native-reliability-suite.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
