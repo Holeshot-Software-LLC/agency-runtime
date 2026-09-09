@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar423-native-context-20260909
-evidence_commit: cd86e40a994bd7d6fad8699047140a8e369718a0
-minimum_ledger_commit: 0cd4f2897b12f9a3de1f277303ba381dd6aa61d5
+branch: codex/ar404-shared-staffing-20260909
+evidence_commit: 0cc40aba74be8ce98b518f5b0a8e5bc12aa26dc2
+minimum_ledger_commit: e93654c9cff0f906f5da25aebca8f43607eaba69
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -30,17 +30,16 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Main last checked clean/synchronized b801c08f after PR810 and merge ledger PR813.
-PR810 merged at 3a921c61; AR-421/422 closed with all isolated criteria satisfied.
-Delivery PR814 uses owned branch codex/ar423-native-context-20260909, source
-cd86e40a and artifact0cd4f289. All615 installed package files match wheel SHA256
-3cea5770b896f788b790675db8dda8ea1321638e899bb57633198ab7266c211e.
-Claude/Zcode normal installs publish07d88875a9e6; their fresh recipe is16.
-Codex/Hermes/OpenClaw installed pointers remain1825059191a2; this long-lived
-Codex conversation still executes6e7dc299c23e. Installation is not fresh-process proof.
-AR-404/418/419/423 open; AR-424 all three isolated verdicts satisfied; closure travels with PR814. No all-host
-completion. After PR814 merges, its named branch is historical: create a new owned
-worktree for the next changes. The worklog records exact merge commits.
+Main clean/synchronized f013e63a after PR814 and ledgerPR815. AR-421/422/424
+closed with isolated evidence; AR-404/418/419/423 open. New owned branch
+codex/ar404-shared-staffing-20260909 applies the approved shared staffing config.
+Only Hermes/OpenClaw overrides removed; other settings/answering models unchanged.
+Fresh Codex inspection: all8hooks enabled/trusted, no modified/missing entries.
+Claude per-tool grant is pending; /permissions instructions are now documented.
+Installed production cd86e40a/artifact0cd4f289 unchanged,615files match. Claude/Zcode
+projection07d88875a9e6; Codex/Hermes/OpenClaw1825059191a2. This parent has a stale
+long-lived integration and previously failed finalizer transport. Fresh processes
+must supply native evidence. Earlier branches are historical and merged.
 
 ## Completed evidence
 
@@ -97,15 +96,12 @@ Claude hook and exact selected-version MCP retrieval; pending cards are not
 reported loaded. Shared bridge preserves trailing card bytes. Native delivery
 and isolated acceptance remain pending. See the AR-423 capsule and worklog.
 
-Codex native trust requires the owner's fresh terminal startup review or /hooks;
-8modified/0trusted. This long-lived conversation itself still reports the old
-projection. Reinstall alone cannot refresh it. No trust hashes edited.
-
-Hermes/OpenClaw host overrides select task-agency-router/Mistral Small3.2 24B,
-not Codex's separate shared staffing pools. Read-only deployment comparison and
-minimal candidate removing only two overrides are prepared. Owner choice pending:
-changes models/cost; leave unapplied. Native answering models would be unaffected.
-Historical backend selection and controlled speed equality are not established.
+The owner reports Codex trusted; fresh hooks/list confirms8trusted/0modified.
+The next normal native phase must prove staffing, injection and terminal behavior.
+The owner now authorizes shared staffing. Hermes/OpenClaw override removal is
+applied; all five hosts resolve identical requested per-stage profiles. This is
+not proof of identical actual backend selection, speed or reliable responses.
+Claude's two native MCP Allow rules remain pending a normal owner grant.
 
 Hermes upstream port30f421ecce onbf53ff00a7 is ready nativePR106490. Repository
 stores the complete AR-418-hermes-upstream-terminal-20260909.patch. Five red
@@ -115,21 +111,18 @@ truncation cause/token cap unproven. OpenClaw exact input remains to be observed
 
 ## Same-task continuity
 
-Read2026-09-09-completed-task-context.md and frozen evidence. Continue the current AR-423 owned
-branch; PR810 and PR813 branches are historical/merged. At/below50percent,
-checkpoint smallest safe substantive/ledger pair and continue the same task.
-Never pause, create a new task or transfer for telemetry. Preserve Windows work.
+Continue the owned shared-staffing branch and same task. At/below50percent,
+checkpoint the smallest substantive/ledger pair and continue. No transfer or
+empty continuation for telemetry. Preserve unrelated and Windows work.
 
 ## Next bounded work package
 
-AR-423/424 fast checks and artifact verification pass; conformance passes 188/188.
-Claude fixed sample: review accepted; follow-up response_invalid; multi-step staffing
-failed. Separate four-card MCP probe: hook4741units versus cards11604, no pointer; all
-loads denied by native permissions. Truthful loaded:none, accepted Stop response.
-AR-423 waits for attended agency_load_specialist permission; no full-card proof. No unchanged-condition staffing retries.
-Keep AR-418/419/404 open; Hermes upstream default adoption, OpenClaw exact accepted
-input, Codex trust and the owner staffing-model decision remain unresolved.
-Zcode review/follow-up passed but multi-step staffing failed; keep it in scope.
+Run phase after_shared_staffing on Hermes/OpenClaw and fresh trusted Codex, one
+attempt per original fixed case, unchanged360s deadline. The bounded OpenClaw
+observer covers only the new exact suite keys and will be removed normally.
+Wait for Claude's exact per-tool grant before repeating its card surface probe.
+Zcode review/follow-up passed but multi-step failed; retain that scope and evidence.
+No manual specialists, altered critic decisions or unchanged-condition retries.
 
 ## Verification
 

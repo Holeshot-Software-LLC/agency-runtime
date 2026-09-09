@@ -1,0 +1,507 @@
+{
+  "observed": "2026-09-09",
+  "authorization": "Owner explicitly said use shared staffing on this turn",
+  "before_sha256": "2aba5817b728af303282d78b99267d0b23ae83e7e26af0f0a9a3cabe4ec1a4b6",
+  "after_sha256": "01c0281733efb8934918dbc45081cccdc7e28e525e73138251c3000086a47e40",
+  "changed_fields": [
+    "inference.harnesses.hermes",
+    "inference.harnesses.openclaw"
+  ],
+  "other_configuration_semantically_unchanged": true,
+  "other_configuration_bytes_unchanged": true,
+  "before_routes": [
+    {
+      "host": "codex",
+      "route": "workforce.planner",
+      "provider": "agency-planner",
+      "model": "task-agency-planner-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.recruiter",
+      "provider": "agency-recruiter",
+      "model": "task-agency-recruiter-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.recruiter.critic",
+      "provider": "agency-recruiter-critic",
+      "model": "task-agency-critic-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.hiring",
+      "provider": "agency-hiring",
+      "model": "task-agency-hiring-generator-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.hiring.critic",
+      "provider": "agency-hiring-critic",
+      "model": "task-agency-hiring-critic-v2",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.recall.embedding",
+      "provider": "local-workforce-embedding",
+      "model": "qwen3-embedding:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.recall.reranker",
+      "provider": "local-workforce-reranker",
+      "model": "qwen3-14b-abliterated:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.planner",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.recruiter",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.recruiter.critic",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.hiring",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.hiring.critic",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.recall.embedding",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.recall.reranker",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.planner",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.recruiter",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.recruiter.critic",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.hiring",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.hiring.critic",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.recall.embedding",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.recall.reranker",
+      "provider": "linux-task-agency-router",
+      "model": "task-agency-router",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.planner",
+      "provider": "agency-planner",
+      "model": "task-agency-planner-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.recruiter",
+      "provider": "agency-recruiter",
+      "model": "task-agency-recruiter-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.recruiter.critic",
+      "provider": "agency-recruiter-critic",
+      "model": "task-agency-critic-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.hiring",
+      "provider": "agency-hiring",
+      "model": "task-agency-hiring-generator-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.hiring.critic",
+      "provider": "agency-hiring-critic",
+      "model": "task-agency-hiring-critic-v2",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.recall.embedding",
+      "provider": "local-workforce-embedding",
+      "model": "qwen3-embedding:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.recall.reranker",
+      "provider": "local-workforce-reranker",
+      "model": "qwen3-14b-abliterated:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.planner",
+      "provider": "agency-planner",
+      "model": "task-agency-planner-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.recruiter",
+      "provider": "agency-recruiter",
+      "model": "task-agency-recruiter-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.recruiter.critic",
+      "provider": "agency-recruiter-critic",
+      "model": "task-agency-critic-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.hiring",
+      "provider": "agency-hiring",
+      "model": "task-agency-hiring-generator-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.hiring.critic",
+      "provider": "agency-hiring-critic",
+      "model": "task-agency-hiring-critic-v2",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.recall.embedding",
+      "provider": "local-workforce-embedding",
+      "model": "qwen3-embedding:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.recall.reranker",
+      "provider": "local-workforce-reranker",
+      "model": "qwen3-14b-abliterated:latest",
+      "timeout_seconds": 120.0
+    }
+  ],
+  "after_routes": [
+    {
+      "host": "codex",
+      "route": "workforce.planner",
+      "provider": "agency-planner",
+      "model": "task-agency-planner-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.recruiter",
+      "provider": "agency-recruiter",
+      "model": "task-agency-recruiter-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.recruiter.critic",
+      "provider": "agency-recruiter-critic",
+      "model": "task-agency-critic-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.hiring",
+      "provider": "agency-hiring",
+      "model": "task-agency-hiring-generator-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.hiring.critic",
+      "provider": "agency-hiring-critic",
+      "model": "task-agency-hiring-critic-v2",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.recall.embedding",
+      "provider": "local-workforce-embedding",
+      "model": "qwen3-embedding:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "codex",
+      "route": "workforce.recall.reranker",
+      "provider": "local-workforce-reranker",
+      "model": "qwen3-14b-abliterated:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.planner",
+      "provider": "agency-planner",
+      "model": "task-agency-planner-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.recruiter",
+      "provider": "agency-recruiter",
+      "model": "task-agency-recruiter-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.recruiter.critic",
+      "provider": "agency-recruiter-critic",
+      "model": "task-agency-critic-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.hiring",
+      "provider": "agency-hiring",
+      "model": "task-agency-hiring-generator-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.hiring.critic",
+      "provider": "agency-hiring-critic",
+      "model": "task-agency-hiring-critic-v2",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.recall.embedding",
+      "provider": "local-workforce-embedding",
+      "model": "qwen3-embedding:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "hermes",
+      "route": "workforce.recall.reranker",
+      "provider": "local-workforce-reranker",
+      "model": "qwen3-14b-abliterated:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.planner",
+      "provider": "agency-planner",
+      "model": "task-agency-planner-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.recruiter",
+      "provider": "agency-recruiter",
+      "model": "task-agency-recruiter-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.recruiter.critic",
+      "provider": "agency-recruiter-critic",
+      "model": "task-agency-critic-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.hiring",
+      "provider": "agency-hiring",
+      "model": "task-agency-hiring-generator-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.hiring.critic",
+      "provider": "agency-hiring-critic",
+      "model": "task-agency-hiring-critic-v2",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.recall.embedding",
+      "provider": "local-workforce-embedding",
+      "model": "qwen3-embedding:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "openclaw",
+      "route": "workforce.recall.reranker",
+      "provider": "local-workforce-reranker",
+      "model": "qwen3-14b-abliterated:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.planner",
+      "provider": "agency-planner",
+      "model": "task-agency-planner-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.recruiter",
+      "provider": "agency-recruiter",
+      "model": "task-agency-recruiter-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.recruiter.critic",
+      "provider": "agency-recruiter-critic",
+      "model": "task-agency-critic-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.hiring",
+      "provider": "agency-hiring",
+      "model": "task-agency-hiring-generator-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.hiring.critic",
+      "provider": "agency-hiring-critic",
+      "model": "task-agency-hiring-critic-v2",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.recall.embedding",
+      "provider": "local-workforce-embedding",
+      "model": "qwen3-embedding:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "claude",
+      "route": "workforce.recall.reranker",
+      "provider": "local-workforce-reranker",
+      "model": "qwen3-14b-abliterated:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.planner",
+      "provider": "agency-planner",
+      "model": "task-agency-planner-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.recruiter",
+      "provider": "agency-recruiter",
+      "model": "task-agency-recruiter-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.recruiter.critic",
+      "provider": "agency-recruiter-critic",
+      "model": "task-agency-critic-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.hiring",
+      "provider": "agency-hiring",
+      "model": "task-agency-hiring-generator-v2",
+      "timeout_seconds": 60.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.hiring.critic",
+      "provider": "agency-hiring-critic",
+      "model": "task-agency-hiring-critic-v2",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.recall.embedding",
+      "provider": "local-workforce-embedding",
+      "model": "qwen3-embedding:latest",
+      "timeout_seconds": 120.0
+    },
+    {
+      "host": "zcode",
+      "route": "workforce.recall.reranker",
+      "provider": "local-workforce-reranker",
+      "model": "qwen3-14b-abliterated:latest",
+      "timeout_seconds": 120.0
+    }
+  ],
+  "live_evidence": "pending fresh native turns"
+}

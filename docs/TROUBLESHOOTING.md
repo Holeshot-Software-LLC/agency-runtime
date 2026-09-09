@@ -273,6 +273,30 @@ cold-inventory states, not failures hidden behind success language. Restart the
 host when required, exercise a harmless preflight, and inspect again. Only a
 native runtime surface can promote `loaded` or `canary`; file existence cannot.
 
+## Claude does not ask to approve Agency tools at startup
+
+Claude requests tool permission when a tool is used, not simply when it launches.
+A noninteractive native run can therefore return a permission-denied tool result
+without showing an attended prompt. Run `/permissions` in normal Claude Code and
+add Allow rules for the exact Agency tools needed:
+
+```text
+mcp__plugin_agency-preflight_agency-runtime__agency_load_specialist
+mcp__plugin_agency-preflight_agency-runtime__agency_finalize
+```
+
+Save these as user rules when they should apply across working directories. The
+corresponding supported user-settings field is `permissions.allow` in
+`~/.claude/settings.json`; preserve other entries and settings. The owner must
+authorize this native grant. Do not replace it with a permission bypass or a
+whole-server wildcard. A matching Deny or Ask rule takes precedence over Allow.
+See [Claude's permission reference](https://code.claude.com/docs/en/permissions#manage-permissions).
+
+After approval, start a fresh ordinary run and verify actual card tool responses,
+truthful loaded headers and central finalization. Tool availability or an Allow
+entry alone does not prove model-facing delivery. AR-423 retains the denied
+four-card probe until a new native phase establishes the missing evidence.
+
 ## Codex says `activation_required`
 
 This means the plugin files are installed and registered, but Agency has not

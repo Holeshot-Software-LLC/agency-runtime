@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-09
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/decisions/0242-align-hermes-openclaw-with-owner-shared-staffing.md
+  - docs/worklog/2026-09-09-shared-staffing-native-verification.md
   - docs/roadmap/issue-AR-420-bind-reranker-candidate-membership.md
   - docs/worklog/2026-09-08-hermes-openclaw-native-refresh.md
   - docs/worklog/2026-09-08-fresh-codex-activation.md
@@ -65,6 +67,14 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+The owner now authorizes shared staffing. Only Hermes/OpenClaw host overrides
+were removed; fresh resolution matches the existing global profiles on all five
+hosts. Answering models and unrelated configuration are unchanged. A fresh Codex
+hooks/list inspection confirms all eight hooks trusted/enabled. New native phase
+is pending. Claude permission guidance now uses /permissions with exact per-tool
+Allow rules; the native grant remains pending. See the September9 shared-staffing
+worklog and new configuration/trust evidence. Earlier checkpoints below are historical.
 
 PR810 merged at 3a921c61; AR-421/422 are closed with all three isolated verdicts
 satisfied each. Merge ledger PR813 is merged at b801c08f. The separate owned
