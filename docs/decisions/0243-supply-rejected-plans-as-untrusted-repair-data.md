@@ -48,3 +48,6 @@ separate evidence and failed receipts remain failed.
 Repeating the original request alone loses the previous answer. Deterministically
 repairing unit topology would take planning authority away from inference.
 Retaining raw answers in terminal receipts would violate content-free diagnostics.
+
+Implementation03a82c3b is indexed in the worklog registry; artifact2b19cce6
+retains exactly that production source.

@@ -62,3 +62,15 @@ follow before acceptance. No exhaustive workflow dispatched.
 
 Keep AR-404/418/423 and AR-425 open until their exact isolated gates are evidenced.
 The parent hook process is stale; fresh native sessions supply acceptance proof.
+
+## Frozen installation checkpoint
+
+Source03a82c3b, ledger/artifact2b19cce6. Canonical portable build and installed
+smoke pass;615package files match wheelcba264c1bdbd57730f7ba748af2b75a5971cd0c71e425ca6d9826c463fad2fcd.
+All five hosts normally refreshed; gateway stop/start succeeds. Codex normal
+inspection marks8modified/0trusted: waiting for the owner's normal fresh /hooks
+review, requested once. Other native hosts proceed independently.
+
+First frozen conformance fails in baseline fixture setup because the shell002
+umask creates a nonprivate test directory;0mutations attempted. Preserve that
+failure. Rerun uses077 without changing source or directory trust policy.

@@ -1,0 +1,916 @@
+{
+  "artifact": {
+    "artifact_source_commit": "2b19cce6",
+    "wheel_sha256": "cba264c1bdbd57730f7ba748af2b75a5971cd0c71e425ca6d9826c463fad2fcd",
+    "installed_package_files": 615,
+    "mismatches": [],
+    "fresh_isolated_recipe_version": 16
+  },
+  "normal_maintenance": [
+    {
+      "command": [
+        "openclaw",
+        "gateway",
+        "stop",
+        "--force"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "/home/holeshot/.local/share/agency-runtime/venvs/ar348-20260905.qq1DjJ/bin/python3",
+        "-m",
+        "pip",
+        "install",
+        "--no-deps",
+        "--force-reinstall",
+        "/home/holeshot/.agency-runtime/release-artifacts/ar425-2b19cce6/agency_runtime-0.1.0-py3-none-any.whl"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "/home/holeshot/.local/share/agency-runtime/venvs/ar348-20260905.qq1DjJ/bin/python3",
+        "-I",
+        "-c",
+        "from agency_runtime.cli.entrypoint import main; raise SystemExit(main())",
+        "install",
+        "--agent",
+        "claude",
+        "--no-dashboard",
+        "--json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "/home/holeshot/.local/share/agency-runtime/venvs/ar348-20260905.qq1DjJ/bin/python3",
+        "-I",
+        "-c",
+        "from agency_runtime.cli.entrypoint import main; raise SystemExit(main())",
+        "install",
+        "--agent",
+        "zcode",
+        "--no-dashboard",
+        "--json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "/home/holeshot/.local/share/agency-runtime/venvs/ar348-20260905.qq1DjJ/bin/python3",
+        "-I",
+        "-c",
+        "from agency_runtime.cli.entrypoint import main; raise SystemExit(main())",
+        "install",
+        "--agent",
+        "hermes",
+        "--no-dashboard",
+        "--json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "/home/holeshot/.local/share/agency-runtime/venvs/ar348-20260905.qq1DjJ/bin/python3",
+        "-I",
+        "-c",
+        "from agency_runtime.cli.entrypoint import main; raise SystemExit(main())",
+        "install",
+        "--agent",
+        "openclaw",
+        "--no-dashboard",
+        "--json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "/home/holeshot/.local/share/agency-runtime/venvs/ar348-20260905.qq1DjJ/bin/python3",
+        "-I",
+        "-c",
+        "from agency_runtime.cli.entrypoint import main; raise SystemExit(main())",
+        "install",
+        "--agent",
+        "codex",
+        "--no-dashboard",
+        "--json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "openclaw",
+        "gateway",
+        "start"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "hosts": {
+    "claude": {
+      "ok": true,
+      "complete": true,
+      "hosts": [
+        {
+          "backup_path": "/home/holeshot/.agency-runtime/backups/claude/20260909T152035.494260Z",
+          "canary": null,
+          "canary_attestation_invalidated": false,
+          "enabled": true,
+          "exit_code": 0,
+          "filesystem": {
+            "backup_path": "/home/holeshot/.agency-runtime/backups/claude/20260909T152035.494260Z",
+            "bundle_digest": "b5f30023818f52a3df2fb85a300a6c980b4f009daf6438730bbdcfaeac30316b",
+            "force_replace": false,
+            "owned_files": [
+              ".agency-runtime-launcher.json",
+              ".claude-plugin/marketplace.json",
+              "plugins/agency-preflight/.claude-plugin/plugin.json",
+              "plugins/agency-preflight/.mcp.json",
+              "plugins/agency-preflight/hooks/hooks.json",
+              "plugins/agency-preflight/skills/agency/SKILL.md",
+              ".agency-runtime-install.json"
+            ],
+            "target": "/home/holeshot/.agency-runtime/marketplaces/claude",
+            "unchanged": false,
+            "would_backup": true
+          },
+          "host": "claude",
+          "loaded": null,
+          "maturity": "enabled-runtime-unverified",
+          "native_steps": [
+            {
+              "applied": true,
+              "chains": [
+                {
+                  "chain": "claude_plugins",
+                  "changed": 2,
+                  "examples": [
+                    "known_marketplaces.json",
+                    "data/agency-preflight-agency-runtime"
+                  ],
+                  "failed": 0,
+                  "host": "claude",
+                  "path_class": "plugin_cache",
+                  "refused": null,
+                  "root": "/home/holeshot/.claude/plugins",
+                  "skipped_unowned": 0,
+                  "truncated": false
+                }
+              ],
+              "changed": 2,
+              "consent": true,
+              "findings": [
+                {
+                  "chain": "claude_plugins",
+                  "count": 1,
+                  "host": "claude",
+                  "kind": "group_writable",
+                  "path_class": "plugin_cache",
+                  "root": "/home/holeshot/.claude/plugins",
+                  "scanned": 1281,
+                  "truncated": false,
+                  "unowned": 0
+                },
+                {
+                  "chain": "claude_plugins",
+                  "count": 1,
+                  "host": "claude",
+                  "kind": "final_dir_not_private",
+                  "path_class": "plugin_cache",
+                  "root": "/home/holeshot/.claude/plugins",
+                  "scanned": 1281,
+                  "truncated": false,
+                  "unowned": 0
+                }
+              ],
+              "name": "trust_chain_repair",
+              "ok": true,
+              "repaired": true
+            },
+            {
+              "command": [
+                "claude",
+                "plugin",
+                "list",
+                "--json"
+              ],
+              "name": "inventory_before",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "claude",
+                "plugin",
+                "marketplace",
+                "list",
+                "--json"
+              ],
+              "name": "marketplace_inventory",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "claude",
+                "plugin",
+                "uninstall",
+                "agency-preflight@agency-runtime",
+                "--scope",
+                "user"
+              ],
+              "name": "plugin_remove_for_refresh",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "claude",
+                "plugin",
+                "install",
+                "agency-preflight@agency-runtime",
+                "--scope",
+                "user"
+              ],
+              "name": "plugin_install",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "claude",
+                "plugin",
+                "enable",
+                "agency-preflight@agency-runtime",
+                "--scope",
+                "user"
+              ],
+              "error": "\u2718 Failed to enable plugin \"agency-preflight@agency-runtime\": Plugin \"agency-preflight@agency-runtime\" is already enabled at user scope",
+              "name": "enable",
+              "ok": false,
+              "returncode": 1,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "claude",
+                "plugin",
+                "list",
+                "--json"
+              ],
+              "name": "inventory_after",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            }
+          ],
+          "ok": true,
+          "partial": false,
+          "plugin_path": "/home/holeshot/.agency-runtime/marketplaces/claude/plugins/agency-preflight/.claude-plugin/plugin.json",
+          "registered": true,
+          "restart_required": true,
+          "status": "registered",
+          "target": "/home/holeshot/.agency-runtime/marketplaces/claude"
+        }
+      ],
+      "activation_required": null
+    },
+    "zcode": {
+      "ok": true,
+      "complete": true,
+      "hosts": [
+        {
+          "backup_path": "/home/holeshot/.agency-runtime/backups/zcode/20260909T152038.682683Z",
+          "canary": null,
+          "canary_attestation_invalidated": false,
+          "enabled": true,
+          "exit_code": 0,
+          "filesystem": {
+            "backup_path": "/home/holeshot/.agency-runtime/backups/zcode/20260909T152038.682683Z",
+            "bundle_digest": "21183baa2655c309f9a2b70cf48b01d214ec65f071449595e3634148865327dc",
+            "force_replace": false,
+            "owned_files": [
+              ".agency-runtime-launcher.json",
+              "zcode-hooks.json",
+              ".agency-runtime-install.json"
+            ],
+            "target": "/home/holeshot/.agency-runtime/host-plugins/zcode/agency-preflight",
+            "unchanged": false,
+            "would_backup": true
+          },
+          "host": "zcode",
+          "loaded": null,
+          "maturity": "enabled-runtime-unverified",
+          "native_steps": [
+            {
+              "changed": true,
+              "config_path": "/home/holeshot/.zcode/cli/config.json",
+              "name": "config_merge",
+              "ok": true,
+              "preserved_global_hooks_enabled": true,
+              "readopted": false
+            },
+            {
+              "config_path": "",
+              "drifted": false,
+              "enabled": true,
+              "global_hooks_enabled": true,
+              "name": "config_inventory",
+              "ok": true,
+              "owned_handler_count": 7,
+              "registered": true
+            }
+          ],
+          "ok": true,
+          "partial": false,
+          "plugin_path": "/home/holeshot/.agency-runtime/host-plugins/zcode/agency-preflight/zcode-hooks.json",
+          "registered": true,
+          "restart_required": true,
+          "status": "registered",
+          "target": "/home/holeshot/.agency-runtime/host-plugins/zcode/agency-preflight"
+        }
+      ],
+      "activation_required": null
+    },
+    "hermes": {
+      "ok": true,
+      "complete": true,
+      "hosts": [
+        {
+          "backup_path": "/home/holeshot/.agency-runtime/backups/hermes/20260909T152039.988716Z",
+          "canary": null,
+          "canary_attestation_invalidated": false,
+          "enabled": true,
+          "exit_code": 0,
+          "filesystem": {
+            "backup_path": "/home/holeshot/.agency-runtime/backups/hermes/20260909T152039.988716Z",
+            "bundle_digest": "e3eb55c4ad65c912d899e3da0ac7b0b344e7a0fefea0a848234a0627b394b99a",
+            "force_replace": false,
+            "owned_files": [
+              ".agency-runtime-launcher.json",
+              ".mcp.json",
+              "__init__.py",
+              "__pycache__/.agency-runtime-cache-denied",
+              "plugin.yaml",
+              ".agency-runtime-install.json"
+            ],
+            "target": "/home/holeshot/.hermes-nexus/plugins/agency-preflight",
+            "unchanged": false,
+            "would_backup": true
+          },
+          "host": "hermes",
+          "loaded": null,
+          "maturity": "enabled-runtime-unverified",
+          "native_steps": [
+            {
+              "command": [
+                "hermes",
+                "plugins",
+                "enable",
+                "agency-preflight"
+              ],
+              "name": "enable",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "hermes",
+                "plugins",
+                "list"
+              ],
+              "name": "inventory",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "hermes",
+                "config",
+                "get",
+                "plugins.hook_callback_timeout"
+              ],
+              "name": "hook_budget_read",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            }
+          ],
+          "ok": true,
+          "partial": false,
+          "plugin_path": "/home/holeshot/.hermes-nexus/plugins/agency-preflight/__init__.py",
+          "registered": true,
+          "restart_required": true,
+          "status": "registered",
+          "target": "/home/holeshot/.hermes-nexus/plugins/agency-preflight"
+        }
+      ],
+      "activation_required": null
+    },
+    "openclaw": {
+      "ok": true,
+      "complete": true,
+      "hosts": [
+        {
+          "backup_path": "/home/holeshot/.agency-runtime/backups/openclaw/20260909T152043.289400Z",
+          "canary": null,
+          "canary_attestation_invalidated": false,
+          "enabled": true,
+          "exit_code": 0,
+          "filesystem": {
+            "backup_path": "/home/holeshot/.agency-runtime/backups/openclaw/20260909T152043.289400Z",
+            "bundle_digest": "c648b381bcd8b5cec694de1b72281f6ed7f2ff181e02c022b09579d6f97e59ed",
+            "force_replace": false,
+            "owned_files": [
+              ".agency-runtime-launcher.json",
+              ".mcp.json",
+              "index.js",
+              "openclaw.plugin.json",
+              "package.json",
+              ".agency-runtime-install.json"
+            ],
+            "target": "/home/holeshot/.agency-runtime/host-plugins/openclaw/agency-preflight",
+            "unchanged": false,
+            "would_backup": true
+          },
+          "host": "openclaw",
+          "loaded": true,
+          "maturity": "runtime-verified",
+          "native_steps": [
+            {
+              "command": [
+                "openclaw",
+                "gateway",
+                "status",
+                "--deep",
+                "--require-rpc",
+                "--json"
+              ],
+              "error": "{\n  \"cli\": {\n    \"version\": \"2026.8.2\",\n    \"entrypoint\": \"/home/holeshot/.npm-global/lib/node_modules/openclaw/openclaw.mjs\"\n  },\n  \"logFile\": \"/tmp/openclaw/openclaw-2026-09-09.log\",\n  \"service\": {\n    \"label\": \"systemd user\",\n    \"loaded\": true,\n    \"loadState\": {\n      \"status\": \"loaded\"\n    },\n    \"loadedText\": \"enabled\",\n    \"notLoadedText\": \"disabled\",\n    \"targetRole\": \"diagnostic-only\",\n    \"command\": {\n      \"programArguments\": [\n        \"/usr/bin/node\",\n        \"/home/holeshot/.npm-gl",
+              "gateway_state": "stopped",
+              "name": "gateway_status",
+              "ok": false,
+              "returncode": 1,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "config",
+                "get",
+                "agents.defaults",
+                "--json"
+              ],
+              "name": "streaming_config_before_agents",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "config",
+                "get",
+                "channels",
+                "--json"
+              ],
+              "name": "streaming_config_before_channels",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "config",
+                "get",
+                "agents.defaults",
+                "--json"
+              ],
+              "name": "streaming_config_after_agents",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "config",
+                "get",
+                "channels",
+                "--json"
+              ],
+              "name": "streaming_config_after_channels",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "backup_path": "/home/holeshot/.agency-runtime/openclaw/config-identities/6a9dbbf91f939879e1c4883c5fd9ff504e035dc4e071015b3e5a11a77feb6b2b/final-only-streaming-backup.yaml",
+              "backup_retained": true,
+              "changed": 0,
+              "idempotent": true,
+              "managed_paths": 5,
+              "name": "final_only_delivery_policy",
+              "ok": true,
+              "recovery": "The values-only backup remains retained. Native disable/enable does not restore it automatically because those paths do not prove the gateway is stopped.",
+              "rollback_attempted": false,
+              "rollback_verified": null
+            },
+            {
+              "command": [
+                "openclaw",
+                "--version"
+              ],
+              "name": "host_capability_version",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "plugins",
+                "inspect",
+                "agency-preflight",
+                "--json"
+              ],
+              "name": "inspect_existing",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "plugins",
+                "install",
+                "/home/holeshot/.agency-runtime/host-plugins/openclaw/agency-preflight",
+                "--force",
+                "--accept-capabilities"
+              ],
+              "name": "install",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "plugins",
+                "enable",
+                "agency-preflight",
+                "--accept-capabilities"
+              ],
+              "name": "enable",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "config",
+                "set",
+                "plugins.entries.agency-preflight.hooks.allowConversationAccess",
+                "true"
+              ],
+              "name": "conversation_access",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "config",
+                "set",
+                "plugins.entries.agency-preflight.hooks.allowPromptInjection",
+                "true"
+              ],
+              "name": "prompt_injection",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "openclaw",
+                "plugins",
+                "inspect",
+                "agency-preflight",
+                "--runtime",
+                "--json"
+              ],
+              "delivery_behavior_proven": false,
+              "loaded": true,
+              "missing_required_hooks": [],
+              "name": "runtime_inspect",
+              "ok": true,
+              "registered_hooks": [
+                "agent_end",
+                "before_agent_finalize",
+                "before_agent_run",
+                "before_prompt_build",
+                "before_reset",
+                "before_tool_call",
+                "gateway_start",
+                "message_sending",
+                "message_sent",
+                "model_call_ended",
+                "reply_payload_sending",
+                "subagent_ended",
+                "subagent_spawned"
+              ],
+              "registration_contract_proven": true,
+              "returncode": 0,
+              "runtime_contract_scope": "registration_only",
+              "stderr_truncated": false,
+              "stdout_truncated": false,
+              "terminal_hook_priorities": {
+                "message_sending": null,
+                "reply_payload_sending": null
+              },
+              "terminal_hook_priority_mismatches": [],
+              "terminal_hook_priority_status": {
+                "message_sending": "unavailable",
+                "reply_payload_sending": "unavailable"
+              },
+              "tool_result_middleware_contract_proven": true,
+              "tool_result_middleware_runtimes": [
+                "openclaw"
+              ]
+            }
+          ],
+          "ok": true,
+          "partial": false,
+          "plugin_path": "/home/holeshot/.agency-runtime/host-plugins/openclaw/agency-preflight/index.js",
+          "registered": true,
+          "restart_required": true,
+          "status": "registered",
+          "streaming_policy": {
+            "backup_path": "/home/holeshot/.agency-runtime/openclaw/config-identities/6a9dbbf91f939879e1c4883c5fd9ff504e035dc4e071015b3e5a11a77feb6b2b/final-only-streaming-backup.yaml",
+            "backup_retained": true,
+            "changed": 0,
+            "idempotent": true,
+            "managed_paths": 5,
+            "ok": true,
+            "recovery": "The values-only backup remains retained. Native disable/enable does not restore it automatically because those paths do not prove the gateway is stopped.",
+            "rollback_attempted": false,
+            "rollback_verified": null
+          },
+          "target": "/home/holeshot/.agency-runtime/host-plugins/openclaw/agency-preflight"
+        }
+      ],
+      "activation_required": null
+    },
+    "codex": {
+      "ok": true,
+      "complete": true,
+      "hosts": [
+        {
+          "action": "install.codex.v1",
+          "activation_complete": false,
+          "activation_required": true,
+          "backup_path": "/home/holeshot/.agency-runtime/backups/codex/20260909T152100.743193Z",
+          "binding_sha256": "18ba75249ea2034483c83a3793502ded7c24c546dc6fb2df1b9a6a232c23062f",
+          "canary": null,
+          "canary_attestation_invalidated": false,
+          "candidate_plan_sha256": "8f92bd2080517a21a9b4e5307da8cd2a7d01feefa67c29339b633b591110ae5e",
+          "candidate_plugin_version": "0.1.0+codex.4f29f99147dc",
+          "complete": true,
+          "current_plugin_version": "0.1.0+codex.64c34689b8a1",
+          "enabled": true,
+          "exit_code": 0,
+          "filesystem": {
+            "backup_path": "/home/holeshot/.agency-runtime/backups/codex/20260909T152100.743193Z",
+            "bundle_digest": "8e09b302c9964b5be5492e04f9fb75bf0e3d8a84932824db768c9988dd9b3798",
+            "force_replace": true,
+            "owned_files": [
+              ".agency-runtime-launcher.json",
+              ".agents/plugins/marketplace.json",
+              "plugins/agency-preflight/.codex-plugin/plugin.json",
+              "plugins/agency-preflight/.mcp.json",
+              "plugins/agency-preflight/hooks/hooks.json",
+              "plugins/agency-preflight/skills/agency/SKILL.md",
+              ".agency-runtime-install.json"
+            ],
+            "target": "/home/holeshot/.agency-runtime/marketplaces/codex",
+            "unchanged": false,
+            "would_backup": true
+          },
+          "hook_trust_status": "unverified",
+          "host": "codex",
+          "loaded": null,
+          "maturity": "enabled-runtime-unverified",
+          "native_steps": [
+            {
+              "command": [
+                "/home/holeshot/.local/bin/codex",
+                "plugin",
+                "list",
+                "--json"
+              ],
+              "name": "inventory",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "/home/holeshot/.local/bin/codex",
+                "plugin",
+                "marketplace",
+                "list",
+                "--json"
+              ],
+              "name": "marketplace_inventory",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "/home/holeshot/.local/bin/codex",
+                "plugin",
+                "remove",
+                "agency-preflight@agency-runtime",
+                "--json"
+              ],
+              "name": "plugin_remove_for_refresh",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "/home/holeshot/.local/bin/codex",
+                "plugin",
+                "list",
+                "--json"
+              ],
+              "name": "inventory",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "/home/holeshot/.local/bin/codex",
+                "plugin",
+                "marketplace",
+                "list",
+                "--json"
+              ],
+              "name": "marketplace_inventory",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "/home/holeshot/.local/bin/codex",
+                "plugin",
+                "add",
+                "agency-preflight@agency-runtime",
+                "--json"
+              ],
+              "name": "plugin_add",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "/home/holeshot/.local/bin/codex",
+                "plugin",
+                "list",
+                "--json"
+              ],
+              "name": "inventory",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            },
+            {
+              "command": [
+                "/home/holeshot/.local/bin/codex",
+                "plugin",
+                "marketplace",
+                "list",
+                "--json"
+              ],
+              "name": "marketplace_inventory",
+              "ok": true,
+              "returncode": 0,
+              "stderr_truncated": false,
+              "stdout_truncated": false
+            }
+          ],
+          "no_op": false,
+          "ok": true,
+          "plugin_path": "/home/holeshot/.agency-runtime/marketplaces/codex/plugins/agency-preflight/.codex-plugin/plugin.json",
+          "published_bundle_sha256": "8e09b302c9964b5be5492e04f9fb75bf0e3d8a84932824db768c9988dd9b3798",
+          "registered": true,
+          "restart_required": true,
+          "status": "registered",
+          "target": "/home/holeshot/.agency-runtime/marketplaces/codex",
+          "transaction_complete": true
+        }
+      ],
+      "activation_required": true
+    }
+  },
+  "codex_hook_trust": {
+    "status": "modified",
+    "expected_count": 8,
+    "observed_count": 8,
+    "trusted_count": 0,
+    "managed_count": 0,
+    "modified_count": 8,
+    "untrusted_count": 0,
+    "disabled_count": 0,
+    "missing_count": 0,
+    "unexpected_count": 0,
+    "duplicate_count": 0,
+    "warning_count": 0,
+    "error_count": 0,
+    "events": {
+      "sessionStart": {
+        "enabled": true,
+        "trustStatus": "modified",
+        "currentHash": "sha256:32ea873aeedf3765295e1e27353914f98d7b49e61048bdfca719087fe111baea"
+      },
+      "userPromptSubmit": {
+        "enabled": true,
+        "trustStatus": "modified",
+        "currentHash": "sha256:efe4de97fedddadca80fa20913227afd9d9c690dca96c24ef18467b271e38175"
+      },
+      "preToolUse": {
+        "enabled": true,
+        "trustStatus": "modified",
+        "currentHash": "sha256:34a66e1669fa39a45edfbe7ef5d69b351281fcd15859aa0760c9908a4c655be5"
+      },
+      "postToolUse": {
+        "enabled": true,
+        "trustStatus": "modified",
+        "currentHash": "sha256:561d392552ec3099f66cc8ea59be03660d062490f980b37df5ef9a0dfdf25d1d"
+      },
+      "subagentStart": {
+        "enabled": true,
+        "trustStatus": "modified",
+        "currentHash": "sha256:ad01c41f1cde94358c00f41dd2e39f0b8a576f1466bb3eb12698bc74df974490"
+      },
+      "subagentStop": {
+        "enabled": true,
+        "trustStatus": "modified",
+        "currentHash": "sha256:b8a9f5a3645c468bfaabc123eb106b90f1078984f8718efdc65d8cad8e1100e4"
+      },
+      "postCompact": {
+        "enabled": true,
+        "trustStatus": "modified",
+        "currentHash": "sha256:3f173033751dfbb6b25f92caadf7f55110d93c539ec92786fb9cf66f97857d67"
+      },
+      "stop": {
+        "enabled": true,
+        "trustStatus": "modified",
+        "currentHash": "sha256:01d12350ea2c404e16b2f61373424342afee55ac8e94dab3f854a60d48544849"
+      }
+    }
+  },
+  "scope": "Installation proof only; native evidence pending. Codex requires operator review of changed hooks."
+}

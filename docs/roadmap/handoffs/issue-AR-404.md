@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-planner-contract-20260909
-evidence_commit: b62c31c7ea6fecae5bd407e9bd2e2730d055d4f4
-minimum_ledger_commit: 6a3dc1541da56d94426046b9a628a00c9187d130
+evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
+minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -142,7 +142,9 @@ planner repair and preserves five known parser reason codes. New diagnostic
 reproduces missing correctness review, but its repair succeeds in33.937s; original
 second Claude error remains unknown. Focused143pass; required verification running.
 Basee3090882 is clean main after PR818/819; current owned branch is unmerged.
-Finish verification, freeze/install candidate, then Claude large-context and fixed
+Candidate2b19cce6 installed,615files match; normal refresh all5hosts. Codex
+8modified/0trusted requires fresh /hooks owner review, requested once. Conformance
+first failed fixture privacy under002; fresh077 rerun in progress. Then Claude large-context and fixed
 five-host phase. Preserve every failure; no unchanged-condition retry or manual
 staffing. See issue-AR-425-preserve-planner-repair-context.md and its worklog.
 No observer remains and no new Claude permission is needed. Codex's long-lived
