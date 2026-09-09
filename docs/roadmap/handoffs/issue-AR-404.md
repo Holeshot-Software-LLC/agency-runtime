@@ -64,7 +64,9 @@ RPC healthy. After-refresh review209.513s has exact accepted hash/headers; follo
 fails staffing and multi361.217s times out. Missing per-plugin conversation-access
 permission, explicitly logged by native registration, explains absent observer events.
 Documented permission is now granted; runtime imports3hooks. Startup RPC initially
-was not ready, subsequent read-only probe passes. One new ordinary probe is prepared.
+was not ready, subsequent read-only probe passes. One new ordinary probe226.500s captures all3callbacks but fails staffing
+(recruiter timeout and malformed fallback). No selected cards/accepted finalization.
+Observer now normally removed, native RPC healthy; no unchanged-condition retry.
 No external delivery. Metadata alone is not callback/card proof.
 
 Claude native2.1.266 PATH repair uses its supported native installer, not npm.
@@ -115,9 +117,9 @@ Never pause, create a new task or transfer for telemetry. Preserve Windows work.
 
 ## Next bounded work package
 
-Grant the bounded observer its documented permission and run the declared one
-ordinary probe; retain callbacks/cards/headers/hash or exact failed gates. Remove the temporary observer normally and restore gateway
-health. Run isolated AR-421/422 verdicts, deliver PR810 with exact merge ledger.
+Run isolated AR-421/422 verdicts, deliver PR810 with exact merge ledger.
+The observer probe is retained as failed staffing, not AR-419 acceptance; the
+observer is removed and gateway healthy. Further H/O trials await the model choice.
 Continue remaining host repair: AR-423 delivery and Hermes normal upstream adoption;
 Codex trust and staffing-model choice remain pending owner actions. No all-host
 claim from ordinary successes while multi-step samples fail.

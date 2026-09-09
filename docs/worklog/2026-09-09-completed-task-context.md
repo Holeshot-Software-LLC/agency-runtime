@@ -230,3 +230,14 @@ stop/install/grant/start all exit0; runtime inspection imports the observer and
 registers all3typed hooks. Immediate startup RPC was not ready; the next read-only
 probe passes without another restart. Every non-plugin/non-meta configuration
 section is unchanged. The one new ordinary review remains to run.
+
+## Observer result and scoped verification
+
+The declared observer probe returned in226.500s, native trace
+a24020c3-c3d0-43e2-bf10-230965702e21. Native llm_input, before_agent_finalize and
+agent_end callbacks are captured under the exact session/run. Staffing failed: primary
+recruiter timeout, then malformed/non-JSON bounded fallback responses. No specialists
+were selected and no accepted finalization exists. This is callback proof only;
+AR-419 stays open. No unchanged-condition retry was performed. Normal observer
+uninstall removes its permission and files; gateway RPC is healthy and every
+non-plugin/non-meta configuration section remains unchanged.

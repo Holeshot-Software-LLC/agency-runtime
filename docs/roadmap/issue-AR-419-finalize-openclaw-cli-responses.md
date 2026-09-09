@@ -31,6 +31,15 @@ ok/completed status does not establish a centrally accepted response.
 
 ## Current state
 
+The declared observer probe returned in226.500s, native trace
+a24020c3-c3d0-43e2-bf10-230965702e21. Native llm_input, before_agent_finalize and
+agent_end callbacks are captured under the exact session/run. Staffing failed: primary
+recruiter timeout, then malformed/non-JSON bounded fallback responses. No specialists
+were selected and no accepted finalization exists. This is callback proof only;
+AR-419 stays open. No unchanged-condition retry was performed. Normal observer
+uninstall removes its permission and files; gateway RPC is healthy and every
+non-plugin/non-meta configuration section remains unchanged.
+
 September 9 refreshed sample: review 209.513s has accepted staffing, all five
 Store-matching headers and exact central accepted response hash. The observer
 captured no input because native registration explicitly rejected missing
