@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-424
-candidate_commit: e76c14770932f8cc3bc2079c2ecb6402d7cc2797
+candidate_commit: 7a26e48992085ac7b4a56f2c52aa25541dc0bb62
 evidence_cutoff: 2026-09-09
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/812
 ---
@@ -38,10 +38,13 @@ native retrieval gate; its pending proof does not disappear from that issue.
 
 | 3 | command-output | Fresh-source conformance has 188 killed, no survivors or invalid mutations and unchanged source | 2026-09-09 | docs/roadmap/evidence/AR-423-context-delivery-validation-20260909.json:130-143 |
 
+| 3 | command-output | Exact matching production/test Git trees and fresh named real shared-host whitespace check | 2026-09-09 | docs/roadmap/evidence/AR-424-shared-host-validation-20260909.json:1-55 |
+| 3 | file | Actual named shared-host whitespace regression in this candidate | 2026-09-09 | tests/test_claude_context_delivery.py:139-142 |
+
 ## Verification
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
-| 1 | satisfied | `AR-424.1-20260909-e5e1a845` | `03a25a195841204abccba86ed2e603f90b6d1bd4d1e98b83c1771cec77075266` | 2026-09-09 | AR-423 evidence JSON logs.original_final_card shows test_other_hosts_keep_inline_delivery failing the byte-exact all(body in context) assert against original recipe-15 source, and tests/test_claude_context_delivery.py:18-61,139-142 drives it through a real HookBridge and Store. |
-| 2 | satisfied | `AR-424.2-20260909-287ec303` | `27ef065365b72e20ae563377a6e0f88c76db587c4087ec9e8b096df903d2f3b7` | 2026-09-09 | tests/test_claude_context_delivery.py:23,85,116,141 assert exact equality for card bodies with leading and trailing whitespace; specialist_context.py:98-101,182 keeps bytes unstripped, mcp_tools.py:249-256 errors rather than trims, hooks.py:2587-2594 joins without stripping; no critic path touched. |
-| 3 | absent | `AR-424.3-20260909-f25218ff` | `7511e872eb91a298cc95660c0a956da1bf8c438c123ab0e48a48e0d6ab956fcf` | 2026-09-09 | AR-423-context-delivery-validation-20260909.json records runs at production_commit cd86e40a, not candidate e76c1477 (absent from snapshot); the cited worklog says "AR-424 isolated builder is next", and no AR-424 evidence file or focused shared-host whitespace regression test exists in the snapshot. |
+| 1 | satisfied | `AR-424.1-20260909-04121983` | `83974571bedeaeae9a4a225eef2d62341cef13ebf380393cd247be8eedb08044` | 2026-09-09 | AR-423-context-delivery-validation JSON logs.original_final_card shows test_other_hosts_keep_inline_delivery failing the byte-exact all(body in context) assert on pre-fix source; tests/test_claude_context_delivery.py:18-61,139-142 drives it via real Store/HookBridge with trailing-whitespace bodies. |
+| 2 | satisfied | `AR-424.2-20260909-6dbff237` | `ec568ecad6a341224a2b22ab2ba63e298a590bfe4fcc8a4b6abc93be441767c9` | 2026-09-09 | Byte-exact preservation shown: roster.py:2288-2296 hash-checks stored content, mcp_tools.py:249 returns it unstripped, hooks.py:2587-2594 and _combine_context join without trimming, and tests lines 23/85-86/140 assert cards with leading and trailing whitespace survive; loads stay evidence-gated. |
+| 3 | satisfied | `AR-424.3-20260909-5b3a847c` | `3c2efb31f6d6cdc083c17b9a479cea22e3bf33668763a8f195f5c1feb7cffb85` | 2026-09-09 | AR-424-shared-host-validation JSON logs the focused zcode regression passing with trees identical to production cd86e40a; AR-423 JSON and worklog show spine 1151/3, focused 166/6, UI 224, ruff and conformance 188/188; test and unstripped join present at candidate. |

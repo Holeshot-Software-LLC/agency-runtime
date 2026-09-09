@@ -74,7 +74,8 @@ review passes; follow-up is response_invalid; multi-step staffing fails. A separ
 four-card probe keeps the hook below the native limit but MCP permission denies
 all cards. AR-423 waits for normal attended tool permission; no full-card claim. OpenClaw's documented observer permission was corrected; one bounded probe
 captured all callbacks but failed staffing. The observer is removed and native
-RPC is healthy. Staffing-route changes and Codex hook trust still await the owner.
+RPC is healthy. AR-424 has all three isolated criteria satisfied and closes through PR814.
+Staffing-route changes and Codex hook trust still await the owner.
 The paragraphs below retain the preceding package's historical checkpoints.
 
 The refreshed fixed sample is complete; all-host reliability remains unproved.

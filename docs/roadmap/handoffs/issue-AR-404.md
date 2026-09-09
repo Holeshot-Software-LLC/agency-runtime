@@ -30,15 +30,17 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Main clean/synchronized b801c08f after PR810 and merge ledger PR813.
-PR810 merged at 3a921c61. Its branch is historical and merged. Current owned
-branch codex/ar423-native-context-20260909 implements separate AR-423/424.
-Production repaircf4ed77f,
-artifact source db1c642f. Wheel SHA256
-9592253ba3d90d362d1ed05daaf641243f2cf598b6d87d5a0a9df28e96c7face:
-all614package files match; fresh isolated interpreter classifier6. Native refresh
-publishes1825059191a2; Codex plugin64c34689b8a1. No all-host completion.
-AR-404/418/419/423/424 open; AR-421/422 are closed with all3isolated verdicts satisfied; AR-414/415/420 closed only against isolated scopes.
+Main last checked clean/synchronized b801c08f after PR810 and merge ledger PR813.
+PR810 merged at 3a921c61; AR-421/422 closed with all isolated criteria satisfied.
+Delivery PR814 uses owned branch codex/ar423-native-context-20260909, source
+cd86e40a and artifact0cd4f289. All615 installed package files match wheel SHA256
+3cea5770b896f788b790675db8dda8ea1321638e899bb57633198ab7266c211e.
+Claude/Zcode normal installs publish07d88875a9e6; their fresh recipe is16.
+Codex/Hermes/OpenClaw installed pointers remain1825059191a2; this long-lived
+Codex conversation still executes6e7dc299c23e. Installation is not fresh-process proof.
+AR-404/418/419/423 open; AR-424 all three isolated verdicts satisfied; closure travels with PR814. No all-host
+completion. After PR814 merges, its named branch is historical: create a new owned
+worktree for the next changes. The worklog records exact merge commits.
 
 ## Completed evidence
 
@@ -131,11 +133,16 @@ Zcode review/follow-up passed but multi-step staffing failed; keep it in scope.
 
 ## Verification
 
-Focused152pass plus selector/context43pass. Original classifier5 negative control
-7fail/12pass. Production spine1151pass/3skip; UI224; Ruff782files; docs1352,
-tracker414; routing pass. Frozen conformance188/188 under process077; initial002
-baseline failure retained, no mutation ran then. Source unchanged sincecf4ed77f.
-Worklog generated index2268commits current after PR810 merge ledger. No exhaustive corpus, coverage gate or Windows matrix dispatched.
+Current production cd86e40a: expanded focused166pass/6skip, spine1151pass/3skip,
+UI224, Ruff784files, routing, docs1357 and tracker415 pass. Original native-hook
+negative control emits15076UTF-16 units; original shared-host card-byte test fails.
+The repaired shared-host case passes separately. Fresh-source conformance188/188,
+no survivors or invalid mutations, source unchanged. Packaged smoke and canonical
+build/distribution verification pass; installed615files exactly match the wheel.
+AR-424 initial criteria1/2 satisfied; criterion3 absent on provenance, retained.
+Second packet includes exact production/test tree identities and the named check;
+all three second-pass verdicts are satisfied (04121983, 6dbff237, 5b3a847c).
+No exhaustive corpus, coverage gate, compatibility or Windows matrix dispatched.
 
 ## Constraints
 

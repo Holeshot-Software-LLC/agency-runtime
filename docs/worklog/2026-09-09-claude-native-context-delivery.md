@@ -139,3 +139,19 @@ The criterion and acceptance procedure remain unchanged; a second isolated pass
 will judge the strengthened packet. No broad tests are repeated because source
 and tests are unchanged. One initial builder schema check rejected bare file
 paths before any model call; corrected paths were used for the first pass.
+
+## Host projection boundary
+
+Read-only installed pointers after this package: Claude and Zcode publish
+07d88875a9e6; Codex, Hermes and OpenClaw remain1825059191a2. The long-lived parent
+Codex conversation still reports6e7dc299c23e. No reinstall is treated as a reload
+of that process. AR-404 retains Codex attended hook trust, H/O staffing-model
+choice and Hermes upstream adoption as separate unresolved gates.
+
+## Scoped isolated completion
+
+AR-424 second-pass criteria1/2/3 are all satisfied: 04121983, 6dbff237 and
+5b3a847c, on frozen candidate7a26e489. The first absent verdict remains retained.
+Only AR-424 is marked done and closed by PR814. AR-423 and AR-404 remain open;
+normal attended Claude MCP permission, Codex hook trust, staffing-model choice,
+Hermes upstream adoption and unpassed native sample gates remain explicit.

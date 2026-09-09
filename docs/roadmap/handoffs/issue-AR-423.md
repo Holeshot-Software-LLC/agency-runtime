@@ -26,10 +26,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/811
 ## Checkpoint
 
 Scoped outcome: exact selected full cards reach Claude despite its native hook
-limit, with truthful loaded evidence. Waiting_for_operator after the live-demo checkpoint; draft PR814.
+limit, with truthful loaded evidence. Waiting_for_operator after the live-demo checkpoint; delivery PR814.
 PR810 and merge ledger PR813 are merged; main b801c08f. AR-421/422 closed only
 against their isolated gates. Source cd86e40a / artifact 0cd4f289 is installed; all 615 package files match.
-Claude/Zcode normal refresh and packaged smoke pass; gateway RPC healthy.
+Claude/Zcode normal refresh publishes07d88875a9e6; packaged smoke passes and
+gateway RPC is healthy. After PR814 merges, this branch is historical; create a
+new owned worktree for further changes. Exact merge entries live in the worklog.
 
 ## Completed evidence
 
@@ -44,7 +46,8 @@ card. All twelve new regression cases and 72 targeted MCP cases pass.
 Fresh native full-card delivery is blocked by Claude tool permission. Four selected
 cards total 11,604 UTF-16 units; the native hook is 4,741 with no pointer. All four
 agency_load_specialist calls were denied; loaded evidence stays empty. Native
-Stop accepts the exact truthful response. AR-423 full-card acceptance is absent.
+Stop accepts the exact truthful response. AR-423 full-card acceptance is absent. AR-424 all three isolated criteria are
+satisfied; its byte-preservation scope is done, with closure in PR814.
 Fast checks pass; fresh-source conformance passes 188/188.
 No staffing models or provider configuration changed; failed suite outcomes remain.
 
