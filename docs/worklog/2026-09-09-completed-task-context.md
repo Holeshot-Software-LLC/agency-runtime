@@ -146,3 +146,12 @@ printable-failure exit variants). An initial runner used the release interpreter
 without pytest and started no tests; corrected native runner uses the dev venv.
 The historical patch is being ported to extracted turn phases; no default Hermes
 source or upstream branch has changed.
+
+## Claude fixed sample completion
+
+Review57.602s has complete native evidence. Follow-up190.045s has classifier6,
+continuation_of the exact completed review, fresh selection/reroute, correct code
+and accepted matching hash. Its15.7KB hook output was replaced by Claude's native
+persisted-output pointer; full inline specialist cards are not proved. Multi-step
+104.114s fails staffing. These outcomes remain in the fixed sample. The context
+repair does not establish whole-system staffing reliability.

@@ -134,3 +134,8 @@ is pending, no hash edits or further unchanged retries. Claude review57.602s has
 classifier6, exact card, all headers and accepted hash; remaining cases pending.
 Hermes upstream port in owned worktree onbf53ff00a7 has5red invariant variants;
 default Hermes unchanged. Model alignment remains unapplied pending owner choice.
+
+Claude suite ended: review57.602s complete evidence; follow-up190.045s classified
+continuation with exact previous trace/fresh staffing, but native15.7KB hook
+output became a persisted-output pointer (full inline cards unproved); multi-step
+104.114s failed staffing. Zcode fixed native sample is next.
