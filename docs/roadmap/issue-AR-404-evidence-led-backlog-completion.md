@@ -68,6 +68,13 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
+PR816 scoped result: shared staffing is applied, Codex8/8trusted and fresh
+review/follow-up pass; AR-419 now has four satisfied isolated native-CLI criteria.
+The nine-case sample passes4/9, with every failure retained. AR-404 remains open.
+Claude still awaits the two exact native tool rules; Hermes upstream adoption and
+Zcode multi-step reliability remain unresolved. No all-host completion claim.
+
+
 ### Fresh trusted Codex phase
 
 Ordinary review62.855s and same-session follow-up53.903s pass exact native cards,

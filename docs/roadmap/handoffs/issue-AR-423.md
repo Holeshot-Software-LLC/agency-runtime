@@ -55,7 +55,8 @@ shared-route alignment is recorded separately; all failed suite outcomes remain.
 
 ## Same-task continuity
 
-Continue this owned branch. At or below 50 percent, checkpoint the smallest safe
+After PR816 merges, create a new owned worktree for further changes. At or below
+50 percent, checkpoint the smallest safe
 source/ledger pair, then continue the same task. The umbrella capsule retains
 other host evidence and pending owner actions. Do not recreate historical work.
 

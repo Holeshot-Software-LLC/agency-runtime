@@ -30,8 +30,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Main clean/synchronized f013e63a after PR814 and ledgerPR815. AR-421/422/424
-closed with isolated evidence; AR-404/418/419/423 open. New owned branch
+Package base main f013e63a follows PR814 and ledgerPR815. AR-421/422/424
+closed with isolated evidence; AR-404/418/423 open; AR-419 now isolated-complete. New owned branch
 codex/ar404-shared-staffing-20260909 applies the approved shared staffing config.
 Only Hermes/OpenClaw overrides removed; other settings/answering models unchanged.
 Fresh Codex inspection: all8hooks enabled/trusted, no modified/missing entries.
@@ -47,8 +47,8 @@ Evidence: AR-404-hermes-suite-after-shared-staffing-20260909.json.
 
 OpenClaw shared phase: review57.109s and multi95.268s fail staffing; follow-up
 53.401s passes exact native card, five headers and one matching accepted terminal.
-AR-419 first isolated1/2/4 satisfied,3absent: missing cited boundary tests.
-Existing host-hooks94 and terminal/boundary48 now pass; second packet prepared.
+AR-419 second isolated pass satisfies all4criteria. First absent verdict retained;
+existing host-hooks94 and terminal/boundary48 pass. Scope: ordinary CLI boundary.
 
 Fresh Codex shared phase: review62.855s/follow-up53.903s pass all native gates;
 multi-step100.324s fails staffing. Classifier6; exact executing projection hash
@@ -64,7 +64,7 @@ Codex baseline review73.147s/multi114.055s have exact cards, headers and accepte
 hashes; follow-up84.122s fails staffing. Post-wheel sample still used classifier5
 and is invalid repair evidence. Post-refresh sample answered with no Agency
 receipt because8modified hooks were untrusted. The current fresh inspection confirms
-all8trusted; a new native phase is pending.
+all8trusted; the fresh review and follow-up now pass, multi-step fails staffing.
 
 Hermes baseline review187.194s has complete evidence; follow-up363.486s and
 multi368.628s time out. After-refresh review299.269s has complete evidence and
@@ -84,7 +84,8 @@ Documented permission is now granted; runtime imports3hooks. Startup RPC initial
 was not ready, subsequent read-only probe passes. One new ordinary probe226.500s captures all3callbacks but fails staffing
 (recruiter timeout and malformed fallback). No selected cards/accepted finalization.
 That observer was normally removed, native RPC healthy. The shared-staffing
-phase reinstalls it for only two new exact keys; native RPC is healthy.
+phase reinstalled it for two new exact keys, captured input, then removed it;
+native RPC is healthy.
 No external delivery. Metadata alone is not callback/card proof.
 
 Claude native2.1.266 PATH repair uses its supported native installer, not npm.
@@ -113,7 +114,8 @@ by normal tool permissions. Ordinary inline delivery passed; full MCP delivery
 and AR-423 isolated acceptance remain pending. See its capsule and worklog.
 
 The owner reports Codex trusted; fresh hooks/list confirms8trusted/0modified.
-The next normal native phase must prove staffing, injection and terminal behavior.
+Fresh review and follow-up prove staffing, injection and accepted finalization;
+the separate multi-step still fails critic selection.
 The owner now authorizes shared staffing. Hermes/OpenClaw override removal is
 applied; all five hosts resolve identical requested per-stage profiles. This is
 not proof of identical actual backend selection, speed or reliable responses.
@@ -123,17 +125,20 @@ Hermes upstream port30f421ecce onbf53ff00a7 is ready nativePR106490. Repository
 stores the complete AR-418-hermes-upstream-terminal-20260909.patch. Five red
 variants reproduced; final31focused tests and2091compatibility pointers pass.
 No upstream merge permission; default checkout unchanged. Original provider
-truncation cause/token cap unproven. OpenClaw exact input remains to be observed.
+truncation cause/token cap unproven. OpenClaw exact input and accepted terminal
+are proven on its follow-up; all4isolated criteria are satisfied.
 
 ## Same-task continuity
 
-Continue the owned shared-staffing branch and same task. At/below50percent,
+PR816 owns this package. After merge, this branch is historical; create a new
+owned worktree for new changes. Continue the same task. At/below50percent,
 checkpoint the smallest substantive/ledger pair and continue. No transfer or
 empty continuation for telemetry. Preserve unrelated and Windows work.
 
 ## Next bounded work package
 
-Complete AR-419 isolated acceptance for its accepted native CLI follow-up.
+Investigate the exact retained recruiter/critic and missing-header failures under
+AR-404 before another bounded phase; no unchanged-condition retry.
 The shared-staffing phase is complete with every failed case retained.
 No observer remains; normal gateway RPC is healthy.
 Wait for Claude's exact per-tool grant before repeating its card surface probe.

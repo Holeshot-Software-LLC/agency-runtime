@@ -1,6 +1,6 @@
 ---
 title: "AR-419: Finalize ordinary OpenClaw CLI responses with exact evidence"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-08
 updated: 2026-09-09
@@ -30,6 +30,13 @@ accepted staffing, yet leave Agency active with zero finalization events. Native
 ok/completed status does not establish a centrally accepted response.
 
 ## Current state
+
+The supplemented isolated packet satisfies all four criteria. Exact native input,
+truthful fields and matching central CLI finalization are demonstrated; source
+rejection boundaries pass their named checks. The first absent verdict remains
+in AR-419-isolated-first-pass-20260909.json. AR-419 is complete only for this
+CLI boundary; failed staffing and other host gates remain under AR-404.
+
 
 First isolated pass satisfies criteria1/2/4; criterion3 is absent for a missing
 named boundary-test citation. The retained record is AR-419-isolated-first-pass-20260909.json.
@@ -119,11 +126,11 @@ AR-404 preserves current installed-copy and gateway-maintenance evidence.
 
 ## Acceptance
 
-- [ ] The ordinary headed CLI response reproduces the missing terminal event,
+- [x] The ordinary headed CLI response reproduces the missing terminal event,
       and its actual native callback/central-finalization boundary is identified.
-- [ ] A fresh ordinary installed native turn has exact card injection evidence,
+- [x] A fresh ordinary installed native turn has exact card injection evidence,
       truthful headers and a centrally accepted matching response hash.
-- [ ] Malformed and cross-run evidence, first-invalid terminal behavior, native
+- [x] Malformed and cross-run evidence, first-invalid terminal behavior, native
       errors and outbound seals retain their existing rejection boundaries.
-- [ ] Focused and production checks pass, with exact repository, tracker and
+- [x] Focused and production checks pass, with exact repository, tracker and
       worklog records and no manual acceptance or weakened staffing contract.

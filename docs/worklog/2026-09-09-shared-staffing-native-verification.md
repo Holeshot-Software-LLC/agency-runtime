@@ -139,3 +139,13 @@ the focused packet omitted named malformed/cross-run/first-invalid regressions.
 Retained the first record, ran existing host-hooks94 and terminal/boundary48 tests,
 all passed. Added their exact evidence and source references for a second pass;
 no production/test assertion changes or weakened acceptance.
+
+## Scoped package result
+
+The second frozen AR-419 packet satisfies all4criteria; first-pass absence retained.
+Only the ordinary OpenClaw CLI finalization scope closes. Shared staffing is
+applied and fresh trusted Codex passes2/3, Hermes1/3 and OpenClaw1/3. All9finish
+within101seconds, but5fail; this is not a reliability guarantee. Claude remains
+waiting_for_operator for two exact native rules; Hermes upstream adoption and
+Zcode multi-step gates remain open under AR-404. Gateway healthy, observer removed.
+No production Python, provider definitions, model overrides or validation bypass.
