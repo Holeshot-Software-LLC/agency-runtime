@@ -2360,6 +2360,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `10df4e6b` | 2026-09-09 | docs(reliability): preserve failed recipe20 Hermes staffing receipt | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 | `7ff8e5bc` | 2026-09-09 | docs(reliability): prepare isolated AR-428 planning evidence | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 | `817e6722` | 2026-09-09 | docs(reliability): freeze AR-428 isolated acceptance candidate | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
+| `0969646d` | 2026-09-09 | docs(reliability): retain AR-428 partial isolated verification | [AR-428](../roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md) | [Detail](2026-09-09-hermes-planner-evidence.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
