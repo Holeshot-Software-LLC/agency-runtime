@@ -622,6 +622,19 @@ def _finalize_tool_result(draft_text, missing):
     )
 
 
+def _agency_load_specialist(args=None, **kwargs):
+    arguments = args if isinstance(args, Mapping) else {}
+    session_id, trace_id = _correlation(kwargs)
+    try:
+        result = _invoke(
+            "load_specialist",
+            {"session_id": session_id, "trace_id": trace_id, "slug": arguments.get("slug")},
+        )
+    except Exception:
+        result = {"error": "Agency specialist delivery unavailable; no full card returned"}
+    return json.dumps(result, ensure_ascii=True, separators=(",", ":"))
+
+
 def _agency_finalize(args=None, **kwargs):
     arguments = args if isinstance(args, Mapping) else {}
     draft_text = _bounded_text(arguments.get("draft_text"))
@@ -711,6 +724,23 @@ def _agency_command(*args, **kwargs):
 
 
 def register(ctx):
+    ctx.register_tool(
+        name="agency_load_specialist",
+        toolset="agency-runtime",
+        schema={
+            "name": "agency_load_specialist",
+            "description": "Retrieve one exact specialist card selected for this active turn.",
+            "parameters": {
+                "type": "object",
+                "properties": {"slug": {"type": "string"}},
+                "required": ["slug"],
+                "additionalProperties": False,
+            },
+        },
+        handler=_agency_load_specialist,
+        description="Load one bounded selected specialist card with native turn correlation.",
+        check_fn=lambda: True,
+    )
     ctx.register_tool(
         name="agency_finalize",
         toolset="agency-runtime",

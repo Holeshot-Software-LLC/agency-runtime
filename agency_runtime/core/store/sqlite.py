@@ -2191,6 +2191,12 @@ class Store(
                     if recipe is not None and recipe.get("specialist_context_via_mcp") is True
                     else {}
                 ),
+                **(
+                    {"specialist_context_via_hermes_tool": True}
+                    if recipe is not None
+                    and recipe.get("specialist_context_via_hermes_tool") is True
+                    else {}
+                ),
                 "specialist_activations": specialist_activations,
                 "delegations": delegations,
             }

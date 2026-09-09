@@ -393,7 +393,7 @@ def test_generated_hermes_plugin_imports_and_registers_native_hooks(
         "on_session_end",
     } <= set(ctx.hooks)
     assert set(ctx.commands) == {"agency"}
-    assert set(ctx.tools) == {"agency_finalize"}
+    assert set(ctx.tools) == {"agency_finalize", "agency_load_specialist"}
     assert ctx.tools["agency_finalize"]["toolset"] == "agency-runtime"
     initial_control = Store(tmp_path / "hermes.db").get_host_control("hermes")
     assert "remains enabled" in ctx.commands["agency"]("off")
@@ -733,7 +733,7 @@ print(json.dumps({
         "transform_turn_failure",
     ]
     assert loaded["commands"] == ["agency"]
-    assert loaded["tools"] == ["agency_finalize"]
+    assert loaded["tools"] == ["agency_finalize", "agency_load_specialist"]
 
 
 def test_generated_hermes_bridge_uses_bounded_shell_free_absolute_argv(

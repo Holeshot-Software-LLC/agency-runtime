@@ -1,0 +1,75 @@
+---
+title: "Hermes native hook spill repair"
+status: active
+category: worklog
+created: 2026-09-09
+updated: 2026-09-09
+tags: [hermes, context, reliability]
+related:
+  - docs/roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md
+  - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
+  - docs/decisions/0244-deliver-large-hermes-card-sets-through-native-tools.md
+supersedes: []
+superseded_by: null
+type: worklog
+commit: null
+short: null
+pr: null
+date: 2026-09-09
+related_issues:
+  - docs/roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md
+---
+
+# Hermes native hook spill repair
+
+## Approach
+
+Owned worktree starts at clean synchronized c6c3e7b5. AR-426/#823 separates native
+input-context spilling from AR-418 output truncation. Recipe17 defers large Hermes
+card loads to a local native tool, preserves exact selected versions and caps the
+whole returned JSON below the native tool-spill floor before recording a load.
+The final hook envelope stays below10,000characters. Small inline cards and the
+shared staffing/critic routes remain unchanged. No native spill or output budgets
+are raised. No old terminal receipt is reopened.
+
+## Evidence and challenges
+
+The exact native messages535347/535352 contain12,991/16,585character spill pointers,
+not the selected full cards or response contract. Retained JSON binds native
+message/session identity, saved-context digest, Store failure and terminal records.
+The old-source regression emits15,578characters and wrongly records four loads
+before retrieval; its bounded-hook assertion fails. The candidate returns full
+exact cards through the generated tool with native correlation.
+
+A new cross-session regression found an exception before the shared active-turn
+check; the bridge now rejects correlation before taking the snapshot. Registration
+tests needed their exact expected tool set updated. All failures remain in the
+validation artifact. A mistyped nonexistent test filename ran no tests and is not
+verification. Source Python could not inspect an installed worker projection;
+the installed interpreter's read-only inspection succeeds8/8trusted.
+
+## Five-host receipt boundary
+
+Fresh parent Codex MCP process2200222 executes projection6db15efbecbe and responds;
+classifier6 is recorded. All615installed package files match the prior wheel.
+The handoff trace01a086f4 has classifier5, subject/reranker contract rejections,
+critic_wrong_neighbor_selection and no finalization event. No raw failed routing
+selection is persisted; the critic cannot be judged erroneous from these receipts.
+Claude review and OpenClaw follow-up retain wrong-neighbor vetoes; Hermes review
+retains missing independent assurance. Zcode first responses place Bash permission
+explanations before their headers. Later corrected output cannot repair the valid
+first terminal rejection. Hermes default checkout7cd91114 is unchanged; upstream
+PR106490 remains open at30f421ecce. AR-418 original output cap remains unknown.
+
+## Verification
+
+Candidate context/terminal tests75passed; wider focused121passed/6skipped. Wider focused, required fast validation,
+canonical build and fresh installed native demonstration follow this checkpoint.
+No exhaustive or Windows workflow. AR-423 corrected packet still awaits explicit
+owner authorization for a third isolated pass. No all-host reliability claim.
+
+## Follow-ups
+
+Finish the bounded AR-426 validation/install/demo/isolated acceptance package,
+merge through a PR and record exact implementation and merge worklogs. Preserve
+AR-404/418/423 and remaining Zcode/staffing failures until their own gates pass.

@@ -60,6 +60,7 @@ Status meanings:
 | ID | Decision | Status |
 |---|---|---|
 | [ADR-0239](0239-render-failed-turn-diagnostics-without-acceptance.md) | Render failed-turn diagnostics without acceptance | Accepted |
+| [ADR-0244](0244-deliver-large-hermes-card-sets-through-native-tools.md) | Deliver large Hermes card sets through native tools | accepted |
 | [ADR-0242](0242-align-hermes-openclaw-with-owner-shared-staffing.md) | Align Hermes and OpenClaw with owner shared staffing | accepted |
 | [ADR-0241](0241-deliver-large-claude-card-sets-through-versioned-mcp.md) | Deliver large Claude card sets through versioned MCP retrieval | accepted |
 | [ADR-0240](0240-project-qualified-critic-veto-causes-with-an-omission-marker.md) | Project qualified critic veto causes with an omission marker | accepted |

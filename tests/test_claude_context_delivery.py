@@ -49,6 +49,20 @@ def _turn(tmp_path, monkeypatch, *, count=4, host="claude"):
         return value
 
     monkeypatch.setattr(pipeline, "route", route)
+    if host == "hermes":
+        from agency_runtime.adapters.hermes.bridge import handle
+        from agency_runtime.adapters.hermes.plugin import HermesAdapter
+
+        result = handle(
+            {
+                "action": "pre_llm_call",
+                "session_id": "context-session",
+                "trace_id": "context-turn",
+                "user_message": "Review the supplied Python average function for correctness.",
+            },
+            adapter=HermesAdapter(store),
+        )
+        return store, "context-turn", bodies, result["context"]
     bridge = HookBridge(host, store=store)
     result = bridge.handle(
         {

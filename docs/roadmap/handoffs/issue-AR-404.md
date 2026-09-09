@@ -19,7 +19,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar404-planner-contract-20260909
+branch: codex/ar404-terminal-reliability-20260909
 evidence_commit: 03a82c3b2314e847a70ae670b44c554ce67e94c7
 minimum_ledger_commit: 2b19cce623a846b5b96f6a3803f9c4b32a1a8abc
 hard_checkpoint_percent: 50
@@ -30,14 +30,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-Owned PR821 package starts from synchronized clean maine3090882. Source03a82c3b
-repairs missing rejected-plan context and preserves five known semantic codes;
-artifact2b19cce6 is normally installed on all five hosts,615files match.
-Wheelcba264c1bdbd57730f7ba748af2b75a5971cd0c71e425ca6d9826c463fad2fcd.
-PR821 and its exact worklog/merge ledger own this package. After merge this
-branch is historical; create a new owned worktree for new changes.
-AR-425 is isolated-complete. AR-419 was already closed through PR816.
-AR-404/418/423 remain open. No all-host completion claim.
+Active owned branch codex/ar404-terminal-reliability-20260909 starts at clean
+synchronized c6c3e7b5. AR-426/#823 owns the new Hermes native hook-spill repair,
+separate from AR-418 output truncation. Recipe17 candidate preserves full cards
+through bounded selected-version native tool retrieval;75context tests pass.
+Required fast checks, canonical install and native demo follow the local checkpoint.
+Exact baseline: AR-426-exact-native-spill-and-terminal-audit-20260909.json.
+Fresh Codex8/8trusted; process2200222 runs published6db15efbecbe, MCP responds,
+classifier6,615installed files match prior wheel. Handoff trace01a086f4 is failed
+staffing/classifier5 and has no finalization event; transport failure is separate.
 
 ## Completed evidence
 
@@ -94,13 +95,13 @@ records belong to this package, not a later optional cleanup.
 
 ## Next bounded work package
 
-Use the corrected AR-423 packet when an additional isolated pass is explicitly
-authorized. Investigate the exact Hermes and Zcode invalid first-finalization
-receipts plus retained recruiter/critic failures before another fixed phase.
-AR-418 awaits upstream merge/adoption. No unchanged-condition native retries.
-OpenClaw observer was normally removed, permission/files gone, finalRPChealthy.
-Claude two exact Allow rules remain; semantic settings unchanged. All five hosts
-share planner/recruiter/critic routes. No pending tool or Codex trust approval.
+Complete AR-426 focused/fast validation, canonical install, affected Hermes native
+card/header/terminal demo, then isolated acceptance and owned PR merge/worklogs.
+No native spill/output budget changes. Zcode first outputs put permission prose
+before headers; old terminal rejection is valid. No raw failed staffing selection
+is retained, so critic correctness is unknown and its authority stays unchanged.
+AR-423 third isolated pass question is pending; elapsed time is not authorization.
+Hermes upstream PR106490 remains open at30f421ecce, default checkout7cd91114.
 
 ## Verification
 

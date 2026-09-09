@@ -1,0 +1,791 @@
+{
+  "observed_at": "2026-09-09",
+  "source_commit": "c6c3e7b575fb0cda87b405c40500a7ebff94f063",
+  "hermes_native_checkout": "7cd91114b462b7af76e558cc4e97f82201d2e884",
+  "hermes_hook_spill": [
+    {
+      "native_message_id": 535347,
+      "session_id": "20260909_113727_2e00b0",
+      "native_api_content_sha256": "581bc49c68b9338afc78b80b0a895bd68ec11b15aa7d4cfd674ee412866835b6",
+      "spill_notice": "[plugin hook output truncated \u2014 12,991 chars; full content saved to <native-session-spill-file>]",
+      "native_reported_context_chars": 12991,
+      "saved_context_chars": 12991,
+      "saved_context_sha256": "7369979e7c70077a628076fd91f613ead5b2fdc84501374f8f77a810505ae56a",
+      "full_card_marker_present_in_api_content": false,
+      "response_contract_present_in_api_content": false,
+      "delivery_rules_present_in_api_content": false,
+      "delivery_rules_present_in_saved_context": true
+    },
+    {
+      "native_message_id": 535352,
+      "session_id": "20260909_114028_3d2269",
+      "native_api_content_sha256": "c5cfcd80d5d5f42204cadf48d49e9dc3db77181c72dc3022b751b783336dca50",
+      "spill_notice": "[plugin hook output truncated \u2014 16,585 chars; full content saved to <native-session-spill-file>]",
+      "native_reported_context_chars": 16585,
+      "saved_context_chars": 16585,
+      "saved_context_sha256": "9899ad9295902d89088497b1c590848ef9c3fd37ea2f03305becab77a56117b1",
+      "full_card_marker_present_in_api_content": false,
+      "response_contract_present_in_api_content": false,
+      "delivery_rules_present_in_api_content": false,
+      "delivery_rules_present_in_saved_context": true
+    }
+  ],
+  "zcode_first_and_later_outputs": [
+    {
+      "native_row": 1,
+      "session_id": "sess_e8fe66a2-840f-4cff-bd61-0c7da813127c",
+      "native_trace_id": "e42d4495-28d4-4ee2-8228-3385f1ea46ca",
+      "started_at": "2026-09-09T15:48:06.123Z",
+      "completed_at": "2026-09-09T15:48:19.319Z",
+      "response_sha256": "a34e7767a1c83f8c0baca4776ff078368dba52554217f86a75852f7d12298fa7",
+      "starts_with_required_header": false,
+      "prefix_before_header": "Bash was not permitted in this session, so I could not produce an execution receipt; the findings below rest on Python language semantics (floor division, builtins `sum`/`len`, exception hierarchy), which are deterministic for this code.\n\n"
+    },
+    {
+      "native_row": 2,
+      "session_id": "sess_e8fe66a2-840f-4cff-bd61-0c7da813127c",
+      "native_trace_id": "e42d4495-28d4-4ee2-8228-3385f1ea46ca",
+      "started_at": "2026-09-09T15:48:19.777Z",
+      "completed_at": "2026-09-09T15:48:29.532Z",
+      "response_sha256": "6dd13c06e60f3b822a890977bfd7ec7af4e557568bcc31ed75a4275ec7f5eba1",
+      "starts_with_required_header": true,
+      "prefix_before_header": ""
+    },
+    {
+      "native_row": 4,
+      "session_id": "sess_e8fe66a2-840f-4cff-bd61-0c7da813127c",
+      "native_trace_id": "6d5eb36b-0327-49af-be22-cf38f061fffb",
+      "started_at": "2026-09-09T15:49:19.686Z",
+      "completed_at": "2026-09-09T15:49:27.538Z",
+      "response_sha256": "a67c703ab0eb87901c03ebd3e55badbc7ed174f03d0aba45d2c6c245f05664e9",
+      "starts_with_required_header": false,
+      "prefix_before_header": "Bash is still not permitted in this session, so I could not execute the verification; the expected results noted below follow from Python semantics, not a run.\n\n"
+    },
+    {
+      "native_row": 5,
+      "session_id": "sess_e8fe66a2-840f-4cff-bd61-0c7da813127c",
+      "native_trace_id": "6d5eb36b-0327-49af-be22-cf38f061fffb",
+      "started_at": "2026-09-09T15:49:27.946Z",
+      "completed_at": "2026-09-09T15:49:38.330Z",
+      "response_sha256": "d4d265a01c3758112b4beea51fcc92fea9000d9fbbf6d6c5f268cfb3d26559b8",
+      "starts_with_required_header": true,
+      "prefix_before_header": ""
+    }
+  ],
+  "staffing_failures": [
+    {
+      "run": {
+        "session_id": "01a082bc-b107-72d2-9f7d-157afd32ea99",
+        "trace_id": "01a086f4-3815-7f53-aad1-8bcc93b0bd27",
+        "status": "preflight_failed",
+        "metadata": {
+          "classifier_version": 5,
+          "execution_decision_required": true,
+          "request_fingerprint": "6299a94664a8e31c49caa0ac9c878dd6c9f6e7a29b42c85a8e431290d6251ef7",
+          "request_kind": "nontrivial",
+          "reroute_required": true,
+          "selection_required": true,
+          "source": "preflight_attempt",
+          "state_revision": "881605f9fd647442b8a3f19729f769365f878070c6fbe1a559155695daf2adb4",
+          "turn_kind": "new_intent",
+          "failed_resident_manager_binding": {
+            "version": 2,
+            "binding_id": "rmb-303e4e1543ba5ee1d6c48e7d05bc0ce7",
+            "host": "codex",
+            "host_mode": "request_scoped",
+            "delivery_mode": "request",
+            "control_epoch": {
+              "master_generation": 6,
+              "master_materialized": true,
+              "host_generation": 2,
+              "host_materialized": true
+            },
+            "kernel": {
+              "version": 5,
+              "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+              "slugs": [
+                "agency-steward"
+              ]
+            }
+          }
+        },
+        "terminal_finalization_id": null
+      },
+      "failure": {
+        "id": "6b567ccf-80ca-4edf-ae58-94718f3fa2dc",
+        "session_id": "01a082bc-b107-72d2-9f7d-157afd32ea99",
+        "trace_id": "01a086f4-3815-7f53-aad1-8bcc93b0bd27",
+        "host": "codex",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "actual_model": "task-agency-planner-v2",
+            "latency_ms": 3025,
+            "metadata_version": 1,
+            "model_group": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 1,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "reason_code": "provider_response_contract_invalid",
+            "requested_model": "task-agency-planner-v2",
+            "stage": "subject",
+            "status": "rejected",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "task-agency-planner-v2",
+            "latency_ms": 12001,
+            "metadata_version": 1,
+            "model_group": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 2,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-planner-v2",
+            "stage": "planner",
+            "status": "applied",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "qwen3-embedding:latest",
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107",
+            "input_count": 2,
+            "latency_ms": 2135,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "provider_call_count": 1,
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "reason_code": "dense_recall_applied",
+            "requested_model": "qwen3-embedding:latest",
+            "stage": "recall_embedding",
+            "status": "applied"
+          },
+          {
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "input_count": 0,
+            "latency_ms": 13516,
+            "metadata_version": 1,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 4,
+            "provider_call_attempted": true,
+            "provider_call_count": 1,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "reason_code": "provider_response_contract_invalid",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "stage": "recall_reranker",
+            "status": "rejected",
+            "timeout_ms": 120000
+          },
+          {
+            "actual_model": "task-agency-recruiter-v2",
+            "latency_ms": 7067,
+            "metadata_version": 1,
+            "model_group": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 5,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-recruiter-v2",
+            "stage": "recruiter",
+            "status": "applied",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "task-agency-critic-v2",
+            "latency_ms": 5228,
+            "metadata_version": 1,
+            "model_group": "task-agency-critic-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 6,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-critic-v2",
+            "stage": "critic",
+            "status": "applied",
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_wrong_neighbor_selection"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T16:16:31.794000+00:00"
+      },
+      "finalization_event_count": 0,
+      "failed_routing_decision_count": 0
+    },
+    {
+      "run": {
+        "session_id": "20260909_113727_2e00b0",
+        "trace_id": "20260909_113727_2e00b0:6c87a1d6-a92a-493a-9f11-7c1b27e84a58:e03a9447",
+        "status": "preflight_failed",
+        "metadata": {
+          "classifier_version": 6,
+          "execution_decision_required": true,
+          "request_fingerprint": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7",
+          "request_kind": "nontrivial",
+          "reroute_required": true,
+          "selection_required": true,
+          "source": "preflight_attempt",
+          "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+          "turn_kind": "new_intent",
+          "failed_resident_manager_binding": {
+            "version": 2,
+            "binding_id": "rmb-33e8354a005ef4fe7ff4c62ae790eb9f",
+            "host": "hermes",
+            "host_mode": "request_scoped",
+            "delivery_mode": "request",
+            "control_epoch": {
+              "master_generation": 6,
+              "master_materialized": true,
+              "host_generation": 2,
+              "host_materialized": true
+            },
+            "kernel": {
+              "version": 5,
+              "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+              "slugs": [
+                "agency-steward"
+              ]
+            }
+          }
+        },
+        "terminal_finalization_id": null
+      },
+      "failure": {
+        "id": "8c658236-5e6e-4963-8a9b-c2c594a651c1",
+        "session_id": "20260909_113727_2e00b0",
+        "trace_id": "20260909_113727_2e00b0:6c87a1d6-a92a-493a-9f11-7c1b27e84a58:e03a9447",
+        "host": "hermes",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "actual_model": "task-agency-planner-v2",
+            "latency_ms": 10285,
+            "metadata_version": 1,
+            "model_group": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 1,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-planner-v2",
+            "stage": "planner",
+            "status": "applied",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "qwen3-embedding:latest",
+            "catalog_cache_hit": false,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107",
+            "input_count": 295,
+            "latency_ms": 40434,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "provider_call_count": 1,
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "reason_code": "dense_recall_applied",
+            "requested_model": "qwen3-embedding:latest",
+            "stage": "recall_embedding",
+            "status": "applied"
+          },
+          {
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "input_count": 0,
+            "latency_ms": 19051,
+            "metadata_version": 1,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 3,
+            "provider_call_attempted": true,
+            "provider_call_count": 1,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "reason_code": "structured_response_applied",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "stage": "recall_reranker",
+            "status": "applied",
+            "timeout_ms": 120000
+          },
+          {
+            "actual_model": "task-agency-recruiter-v2",
+            "latency_ms": 10110,
+            "metadata_version": 1,
+            "model_group": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 4,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-recruiter-v2",
+            "stage": "recruiter",
+            "status": "applied",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "task-agency-critic-v2",
+            "latency_ms": 7904,
+            "metadata_version": 1,
+            "model_group": "task-agency-critic-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 5,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-critic-v2",
+            "stage": "critic",
+            "status": "applied",
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_missing_independent_review_assurance"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T15:39:06.205000+00:00"
+      },
+      "finalization_event_count": 0,
+      "failed_routing_decision_count": 0
+    },
+    {
+      "run": {
+        "session_id": "3cdbda14-7050-48d0-808b-71d8d57bbe0b",
+        "trace_id": "c6f46318-3bfa-4a67-9f84-20aebf47f7c0",
+        "status": "preflight_failed",
+        "metadata": {
+          "classifier_version": 6,
+          "execution_decision_required": true,
+          "request_fingerprint": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7",
+          "request_kind": "nontrivial",
+          "reroute_required": true,
+          "selection_required": true,
+          "source": "preflight_attempt",
+          "state_revision": "86edb6f7e5667ed27e87ba6731b3f8ef24106608ad2734c6866df7c367e8d595",
+          "turn_kind": "new_intent",
+          "failed_resident_manager_binding": {
+            "version": 2,
+            "binding_id": "rmb-7d449b039bfa2c0434259510fcdb1dc8",
+            "host": "claude",
+            "host_mode": "persistent",
+            "delivery_mode": "injected",
+            "control_epoch": {
+              "master_generation": 6,
+              "master_materialized": true,
+              "host_generation": 2,
+              "host_materialized": true
+            },
+            "kernel": {
+              "version": 5,
+              "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+              "slugs": [
+                "agency-steward"
+              ]
+            }
+          }
+        },
+        "terminal_finalization_id": null
+      },
+      "failure": {
+        "id": "2a703d21-4cc7-4ed5-be6c-44f75a426b0d",
+        "session_id": "3cdbda14-7050-48d0-808b-71d8d57bbe0b",
+        "trace_id": "c6f46318-3bfa-4a67-9f84-20aebf47f7c0",
+        "host": "claude",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "actual_model": "task-agency-planner-v2",
+            "latency_ms": 9749,
+            "metadata_version": 1,
+            "model_group": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 1,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-planner-v2",
+            "stage": "planner",
+            "status": "applied",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "qwen3-embedding:latest",
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107",
+            "input_count": 1,
+            "latency_ms": 2638,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "provider_call_count": 1,
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "reason_code": "dense_recall_applied",
+            "requested_model": "qwen3-embedding:latest",
+            "stage": "recall_embedding",
+            "status": "applied"
+          },
+          {
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "input_count": 0,
+            "latency_ms": 11809,
+            "metadata_version": 1,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 3,
+            "provider_call_attempted": true,
+            "provider_call_count": 1,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "reason_code": "structured_response_applied",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "stage": "recall_reranker",
+            "status": "applied",
+            "timeout_ms": 120000
+          },
+          {
+            "actual_model": "task-agency-recruiter-v2",
+            "latency_ms": 15516,
+            "metadata_version": 1,
+            "model_group": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 4,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "reason_code": "provider_response_contract_invalid",
+            "requested_model": "task-agency-recruiter-v2",
+            "stage": "recruiter",
+            "status": "rejected",
+            "timeout_ms": 60000,
+            "validation_failures": [
+              {
+                "reason_code": "invalid_ranking",
+                "unit_id": "unit-defect-analysis"
+              }
+            ]
+          },
+          {
+            "actual_model": "task-agency-recruiter-v2",
+            "latency_ms": 11842,
+            "metadata_version": 1,
+            "model_group": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 5,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-recruiter-v2",
+            "stage": "recruiter",
+            "status": "applied",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "task-agency-critic-v2",
+            "latency_ms": 6470,
+            "metadata_version": 1,
+            "model_group": "task-agency-critic-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 6,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-critic-v2",
+            "stage": "critic",
+            "status": "applied",
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_wrong_neighbor_selection"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T15:30:19.107000+00:00"
+      },
+      "finalization_event_count": 0,
+      "failed_routing_decision_count": 0
+    },
+    {
+      "run": {
+        "session_id": "agent:openclaw:ar404-20260909-after_planner_context-review_followup",
+        "trace_id": "bdf2e524-1b4e-4214-8db0-b58733e83b08",
+        "status": "preflight_failed",
+        "metadata": {
+          "classifier_version": 6,
+          "continuation_of": "73e0b4e0-f5ea-4efd-958e-242f815efcf3",
+          "execution_decision_required": true,
+          "request_fingerprint": "cf97d012ecc86f377b7d8e87fbe81109c2e7d7596fbed57340f373d76504b7e6",
+          "request_kind": "nontrivial",
+          "reroute_required": true,
+          "selection_required": true,
+          "source": "preflight_attempt",
+          "state_revision": "3da4d1a4e651b75693d68846f53fd3cdabadb0fd48376d27fd0456562247b7f0",
+          "turn_kind": "continuation",
+          "failed_resident_manager_binding": {
+            "version": 2,
+            "binding_id": "rmb-3f6d3bc066a0518c9569b7e32fe808ad",
+            "host": "openclaw",
+            "host_mode": "request_scoped",
+            "delivery_mode": "request",
+            "control_epoch": {
+              "master_generation": 6,
+              "master_materialized": true,
+              "host_generation": 2,
+              "host_materialized": true
+            },
+            "kernel": {
+              "version": 5,
+              "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+              "slugs": [
+                "agency-steward"
+              ]
+            }
+          }
+        },
+        "terminal_finalization_id": null
+      },
+      "failure": {
+        "id": "998d3a51-e3b4-4bdf-97eb-855d8a095729",
+        "session_id": "agent:openclaw:ar404-20260909-after_planner_context-review_followup",
+        "trace_id": "bdf2e524-1b4e-4214-8db0-b58733e83b08",
+        "host": "openclaw",
+        "stage": "routing",
+        "reason_code": "workforce_inference_failed",
+        "invariant_code": "",
+        "exception_category": "runtime_error",
+        "provider_attempts": [
+          {
+            "actual_model": "task-agency-planner-v2",
+            "latency_ms": 7952,
+            "metadata_version": 1,
+            "model_group": "task-agency-planner-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 1,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-planner-v2",
+            "stage": "planner",
+            "status": "applied",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "qwen3-embedding:latest",
+            "catalog_cache_hit": true,
+            "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107",
+            "input_count": 1,
+            "latency_ms": 2514,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "provider_call_count": 1,
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "reason_code": "dense_recall_applied",
+            "requested_model": "qwen3-embedding:latest",
+            "stage": "recall_embedding",
+            "status": "applied"
+          },
+          {
+            "actual_model": "qwen3-14b-abliterated:latest",
+            "input_count": 0,
+            "latency_ms": 10077,
+            "metadata_version": 1,
+            "model_group": "",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 3,
+            "provider_call_attempted": true,
+            "provider_call_count": 1,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "reason_code": "structured_response_applied",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "stage": "recall_reranker",
+            "status": "applied",
+            "timeout_ms": 120000
+          },
+          {
+            "actual_model": "glm-5.3-flash",
+            "latency_ms": 15904,
+            "metadata_version": 1,
+            "model_group": "task-agency-recruiter-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 4,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-recruiter-v2",
+            "stage": "recruiter",
+            "status": "applied",
+            "timeout_ms": 60000
+          },
+          {
+            "actual_model": "task-agency-critic-v2",
+            "latency_ms": 6377,
+            "metadata_version": 1,
+            "model_group": "task-agency-critic-v2",
+            "model_receipt_source": "response.body.model",
+            "ordinal": 5,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-critic-v2",
+            "stage": "critic",
+            "status": "applied",
+            "timeout_ms": 60000
+          }
+        ],
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_wrong_neighbor_selection"
+        ],
+        "hiring_reason_codes": [],
+        "eligibility_reason_codes": [],
+        "recorded_at": "2026-09-09T15:44:09.034000+00:00"
+      },
+      "finalization_event_count": 0,
+      "failed_routing_decision_count": 0
+    }
+  ],
+  "staffing_limit": "Content-free receipts retain the critic reason, not the rejected selection or rationale. No evidence proves the critic veto erroneous; gates remain unchanged.",
+  "transport_limit": "The handoff trace has no finalization event. Its reported Transport closed is separate from staffing rejection.",
+  "fresh_codex": {
+    "current_session": "01a086f5-780c-7620-9d07-f006ca43cfab",
+    "current_trace": "01a086f6-67d0-79a2-a86e-169226f551ac",
+    "classifier_version": 6,
+    "mcp_pid": 2200222,
+    "executing_projection": "6db15efbecbe532629157184ad7090dc0c1740d374ab4fb04e5d6c5bf657ce76",
+    "host_status_mcp_call": "succeeded",
+    "trust": {
+      "status": "trusted",
+      "expected_count": 8,
+      "observed_count": 8,
+      "trusted_count": 8,
+      "managed_count": 0,
+      "modified_count": 0,
+      "untrusted_count": 0,
+      "disabled_count": 0,
+      "missing_count": 0,
+      "unexpected_count": 0,
+      "duplicate_count": 0,
+      "warning_count": 0,
+      "error_count": 0,
+      "events": {
+        "sessionStart": {
+          "enabled": true,
+          "trustStatus": "trusted",
+          "currentHash": "sha256:32ea873aeedf3765295e1e27353914f98d7b49e61048bdfca719087fe111baea"
+        },
+        "userPromptSubmit": {
+          "enabled": true,
+          "trustStatus": "trusted",
+          "currentHash": "sha256:efe4de97fedddadca80fa20913227afd9d9c690dca96c24ef18467b271e38175"
+        },
+        "preToolUse": {
+          "enabled": true,
+          "trustStatus": "trusted",
+          "currentHash": "sha256:34a66e1669fa39a45edfbe7ef5d69b351281fcd15859aa0760c9908a4c655be5"
+        },
+        "postToolUse": {
+          "enabled": true,
+          "trustStatus": "trusted",
+          "currentHash": "sha256:561d392552ec3099f66cc8ea59be03660d062490f980b37df5ef9a0dfdf25d1d"
+        },
+        "subagentStart": {
+          "enabled": true,
+          "trustStatus": "trusted",
+          "currentHash": "sha256:ad01c41f1cde94358c00f41dd2e39f0b8a576f1466bb3eb12698bc74df974490"
+        },
+        "subagentStop": {
+          "enabled": true,
+          "trustStatus": "trusted",
+          "currentHash": "sha256:b8a9f5a3645c468bfaabc123eb106b90f1078984f8718efdc65d8cad8e1100e4"
+        },
+        "postCompact": {
+          "enabled": true,
+          "trustStatus": "trusted",
+          "currentHash": "sha256:3f173033751dfbb6b25f92caadf7f55110d93c539ec92786fb9cf66f97857d67"
+        },
+        "stop": {
+          "enabled": true,
+          "trustStatus": "trusted",
+          "currentHash": "sha256:01d12350ea2c404e16b2f61373424342afee55ac8e94dab3f854a60d48544849"
+        }
+      }
+    },
+    "installed_files": 615,
+    "wheel_mismatches": [],
+    "wheel_sha256": "cba264c1bdbd57730f7ba748af2b75a5971cd0c71e425ca6d9826c463fad2fcd"
+  },
+  "old_source_regression": "old source context characters: 15578 loaded before retrieval: ['context-reviewer-0', 'context-reviewer-1', 'context-reviewer-2', 'context-reviewer-3']\nTraceback (most recent call last):\n  File \"<stdin>\", line 10, in <module>\nAssertionError: native hook spills the full cards and response contract\n"
+}
