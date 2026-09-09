@@ -80,3 +80,10 @@ conformance188/188 passed; canonical artifact ecf8a584 matches616 installed file
 Fresh Claude context12 passed, native4/4 complete cards and five headers/final hash
 passed. Documentation1381 and strict tracker419 passed before this evidence update.
 No exhaustive or Windows workflow ran; no all-host reliability claim.
+
+## Constraints
+
+Inference selects specialists. Preserve independent critic, validators, trust,
+caller scope and native limits. No manual acceptance, failed-receipt reopening,
+external messages or unbounded retries. Retain both exact MCP Allow rules.
+AR-404 remains open and Zcode remains owner-deferred.
