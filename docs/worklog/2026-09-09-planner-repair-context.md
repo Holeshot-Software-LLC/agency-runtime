@@ -126,3 +126,11 @@ with no third review in this package.
 AR-425's first attempted verification was refused before a model call because a
 new compact artifact locator exceeded its actual line count; corrected and
 structurally checked before starting its first real isolated pass.
+
+## First planner isolated result
+
+Criteria1/3/4satisfiedb925dd5e/79466089/9fedf21a; criterion2absente4da83a4
+requests the exact existing call-budget enforcement and independent-assurance
+checks. The second packet cites those unchanged source guards and complete
+assertion ranges from the already passing focused suite. No source or criteria
+change; first verdict remains retained.
