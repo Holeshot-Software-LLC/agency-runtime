@@ -2398,6 +2398,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `438a17dc` | 2026-09-10 | fix(workforce): merge PR849 wrong-neighbour veto pointer | [AR-433](../roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | [Detail](2026-09-10-ar433-wrong-neighbour-pointer.md) |
 | `73df2907` | 2026-09-10 | fix(installer): accept any stable OpenClaw at or above the audited minimum | [AR-435](../roadmap/issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | null |
 | `439b9fc8` | 2026-09-10 | fix(installer): merge PR852 OpenClaw version rule | [AR-435](../roadmap/issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | null |
+| `d1648668` | 2026-09-10 | docs: record AR-433 all-host reinstall and liveness evidence | [AR-433](../roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
