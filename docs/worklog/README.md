@@ -2403,6 +2403,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `45c5f758` | 2026-09-10 | feat(dashboard): let the owner opt in to a durable dashboard access token | [AR-436](../roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md) | null |
 | `ec1a98e1` | 2026-09-10 | feat(dashboard): merge PR857 durable dashboard access | [AR-436](../roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md) | null |
 | `132849cc` | 2026-09-10 | docs: file AR-437 reviewer independence the plan calls for | [AR-437](../roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | null |
+| `729ebfed` | 2026-09-10 | docs: merge PR860 AR-437 filing | [AR-437](../roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
