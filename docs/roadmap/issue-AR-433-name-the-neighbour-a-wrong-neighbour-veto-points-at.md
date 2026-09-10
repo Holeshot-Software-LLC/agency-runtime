@@ -14,6 +14,8 @@ related:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/evidence/AR-433-critic-veto-population-20260910.json
   - docs/roadmap/evidence/AR-433-live-diagnostic-20260910.json
+  - docs/roadmap/evidence/AR-433-install-liveness-20260910.json
+  - docs/roadmap/issue-AR-435-install-into-the-openclaw-version-the-host-runs.md
 supersedes: []
 superseded_by: null
 type: issue
@@ -78,6 +80,21 @@ first attempt whose unproven capability receipt made every contract
 ineligible, are in
 [AR-433-live-diagnostic-20260910.json](evidence/AR-433-live-diagnostic-20260910.json).
 The acceptance record and isolated verdicts remain pending after merge.
+
+Installed and live on 2026-09-10: the a354e9a5 wheel and then the 83994e2b
+wheel (AR-435) were installed into the shared runtime venv and projected to all
+five hosts; every launcher pointer, projection and the dashboard service unit
+are on runtime digest `c2d5c60e`, and the launcher trees match the venv byte
+for byte. Fresh native turns on the ordinary-review request, observed on the
+critic route with the owner config restored byte-exact, show the pointer
+contract in the live critic prompt on claude, hermes, zcode and openclaw after
+the second install (and on the first three after the first). Hermes and zcode
+staffed teams; claude (twice) and openclaw were vetoed on
+`missing-lifecycle-assurance-the-plan-calls-for`, a ground this issue does not
+touch, so that veto is a new observation, not a regression of this repair.
+Codex re-enters `activation-required` after every digest change and needs the
+owner's Trust screen before a fresh Codex turn can prove anything. Details in
+[AR-433-install-liveness-20260910.json](evidence/AR-433-install-liveness-20260910.json).
 
 Population evidence is in
 [AR-433-critic-veto-population-20260910.json](evidence/AR-433-critic-veto-population-20260910.json).
