@@ -19,7 +19,7 @@ from agency_runtime.core.preflight_failure import (
 from agency_runtime.core.selector.receipt_projection import project_durable_routing_receipt
 from agency_runtime.core.store.sqlite import Store
 from agency_runtime.core.workforce.inference import _critic_receipt_codes
-from tests.test_strict_critic_doctrine import _routing, _run
+from tests.test_strict_critic_doctrine import _POINTER, _routing, _run_neighbourhood
 
 _OMITTED = "critic_reason_detail_omitted"
 
@@ -28,11 +28,14 @@ def test_captured_qualified_veto_survives_receipts_and_terminal_header(tmp_path:
     # Pin the observed native response directly: JSON evidence attachments are
     # intentionally outside the governed sdist payload (AR-417). The complete
     # packet remains in docs/roadmap/evidence/AR-414-native-critic-packet.json.
+    # AR-433 / ADR-0246: the same qualified code now also names its card as a
+    # verifiable pointer; the neighbourhood runner holds that card eligible.
     verdict = {
         "approved": False,
         "reason_codes": ["wrong-neighbor-selection-documentation-evidence-researcher"],
+        "wrong_neighbors": [_POINTER],
     }
-    outcome, _ = _run(verdict)
+    outcome, _ = _run_neighbourhood(verdict)
     assert not outcome.accepted
     assert outcome.staffing.units == ()
     routing = _routing(outcome)

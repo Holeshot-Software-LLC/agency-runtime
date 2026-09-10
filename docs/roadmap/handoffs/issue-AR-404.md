@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-10
 tags: [handoff, hermes, openclaw, live-evaluation]
 related:
+  - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
+  - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
   - docs/roadmap/issue-AR-432-preserve-numeric-facts-in-review-plans.md
   - docs/worklog/2026-09-10-hermes-assurance-investigation.md
   - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
@@ -40,6 +42,10 @@ packet retained. One fresh ordinary_review completes86.235s: one full native
 card, five Store headers and authoritative hashdd9b5b8c match; critic approves.
 Captured plan contains wrong expected mean2.5; final correctly says1.5.
 AR-432/#845 tracks that separate factual defect. No product change or closure.
+The owner's "every other call" recruitment observation is AR-433/#847: 27 of
+30 critic vetoes since 2026-09-08 were unaccountable wrong-neighbour claims;
+ADR-0246 makes the veto name and verify its neighbour. AR-434/#848 files the
+handoff-as-code-mutation plan-policy defect the same session exposed.
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,

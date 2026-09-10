@@ -84,6 +84,17 @@ _NOMINATION_FAILURE_PREFIX = "workforce nomination failures: "
 # verifier's own closed vocabulary, on the detail path and again on the
 # re-projection every reader applies.
 _STAFFING_VERIFICATION_PREFIX = "workforce staffing verification failures: "
+# AR-433 / ADR-0246: a strict-critic wrong-neighbour veto names, per unit, the
+# worker the runtime selected and the eligible card the critic preferred. The
+# runtime verified both identities against its own neighbourhood document
+# before writing them, so the row carries roster identities and one closed
+# code, never model prose. Wire form: ``unit=selected>neighbor`` rows.
+CRITIC_POINTER_DETAIL_PREFIX = "workforce critic wrong-neighbor pointers: "
+_CRITIC_POINTER_CODE = "critic_wrong_neighbor_selection"
+_CRITIC_POINTER_KEYS = frozenset(
+    {"unit_id", "reason_code", "selected_agent_id", "neighbor_agent_id"}
+)
+_MAX_CRITIC_POINTERS = 8
 _GLOBAL_UNIT = "global"
 # A waived typed requirement (ADR-0198) is, by construction, an identifier some
 # audited contract declares: roster vocabulary, never model prose. The closed
@@ -307,6 +318,8 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
             return []
         if value.startswith(_STAFFING_VERIFICATION_PREFIX):
             return _staffing_verification_failures(value)
+        if value.startswith(CRITIC_POINTER_DETAIL_PREFIX):
+            return _critic_pointer_failures(value)
         if not value.startswith(_NOMINATION_FAILURE_PREFIX):
             return []
         raw = _parse_nomination_detail(value)
@@ -334,10 +347,21 @@ def _nomination_failure_row(item: object) -> dict[str, Any] | None:
         "required_agent_count",
         "ranked_executable_count",
         "maximum_selected_per_unit",
+        "selected_agent_id",
+        "neighbor_agent_id",
     }:
         return None
     unit_id = str(item.get("unit_id") or "").strip().casefold()
     reason_code = _code(item.get("reason_code"))
+    # AR-433 / ADR-0246: a critic pointer row must survive the re-projection
+    # every reader applies. It is exactly its four keys with the critic's
+    # closed code; the pointer identities are admitted on no other row.
+    if set(item) == _CRITIC_POINTER_KEYS and reason_code == _CRITIC_POINTER_CODE:
+        return _critic_pointer_row(
+            unit_id, item.get("selected_agent_id"), item.get("neighbor_agent_id")
+        )
+    if "selected_agent_id" in item or "neighbor_agent_id" in item:
+        return None
     axis = _code(item.get("requirement_axis")) if "requirement_axis" in item else ""
     ranked = _nomination_ranked_ids(item.get("ranked_agent_ids"))
     if ranked is None:
@@ -394,6 +418,51 @@ def _nomination_failure_row(item: object) -> dict[str, Any] | None:
         failure["safe_team_shortfall"] = shortfall
     failure.update(counts)
     return failure
+
+
+def _critic_pointer_row(unit_id: str, selected: object, neighbor: object) -> dict[str, Any] | None:
+    """Project one verified wrong-neighbour pointer, or None when a field is malformed."""
+
+    selected_id = str(selected or "").strip().casefold()
+    neighbor_id = str(neighbor or "").strip().casefold()
+    if (
+        _NOMINATION_UNIT_ID.fullmatch(unit_id) is None
+        or _NOMINATION_AGENT_ID.fullmatch(selected_id) is None
+        or _NOMINATION_AGENT_ID.fullmatch(neighbor_id) is None
+        or selected_id == neighbor_id
+    ):
+        return None
+    return {
+        "unit_id": unit_id,
+        "reason_code": _CRITIC_POINTER_CODE,
+        "selected_agent_id": selected_id,
+        "neighbor_agent_id": neighbor_id,
+    }
+
+
+def _critic_pointer_failures(value: str) -> list[dict[str, Any]]:
+    """Project the critic's verified ``unit=selected>neighbor`` rows, bounded and closed.
+
+    The runtime wrote the rows from identities it verified against its own
+    neighbourhood document (AR-433), so a malformed row is a corrupted detail,
+    not a model claim, and the whole attempt projects blank rather than
+    partially.
+    """
+
+    rows = value.removeprefix(CRITIC_POINTER_DETAIL_PREFIX).split(",")
+    if not 1 <= len(rows) <= _MAX_CRITIC_POINTERS:
+        return []
+    failures: list[dict[str, Any]] = []
+    for item in rows:
+        unit_id, separator, pointer = item.partition("=")
+        selected_id, arrow, neighbor_id = pointer.partition(">")
+        if not separator or not arrow:
+            return []
+        failure = _critic_pointer_row(unit_id.strip().casefold(), selected_id, neighbor_id)
+        if failure is None or failure in failures:
+            return []
+        failures.append(failure)
+    return failures
 
 
 def _staffing_verification_failures(value: str) -> list[dict[str, Any]]:
@@ -1010,6 +1079,7 @@ def normalize_durable_routing_receipt(value: object) -> dict[str, Any] | None:
 
 
 __all__ = [
+    "CRITIC_POINTER_DETAIL_PREFIX",
     "RECEIPT_DESCRIPTION_BYTES",
     "ROUTING_RECEIPT_VERSION",
     "bounded_receipt_text",

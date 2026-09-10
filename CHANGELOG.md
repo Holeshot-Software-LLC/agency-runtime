@@ -3,9 +3,11 @@ title: "Changelog"
 status: active
 category: release
 created: 2026-07-10
-updated: 2026-09-09
+updated: 2026-09-10
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
+  - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
   - docs/roadmap/issue-AR-416-retain-qualified-critic-veto-causes.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/roadmap/issue-AR-251-cli-presentation-richness.md
@@ -79,6 +81,13 @@ Faithful commit history and reasoning-rich implementation notes remain in the
 changes rather than duplicating every commit.
 
 ## Unreleased
+
+- Require a strict-critic wrong-neighbour veto to name, per unit, the selected
+  worker and the eligible card it prefers; verify the pointer against the
+  neighbourhood the runtime supplied, treat an unnamed or unverifiable claim as
+  a critic contract failure with one bounded repair rather than a veto, and
+  retain a verified pointer on both durable receipts (AR-433). Filed the
+  handoff-as-code-mutation plan-policy defect the same session exposed (AR-434).
 
 - Preserve bounded completed-task context for “keep going” before fresh specialist
   recruitment, retaining failed-state guards and independent criticism.

@@ -1,0 +1,618 @@
+{
+  "issue": "AR-433",
+  "scope": "One in-process strict staffing run per exact vetoed request per mode on 2026-09-10, against the live LiteLLM gateway, the live agency.yaml and a copy of the live store for the roster snapshot (generation 395, 293 workers); the live Codex capability set from trace 01a08b59; no store write, no retry, no sampling loop. Candidate imports the branch source, control imports main 28b0a76d. Planner and recruiter are stochastic (and the gateway served cached planner replies to the control runs in ~15 ms), so the four runs are single samples that show the critic under each contract, not a controlled A/B on the critic alone.",
+  "attempt_1_discarded": "The first attempt used current_host_capability_receipt without a native receipt, which yields an unproven receipt with no capabilities; every contract was ineligible and the recruiter declared a gap on every unit before any critic call in all four runs. Retained under candidate-attempt1-unproven-receipt/ and control-attempt1-unproven-receipt/ in the ephemeral directory; not evidence about the critic.",
+  "findings": [
+    "Candidate: both requests reached the critic and were approved on the critic's first reply under the pointer contract; no repair re-ask was needed; the merge request staffed git-workflow-master plus two verifiers, the handoff request staffed six units.",
+    "Control: the merge request was vetoed by the critic with a bare wrong-neighbor-selection code naming no card, the exact historical shape; the handoff request was approved after three recruiter repairs.",
+    "AR-434 reproduced in both modes: the planner's first reply for the handoff request was rejected with plan_missing_implementation, plan_missing_test_implementation and plan_missing_test_evidence_review, and the accepted plan carried implementation and test units for a handoff document.",
+    "The recall reranker reply was invalid in three of four runs; staffing proceeded on configured fallback each time."
+  ],
+  "runs": [
+    {
+      "mode": "candidate",
+      "case": "merge-and-pause",
+      "source": "branch claude/ar433-alternating-recruitment-20260910",
+      "request": "merge everything to remote main and pause for a bit, need to conserve tokens",
+      "elapsed_seconds": 74.735,
+      "status": "accepted",
+      "accepted": true,
+      "abstention_codes": [],
+      "calls_used": 5,
+      "plan_units": [
+        [
+          "unit-merge-main",
+          "implementation-change"
+        ],
+        [
+          "unit-verify-push",
+          "test-evidence"
+        ]
+      ],
+      "staffed_units": [
+        [
+          "unit-merge-main",
+          [
+            "git-workflow-master"
+          ]
+        ],
+        [
+          "unit-verify-push",
+          [
+            "cross-platform-release-verifier",
+            "reality-checker"
+          ]
+        ]
+      ],
+      "attempts": [
+        {
+          "stage": "planner",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 7602
+        },
+        {
+          "stage": "recall_embedding",
+          "status": "applied",
+          "reason_code": "dense_recall_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 36674
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 17450
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 2451
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 10329
+        }
+      ],
+      "critic_replies": [
+        {
+          "value": {
+            "approved": true,
+            "reason_codes": []
+          },
+          "finish_reason": "stop",
+          "completion_tokens": 453,
+          "elapsed_ms": 10329,
+          "prompt_bytes": 20658,
+          "repair_prompt": false,
+          "contract_pointer_required": true
+        }
+      ],
+      "eligible_neighbourhood_summary": {
+        "unit-merge-main": {
+          "eligible_count": 95,
+          "ranked_eligible_cards": [
+            "git-workflow-master"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-verify-push": {
+          "eligible_count": 84,
+          "ranked_eligible_cards": [
+            "application-integration-verifier",
+            "code-reviewer",
+            "codebase-archaeologist",
+            "codebase-onboarding-engineer",
+            "cross-platform-release-verifier",
+            "evidence-collector",
+            "reality-checker",
+            "test-results-analyzer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        }
+      }
+    },
+    {
+      "mode": "candidate",
+      "case": "create-handoff",
+      "source": "branch claude/ar433-alternating-recruitment-20260910",
+      "request": "can you create a handoff, ill let another agent crank on this for a bit, include that observation, and where we left off and whats next to do, and where the code is and what branch and anything it needs to start working on this fresh",
+      "elapsed_seconds": 84.209,
+      "status": "accepted",
+      "accepted": true,
+      "abstention_codes": [],
+      "calls_used": 6,
+      "plan_units": [
+        [
+          "unit-discovery-repo-map",
+          "analysis"
+        ],
+        [
+          "unit-impl-inflight-change",
+          "implementation-change"
+        ],
+        [
+          "unit-tests-inflight-change",
+          "test-code"
+        ],
+        [
+          "unit-test-evidence-run",
+          "test-evidence"
+        ],
+        [
+          "unit-handoff-doc",
+          "documentation"
+        ],
+        [
+          "unit-handoff-review",
+          "review-report"
+        ]
+      ],
+      "staffed_units": [
+        [
+          "unit-discovery-repo-map",
+          [
+            "codebase-onboarding-engineer"
+          ]
+        ],
+        [
+          "unit-impl-inflight-change",
+          [
+            "minimal-change-engineer"
+          ]
+        ],
+        [
+          "unit-tests-inflight-change",
+          [
+            "software-test-engineer"
+          ]
+        ],
+        [
+          "unit-test-evidence-run",
+          [
+            "evidence-collector"
+          ]
+        ],
+        [
+          "unit-handoff-doc",
+          [
+            "technical-writer"
+          ]
+        ],
+        [
+          "unit-handoff-review",
+          [
+            "code-reviewer"
+          ]
+        ]
+      ],
+      "attempts": [
+        {
+          "stage": "planner",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_reason_codes": [
+            "plan_missing_implementation",
+            "plan_missing_test_implementation",
+            "plan_missing_test_evidence_review"
+          ],
+          "latency_ms": 8319
+        },
+        {
+          "stage": "planner",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 14518
+        },
+        {
+          "stage": "recall_embedding",
+          "status": "applied",
+          "reason_code": "dense_recall_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 3446
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_reason_codes": [],
+          "latency_ms": 28008
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 19829
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 9755
+        }
+      ],
+      "critic_replies": [
+        {
+          "value": {
+            "approved": true,
+            "reason_codes": []
+          },
+          "finish_reason": "stop",
+          "completion_tokens": 339,
+          "elapsed_ms": 9755,
+          "prompt_bytes": 44849,
+          "repair_prompt": false,
+          "contract_pointer_required": true
+        }
+      ],
+      "eligible_neighbourhood_summary": {
+        "unit-discovery-repo-map": {
+          "eligible_count": 289,
+          "ranked_eligible_cards": [
+            "code-reviewer",
+            "codebase-onboarding-engineer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-handoff-doc": {
+          "eligible_count": 3,
+          "ranked_eligible_cards": [
+            "project-delivery-response-documentation-specialist",
+            "technical-writer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-handoff-review": {
+          "eligible_count": 84,
+          "ranked_eligible_cards": [
+            "code-reviewer",
+            "reality-checker"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-impl-inflight-change": {
+          "eligible_count": 95,
+          "ranked_eligible_cards": [
+            "backend-service-engineer",
+            "minimal-change-engineer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-test-evidence-run": {
+          "eligible_count": 84,
+          "ranked_eligible_cards": [
+            "evidence-collector",
+            "test-results-analyzer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-tests-inflight-change": {
+          "eligible_count": 44,
+          "ranked_eligible_cards": [
+            "software-test-engineer",
+            "test-automation-engineer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        }
+      }
+    },
+    {
+      "mode": "control",
+      "case": "merge-and-pause",
+      "source": "main 28b0a76d",
+      "request": "merge everything to remote main and pause for a bit, need to conserve tokens",
+      "elapsed_seconds": 86.788,
+      "status": "inference_invalid",
+      "accepted": false,
+      "abstention_codes": [
+        "inference_invalid",
+        "staffing_critic_rejected",
+        "wrong-neighbor-selection"
+      ],
+      "calls_used": 5,
+      "plan_units": [
+        [
+          "unit-merge-main",
+          "implementation-change"
+        ],
+        [
+          "unit-verify-push",
+          "test-evidence"
+        ]
+      ],
+      "staffed_units": [],
+      "attempts": [
+        {
+          "stage": "planner",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 18
+        },
+        {
+          "stage": "recall_embedding",
+          "status": "applied",
+          "reason_code": "dense_recall_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 41339
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_reason_codes": [],
+          "latency_ms": 18953
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 14112
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 12073
+        }
+      ],
+      "critic_replies": [
+        {
+          "value": {
+            "approved": false,
+            "reason_codes": [
+              "wrong-neighbor-selection"
+            ]
+          },
+          "finish_reason": "stop",
+          "completion_tokens": 536,
+          "elapsed_ms": 12073,
+          "prompt_bytes": 20489,
+          "repair_prompt": false,
+          "contract_pointer_required": null
+        }
+      ],
+      "eligible_neighbourhood_summary": {
+        "unit-merge-main": {
+          "eligible_count": 95,
+          "ranked_eligible_cards": [
+            "developer-tooling-engineer",
+            "devops-automator",
+            "monitoring-engineer",
+            "service-operations-engineer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-verify-push": {
+          "eligible_count": 84,
+          "ranked_eligible_cards": [
+            "application-integration-verifier",
+            "cross-platform-release-verifier",
+            "evidence-collector"
+          ],
+          "selected_are_whole_neighbourhood": false
+        }
+      }
+    },
+    {
+      "mode": "control",
+      "case": "create-handoff",
+      "source": "main 28b0a76d",
+      "request": "can you create a handoff, ill let another agent crank on this for a bit, include that observation, and where we left off and whats next to do, and where the code is and what branch and anything it needs to start working on this fresh",
+      "elapsed_seconds": 94.61,
+      "status": "accepted",
+      "accepted": true,
+      "abstention_codes": [],
+      "calls_used": 9,
+      "plan_units": [
+        [
+          "unit-discovery-repo-map",
+          "analysis"
+        ],
+        [
+          "unit-impl-inflight-change",
+          "implementation-change"
+        ],
+        [
+          "unit-tests-inflight-change",
+          "test-code"
+        ],
+        [
+          "unit-test-evidence-run",
+          "test-evidence"
+        ],
+        [
+          "unit-handoff-doc",
+          "documentation"
+        ],
+        [
+          "unit-handoff-review",
+          "review-report"
+        ]
+      ],
+      "staffed_units": [
+        [
+          "unit-discovery-repo-map",
+          [
+            "codebase-onboarding-engineer"
+          ]
+        ],
+        [
+          "unit-impl-inflight-change",
+          [
+            "minimal-change-engineer"
+          ]
+        ],
+        [
+          "unit-tests-inflight-change",
+          [
+            "software-test-engineer"
+          ]
+        ],
+        [
+          "unit-test-evidence-run",
+          [
+            "evidence-collector"
+          ]
+        ],
+        [
+          "unit-handoff-doc",
+          [
+            "technical-writer"
+          ]
+        ],
+        [
+          "unit-handoff-review",
+          [
+            "code-reviewer"
+          ]
+        ]
+      ],
+      "attempts": [
+        {
+          "stage": "planner",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_reason_codes": [
+            "plan_missing_implementation",
+            "plan_missing_test_implementation",
+            "plan_missing_test_evidence_review"
+          ],
+          "latency_ms": 14
+        },
+        {
+          "stage": "planner",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 15
+        },
+        {
+          "stage": "recall_embedding",
+          "status": "applied",
+          "reason_code": "dense_recall_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 3311
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_reason_codes": [],
+          "latency_ms": 27841
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_reason_codes": [
+            "recruiter_candidate_row_shape_invalid"
+          ],
+          "latency_ms": 14572
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_reason_codes": [
+            "recruiter_repair_row_outside_failed_set"
+          ],
+          "latency_ms": 4289
+        },
+        {
+          "stage": "recruiter",
+          "status": "failed",
+          "reason_code": "provider_model_text_not_json",
+          "validation_reason_codes": [],
+          "latency_ms": 19547
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 8684
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_reason_codes": [],
+          "latency_ms": 16001
+        }
+      ],
+      "critic_replies": [
+        {
+          "value": {
+            "approved": true,
+            "reason_codes": []
+          },
+          "finish_reason": "stop",
+          "completion_tokens": 769,
+          "elapsed_ms": 16001,
+          "prompt_bytes": 41036,
+          "repair_prompt": false,
+          "contract_pointer_required": null
+        }
+      ],
+      "eligible_neighbourhood_summary": {
+        "unit-discovery-repo-map": {
+          "eligible_count": 289,
+          "ranked_eligible_cards": [
+            "codebase-onboarding-engineer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-handoff-doc": {
+          "eligible_count": 3,
+          "ranked_eligible_cards": [
+            "technical-writer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-handoff-review": {
+          "eligible_count": 84,
+          "ranked_eligible_cards": [
+            "code-reviewer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-impl-inflight-change": {
+          "eligible_count": 95,
+          "ranked_eligible_cards": [
+            "minimal-change-engineer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-test-evidence-run": {
+          "eligible_count": 84,
+          "ranked_eligible_cards": [
+            "evidence-collector",
+            "test-results-analyzer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        },
+        "unit-tests-inflight-change": {
+          "eligible_count": 44,
+          "ranked_eligible_cards": [
+            "software-test-engineer"
+          ],
+          "selected_are_whole_neighbourhood": false
+        }
+      }
+    }
+  ],
+  "raw_capture": "/home/holeshot/.agency-runtime/ephemeral/ar433-wrong-neighbor-20260910/{candidate,control}/*.json (full critic prompts and replies; local, outside the repository)"
+}

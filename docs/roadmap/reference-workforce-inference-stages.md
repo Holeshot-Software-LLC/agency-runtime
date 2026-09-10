@@ -160,7 +160,15 @@ doctrine, AR-389 / ADR-0205 gave it the eligible neighbourhood):
 > neighbor. A wrong-neighbor veto must point at a card in that unit's
 > eligible_neighbourhood that fits the unit better than a selected worker.
 > When a unit's selected workers are its whole eligible neighbourhood,
-> wrong-neighbor selection cannot apply to it. When approved is true,
+> wrong-neighbor selection cannot apply to it. A wrong-neighbor-selection
+> code must be accompanied by wrong_neighbors: one object per such unit
+> naming unit_id, the selected_agent_id it should not have staffed, and
+> the neighbor_agent_id from that unit's eligible_candidate_ids that fits
+> better. The runtime verifies every pointer against the neighbourhood it
+> supplied and refuses a wrong-neighbor code that names no verifiable
+> pointer; when you cannot name one, the ground does not apply and you
+> must not use it. Omit wrong_neighbors for every other ground and when
+> approving. When approved is true,
 > reason_codes must be exactly an empty JSON array. When approved is
 > false, reason_codes must contain one or more unique lowercase hyphenated
 > staffing-defect codes. Return only one JSON object matching the supplied
@@ -172,7 +180,9 @@ The `critic_contract` document carries the same doctrine as fields
 `roster_coverage_gaps_are_runtime_waivers`,
 `plan_authority_units_for_host_side_work_are_intended`,
 `wrong_neighbor_must_name_an_eligible_card`,
-`eligible_neighbourhood_is_complete_per_unit`) plus the
+`eligible_neighbourhood_is_complete_per_unit`,
+`wrong_neighbor_pointer_required`, `wrong_neighbor_pointer_fields`,
+`wrong_neighbor_pointer_verified_by_runtime`) plus the
 `veto_grounds` and `never_veto_for` lists, beside the thresholds and the
 selected-only composition contract. The document's
 `eligible_neighbourhood` (AR-389 / ADR-0205) carries, per plan unit, the
@@ -194,9 +204,24 @@ name the veto.
 ```jsonc
 {
   "approved": true | false,
-  "reason_codes": ["<bounded-identifier>", ...]   // max 16
+  "reason_codes": ["<bounded-identifier>", ...],  // max 16
+  "wrong_neighbors": [                            // optional; max 8 (AR-433 / ADR-0246)
+    {"unit_id": "unit-...", "selected_agent_id": "...", "neighbor_agent_id": "..."}
+  ]
 }
 ```
+
+A `wrong-neighbor-selection` code, bare or qualified, requires
+`wrong_neighbors`; the runtime verifies each pointer against the unit's
+`eligible_neighbourhood` (planned unit, selected worker, eligible and
+unselected neighbour, selected team not the whole neighbourhood). An
+unnamed or unverifiable claim is a critic contract failure
+(`critic_wrong_neighbor_unnamed`, `critic_wrong_neighbor_unverified`,
+`critic_wrong_neighbor_shape_invalid`) with one bounded repair, never a
+veto. A verified pointer rides the applied critic attempt into both
+receipts as a per-unit `validation_failures` row with `reason_code`
+`critic_wrong_neighbor_selection`, `selected_agent_id` and
+`neighbor_agent_id`.
 
 ### `hiring` (gap contractor compilation)
 
