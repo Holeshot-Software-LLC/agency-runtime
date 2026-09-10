@@ -6,7 +6,7 @@ import yaml
 from agency_runtime.core.configuration import _config_lock, _atomic_write_yaml
 
 ASK = 'Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed.'
-FOLLOWUP = "Review the corrected average function."
+FOLLOWUP = "Review the corrected function."
 def matches_packet(value):
     return 'critic_contract' in value and (value.get('request') == ASK or (value.get('request') == FOLLOWUP and 'average' in json.dumps(value).lower()))
 PROFILE = 'agency-recruiter-critic'

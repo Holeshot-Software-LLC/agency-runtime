@@ -39,6 +39,12 @@ positive specialized cases and typed-coverage exceptions kept explicit.
 
 ## Challenges encountered
 
+Observer bootstrap stopped before any native invocation or config mutation twice:
+the ambient Python lacked the package, then a synthetic follow-up containing
+the matcher keyword defeated its unrelated-request control. Run the observer
+with the installed Python in isolated mode; the corrected neutral control now
+passes byte-preservation, auth-not-recorded and unrelated-request tests.
+
 Broader focused checks240 passed/1skipped with2 foundation failures; unchanged
 main reproduces both. AR-430/#835 defers those domain-coverage fixtures under
 ADR-0217. This prompt change cannot affect their deterministic code path.
