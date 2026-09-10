@@ -2376,6 +2376,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `98cb36c1` | 2026-09-09 | docs(hermes): correct observer control before native invocation | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
 | `d35d3bfe` | 2026-09-09 | docs(hermes): preserve AR-429 native staffing and finalization evidence | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
 | `c7569ee4` | 2026-09-09 | docs(acceptance): freeze AR-429 native evidence candidate | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
+| `24368c37` | 2026-09-09 | docs(acceptance): complete AR-429 isolated native verification | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
