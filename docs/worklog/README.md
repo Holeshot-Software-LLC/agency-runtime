@@ -2402,6 +2402,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0ab364b6` | 2026-09-10 | docs: merge PR854 AR-433 install evidence | [AR-433](../roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | null |
 | `45c5f758` | 2026-09-10 | feat(dashboard): let the owner opt in to a durable dashboard access token | [AR-436](../roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md) | null |
 | `ec1a98e1` | 2026-09-10 | feat(dashboard): merge PR857 durable dashboard access | [AR-436](../roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md) | null |
+| `132849cc` | 2026-09-10 | docs: file AR-437 reviewer independence the plan calls for | [AR-437](../roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

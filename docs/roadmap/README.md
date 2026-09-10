@@ -46,6 +46,7 @@ bounded package are in AR-404's
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
 | `AR-427` | [Preserve the complete inferred specialist team during hydration](issue-AR-427-preserve-complete-inferred-specialist-team.md) | done | p1 | reliability | [#825](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825) |
+| `AR-437` | [Enforce the reviewer independence the plan calls for](issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | open | p1 | reliability | [#859](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/859) |
 | `AR-436` | [Durable dashboard access without a terminal](issue-AR-436-durable-dashboard-access-without-a-terminal.md) | open | p2 | reliability | [#856](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/856) |
 | `AR-435` | [Install into the OpenClaw version the host runs](issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | open | p1 | reliability | [#851](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/851) |
 | `AR-434` | [Plan policy reads a handoff request as a code mutation](issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | open | p2 | reliability | [#848](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/848) |
@@ -484,6 +485,7 @@ not stable internal identifiers.
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
 | [AR-427](issue-AR-427-preserve-complete-inferred-specialist-team.md) | `176adc19`, `b265f715`, `23ae46bf` | [ADR-0245](../decisions/0245-preserve-complete-inferred-teams-during-delivery.md) |
+| [AR-437](issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | (filed from the AR-433 liveness evidence; no implementation commit) | [ADR-0213](../decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md) |
 | [AR-436](issue-AR-436-durable-dashboard-access-without-a-terminal.md) | `45c5f758`, `ec1a98e1` | [ADR-0248](../decisions/0248-let-the-owner-opt-in-to-a-durable-dashboard-access-token.md) |
 | [AR-435](issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | `73df2907`, `439b9fc8` | [ADR-0247](../decisions/0247-accept-any-stable-openclaw-at-or-above-the-audited-minimum.md) |
 | [AR-434](issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | (filed from the AR-433 investigation; no implementation commit) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
