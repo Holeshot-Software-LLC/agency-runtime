@@ -1,0 +1,84 @@
+.....FF......................F                                           [100%]
+=================================== FAILURES ===================================
+____ test_completed_followup_requires_fresh_correlated_staffing[keep going] ____
+
+message = 'keep going'
+
+    @pytest.mark.parametrize("message", ["go for it", "GO FOR IT!", "go ahead", "do it", "yes", "keep going", " KEEP   GOING! "])
+    def test_completed_followup_requires_fresh_correlated_staffing(message: str) -> None:
+        decision = classify_turn_intent(message, _completed())
+    
+>       assert decision.turn_kind == "continuation"
+E       AssertionError: assert 'new_intent' == 'continuation'
+E         
+E         - continuation
+E         + new_intent
+
+tests/test_completed_task_followup.py:29: AssertionError
+_ test_completed_followup_requires_fresh_correlated_staffing[ KEEP   GOING! ] __
+
+message = ' KEEP   GOING! '
+
+    @pytest.mark.parametrize("message", ["go for it", "GO FOR IT!", "go ahead", "do it", "yes", "keep going", " KEEP   GOING! "])
+    def test_completed_followup_requires_fresh_correlated_staffing(message: str) -> None:
+        decision = classify_turn_intent(message, _completed())
+    
+>       assert decision.turn_kind == "continuation"
+E       AssertionError: assert 'new_intent' == 'continuation'
+E         
+E         - continuation
+E         + new_intent
+
+tests/test_completed_task_followup.py:29: AssertionError
+___ test_real_preflight_passes_completed_subject_to_fresh_route[keep going] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-holeshot/pytest-2144/test_real_preflight_passes_com1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7b690f5f42c0>
+message = 'keep going'
+
+    @pytest.mark.parametrize("message", ["go for it", "keep going"])
+    def test_real_preflight_passes_completed_subject_to_fresh_route(tmp_path, monkeypatch, message) -> None:
+        store = Store(tmp_path / "agency.db")
+        store.create_run(
+            session_id="sample",
+            trace_id="review",
+            host="codex",
+            metadata={"turn_kind": "new_intent", "selection_required": True},
+        )
+        with store._connect() as connection:
+            connection.execute("UPDATE runs SET status = 'completed' WHERE trace_id = 'review'")
+    
+        captured: dict[str, object] = {}
+    
+        class ReachedFreshRoute(Exception):
+            pass
+    
+        def inspect_request(*_args, **kwargs):
+            captured.update(kwargs)
+            raise ReachedFreshRoute
+    
+        def reject_replay(**_kwargs):
+            raise AssertionError("completed specialist assignments must never be replayed")
+    
+        monkeypatch.setattr(pipeline, "build_route_request", inspect_request)
+        monkeypatch.setattr(store, "resolve_durable_continuation", reject_replay)
+        with pytest.raises(ReachedFreshRoute):
+            preflight.run_preflight(
+                store,
+                session_id="sample",
+                trace_id="followup",
+                host="codex",
+                user_message=message,
+            )
+    
+        context = captured["turn_routing_context"]
+>       assert context["source_trace_id"] == "review"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'source_trace_id'
+
+tests/test_completed_task_followup.py:118: KeyError
+=========================== short test summary info ============================
+FAILED tests/test_completed_task_followup.py::test_completed_followup_requires_fresh_correlated_staffing[keep going]
+FAILED tests/test_completed_task_followup.py::test_completed_followup_requires_fresh_correlated_staffing[ KEEP   GOING! ]
+FAILED tests/test_completed_task_followup.py::test_real_preflight_passes_completed_subject_to_fresh_route[keep going]
+3 failed, 27 passed in 3.34s

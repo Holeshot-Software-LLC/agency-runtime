@@ -30,8 +30,8 @@ TurnKind = Literal[
 ]
 TurnStateStatus = Literal["current", "missing", "stale", "ambiguous", "corrupt"]
 
-TURN_CLASSIFIER_VERSION = 6
-SUPPORTED_TURN_CLASSIFIER_VERSIONS: Final[frozenset[int]] = frozenset({1, 2, 3, 4, 5, 6})
+TURN_CLASSIFIER_VERSION = 7
+SUPPORTED_TURN_CLASSIFIER_VERSIONS: Final[frozenset[int]] = frozenset({1, 2, 3, 4, 5, 6, 7})
 MAX_TURN_SIGNAL_CHARS = 16_384
 MAX_REASON_CODES = 8
 MAX_REASON_CODE_CHARS = 64
@@ -61,7 +61,7 @@ _PURE_CONVERSATION = re.compile(
 )
 _CONTEXTUAL_CONTINUATION = re.compile(
     r"^(?:continue|do\s+it|go(?:\s+ahead|\s+for\s+it)?|hold|no|nope|proceed|"
-    r"retry|ship\s+it|skip|stop|sure|wait|yes|yep)\s*[!.]*$",
+    r"keep\s+going|retry|ship\s+it|skip|stop|sure|wait|yes|yep)\s*[!.]*$",
     re.IGNORECASE,
 )
 # A contextual inquiry *about* the work rather than a request to perform it.
