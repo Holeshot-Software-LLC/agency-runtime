@@ -41,11 +41,17 @@ solely to context loss. Separate finalization returned Transport closed and
 remains unconfirmed. No old receipt is reopened.
 
 Classifier7 recognizes the exact phrase; recipe/context22 separates current
-classification from historical projections. Negative control3 failed/27 passed;
-repaired focused163 passed. Required fast checks, canonical artifact, installed
-file/trust inspection, fresh native follow-up and isolated acceptance are pending.
-The current parent runs stale projection6db15efbecbe versus published37c1bf7d5eb0;
-reinstallation alone cannot refresh that process. Zcode work remains deferred.
+classification from historical projections. Source05653bc9 and artifactf95e0ab6
+are carried by PR840. Negative control3 failed/27 passed; focused163,
+production1151/3skip, UI224, routing and frozen conformance188/188 passed.
+Canonical build/Twine/artifact/smoke passed and616 package files match the wheel.
+All651 projected files match candidate08689b5b8769. A fresh hook inventory now
+reports8 modified/0 trusted after the necessary refresh (before:8/8 trusted on
+37c1bf7d5eb0). Delivery is waiting_for_operator under the normal /hooks workflow;
+no native candidate call or trust bypass was attempted. Fresh native and isolated
+acceptance remain pending. Current parent runs stale6db15efbecbe; reinstalling
+cannot refresh it or confirm recovery of the separate closed MCP transport.
+Zcode work remains deferred.
 
 ## Approach
 

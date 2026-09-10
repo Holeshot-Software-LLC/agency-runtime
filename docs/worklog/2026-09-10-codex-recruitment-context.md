@@ -15,7 +15,7 @@ type: worklog
 commit: 05653bc9ed4222ddf4c779a105bd01fd79255fa4
 short: 05653bc9
 date: 2026-09-10
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/840
 related_issues:
   - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
 ---
@@ -61,3 +61,18 @@ workflow requested.
 
 Build a canonical artifact after fast checks; inspect exact installed hook files
 and trust, then demonstrate the contextual follow-up in a fresh native process.
+
+## Installed candidate checkpoint
+
+PR840 carries source05653bc9, canonical artifactf95e0ab6 and recipe22/classifier7.
+Focused163, production1151/3skip, UI224, routing, Ruff788, docs, strict tracker and
+frozen conformance188/188 passed. Build, strict Twine, artifact and installed
+smoke pass; all616 package files match wheele1b6e5d47b31603b06e9f0f71f87df3692aaa7e9ecab8b0d673652e0e1e0ece7.
+Before refresh, all651 projection37c1bf7d5eb0 files matched and a fresh app-server
+reported8/8 trusted hooks. Candidate08689b5b8769 also has651 matching files, but
+its8 changed hooks report modified/0trusted. This is a new trust requirement
+caused by the necessary refresh, not a contradiction of the earlier8/8 result.
+No native provider call or trust bypass was attempted. The package waits for
+operator review in a fresh Codex TUI /hooks; then run the bounded completed-task
+and keep-going follow-up. The stale parent and its separate closed MCP transport
+are not repaired by installation. No isolated acceptance pass has run for AR-431.

@@ -122,3 +122,6 @@ without starting preflight.
   valid continuation correlation and needlessly repeats selection and planning.
 - Reuse the last selection for every short reply. Rejected because configuration,
   roster, specialist versions, or work-unit state may have changed.
+
+AR-431 implementation `05653bc9` extends the existing exact contextual phrase set;
+its evidence and scope are indexed in the related roadmap and worklog registry.

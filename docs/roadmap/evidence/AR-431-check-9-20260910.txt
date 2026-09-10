@@ -1,0 +1,2626 @@
+{
+  "baseline": {
+    "duration_ms": 101263,
+    "exit_code": 0,
+    "failed_nodes": [],
+    "failure_excerpt": null,
+    "status": "passed",
+    "test_nodes": [
+      "tests/test_workforce_dynamic_hiring.py::test_hiring_strict_independence_checks_effective_provider_chains[profile-security_review-True]",
+      "tests/test_workforce_inference.py::test_balanced_mode_always_uses_inference_for_planning_and_selection",
+      "tests/test_workforce_inference.py::test_no_provider_declines_without_selecting_or_calling_the_model",
+      "tests/test_workforce_selection_safety.py::test_production_staffing_entrypoints_have_no_deterministic_decider_dependency",
+      "tests/test_workforce_inference.py::test_planner_repair_receives_exact_assurance_graph_and_remains_inference_owned",
+      "tests/test_unit_assignment_selector.py::test_unavailable_inference_cannot_be_reinterpreted_as_a_unit_assignment",
+      "tests/test_child_routing_coordination.py::test_child_owner_failure_aborts_and_unconfigured_child_fails_closed",
+      "tests/test_resident_managers.py::test_resident_identity_is_canonical_and_compatibility_aliases_share_it",
+      "tests/test_workforce_inference.py::test_staff_decision_without_safe_team_gets_one_bounded_inference_repair",
+      "tests/test_workforce_inference.py::test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows",
+      "tests/test_workforce_inference.py::test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate",
+      "tests/test_workforce_inference.py::test_balanced_recruiter_repairs_only_missing_work_unit_rows",
+      "tests/test_workforce_inference.py::test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requirements",
+      "tests/test_workforce_inference.py::test_recruiter_repair_rejects_rows_outside_recorded_failure_set",
+      "tests/test_subject_domain_eligibility.py::test_backend_implementation_does_not_require_roblox",
+      "tests/test_recruiter_eligibility_view.py::test_every_recall_row_carries_the_complete_eligible_card_set",
+      "tests/test_inferred_subject_beside_context.py::test_an_unreadable_request_keeps_dense_recall_and_both_documents_carry_the_subject",
+      "tests/test_inferred_subject_beside_context.py::test_a_refused_projection_names_the_validation_on_the_attempt_and_the_receipt",
+      "tests/test_team_derivation_account.py::test_a_whole_team_rejection_shows_the_derived_team_and_the_correction",
+      "tests/test_team_derivation_account.py::test_each_recall_row_names_the_requirements_only_one_eligible_card_covers",
+      "tests/test_card_outcomes_complete.py::test_the_recruiter_card_carries_every_outcome_and_not_for_line",
+      "tests/test_critic_eligibility_view.py::test_the_critic_sees_the_complete_eligible_neighbourhood_per_unit",
+      "tests/test_credential_env_unset.py::test_the_unset_variable_is_recorded_before_any_call",
+      "tests/test_recruiter_reply_residue.py::test_a_verifier_rejection_projects_onto_the_attempt_row",
+      "tests/test_reply_budget_truncation.py::test_the_stage_records_a_cut_reply_as_truncated_and_names_the_cut_on_the_retry",
+      "tests/test_strict_critic_doctrine.py::test_a_veto_reaches_both_receipts_and_the_disclosure_beside_the_verifier_codes",
+      "tests/test_strict_critic_doctrine.py::test_the_critic_contract_and_system_prompt_state_the_advisory_doctrine",
+      "tests/test_reply_budget_truncation.py::test_a_row_cut_mid_way_loses_only_its_own_unit_and_the_repair_completes_it",
+      "tests/test_routing_receipt_header.py::test_routing_receipt_is_bounded_content_free_and_idempotent",
+      "tests/test_product_host.py::test_codex_agency_product_host_consumes_the_exact_activation_snapshot",
+      "tests/test_activation_canary_contract.py::test_activation_canary_rejects_missing_inference_attempt_evidence",
+      "tests/test_activation_canary_contract.py::test_activation_canary_rejects_missing_provider_attempt_receipts",
+      "tests/test_activation_canary_contract.py::test_activation_canary_uses_inference_owned_selection",
+      "tests/test_activation_canary_contract.py::test_existing_store_product_canary_can_hire_an_inference_declared_gap",
+      "tests/test_preflight_bounds.py::test_persistent_host_ceiling_is_the_general_preflight_ceiling",
+      "tests/test_preflight_bounds.py::test_multibyte_complete_context_fails_before_ready_is_persisted",
+      "tests/test_host_hooks.py::test_codex_rejects_oversized_utf8_model_before_preflight_ready",
+      "tests/test_routing_receipt_header.py::test_ready_receipt_accepts_valid_routing_above_legacy_node_limit",
+      "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_unrecognized_or_malformed_auxiliary_routes",
+      "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_duplicate_valid_native_child_launch_route",
+      "tests/test_canary_activation_snapshot.py::test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route",
+      "tests/test_canary_activation_snapshot.py::test_restricted_codex_post_tool_first_promotes_the_pending_dispatch",
+      "tests/test_routing_receipt_header.py::test_ready_receipt_accepts_distinct_native_child_launch_routes",
+      "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_noncanonical_native_child_route_timestamp",
+      "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_noncanonical_native_child_route_id",
+      "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_non_digest_native_child_context_projection",
+      "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_noncanonical_native_child_json_projection",
+      "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_coercible_native_child_numeric_columns",
+      "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout",
+      "tests/test_product_host.py::test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority",
+      "tests/test_codex_activation_canary.py::test_codex_product_rollout_projects_exact_eight_unit_reuse_topology",
+      "tests/test_codex_global_guidance.py::test_codex_global_guidance_preserves_owner_content_and_is_idempotent",
+      "tests/test_product_host.py::test_codex_product_host_uses_isolated_workspace_write_profile",
+      "tests/test_codex_activation_canary.py::test_codex_jsonl_parser_classifies_only_exact_allowlisted_host_notices",
+      "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_is_fixed_and_content_free",
+      "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_projects_fixed_wrapper_failure_category",
+      "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_correlates_nested_tool_and_wrapper_outcome",
+      "tests/test_codex_child_execution.py::test_direct_completion_requires_exact_parent_and_causal_delivery",
+      "tests/test_codex_child_execution.py::test_current_turn_matches_exact_parent_and_child_ciphertext",
+      "tests/test_codex_child_execution.py::test_parent_stop_projection_requires_exact_completed_child_response",
+      "tests/test_codex_child_execution.py::test_parent_stop_projection_rejects_tampered_or_ambiguous_completion",
+      "tests/test_codex_child_execution.py::test_direct_initial_turn_requires_exact_spawn_ciphertext_and_completion",
+      "tests/test_preflight_bounds.py::test_preflight_persists_request_kind_and_terminalizes_downstream_failure",
+      "tests/test_preflight_bounds.py::test_preflight_failure_receipt_projects_provider_attempts_without_content",
+      "tests/test_canary_activation_snapshot.py::test_canary_activation_snapshot_projects_exact_preflight_failure",
+      "tests/test_codex_activation_canary.py::test_codex_v2_rollout_reports_content_free_parent_spawn_failure",
+      "tests/test_product_one_shot.py::test_product_trial_rejects_a_deadline_too_short_for_the_complete_contract",
+      "tests/test_product_host.py::test_workspace_write_proof_is_owned_by_a_delegated_workspace_write_unit",
+      "tests/test_product_one_shot.py::test_unproven_workspace_write_stops_before_product_grading[None]",
+      "tests/test_workforce_inference.py::test_default_fast_mode_funds_one_repair_for_each_inference_stage",
+      "tests/test_staffing_call_reservations.py::test_subject_repair_no_longer_spends_the_fifth_call_needed_by_the_critic",
+      "tests/test_staffing_call_reservations.py::test_explicit_strict_cap_is_never_enlarged_or_spent_on_doomed_stages[3]",
+      "tests/test_staffing_call_reservations.py::test_planner_fallback_cannot_spend_recruiter_and_critic_reservation",
+      "tests/test_staffing_call_reservations.py::test_subject_and_both_repairs_require_six_calls_without_weakening_validation[5-False]",
+      "tests/test_workforce_dynamic_hiring.py::test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful",
+      "tests/test_workforce_dynamic_hiring.py::test_hire_compiles_schema_maximum_lists_into_bounded_workforce_contract",
+      "tests/test_workforce_dynamic_hiring.py::test_workspace_unit_overrides_model_external_mutation_claim",
+      "tests/test_workforce_dynamic_hiring.py::test_external_write_unit_overrides_an_understated_model_claim",
+      "tests/test_workforce_hiring_contract.py::test_explicit_high_risk_prohibitions_do_not_grant_authority",
+      "tests/test_workforce_hiring_contract.py::test_positive_risk_after_a_prohibition_still_requires_approval",
+      "tests/test_workforce_dynamic_hiring.py::test_owner_gated_hire_waits_for_approval_then_materializes",
+      "tests/test_workforce_subject_inference.py::test_the_trigger_is_a_zero_floor_not_a_tunable_threshold",
+      "tests/test_workforce_dynamic_hiring.py::test_amendment_binds_model_extension_slug_to_inferred_target",
+      "tests/test_workforce_dynamic_hiring.py::test_task_gap_amendment_is_rejected_when_amendment_is_disallowed",
+      "tests/test_workforce_dynamic_hiring.py::test_amendment_preserves_existing_values_inside_smaller_workforce_bounds",
+      "tests/test_workforce_dynamic_hiring.py::test_hire_reports_content_free_employment_revalidation_stage",
+      "tests/test_workforce_dynamic_hiring.py::test_critic_can_independently_validate_runtime_gap_evidence",
+      "tests/test_workforce_dynamic_hiring.py::test_product_request_gap_repair_receives_live_reason_family_and_typed_proof",
+      "tests/test_routing_correctness.py::test_full_route_never_repopulates_inference_failure_from_policy",
+      "tests/test_host_hooks.py::test_identical_codex_invalid_stop_is_terminal_and_exactly_replayed",
+      "tests/test_host_hooks.py::test_stdio_preflight_header_is_accepted_first_pass",
+      "tests/test_adapter_parity.py::test_generated_openclaw_plugin_is_native_openclaw_package",
+      "tests/test_completion_policy_boundary.py::test_hermes_transform_rejects_unfinalized_natural_response_without_repair",
+      "tests/test_codex_spawn_provenance.py::test_exact_forked_child_shape_attests_and_binds_thread_and_root",
+      "tests/test_native_child_duplicate_launch.py::test_final_delivery_validation_rolls_back_and_exact_launch_can_retry",
+      "tests/test_native_child_staffing.py::test_config_lock_exit_failure_preserves_committed_staffed_delivery",
+      "tests/test_codex_spawn_provenance.py::test_function_call_requires_exact_observed_response_item_schema",
+      "tests/test_codex_spawn_provenance.py::test_target_response_item_rejects_an_extra_outer_key",
+      "tests/test_codex_spawn_provenance.py::test_target_response_item_requires_exact_observed_timestamp",
+      "tests/test_codex_spawn_provenance.py::test_target_response_item_requires_a_nonnegative_integer_ordinal",
+      "tests/test_codex_spawn_provenance.py::test_rollout_path_requires_canonical_padded_date_components",
+      "tests/test_codex_spawn_provenance.py::test_root_identity_requires_canonical_non_nil_uuid7_without_filename_binding",
+      "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7",
+      "tests/test_codex_spawn_provenance.py::test_function_item_identity_must_be_unique_across_initial_snapshot",
+      "tests/test_codex_spawn_provenance.py::test_appended_different_call_cannot_reuse_attested_function_item_identity",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_external_records_and_parallel_arrays_are_structurally_bound",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_external_identity_and_scanned_prefix_are_sealed",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_appended_causal_replay_is_rejected",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_both_causal_edges_and_history_variant_are_authoritative",
+      "tests/test_codex_spawn_provenance.py::test_exact_one_metadata_tui_chain_attests_across_canonical_rollouts[2-True]",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[sparse_wrong_fork_turns]",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[inherited_wrong_fork_turns]",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_copied_root_matches_canonical_payload",
+      "tests/test_codex_spawn_provenance.py::test_one_metadata_tui_chain_accepts_independent_cross_offset_rollouts",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_nonzero_offset_is_required_for_canonical_lookup",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[bounded_root_directory]",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[ambiguous_root_path]",
+      "tests/test_codex_spawn_provenance.py::test_external_rollouts_use_one_initial_streaming_pass_each",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_causal_edges_accept_exact_empty_delivery_marker[root]",
+      "tests/test_codex_spawn_provenance.py::test_external_ancestry_aggregate_byte_bound_is_exact",
+      "tests/test_codex_spawn_provenance.py::test_current_external_ancestry_aggregate_byte_bound_is_exact",
+      "tests/test_codex_spawn_provenance.py::test_final_currentness_recomputes_unique_external_namespace",
+      "tests/test_codex_spawn_provenance.py::test_exact_desktop_alpha_marked_root_attests",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_profile_and_metadata_drift_fail_open[desktop-envelope-ordinal]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_profile_and_metadata_drift_fail_open[desktop-multi-agent-disabled]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_rejects_unobserved_shape_cross_products[d1-inherited-child-only-dynamic-branch-fork1-residual0]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_profile_and_metadata_drift_fail_open[desktop-dynamic-tools-drift]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d2-child-parent-all-dynamic-branch-residual0]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d2-child-parent-sparse-parent-all-no-dynamic-branch-residual0]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_requires_unique_canonical_owners_and_exact_copies[copied-parent-drift]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_direct_causal_transaction_is_exact[event-schema-drift]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d1-inherited-external-three-dynamic-branch-residual0]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_direct_causal_transaction_is_exact[path-drift]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_direct_causal_transaction_is_exact[event-time-plus-two]",
+      "tests/test_codex_spawn_provenance.py::test_cross_file_cli_external_rollout_rejects_plus_one_residual",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_or_external_direct_replay_invalidates_attestation",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_sealed_profile_and_external_arrays_are_authoritative",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_and_ancestor_marker_domains_are_separate[current-null]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_call_binds_shared_authorization_fields[arguments]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_call_binds_shared_authorization_fields[turn]",
+      "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_call_binds_shared_authorization_fields[call]",
+      "tests/test_native_child_duplicate_launch.py::test_contradictory_native_child_success_projection_rolls_back_before_callback",
+      "tests/test_native_child_duplicate_launch.py::test_extra_native_child_success_projection_rolls_back_before_callback",
+      "tests/test_native_child_decision.py::test_success_route_requires_neutral_work_units",
+      "tests/test_native_child_duplicate_launch.py::test_native_child_delivery_host_must_match_open_parent_before_callback",
+      "tests/test_native_child_duplicate_launch.py::test_route_provider_must_match_applied_attempt_and_exact_launch_can_retry",
+      "tests/test_native_child_staffing.py::test_provider_name_uses_the_same_safe_identity_as_the_applied_receipt",
+      "tests/test_native_child_duplicate_launch.py::test_native_child_success_numeric_contract_rolls_back_and_retries",
+      "tests/test_native_child_staffing.py::test_postcommit_connection_close_failure_preserves_exact_staffed_output",
+      "tests/test_native_child_decision.py::test_store_rejects_a_route_column_that_no_longer_matches_its_decision",
+      "tests/test_canary_activation_snapshot.py::test_restricted_codex_collectors_keep_live_and_terminal_authority_separate",
+      "tests/test_canary_activation_snapshot.py::test_restricted_codex_backend_terminal_parent_rejects_inexact_terminal_shapes",
+      "tests/test_child_delivery_evidence.py::test_persisted_codex_receipt_replays_its_exact_prefix_after_host_append",
+      "tests/test_child_delivery_evidence.py::test_persisted_codex_receipt_digest_must_end_at_a_jsonl_record_boundary",
+      "tests/test_workforce_inference.py::test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps"
+    ]
+  },
+  "counts": {
+    "invalid": 0,
+    "killed": 188,
+    "mutations": 188,
+    "survived": 0
+  },
+  "evidence_boundary": "Curated decision sensitivity only; no coverage, superiority, or exhaustive mutation claim.",
+  "mutations": [
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1483,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_hiring_strict_independence_checks_effective_provider_chains[profile-security_review-True]"
+      ],
+      "invariant": "Strict hiring rejects overlapping resolved reviewer and creator chains.",
+      "mutation_id": "strict-hiring-independence-disabled",
+      "source_path": "agency_runtime/core/inference_profiles.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_hiring_strict_independence_checks_effective_provider_chains[profile-security_review-True]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1136,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_hiring_strict_independence_checks_effective_provider_chains[profile-security_review-True]"
+      ],
+      "invariant": "A known-invalid hiring pair fails before spending the creator call.",
+      "mutation_id": "strict-hiring-preflight-skipped",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_hiring_strict_independence_checks_effective_provider_chains[profile-security_review-True]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1066,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_balanced_mode_always_uses_inference_for_planning_and_selection"
+      ],
+      "invariant": "A configured provider always owns online planning and specialist selection.",
+      "mutation_id": "configured-provider-bypasses-inference",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_balanced_mode_always_uses_inference_for_planning_and_selection"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1123,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_no_provider_declines_without_selecting_or_calling_the_model"
+      ],
+      "invariant": "Missing inference fails without a deterministic specialist team.",
+      "mutation_id": "missing-provider-restores-offline-staffing",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_no_provider_declines_without_selecting_or_calling_the_model"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 983,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_selection_safety.py::test_production_staffing_entrypoints_have_no_deterministic_decider_dependency"
+      ],
+      "invariant": "Production planning preserves the inference-authored plan without local additions.",
+      "mutation_id": "online-plan-restores-deterministic-enrichment",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_selection_safety.py::test_production_staffing_entrypoints_have_no_deterministic_decider_dependency"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1152,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_planner_repair_receives_exact_assurance_graph_and_remains_inference_owned"
+      ],
+      "invariant": "Inference receives the exact deterministic plan acceptance contract before it authors a plan.",
+      "mutation_id": "planner-drops-deterministic-acceptance-contract",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_planner_repair_receives_exact_assurance_graph_and_remains_inference_owned"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 871,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_unit_assignment_selector.py::test_unavailable_inference_cannot_be_reinterpreted_as_a_unit_assignment"
+      ],
+      "invariant": "An unavailable inference route cannot become an exact unit recommendation.",
+      "mutation_id": "unit-assignment-reinterprets-unavailable-inference",
+      "source_path": "agency_runtime/core/unit_assignment.py",
+      "status": "killed",
+      "test_node": "tests/test_unit_assignment_selector.py::test_unavailable_inference_cannot_be_reinterpreted_as_a_unit_assignment"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 910,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_child_routing_coordination.py::test_child_owner_failure_aborts_and_unconfigured_child_fails_closed"
+      ],
+      "invariant": "An unconfigured child route clears every unproven specialist identity.",
+      "mutation_id": "unconfigured-child-preserves-specialist-selection",
+      "source_path": "agency_runtime/core/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_child_routing_coordination.py::test_child_owner_failure_aborts_and_unconfigured_child_fails_closed"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 835,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_resident_managers.py::test_resident_identity_is_canonical_and_compatibility_aliases_share_it"
+      ],
+      "invariant": "Exactly one Agency-native steward is resident; imported managers remain optional specialists.",
+      "mutation_id": "resident-steward-restores-imported-default-pair",
+      "source_path": "agency_runtime/core/resident_managers.py",
+      "status": "killed",
+      "test_node": "tests/test_resident_managers.py::test_resident_identity_is_canonical_and_compatibility_aliases_share_it"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1076,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_staff_decision_without_safe_team_gets_one_bounded_inference_repair"
+      ],
+      "invariant": "An online staff decision without a safe team is repaired by inference rather than relabeled as a contractor gap.",
+      "mutation_id": "implicit-staffing-failure-becomes-hiring-gap",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_staff_decision_without_safe_team_gets_one_bounded_inference_repair"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1061,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows"
+      ],
+      "invariant": "One bounded recruiter repair receives every invalid planned unit, not only the first.",
+      "mutation_id": "recruiter-validation-drops-later-unit-failures",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_recruiter_repair_receives_every_invalid_unit_and_preserves_valid_rows"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1149,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate"
+      ],
+      "invariant": "Recruiter inference may declare a real gap with zero ranked roster candidates.",
+      "mutation_id": "recruiter-gap-requires-invented-roster-candidate",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1078,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_balanced_recruiter_repairs_only_missing_work_unit_rows"
+      ],
+      "invariant": "A partial recruiter repair receives a non-contradictory system contract that requests only failed planned units.",
+      "mutation_id": "recruiter-repair-restores-full-plan-system-contract",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_balanced_recruiter_repairs_only_missing_work_unit_rows"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1151,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requirements"
+      ],
+      "invariant": "Recruiter inference receives exact non-ranked typed coverage and uncovered-gap evidence for every planned unit.",
+      "mutation_id": "recruiter-drops-typed-recall-evidence",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_recruiter_repair_declares_gap_when_typed_recall_proves_uncovered_requirements"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1109,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_recruiter_repair_rejects_rows_outside_recorded_failure_set"
+      ],
+      "invariant": "A recruiter repair may answer only for units in the recorded failed set; a row for any other unit is refused before it can replace an accumulated row.",
+      "mutation_id": "recruiter-repair-allows-unlisted-row-overwrite",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_recruiter_repair_rejects_rows_outside_recorded_failure_set"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2693,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_subject_domain_eligibility.py::test_backend_implementation_does_not_require_roblox[claude]"
+      ],
+      "invariant": "Subject-domain labels cannot reject an otherwise execution-eligible specialist or elevate a planning-only contract (ADR-0217 supersedes ADR-0201).",
+      "mutation_id": "subject-domain-restored-as-execution-veto",
+      "source_path": "agency_runtime/core/workforce/staffing_verifier.py",
+      "status": "killed",
+      "test_node": "tests/test_subject_domain_eligibility.py::test_backend_implementation_does_not_require_roblox"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 750,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_recruiter_eligibility_view.py::test_every_recall_row_carries_the_complete_eligible_card_set"
+      ],
+      "invariant": "Every recall row lists exactly the detail cards the verifier's eligibility admits for that unit, so the recruiter is shown the boundary it is held to (ADR-0203).",
+      "mutation_id": "recruiter-eligible-card-set-ignores-eligibility",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_recruiter_eligibility_view.py::test_every_recall_row_carries_the_complete_eligible_card_set"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1157,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_inferred_subject_beside_context.py::test_an_unreadable_request_keeps_dense_recall_and_both_documents_carry_the_subject"
+      ],
+      "invariant": "The subject inferred for a fresh turn rides beside the projected turn context, so the context stays projectable and dense recall still runs (ADR-0208).",
+      "mutation_id": "inferred-subject-merged-into-the-turn-context",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_inferred_subject_beside_context.py::test_an_unreadable_request_keeps_dense_recall_and_both_documents_carry_the_subject"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1194,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_inferred_subject_beside_context.py::test_a_refused_projection_names_the_validation_on_the_attempt_and_the_receipt"
+      ],
+      "invariant": "A dense recall skipped for a refused context projection names the validation that refused it on the attempt (ADR-0208).",
+      "mutation_id": "refused-recall-projection-loses-its-code",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_inferred_subject_beside_context.py::test_a_refused_projection_names_the_validation_on_the_attempt_and_the_receipt"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 980,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_team_derivation_account.py::test_a_whole_team_rejection_shows_the_derived_team_and_the_correction"
+      ],
+      "invariant": "A whole-team verifier rejection shows the recruiter the team the runtime derived for the failed unit, so the member that set the confidence is named beside the code (ADR-0207).",
+      "mutation_id": "staffing-feedback-hides-the-derived-team",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_team_derivation_account.py::test_a_whole_team_rejection_shows_the_derived_team_and_the_correction"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 940,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_team_derivation_account.py::test_each_recall_row_names_the_requirements_only_one_eligible_card_covers"
+      ],
+      "invariant": "Each typed recall row names the requirements exactly one eligible card covers, so the card every safe team must hold is a stated fact and not an inference over the candidate rows (ADR-0207).",
+      "mutation_id": "recall-row-hides-the-sole-eligible-coverer",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_team_derivation_account.py::test_each_recall_row_names_the_requirements_only_one_eligible_card_covers"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 906,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_card_outcomes_complete.py::test_the_recruiter_card_carries_every_outcome_and_not_for_line"
+      ],
+      "invariant": "The card the recruiter reads carries every outcome the contract declares, so the outcome that names the unit's work is never hidden (ADR-0206).",
+      "mutation_id": "recruiter-card-hides-outcomes-past-two",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_card_outcomes_complete.py::test_the_recruiter_card_carries_every_outcome_and_not_for_line"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 929,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_critic_eligibility_view.py::test_the_critic_sees_the_complete_eligible_neighbourhood_per_unit"
+      ],
+      "invariant": "The critic's eligible_neighbourhood lists exactly the cards the verifier's eligibility admits for each unit, so a wrong-neighbor veto can only point at a card the runtime could have staffed (ADR-0205).",
+      "mutation_id": "critic-neighbourhood-ignores-eligibility",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_critic_eligibility_view.py::test_the_critic_sees_the_complete_eligible_neighbourhood_per_unit"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1165,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_credential_env_unset.py::test_the_unset_variable_is_recorded_before_any_call"
+      ],
+      "invariant": "A provider whose configured credential variable the launching environment lacks is recorded as provider_credential_env_unset before any call is made, so the receipt, the disclosure line and doctor name the cause (ADR-0204).",
+      "mutation_id": "credential-env-unset-reported-as-generic-provider-failure",
+      "source_path": "agency_runtime/core/structured_provider.py",
+      "status": "killed",
+      "test_node": "tests/test_credential_env_unset.py::test_the_unset_variable_is_recorded_before_any_call"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 920,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_recruiter_reply_residue.py::test_a_verifier_rejection_projects_onto_the_attempt_row"
+      ],
+      "invariant": "A recruiter attempt the staffing verifier rejected carries the verifier's unit=code rows as validation_failures on both receipts (ADR-0202).",
+      "mutation_id": "verifier-rejection-left-blank-on-the-attempt",
+      "source_path": "agency_runtime/core/selector/receipt_projection.py",
+      "status": "killed",
+      "test_node": "tests/test_recruiter_reply_residue.py::test_a_verifier_rejection_projects_onto_the_attempt_row"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 959,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_reply_budget_truncation.py::test_the_stage_records_a_cut_reply_as_truncated_and_names_the_cut_on_the_retry"
+      ],
+      "invariant": "A rejected reply that reached the completion cap is recorded as provider_response_truncated, never as a contract failure (ADR-0199).",
+      "mutation_id": "cut-reply-recorded-as-contract-failure",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_reply_budget_truncation.py::test_the_stage_records_a_cut_reply_as_truncated_and_names_the_cut_on_the_retry"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 904,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_strict_critic_doctrine.py::test_a_veto_reaches_both_receipts_and_the_disclosure_beside_the_verifier_codes"
+      ],
+      "invariant": "A strict-critic veto carries the critic's projected codes beside staffing_critic_rejected on the staffing decision, so both durable receipts name why the turn died (ADR-0200).",
+      "mutation_id": "critic-veto-codes-dropped-from-the-receipts",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_strict_critic_doctrine.py::test_a_veto_reaches_both_receipts_and_the_disclosure_beside_the_verifier_codes"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 899,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_strict_critic_doctrine.py::test_the_critic_contract_and_system_prompt_state_the_advisory_doctrine"
+      ],
+      "invariant": "The strict critic's contract states that the workforce is advisory and the host executes (ADR-0200).",
+      "mutation_id": "critic-contract-drops-the-advisory-doctrine",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_strict_critic_doctrine.py::test_the_critic_contract_and_system_prompt_state_the_advisory_doctrine"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 956,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_reply_budget_truncation.py::test_a_row_cut_mid_way_loses_only_its_own_unit_and_the_repair_completes_it"
+      ],
+      "invariant": "A nomination row the runtime cannot read costs only its own unit, which surfaces as missing_work_unit; the rows before it are kept (ADR-0199).",
+      "mutation_id": "unreadable-nomination-row-refuses-the-whole-reply",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_reply_budget_truncation.py::test_a_row_cut_mid_way_loses_only_its_own_unit_and_the_repair_completes_it"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 934,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_routing_receipt_is_bounded_content_free_and_idempotent"
+      ],
+      "invariant": "A durable route retains only the allowlisted unit and reason codes needed to diagnose a recruiter rejection.",
+      "mutation_id": "recruiter-failure-detail-dropped-from-durable-receipt",
+      "source_path": "agency_runtime/core/selector/receipt_projection.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_routing_receipt_is_bounded_content_free_and_idempotent"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 953,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_routing_receipt_is_bounded_content_free_and_idempotent"
+      ],
+      "invariant": "A durable recruiter failure hashes a sensitive planner-derived unit identity.",
+      "mutation_id": "recruiter-failure-sensitive-unit-id-not-sanitized",
+      "source_path": "agency_runtime/core/selector/receipt_projection.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_routing_receipt_is_bounded_content_free_and_idempotent"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1082,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_agency_product_host_consumes_the_exact_activation_snapshot"
+      ],
+      "invariant": "Codex Agency product trials consume the exact activation snapshot for the executed prompt hash and native parent session.",
+      "mutation_id": "product-host-falls-back-to-legacy-activity-summary",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_agency_product_host_consumes_the_exact_activation_snapshot"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1096,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_agency_product_host_consumes_the_exact_activation_snapshot"
+      ],
+      "invariant": "Repeated product prompts resolve only against the exact native Codex parent session.",
+      "mutation_id": "product-host-drops-exact-codex-session-binding",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_agency_product_host_consumes_the_exact_activation_snapshot"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1053,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_activation_canary_contract.py::test_activation_canary_rejects_missing_inference_attempt_evidence"
+      ],
+      "invariant": "The Codex activation canary cannot select a worker without a recorded inference attempt.",
+      "mutation_id": "activation-canary-accepts-no-inference-attempt",
+      "source_path": "agency_runtime/core/selector/pipeline.py",
+      "status": "killed",
+      "test_node": "tests/test_activation_canary_contract.py::test_activation_canary_rejects_missing_inference_attempt_evidence"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1041,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_activation_canary_contract.py::test_activation_canary_rejects_missing_provider_attempt_receipts"
+      ],
+      "invariant": "The Codex activation canary cannot select a worker without a nonempty provider attempt receipt.",
+      "mutation_id": "activation-canary-accepts-no-provider-receipt",
+      "source_path": "agency_runtime/core/selector/pipeline.py",
+      "status": "killed",
+      "test_node": "tests/test_activation_canary_contract.py::test_activation_canary_rejects_missing_provider_attempt_receipts"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1223,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_activation_canary_contract.py::test_activation_canary_uses_inference_owned_selection"
+      ],
+      "invariant": "The read-only Codex activation canary cannot enter gap hiring.",
+      "mutation_id": "activation-canary-enters-gap-hiring",
+      "source_path": "agency_runtime/core/selector/pipeline.py",
+      "status": "killed",
+      "test_node": "tests/test_activation_canary_contract.py::test_activation_canary_uses_inference_owned_selection"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1047,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_activation_canary_contract.py::test_existing_store_product_canary_can_hire_an_inference_declared_gap"
+      ],
+      "invariant": "An ordinary product task may hire an inference-declared specialist gap even when its isolated hook requires the existing Store.",
+      "mutation_id": "product-canary-suppresses-gap-hiring",
+      "source_path": "agency_runtime/core/selector/pipeline.py",
+      "status": "killed",
+      "test_node": "tests/test_activation_canary_contract.py::test_existing_store_product_canary_can_hire_an_inference_declared_gap"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 937,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_preflight_bounds.py::test_persistent_host_ceiling_is_the_general_preflight_ceiling"
+      ],
+      "invariant": "Persistent native parents may carry the complete bounded specialist team and delegation plan up to the general preflight ceiling.",
+      "mutation_id": "persistent-host-restores-legacy-context-ceiling",
+      "source_path": "agency_runtime/core/preflight_recipe.py",
+      "status": "killed",
+      "test_node": "tests/test_preflight_bounds.py::test_persistent_host_ceiling_is_the_general_preflight_ceiling"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2430,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_preflight_bounds.py::test_multibyte_complete_context_fails_before_ready_is_persisted"
+      ],
+      "invariant": "Persistent native-parent context is rejected before ready commit when its exact UTF-8 hook envelope exceeds the reserved output budget.",
+      "mutation_id": "persistent-host-drops-encoded-output-bound",
+      "source_path": "agency_runtime/core/preflight_recipe.py",
+      "status": "killed",
+      "test_node": "tests/test_preflight_bounds.py::test_multibyte_complete_context_fails_before_ready_is_persisted"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 952,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_host_hooks.py::test_codex_rejects_oversized_utf8_model_before_preflight_ready"
+      ],
+      "invariant": "Codex rejects an oversized UTF-8 model identifier before preflight can commit a route whose appended evidence header exceeds the final hook envelope.",
+      "mutation_id": "codex-user-prompt-admits-oversized-model-header",
+      "source_path": "agency_runtime/adapters/hooks.py",
+      "status": "killed",
+      "test_node": "tests/test_host_hooks.py::test_codex_rejects_oversized_utf8_model_before_preflight_ready"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2881,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_accepts_valid_routing_above_legacy_node_limit"
+      ],
+      "invariant": "Ready routing receipts accept every structurally bounded decision admitted by the durable preflight recipe.",
+      "mutation_id": "ready-routing-receipt-restores-legacy-node-cap",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_accepts_valid_routing_above_legacy_node_limit"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 3035,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_unrecognized_or_malformed_auxiliary_routes[computed-extra_decision0]"
+      ],
+      "invariant": "Only a fully validated native-child success route may coexist with the one canonical ready-preflight routing component.",
+      "mutation_id": "ready-routing-receipt-allows-unvalidated-auxiliary-route",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_unrecognized_or_malformed_auxiliary_routes"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2932,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_duplicate_valid_native_child_launch_route"
+      ],
+      "invariant": "A successful native-child launch contributes at most one auxiliary routing component to a ready parent receipt.",
+      "mutation_id": "ready-routing-receipt-allows-duplicate-native-child-launch",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_duplicate_valid_native_child_launch_route"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 3207,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_canary_activation_snapshot.py::test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route"
+      ],
+      "invariant": "The exact managed Codex canary leaves its recognized spawn to the restricted flow without appending an ordinary opaque-channel failure route.",
+      "mutation_id": "restricted-codex-opaque-spawn-appends-contradictory-failure-route",
+      "source_path": "agency_runtime/adapters/hooks.py",
+      "status": "killed",
+      "test_node": "tests/test_canary_activation_snapshot.py::test_restricted_codex_opaque_spawn_preserves_the_proven_parent_route"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 3188,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_canary_activation_snapshot.py::test_restricted_codex_post_tool_first_promotes_the_pending_dispatch[pending-rekey]"
+      ],
+      "invariant": "A restricted Codex PostToolUse that precedes SubagentStart retains the exact fixed-unit dispatch for later real-child promotion.",
+      "mutation_id": "restricted-codex-post-first-drops-pending-dispatch",
+      "source_path": "agency_runtime/adapters/hooks.py",
+      "status": "killed",
+      "test_node": "tests/test_canary_activation_snapshot.py::test_restricted_codex_post_tool_first_promotes_the_pending_dispatch"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2971,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_accepts_distinct_native_child_launch_routes"
+      ],
+      "invariant": "Auxiliary routing uniqueness is scoped to host and launch identity rather than limiting a parent turn to one legitimate child.",
+      "mutation_id": "ready-routing-receipt-rejects-distinct-native-child-launch",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_accepts_distinct_native_child_launch_routes"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2902,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_noncanonical_native_child_route_timestamp"
+      ],
+      "invariant": "Every accepted auxiliary native-child route retains the canonical Store clock timestamp written with its immutable projection.",
+      "mutation_id": "ready-routing-receipt-allows-noncanonical-auxiliary-timestamp",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_noncanonical_native_child_route_timestamp"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2923,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_noncanonical_native_child_route_id[whitespace_text]"
+      ],
+      "invariant": "An auxiliary routing row ID remains an exact canonical correlation string, without whitespace or storage-class coercion.",
+      "mutation_id": "ready-routing-receipt-coerces-auxiliary-route-id",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_noncanonical_native_child_route_id"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2944,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_non_digest_native_child_context_projection"
+      ],
+      "invariant": "The auxiliary routing context fingerprint remains an exact canonical content digest identity.",
+      "mutation_id": "ready-routing-receipt-allows-opaque-auxiliary-context",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_non_digest_native_child_context_projection"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2904,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_noncanonical_native_child_json_projection[selected_ids-[\"code-reviewer\" ]]"
+      ],
+      "invariant": "Auxiliary selected, semantic, companion, and work-unit columns retain the exact canonical JSON serialization committed by the Store writer.",
+      "mutation_id": "ready-routing-receipt-normalizes-auxiliary-json-projections",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_noncanonical_native_child_json_projection"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 4364,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_coercible_native_child_numeric_columns[blob_confidence]"
+      ],
+      "invariant": "Auxiliary route confidence must retain the Store's canonical REAL type instead of passing through numeric coercion.",
+      "mutation_id": "ready-routing-receipt-coerces-auxiliary-confidence",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_coercible_native_child_numeric_columns"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2913,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_coercible_native_child_numeric_columns[fractional_latency]"
+      ],
+      "invariant": "Auxiliary route latency must retain the Store's canonical INTEGER type instead of truncating through numeric coercion.",
+      "mutation_id": "ready-routing-receipt-coerces-auxiliary-latency",
+      "source_path": "agency_runtime/core/store/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_receipt_header.py::test_ready_receipt_rejects_coercible_native_child_numeric_columns"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1194,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_activation_canary_contract.py::test_activation_canary_uses_inference_owned_selection"
+      ],
+      "invariant": "The exact indivisible Codex activation request constrains inference to one planned work unit.",
+      "mutation_id": "activation-canary-allows-plan-subdivision",
+      "source_path": "agency_runtime/core/selector/pipeline.py",
+      "status": "killed",
+      "test_node": "tests/test_activation_canary_contract.py::test_activation_canary_uses_inference_owned_selection"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1208,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_activation_canary_contract.py::test_activation_canary_uses_inference_owned_selection"
+      ],
+      "invariant": "The exact Codex activation canary delegates the inference-selected worker through the native host instead of loading it into the parent.",
+      "mutation_id": "activation-canary-allows-load-delivery",
+      "source_path": "agency_runtime/core/selector/pipeline.py",
+      "status": "killed",
+      "test_node": "tests/test_activation_canary_contract.py::test_activation_canary_uses_inference_owned_selection"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1198,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_activation_canary_contract.py::test_activation_canary_uses_inference_owned_selection"
+      ],
+      "invariant": "The exact Codex review canary constrains inference to the requested review-report artifact.",
+      "mutation_id": "activation-canary-allows-wrong-artifact",
+      "source_path": "agency_runtime/core/selector/pipeline.py",
+      "status": "killed",
+      "test_node": "tests/test_activation_canary_contract.py::test_activation_canary_uses_inference_owned_selection"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1109,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+      ],
+      "invariant": "Ordinary Codex product trials persist the parent turn required by native multi-agent delegation.",
+      "mutation_id": "product-host-restores-ephemeral-parent",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1070,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+      ],
+      "invariant": "Ordinary Codex product trials explicitly enable native multi-agent V2.",
+      "mutation_id": "product-host-disables-multi-agent-v2",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1103,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+      ],
+      "invariant": "Ordinary Codex product trials explicitly enable the agents capability.",
+      "mutation_id": "product-host-disables-agents",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1095,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority"
+      ],
+      "invariant": "Codex product trials give the parent exact scheduling mechanics for every accepted plan row and prevent delegated children from recursively spawning.",
+      "mutation_id": "product-host-drops-explicit-delegation-authority",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1102,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority"
+      ],
+      "invariant": "A product parent never advances after a nonterminal child commentary wake.",
+      "mutation_id": "product-host-advances-after-commentary-wake",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_supplies_bounded_parent_and_child_delegation_authority"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1116,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_activation_canary.py::test_codex_product_rollout_projects_exact_eight_unit_reuse_topology"
+      ],
+      "invariant": "Product rollout evidence admits bounded repeated execution waits before terminal child completion.",
+      "mutation_id": "product-rollout-rejects-commentary-waits",
+      "source_path": "agency_runtime/core/canary_backends.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_activation_canary.py::test_codex_product_rollout_projects_exact_eight_unit_reuse_topology"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 663,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_global_guidance.py::test_codex_global_guidance_preserves_owner_content_and_is_idempotent"
+      ],
+      "invariant": "A Codex installation explicitly requests native delegation only for an accepted current-turn Agency plan.",
+      "mutation_id": "codex-global-guidance-drops-native-delegation-request",
+      "source_path": "agency_runtime/core/codex_global_guidance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_global_guidance.py::test_codex_global_guidance_preserves_owner_content_and_is_idempotent"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1220,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_host_uses_isolated_workspace_write_profile[native-only-False]"
+      ],
+      "invariant": "Codex product delegation authority is injected only for Agency mode and is absent from native-only trials.",
+      "mutation_id": "native-only-product-host-inherits-agency-delegation-authority",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_host_uses_isolated_workspace_write_profile"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1096,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+      ],
+      "invariant": "Ordinary Codex product trials require the exact pre-existing Agency evidence store.",
+      "mutation_id": "product-host-allows-store-bootstrap",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1101,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+      ],
+      "invariant": "Agency-mode product trials capture content-free hook stage diagnostics.",
+      "mutation_id": "product-host-drops-hook-start-evidence",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1070,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+      ],
+      "invariant": "Codex product trials correlate collaboration events from the exact child rollout.",
+      "mutation_id": "product-host-disables-exact-rollout-correlation",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1045,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+      ],
+      "invariant": "Codex product trials project every exact product child instead of applying the one-child activation-canary topology.",
+      "mutation_id": "product-host-restores-one-child-rollout-contract",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1114,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_activation_canary.py::test_codex_jsonl_parser_classifies_only_exact_allowlisted_host_notices"
+      ],
+      "invariant": "Only exact known Codex non-critical host notices bypass the unexpected-item gate.",
+      "mutation_id": "codex-host-notice-accepts-arbitrary-errors",
+      "source_path": "agency_runtime/core/canary_backends.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_activation_canary.py::test_codex_jsonl_parser_classifies_only_exact_allowlisted_host_notices"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1135,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_is_fixed_and_content_free"
+      ],
+      "invariant": "Codex product evidence preserves successful child patch receipts as bounded counts without retaining tool content.",
+      "mutation_id": "codex-product-drops-successful-child-patch-receipts",
+      "source_path": "agency_runtime/core/codex_child_tool_evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_is_fixed_and_content_free"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1111,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_is_fixed_and_content_free"
+      ],
+      "invariant": "Codex product evidence classifies allowlisted nested tools and the fixed wrapper outcome inside current functions.exec transport without retaining tool content.",
+      "mutation_id": "codex-product-skips-nested-exec-tool-classification",
+      "source_path": "agency_runtime/core/canary_backends.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_is_fixed_and_content_free"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1114,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_projects_fixed_wrapper_failure_category"
+      ],
+      "invariant": "Codex product evidence classifies failed exec wrappers into bounded fixed categories without retaining output content.",
+      "mutation_id": "codex-product-collapses-wrapper-failure-category",
+      "source_path": "agency_runtime/core/canary_backends.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_projects_fixed_wrapper_failure_category"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1129,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_correlates_nested_tool_and_wrapper_outcome"
+      ],
+      "invariant": "Codex product evidence correlates each unambiguous nested tool kind with its wrapper outcome without retaining input or output content.",
+      "mutation_id": "codex-product-collapses-wrapper-tool-outcome-correlation",
+      "source_path": "agency_runtime/core/canary_backends.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_activation_canary.py::test_product_child_tool_evidence_correlates_nested_tool_and_wrapper_outcome"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 916,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_child_execution.py::test_direct_completion_requires_exact_parent_and_causal_delivery"
+      ],
+      "invariant": "Codex execution evidence requires the parent rollout to prove its exact session identity.",
+      "mutation_id": "codex-execution-drops-parent-session-identity",
+      "source_path": "agency_runtime/core/codex_child_execution.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_child_execution.py::test_direct_completion_requires_exact_parent_and_causal_delivery"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 911,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_child_execution.py::test_current_turn_matches_exact_parent_and_child_ciphertext"
+      ],
+      "invariant": "Opaque Codex execution evidence requires one child ciphertext that is byte-identical to the exact parent follow-up ciphertext.",
+      "mutation_id": "codex-opaque-execution-drops-ciphertext-identity",
+      "source_path": "agency_runtime/core/codex_child_execution.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_child_execution.py::test_current_turn_matches_exact_parent_and_child_ciphertext"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 895,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_child_execution.py::test_parent_stop_projection_requires_exact_completed_child_response"
+      ],
+      "invariant": "A Codex worker closes only after its second turn contains one exact nonempty assistant final response.",
+      "mutation_id": "codex-parent-stop-accepts-missing-child-final-response",
+      "source_path": "agency_runtime/core/codex_child_execution.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_child_execution.py::test_parent_stop_projection_requires_exact_completed_child_response"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 896,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_child_execution.py::test_parent_stop_projection_rejects_tampered_or_ambiguous_completion"
+      ],
+      "invariant": "The exact Codex execution delivery causally precedes the child final response.",
+      "mutation_id": "codex-parent-stop-accepts-execution-after-child-response",
+      "source_path": "agency_runtime/core/codex_child_execution.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_child_execution.py::test_parent_stop_projection_rejects_tampered_or_ambiguous_completion"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 917,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_child_execution.py::test_parent_stop_projection_rejects_tampered_or_ambiguous_completion"
+      ],
+      "invariant": "The exact Codex execution delivery occurs inside, not before, the second child turn.",
+      "mutation_id": "codex-parent-stop-accepts-execution-before-second-turn",
+      "source_path": "agency_runtime/core/codex_child_execution.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_child_execution.py::test_parent_stop_projection_rejects_tampered_or_ambiguous_completion"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 920,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_child_execution.py::test_direct_initial_turn_requires_exact_spawn_ciphertext_and_completion"
+      ],
+      "invariant": "Direct Codex execution requires a child NEW_TASK ciphertext byte-identical to the exact parent spawn ciphertext.",
+      "mutation_id": "codex-direct-execution-drops-ciphertext-identity",
+      "source_path": "agency_runtime/core/codex_child_execution.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_child_execution.py::test_direct_initial_turn_requires_exact_spawn_ciphertext_and_completion"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 936,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_child_execution.py::test_direct_completion_requires_exact_parent_and_causal_delivery"
+      ],
+      "invariant": "Direct Codex completion requires one nonempty final response before task completion.",
+      "mutation_id": "codex-direct-completion-accepts-missing-final-response",
+      "source_path": "agency_runtime/core/codex_child_execution.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_child_execution.py::test_direct_completion_requires_exact_parent_and_causal_delivery"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 913,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_child_execution.py::test_direct_completion_requires_exact_parent_and_causal_delivery"
+      ],
+      "invariant": "The exact direct Codex spawn delivery causally precedes the child final response.",
+      "mutation_id": "codex-direct-completion-accepts-delivery-after-final-response",
+      "source_path": "agency_runtime/core/codex_child_execution.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_child_execution.py::test_direct_completion_requires_exact_parent_and_causal_delivery"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2944,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_preflight_bounds.py::test_preflight_persists_request_kind_and_terminalizes_downstream_failure"
+      ],
+      "invariant": "Every owned terminal preflight failure persists one exact content-free receipt.",
+      "mutation_id": "preflight-failure-drops-terminal-receipt",
+      "source_path": "agency_runtime/core/preflight.py",
+      "status": "killed",
+      "test_node": "tests/test_preflight_bounds.py::test_preflight_persists_request_kind_and_terminalizes_downstream_failure"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 3040,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_preflight_bounds.py::test_preflight_failure_receipt_projects_provider_attempts_without_content"
+      ],
+      "invariant": "Preflight failure receipts retain only allowlisted content-free provider attempts.",
+      "mutation_id": "preflight-failure-retains-raw-provider-content",
+      "source_path": "agency_runtime/core/selector/receipt_projection.py",
+      "status": "killed",
+      "test_node": "tests/test_preflight_bounds.py::test_preflight_failure_receipt_projects_provider_attempts_without_content"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 3595,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_canary_activation_snapshot.py::test_canary_activation_snapshot_projects_exact_preflight_failure"
+      ],
+      "invariant": "Exact activation evidence projects one correlated preflight failure instead of collapsing it to route-not-found.",
+      "mutation_id": "exact-snapshot-collapses-preflight-failure",
+      "source_path": "agency_runtime/core/store/evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_canary_activation_snapshot.py::test_canary_activation_snapshot_projects_exact_preflight_failure"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1111,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_activation_canary.py::test_codex_v2_rollout_reports_content_free_parent_spawn_failure"
+      ],
+      "invariant": "A completed Codex turn with no native spawn reports that exact content-free cause.",
+      "mutation_id": "codex-diagnostic-erases-parent-spawn-failure",
+      "source_path": "agency_runtime/core/canary_backends.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_activation_canary.py::test_codex_v2_rollout_reports_content_free_parent_spawn_failure"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 921,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_one_shot.py::test_product_trial_rejects_a_deadline_too_short_for_the_complete_contract"
+      ],
+      "invariant": "A full product trial receives at least ten minutes for inference, all specialist units, validation, and final evidence.",
+      "mutation_id": "product-trial-restores-canary-sized-deadline",
+      "source_path": "agency_runtime/core/evals/product_one_shot.py",
+      "status": "killed",
+      "test_node": "tests/test_product_one_shot.py::test_product_trial_rejects_a_deadline_too_short_for_the_complete_contract"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1145,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_activation_canary.py::test_codex_product_rollout_projects_exact_eight_unit_reuse_topology"
+      ],
+      "invariant": "Product rollout evidence accepts the current bounded Codex wait contract without weakening the activation canary.",
+      "mutation_id": "product-rollout-restores-stale-wait-ceiling",
+      "source_path": "agency_runtime/core/canary_backends.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_activation_canary.py::test_codex_product_rollout_projects_exact_eight_unit_reuse_topology"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1098,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_workspace_write_proof_is_owned_by_a_delegated_workspace_write_unit"
+      ],
+      "invariant": "Only a delegated workspace-write child may create the product sentinel.",
+      "mutation_id": "product-write-proof-assigns-read-only-child",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_workspace_write_proof_is_owned_by_a_delegated_workspace_write_unit"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1113,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+      ],
+      "invariant": "Codex product trials record the supported one-invocation bypass without claiming attended trust.",
+      "mutation_id": "product-host-mislabels-hook-bypass-as-attended",
+      "source_path": "agency_runtime/core/evals/product_host.py",
+      "status": "killed",
+      "test_node": "tests/test_product_host.py::test_codex_product_backend_persists_parent_and_correlates_exact_rollout"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 919,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_product_one_shot.py::test_unproven_workspace_write_stops_before_product_grading[None]"
+      ],
+      "invariant": "Product grading fails closed unless effective workspace-write evidence is true.",
+      "mutation_id": "product-grading-accepts-missing-write-proof",
+      "source_path": "agency_runtime/core/evals/product_one_shot.py",
+      "status": "killed",
+      "test_node": "tests/test_product_one_shot.py::test_unproven_workspace_write_stops_before_product_grading[None]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1060,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_default_fast_mode_funds_one_repair_for_each_inference_stage"
+      ],
+      "invariant": "The default fast budget funds one bounded repair for both planner and recruiter.",
+      "mutation_id": "default-fast-budget-removes-stage-repair",
+      "source_path": "agency_runtime/core/config.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_default_fast_mode_funds_one_repair_for_each_inference_stage"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1090,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_staffing_call_reservations.py::test_subject_repair_no_longer_spends_the_fifth_call_needed_by_the_critic"
+      ],
+      "invariant": "A subject stage spends at most one actual call across its provider chain.",
+      "mutation_id": "staffing-subject-repair-spends-critic-call",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_staffing_call_reservations.py::test_subject_repair_no_longer_spends_the_fifth_call_needed_by_the_critic"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1187,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_staffing_call_reservations.py::test_explicit_strict_cap_is_never_enlarged_or_spent_on_doomed_stages[3]"
+      ],
+      "invariant": "Optional subject inference preserves the initial mandatory staffing calls.",
+      "mutation_id": "staffing-subject-spends-mandatory-stage-calls",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_staffing_call_reservations.py::test_explicit_strict_cap_is_never_enlarged_or_spent_on_doomed_stages[3]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1128,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_staffing_call_reservations.py::test_planner_fallback_cannot_spend_recruiter_and_critic_reservation"
+      ],
+      "invariant": "Planner attempts preserve the initial recruiter and strict critic calls.",
+      "mutation_id": "staffing-planner-spends-downstream-stage-calls",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_staffing_call_reservations.py::test_planner_fallback_cannot_spend_recruiter_and_critic_reservation"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1126,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_staffing_call_reservations.py::test_subject_and_both_repairs_require_six_calls_without_weakening_validation[5-False]"
+      ],
+      "invariant": "Recruiter repair cannot spend the last call needed by a strict critic.",
+      "mutation_id": "staffing-recruiter-spends-mandatory-critic-call",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_staffing_call_reservations.py::test_subject_and_both_repairs_require_six_calls_without_weakening_validation[5-False]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 2037,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful[1-3-True-expected_statuses2-expected_calls2-False]"
+      ],
+      "invariant": "A declined hiring analysis does not consume the task's workforce-change allowance or starve a later declared gap.",
+      "mutation_id": "declined-hiring-analysis-consumes-hire-budget",
+      "source_path": "agency_runtime/core/selector/pipeline.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_route_hiring_caps_and_daily_budget_are_cumulative_and_truthful"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1212,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_hire_compiles_schema_maximum_lists_into_bounded_workforce_contract"
+      ],
+      "invariant": "Causing-unit facts stay inside the employment contract item bound.",
+      "mutation_id": "causing-unit-binding-overflows-employment-schema",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_hire_compiles_schema_maximum_lists_into_bounded_workforce_contract"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1509,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_workspace_unit_overrides_model_external_mutation_claim"
+      ],
+      "invariant": "A workspace-local contractor receives the validated unit authority rather than a model-authored external-mutation claim.",
+      "mutation_id": "workspace-hire-trusts-model-external-mutation",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_workspace_unit_overrides_model_external_mutation_claim"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1499,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_external_write_unit_overrides_an_understated_model_claim"
+      ],
+      "invariant": "An external-write work unit remains approval-gated even when the model understates mutation authority.",
+      "mutation_id": "external-write-hire-drops-approval-authority",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_external_write_unit_overrides_an_understated_model_claim"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 732,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_hiring_contract.py::test_explicit_high_risk_prohibitions_do_not_grant_authority[No legal advice or legal filing authority.]"
+      ],
+      "invariant": "An explicit high-risk prohibition does not grant the authority it denies.",
+      "mutation_id": "explicit-risk-prohibition-becomes-granted-authority",
+      "source_path": "agency_runtime/core/workforce/hiring_contract.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_hiring_contract.py::test_explicit_high_risk_prohibitions_do_not_grant_authority"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 738,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_hiring_contract.py::test_positive_risk_after_a_prohibition_still_requires_approval"
+      ],
+      "invariant": "A later positive high-risk assertion cannot hide behind an earlier prohibition.",
+      "mutation_id": "positive-risk-after-prohibition-is-hidden",
+      "source_path": "agency_runtime/core/workforce/hiring_contract.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_hiring_contract.py::test_positive_risk_after_a_prohibition_still_requires_approval"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1506,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_owner_gated_hire_waits_for_approval_then_materializes"
+      ],
+      "invariant": "An owner-gated high-risk contract never instantiates without recorded approval.",
+      "mutation_id": "owner-approval-gate-severed",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_owner_gated_hire_waits_for_approval_then_materializes"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 927,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_subject_inference.py::test_the_trigger_is_a_zero_floor_not_a_tunable_threshold"
+      ],
+      "invariant": "The typed subject call is bought only when retrieval scored nothing, never when it scored lowish.",
+      "mutation_id": "subject-inference-trigger-loosened",
+      "source_path": "agency_runtime/core/selector/candidate_narrow.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_subject_inference.py::test_the_trigger_is_a_zero_floor_not_a_tunable_threshold"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1183,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_hire_compiles_schema_maximum_lists_into_bounded_workforce_contract"
+      ],
+      "invariant": "Employment outcomes are capped to the smaller workforce projection.",
+      "mutation_id": "contractor-outcomes-overflow-workforce-schema",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_hire_compiles_schema_maximum_lists_into_bounded_workforce_contract"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1474,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_amendment_binds_model_extension_slug_to_inferred_target"
+      ],
+      "invariant": "An amendment revises the inference-selected existing worker instead of creating a second model-authored identity.",
+      "mutation_id": "amendment-target-identity-left-model-authored",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_amendment_binds_model_extension_slug_to_inferred_target"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1537,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_task_gap_amendment_is_rejected_when_amendment_is_disallowed"
+      ],
+      "invariant": "An ordinary task gap creates a distinct exact specialist instead of broadening a near-match.",
+      "mutation_id": "task-gap-restores-near-match-amendment",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_task_gap_amendment_is_rejected_when_amendment_is_disallowed"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1437,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_amendment_preserves_existing_values_inside_smaller_workforce_bounds"
+      ],
+      "invariant": "An additive amendment preserves existing outcomes while respecting the smaller workforce projection bound.",
+      "mutation_id": "amendment-outcomes-overflow-workforce-schema",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_amendment_preserves_existing_values_inside_smaller_workforce_bounds"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1133,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_hire_reports_content_free_employment_revalidation_stage"
+      ],
+      "invariant": "Post-parse contractor failures retain their content-free validation stage.",
+      "mutation_id": "contractor-diagnostics-collapse",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_hire_reports_content_free_employment_revalidation_stage"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1156,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_critic_can_independently_validate_runtime_gap_evidence"
+      ],
+      "invariant": "A contractor critic receives bounded typed requirements and eligible coverage from the exact staffing-verifier context.",
+      "mutation_id": "contractor-critic-loses-typed-gap-projection",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_critic_can_independently_validate_runtime_gap_evidence"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1510,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_product_request_gap_repair_receives_live_reason_family_and_typed_proof"
+      ],
+      "invariant": "A replacement contractor is explicitly told to remove speculative composition edges after a relationship-coherence rejection.",
+      "mutation_id": "contractor-repair-keeps-incoherent-relationships",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_product_request_gap_repair_receives_live_reason_family_and_typed_proof"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1475,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_dynamic_hiring.py::test_product_request_gap_repair_receives_live_reason_family_and_typed_proof"
+      ],
+      "invariant": "A replacement contractor binds its evidence and evaluations to every work-unit acceptance check after an evidence-sufficiency rejection.",
+      "mutation_id": "contractor-repair-ignores-acceptance-evidence",
+      "source_path": "agency_runtime/core/workforce/hiring.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_dynamic_hiring.py::test_product_request_gap_repair_receives_live_reason_family_and_typed_proof"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1081,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_routing_correctness.py::test_full_route_never_repopulates_inference_failure_from_policy"
+      ],
+      "invariant": "A terminal inference failure cannot be repopulated by deterministic policy companions or fallbacks.",
+      "mutation_id": "terminal-inference-failure-restores-policy-selection",
+      "source_path": "agency_runtime/core/selector/pipeline.py",
+      "status": "killed",
+      "test_node": "tests/test_routing_correctness.py::test_full_route_never_repopulates_inference_failure_from_policy"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 987,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_host_hooks.py::test_identical_codex_invalid_stop_is_terminal_and_exactly_replayed"
+      ],
+      "invariant": "A terminal Codex response failure stops the turn instead of creating a model-visible correction prompt.",
+      "mutation_id": "codex-terminal-invalid-restores-continuation-prompt",
+      "source_path": "agency_runtime/adapters/hooks.py",
+      "status": "killed",
+      "test_node": "tests/test_host_hooks.py::test_identical_codex_invalid_stop_is_terminal_and_exactly_replayed"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 3632,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_host_hooks.py::test_stdio_preflight_header_is_accepted_first_pass[codex]"
+      ],
+      "invariant": "Codex receives the exact Store-backed header snapshot before its first visible response.",
+      "mutation_id": "codex-preflight-drops-initial-header-snapshot",
+      "source_path": "agency_runtime/adapters/hooks.py",
+      "status": "killed",
+      "test_node": "tests/test_host_hooks.py::test_stdio_preflight_header_is_accepted_first_pass"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1066,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_adapter_parity.py::test_generated_openclaw_plugin_is_native_openclaw_package"
+      ],
+      "invariant": "OpenClaw terminal verification never asks the model to revise a natural response.",
+      "mutation_id": "openclaw-finalize-restores-model-revision",
+      "source_path": "agency_runtime/core/installer_payload_openclaw.py",
+      "status": "killed",
+      "test_node": "tests/test_adapter_parity.py::test_generated_openclaw_plugin_is_native_openclaw_package"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1128,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_completion_policy_boundary.py::test_hermes_transform_rejects_unfinalized_natural_response_without_repair"
+      ],
+      "invariant": "Hermes blocks an unfinalized natural response instead of repairing it after generation.",
+      "mutation_id": "hermes-transform-repairs-unfinalized-response",
+      "source_path": "agency_runtime/adapters/hermes/bridge.py",
+      "status": "killed",
+      "test_node": "tests/test_completion_policy_boundary.py::test_hermes_transform_rejects_unfinalized_natural_response_without_repair"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 769,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_exact_forked_child_shape_attests_and_binds_thread_and_root"
+      ],
+      "invariant": "A forked Codex rollout binds its filename thread identity separately from the root session carried by hook correlation.",
+      "mutation_id": "codex-forked-rollout-collapses-thread-into-root-session",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_exact_forked_child_shape_attests_and_binds_thread_and_root"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 952,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_duplicate_launch.py::test_final_delivery_validation_rolls_back_and_exact_launch_can_retry"
+      ],
+      "invariant": "A failed final delivery validation rolls back the successful native-child route so the exact launch remains retryable.",
+      "mutation_id": "native-child-final-validation-persists-poisoned-success",
+      "source_path": "agency_runtime/core/store/maintenance.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_duplicate_launch.py::test_final_delivery_validation_rolls_back_and_exact_launch_can_retry"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1033,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_staffing.py::test_config_lock_exit_failure_preserves_committed_staffed_delivery"
+      ],
+      "invariant": "A config-lock release failure after route commit preserves the matching staffed output instead of leaving a successful row that poisons retry.",
+      "mutation_id": "native-child-config-lock-exit-suppresses-committed-delivery",
+      "source_path": "agency_runtime/core/native_child_staffing.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_staffing.py::test_config_lock_exit_failure_preserves_committed_staffed_delivery"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 833,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_function_call_requires_exact_observed_response_item_schema[extra_payload_key]"
+      ],
+      "invariant": "A marked Codex spawn must match the exact pinned 0.147 response-item schema.",
+      "mutation_id": "codex-marked-call-allows-response-schema-drift",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_function_call_requires_exact_observed_response_item_schema"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 823,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_target_response_item_rejects_an_extra_outer_key"
+      ],
+      "invariant": "A marked Codex spawn must match one of the two exact observed 0.147 response envelopes, including its timestamp and optional ordinal contract.",
+      "mutation_id": "codex-marked-call-allows-outer-envelope-drift",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_target_response_item_rejects_an_extra_outer_key"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 840,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_target_response_item_requires_exact_observed_timestamp[2026-08-13T00:00:00.000000Z]"
+      ],
+      "invariant": "The marked response envelope uses the exact valid millisecond UTC timestamp format observed for Codex 0.147.",
+      "mutation_id": "codex-marked-call-allows-timestamp-format-drift",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_target_response_item_requires_exact_observed_timestamp"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 836,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_target_response_item_requires_a_nonnegative_integer_ordinal[True]"
+      ],
+      "invariant": "The optional Codex 0.147 response ordinal is a non-boolean nonnegative integer.",
+      "mutation_id": "codex-marked-call-allows-boolean-ordinal",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_target_response_item_requires_a_nonnegative_integer_ordinal"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 828,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_function_call_requires_exact_observed_response_item_schema[malformed_id]"
+      ],
+      "invariant": "The marked Codex function call carries the exact observed 0.147 function-item identity format before that identity can be sealed.",
+      "mutation_id": "codex-marked-call-allows-malformed-function-item-id",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_function_call_requires_exact_observed_response_item_schema"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 818,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_rollout_path_requires_canonical_padded_date_components[8-12]"
+      ],
+      "invariant": "The canonical Codex sessions path uses exact four-digit year and two-digit month and day components.",
+      "mutation_id": "codex-rollout-allows-noncanonical-date-widths",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_rollout_path_requires_canonical_padded_date_components"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 825,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_root_identity_requires_canonical_non_nil_uuid7_without_filename_binding[00000000-0000-0000-0000-000000000000]"
+      ],
+      "invariant": "Codex session, thread, and turn UUID identities are canonical and non-nil.",
+      "mutation_id": "codex-rollout-allows-nil-uuid-identity",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_root_identity_requires_canonical_non_nil_uuid7_without_filename_binding"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 837,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7[019ff8ee-eb1c-4de3-815d-3deea9eca028]"
+      ],
+      "invariant": "Codex thread/session identities are UUIDv7 and turn identities are observed UUIDv4 or UUIDv7 values.",
+      "mutation_id": "codex-rollout-drops-observed-uuid-version-domain",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 837,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7[019ff8ee-eb1c-7de3-015d-3deea9eca028]"
+      ],
+      "invariant": "Codex session, thread, and turn identities use the RFC UUID variant.",
+      "mutation_id": "codex-rollout-drops-rfc-uuid-variant",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_session_identity_requires_non_nil_rfc_uuid7"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 836,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_function_item_identity_must_be_unique_across_initial_snapshot[before]"
+      ],
+      "invariant": "The sealed Codex function-call item identity occurs exactly once in the initial bounded transcript snapshot.",
+      "mutation_id": "codex-marked-call-allows-initial-item-id-reuse",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_function_item_identity_must_be_unique_across_initial_snapshot"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 839,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_appended_different_call_cannot_reuse_attested_function_item_identity"
+      ],
+      "invariant": "Any appended response item reusing the sealed Codex function-call identity invalidates the ephemeral attestation.",
+      "mutation_id": "codex-marked-call-allows-appended-item-id-reuse",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_appended_different_call_cannot_reuse_attested_function_item_identity"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 827,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_external_records_and_parallel_arrays_are_structurally_bound"
+      ],
+      "invariant": "A sealed cross-file Codex attestation rejects mismatched parallel evidence arrays before any indexed revalidation.",
+      "mutation_id": "codex-cross-file-allows-parallel-evidence-shape-drift",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_external_records_and_parallel_arrays_are_structurally_bound"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 840,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_external_identity_and_scanned_prefix_are_sealed"
+      ],
+      "invariant": "Each external Codex ancestry rollout remains bound to the exact sealed device and inode rather than a byte-identical pathname replacement.",
+      "mutation_id": "codex-cross-file-drops-external-file-identity",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_external_identity_and_scanned_prefix_are_sealed"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 853,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_external_identity_and_scanned_prefix_are_sealed"
+      ],
+      "invariant": "The full external prefix scanned for absence and uniqueness remains sealed, including records outside the selected metadata and causal pair.",
+      "mutation_id": "codex-cross-file-skips-scanned-prefix-digest",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_external_identity_and_scanned_prefix_are_sealed"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 847,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_external_records_and_parallel_arrays_are_structurally_bound"
+      ],
+      "invariant": "Every sealed external metadata and causal record digest is independently revalidated before a Codex rewrite remains authoritative.",
+      "mutation_id": "codex-cross-file-skips-external-record-revalidation",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_external_records_and_parallel_arrays_are_structurally_bound"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 855,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_appended_causal_replay_is_rejected"
+      ],
+      "invariant": "An external ancestry rollout cannot append a duplicate sealed launch, item, child-start, or session record after attestation.",
+      "mutation_id": "codex-cross-file-allows-appended-causal-replay",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_appended_causal_replay_is_rejected"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 815,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_both_causal_edges_and_history_variant_are_authoritative"
+      ],
+      "invariant": "A host-written child-start event is bound to the exact parent rollout thread for both cross-file causal edges.",
+      "mutation_id": "codex-cross-file-decouples-causal-parent-thread",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_both_causal_edges_and_history_variant_are_authoritative"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 800,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_exact_one_metadata_tui_chain_attests_across_canonical_rollouts[2-True]"
+      ],
+      "invariant": "A depth-two chain binds its canonical root launch to the exact intermediate parent thread rather than the current grandchild.",
+      "mutation_id": "codex-cross-file-weakens-root-parent-causal-edge",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_exact_one_metadata_tui_chain_attests_across_canonical_rollouts[2-True]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 856,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[sparse_wrong_fork_turns]"
+      ],
+      "invariant": "A sparse one-record child is accepted only when its causal launch explicitly uses fork_turns none.",
+      "mutation_id": "codex-cross-file-decouples-sparse-fork-turn-semantics",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[sparse_wrong_fork_turns]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 840,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[inherited_wrong_fork_turns]"
+      ],
+      "invariant": "An inherited one-record child is accepted only when its causal launch uses fork_turns all or a canonical positive decimal.",
+      "mutation_id": "codex-cross-file-decouples-fork-history-variant",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[inherited_wrong_fork_turns]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 870,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_copied_root_matches_canonical_payload"
+      ],
+      "invariant": "A depth-two parent's copied root metadata payload exactly matches the separately opened canonical root payload.",
+      "mutation_id": "codex-cross-file-allows-copied-root-payload-drift",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_copied_root_matches_canonical_payload"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 839,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_one_metadata_tui_chain_accepts_independent_cross_offset_rollouts"
+      ],
+      "invariant": "Each canonical external rollout retains its own independently derived integral UTC offset rather than inheriting another ancestor's offset.",
+      "mutation_id": "codex-cross-file-drops-rollout-offset-binding",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_one_metadata_tui_chain_accepts_independent_cross_offset_rollouts"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 845,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_nonzero_offset_is_required_for_canonical_lookup"
+      ],
+      "invariant": "Canonical ancestry lookup checks only the bounded UTC date neighborhood needed for valid minus-twelve through plus-fourteen-hour rollout offsets.",
+      "mutation_id": "codex-cross-file-drops-adjacent-utc-day-lookup",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_nonzero_offset_is_required_for_canonical_lookup"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 838,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[bounded_root_directory]"
+      ],
+      "invariant": "Each candidate UTC-date directory is scanned under a fixed entry bound before any external ancestry path can become authoritative.",
+      "mutation_id": "codex-cross-file-drops-rollout-directory-entry-bound",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[bounded_root_directory]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 846,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[ambiguous_root_path]"
+      ],
+      "invariant": "Initial external rollout lookup requires exactly one canonical filename for each ancestor thread across the bounded UTC-date neighborhood.",
+      "mutation_id": "codex-cross-file-allows-ambiguous-initial-namespace",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_ancestry_rejects_missing_ambiguous_or_unbound_lineage[ambiguous_root_path]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 915,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_external_rollouts_use_one_initial_streaming_pass_each"
+      ],
+      "invariant": "Each external ancestry rollout is parsed and hashed in one bounded initial streaming pass.",
+      "mutation_id": "codex-cross-file-repeats-initial-external-scan",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_external_rollouts_use_one_initial_streaming_pass_each"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 818,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_causal_edges_accept_exact_empty_delivery_marker[root]"
+      ],
+      "invariant": "A cross-file causal call accepts either the exact ordinary schema or that exact schema plus the observed empty encrypted-function-arguments marker.",
+      "mutation_id": "codex-cross-file-rejects-exact-empty-causal-marker",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_causal_edges_accept_exact_empty_delivery_marker[root]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 799,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_external_ancestry_aggregate_byte_bound_is_exact"
+      ],
+      "invariant": "A depth-two initial ancestry scan admits a combined external snapshot exactly at 64 MiB and fails closed only when that aggregate exceeds the bound.",
+      "mutation_id": "codex-cross-file-shifts-initial-aggregate-byte-bound",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_external_ancestry_aggregate_byte_bound_is_exact"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 812,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_current_external_ancestry_aggregate_byte_bound_is_exact"
+      ],
+      "invariant": "Currentness fails closed when the combined present size of all external ancestry rollouts exceeds 64 MiB.",
+      "mutation_id": "codex-cross-file-drops-current-aggregate-byte-bound",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_current_external_ancestry_aggregate_byte_bound_is_exact"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 859,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_final_currentness_recomputes_unique_external_namespace"
+      ],
+      "invariant": "External rollout uniqueness and independently derived offsets are recomputed after record and file revalidation, immediately before success.",
+      "mutation_id": "codex-cross-file-skips-final-namespace-recomputation",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_final_currentness_recomputes_unique_external_namespace"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 815,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_exact_desktop_alpha_marked_root_attests"
+      ],
+      "invariant": "Desktop authority remains atomically pinned to runtime 0.147.0-alpha.6.6 rather than accepting the separate CLI 0.147.0 version.",
+      "mutation_id": "codex-desktop-shifts-pinned-version",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_exact_desktop_alpha_marked_root_attests"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 787,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_profile_and_metadata_drift_fail_open[desktop-envelope-ordinal]"
+      ],
+      "invariant": "Desktop session metadata uses the exact no-ordinal Desktop envelope and cannot be confused with the CLI ordinal envelope.",
+      "mutation_id": "codex-desktop-allows-metadata-envelope-drift",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_profile_and_metadata_drift_fail_open[desktop-envelope-ordinal]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 831,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_profile_and_metadata_drift_fail_open[desktop-multi-agent-disabled]"
+      ],
+      "invariant": "Only active v2 thread-spawn metadata can authorize Desktop ancestry; disabled guardian or other subagent records fail open.",
+      "mutation_id": "codex-desktop-allows-disabled-subagent-lineage",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_profile_and_metadata_drift_fail_open[desktop-multi-agent-disabled]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 787,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_rejects_unobserved_shape_cross_products[d1-inherited-child-only-dynamic-branch-fork1-residual0]"
+      ],
+      "invariant": "Desktop child authority requires one complete observed alpha.6.6 tuple across depth, inheritance, prefix size, dynamic tools, Git shape, fork semantics, filename residual, and canonical-parent inheritance; independently observed field values cannot be recombined.",
+      "mutation_id": "codex-desktop-allows-unobserved-shape-cross-products",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_rejects_unobserved_shape_cross_products[d1-inherited-child-only-dynamic-branch-fork1-residual0]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 797,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_profile_and_metadata_drift_fail_open[desktop-dynamic-tools-drift]"
+      ],
+      "invariant": "When Desktop metadata carries dynamic_tools, its bounded canonical digest is the pinned alpha.6.6 two-namespace value.",
+      "mutation_id": "codex-desktop-skips-dynamic-tools-pin",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_profile_and_metadata_drift_fail_open[desktop-dynamic-tools-drift]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 807,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d2-child-parent-all-dynamic-branch-residual0]"
+      ],
+      "invariant": "A Desktop depth-two parent rollout launches the exact current child rather than naming its own thread as the child.",
+      "mutation_id": "codex-desktop-decouples-parent-child-causal-edge",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d2-child-parent-all-dynamic-branch-residual0]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 798,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d2-child-parent-all-dynamic-branch-residual0]"
+      ],
+      "invariant": "A Desktop depth-two root rollout launches the canonical intermediate parent, not the current grandchild.",
+      "mutation_id": "codex-desktop-decouples-root-parent-causal-edge",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d2-child-parent-all-dynamic-branch-residual0]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 834,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d2-child-parent-sparse-parent-all-no-dynamic-branch-residual0]"
+      ],
+      "invariant": "The Desktop root-to-parent edge uses the canonical parent's own inherited or sparse binding independently of the current child's inheritance.",
+      "mutation_id": "codex-desktop-binds-root-edge-to-current-inheritance",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d2-child-parent-sparse-parent-all-no-dynamic-branch-residual0]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 831,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_requires_unique_canonical_owners_and_exact_copies[copied-parent-drift]"
+      ],
+      "invariant": "A copied Desktop parent payload is byte-semantically equal to its unique canonical parent owner before it can contribute ancestry.",
+      "mutation_id": "codex-desktop-allows-copied-parent-payload-drift",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_requires_unique_canonical_owners_and_exact_copies[copied-parent-drift]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 900,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_direct_causal_transaction_is_exact[event-schema-drift]"
+      ],
+      "invariant": "A direct Desktop start has the exact pinned event schema and event_id equal to its immediately preceding spawn call_id.",
+      "mutation_id": "codex-desktop-allows-event-schema-or-call-drift",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_direct_causal_transaction_is_exact[event-schema-drift]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 833,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d1-inherited-external-three-dynamic-branch-residual0]"
+      ],
+      "invariant": "A direct Desktop start names the exact child thread resolved from canonical metadata.",
+      "mutation_id": "codex-desktop-decouples-event-child-thread",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_observed_ancestry_variants_attest[d1-inherited-external-three-dynamic-branch-residual0]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 838,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_direct_causal_transaction_is_exact[path-drift]"
+      ],
+      "invariant": "A direct Desktop start names the exact canonical child agent path derived from the spawn arguments and parent path.",
+      "mutation_id": "codex-desktop-decouples-event-agent-path",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_direct_causal_transaction_is_exact[path-drift]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 830,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_direct_causal_transaction_is_exact[event-time-plus-two]"
+      ],
+      "invariant": "The Desktop direct event outer timestamp equals occurred_at_ms or trails it by exactly one observed millisecond.",
+      "mutation_id": "codex-desktop-widens-direct-event-time-residual",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_direct_causal_transaction_is_exact[event-time-plus-two]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 828,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_cross_file_cli_external_rollout_rejects_plus_one_residual"
+      ],
+      "invariant": "Observed plus-one filename residuals apply to Desktop and CLI current/in-file profiles, while the pinned CLI cross-file census remains exact-zero.",
+      "mutation_id": "codex-desktop-drops-cli-external-residual-separation",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_cross_file_cli_external_rollout_rejects_plus_one_residual"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 846,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_or_external_direct_replay_invalidates_attestation"
+      ],
+      "invariant": "Any appended Desktop direct outcome reusing the current call_id invalidates the sealed authorization before rewrite.",
+      "mutation_id": "codex-desktop-allows-direct-outcome-suffix-replay",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_or_external_direct_replay_invalidates_attestation"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 855,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_sealed_profile_and_external_arrays_are_authoritative"
+      ],
+      "invariant": "The sealed Desktop profile_id and alpha version remain an atomic authority and cannot be rebound to a CLI profile identifier.",
+      "mutation_id": "codex-desktop-accepts-profile-id-rebinding",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_sealed_profile_and_external_arrays_are_authoritative"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 819,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_and_ancestor_marker_domains_are_separate[current-null]"
+      ],
+      "invariant": "The current Desktop authorization call carries the explicit exact-empty host marker, never missing, null, or nonempty marker content.",
+      "mutation_id": "codex-desktop-allows-nonempty-current-marker",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_and_ancestor_marker_domains_are_separate[current-null]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 835,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_call_binds_shared_authorization_fields[arguments]"
+      ],
+      "invariant": "The canonical current Desktop call arguments exactly equal the hook tool_input whose digest is sealed.",
+      "mutation_id": "codex-desktop-decouples-current-arguments",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_call_binds_shared_authorization_fields[arguments]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 830,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_call_binds_shared_authorization_fields[turn]"
+      ],
+      "invariant": "The current Desktop response item carries the exact hook turn_id in its pinned metadata passthrough object.",
+      "mutation_id": "codex-desktop-decouples-current-turn",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_call_binds_shared_authorization_fields[turn]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 825,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_call_binds_shared_authorization_fields[call]"
+      ],
+      "invariant": "The one current Desktop function call selected from the initial snapshot has the exact hook tool_use_id.",
+      "mutation_id": "codex-desktop-decouples-current-call-id",
+      "source_path": "agency_runtime/core/codex_spawn_provenance.py",
+      "status": "killed",
+      "test_node": "tests/test_codex_spawn_provenance.py::test_desktop_alpha_current_call_binds_shared_authorization_fields[call]"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 959,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_duplicate_launch.py::test_contradictory_native_child_success_projection_rolls_back_before_callback[semantic_status-inference_invalid]"
+      ],
+      "invariant": "The transactional native-child readback rejects an inner semantic status that contradicts its applied outer route.",
+      "mutation_id": "native-child-readback-allows-contradictory-semantic-status",
+      "source_path": "agency_runtime/core/native_child_decision.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_duplicate_launch.py::test_contradictory_native_child_success_projection_rolls_back_before_callback"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 954,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_duplicate_launch.py::test_extra_native_child_success_projection_rolls_back_before_callback[fallback_applied-True]"
+      ],
+      "invariant": "The transactional native-child readback accepts only the exact applied success field set, never fallback, continuation, or origin metadata.",
+      "mutation_id": "native-child-readback-allows-extra-success-fields",
+      "source_path": "agency_runtime/core/native_child_decision.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_duplicate_launch.py::test_extra_native_child_success_projection_rolls_back_before_callback"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 912,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_decision.py::test_success_route_requires_neutral_work_units"
+      ],
+      "invariant": "An applied native-child success cannot smuggle delegated work units alongside the host-owned child launch.",
+      "mutation_id": "native-child-readback-allows-nonneutral-work-units",
+      "source_path": "agency_runtime/core/native_child_decision.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_decision.py::test_success_route_requires_neutral_work_units"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 991,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_duplicate_launch.py::test_native_child_delivery_host_must_match_open_parent_before_callback"
+      ],
+      "invariant": "The delivery host must equal the host of the exact open parent run before the final callback can authorize output.",
+      "mutation_id": "native-child-readback-drops-parent-host-binding",
+      "source_path": "agency_runtime/core/native_child_decision.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_duplicate_launch.py::test_native_child_delivery_host_must_match_open_parent_before_callback"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 989,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_duplicate_launch.py::test_route_provider_must_match_applied_attempt_and_exact_launch_can_retry"
+      ],
+      "invariant": "The route provider must equal the sole applied provider attempt sealed into the native-child delivery receipt.",
+      "mutation_id": "native-child-readback-drops-applied-provider-binding",
+      "source_path": "agency_runtime/core/native_child_decision.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_duplicate_launch.py::test_route_provider_must_match_applied_attempt_and_exact_launch_can_retry"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1159,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_staffing.py::test_provider_name_uses_the_same_safe_identity_as_the_applied_receipt"
+      ],
+      "invariant": "The route and sealed delivery use the same content-free applied provider identity even when a valid configured name requires hashing.",
+      "mutation_id": "native-child-route-uses-raw-provider-name",
+      "source_path": "agency_runtime/core/native_child_staffing.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_staffing.py::test_provider_name_uses_the_same_safe_identity_as_the_applied_receipt"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 969,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_duplicate_launch.py::test_native_child_success_numeric_contract_rolls_back_and_retries[confidence--1.0]"
+      ],
+      "invariant": "An applied native-child success retains the inference judge's public zero-to-one confidence contract.",
+      "mutation_id": "native-child-readback-allows-out-of-range-confidence",
+      "source_path": "agency_runtime/core/native_child_decision.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_duplicate_launch.py::test_native_child_success_numeric_contract_rolls_back_and_retries"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1168,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_duplicate_launch.py::test_native_child_success_numeric_contract_rolls_back_and_retries[candidate_count-0]"
+      ],
+      "invariant": "A successful complete-universe decision cannot select more cards than its reported inference candidate universe contained.",
+      "mutation_id": "native-child-readback-allows-impossible-candidate-count",
+      "source_path": "agency_runtime/core/native_child_decision.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_duplicate_launch.py::test_native_child_success_numeric_contract_rolls_back_and_retries"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1248,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_duplicate_launch.py::test_native_child_success_numeric_contract_rolls_back_and_retries[top_score--0.1]"
+      ],
+      "invariant": "Native-child inference uses the complete candidate universe and therefore retains its exact neutral retrieval top score.",
+      "mutation_id": "native-child-readback-allows-retrieval-score-in-complete-mode",
+      "source_path": "agency_runtime/core/native_child_decision.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_duplicate_launch.py::test_native_child_success_numeric_contract_rolls_back_and_retries"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1119,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_staffing.py::test_postcommit_connection_close_failure_preserves_exact_staffed_output[False]"
+      ],
+      "invariant": "A connection cleanup failure after commit cannot convert an authoritative native-child success into unstaffed output.",
+      "mutation_id": "native-child-postcommit-close-suppresses-staffed-output",
+      "source_path": "agency_runtime/core/store/maintenance.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_staffing.py::test_postcommit_connection_close_failure_preserves_exact_staffed_output"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1255,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_staffing.py::test_postcommit_connection_close_failure_preserves_exact_staffed_output[True]"
+      ],
+      "invariant": "A logging failure while diagnosing post-commit cleanup cannot escape and suppress the exact staffed output.",
+      "mutation_id": "native-child-postcommit-diagnostic-suppresses-staffed-output",
+      "source_path": "agency_runtime/core/store/maintenance.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_staffing.py::test_postcommit_connection_close_failure_preserves_exact_staffed_output"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1042,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_decision.py::test_store_rejects_a_route_column_that_no_longer_matches_its_decision[confidence-0.1]"
+      ],
+      "invariant": "The native-child resolver rejects a duplicated confidence column that no longer matches the exact serialized success.",
+      "mutation_id": "native-child-resolver-drops-route-confidence-projection",
+      "source_path": "agency_runtime/core/store/evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_decision.py::test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1149,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_decision.py::test_store_rejects_a_route_column_that_no_longer_matches_its_decision[latency_ms-999]"
+      ],
+      "invariant": "The native-child resolver rejects a duplicated latency column that no longer matches the exact serialized success.",
+      "mutation_id": "native-child-resolver-drops-route-latency-projection",
+      "source_path": "agency_runtime/core/store/evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_decision.py::test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1230,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_decision.py::test_store_rejects_a_route_column_that_no_longer_matches_its_decision[provider-different-provider]"
+      ],
+      "invariant": "The native-child resolver rejects a duplicated provider column that no longer matches the exact serialized success.",
+      "mutation_id": "native-child-resolver-drops-route-provider-projection",
+      "source_path": "agency_runtime/core/store/evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_decision.py::test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1324,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_native_child_decision.py::test_store_rejects_a_route_column_that_no_longer_matches_its_decision[created_at-]"
+      ],
+      "invariant": "The native-child resolver mirrors the transactional requirement that the route has the exact valid timestamp shape authored by the Store clock.",
+      "mutation_id": "native-child-resolver-allows-noncanonical-created-at",
+      "source_path": "agency_runtime/core/store/evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_native_child_decision.py::test_store_rejects_a_route_column_that_no_longer_matches_its_decision"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1009,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_canary_activation_snapshot.py::test_restricted_codex_collectors_keep_live_and_terminal_authority_separate"
+      ],
+      "invariant": "Only the backend post-return collector requests the exact accepted terminal Codex parent; hook collection remains live-only.",
+      "mutation_id": "codex-postreturn-collector-falls-back-to-live-parent",
+      "source_path": "agency_runtime/core/child_delivery_evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_canary_activation_snapshot.py::test_restricted_codex_collectors_keep_live_and_terminal_authority_separate"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 4042,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_canary_activation_snapshot.py::test_restricted_codex_backend_terminal_parent_rejects_inexact_terminal_shapes"
+      ],
+      "invariant": "A completed Codex run authorizes post-return collection only when its sole bound terminal finalization action is accept.",
+      "mutation_id": "codex-postreturn-collector-allows-nonaccept-terminal",
+      "source_path": "agency_runtime/core/store/evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_canary_activation_snapshot.py::test_restricted_codex_backend_terminal_parent_rejects_inexact_terminal_shapes"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1158,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_child_delivery_evidence.py::test_persisted_codex_receipt_replays_its_exact_prefix_after_host_append"
+      ],
+      "invariant": "Read-only Codex receipt replay reparses the exact prior artifact prefix bound by the immutable Store receipt, not the later completed rollout.",
+      "mutation_id": "codex-receipt-replay-drops-immutable-prefix-digest",
+      "source_path": "agency_runtime/core/child_delivery_evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_child_delivery_evidence.py::test_persisted_codex_receipt_replays_its_exact_prefix_after_host_append"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1106,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_child_delivery_evidence.py::test_persisted_codex_receipt_digest_must_end_at_a_jsonl_record_boundary"
+      ],
+      "invariant": "An immutable Codex receipt digest selects only a newline-terminated JSONL prefix, never bytes ending inside a host record.",
+      "mutation_id": "codex-receipt-prefix-allows-partial-jsonl-record",
+      "source_path": "agency_runtime/core/child_delivery_evidence.py",
+      "status": "killed",
+      "test_node": "tests/test_child_delivery_evidence.py::test_persisted_codex_receipt_digest_must_end_at_a_jsonl_record_boundary"
+    },
+    {
+      "anchor_occurrences": 1,
+      "duration_ms": 1198,
+      "exit_code": 1,
+      "failed_nodes": [
+        "tests/test_workforce_inference.py::test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps"
+      ],
+      "invariant": "The model's semantic ranking order is preserved, never locally reranked.",
+      "mutation_id": "ranking-order-reversed",
+      "source_path": "agency_runtime/core/workforce/inference.py",
+      "status": "killed",
+      "test_node": "tests/test_workforce_inference.py::test_inference_uses_semantic_order_without_trusting_uncalibrated_score_gaps"
+    }
+  ],
+  "passed": true,
+  "repository": "/tmp/agency-ar431-codex-recruitment-20260910",
+  "schema": "agency-runtime.decision-conformance",
+  "source_scope": "pyproject.toml, agency_runtime regular files, and selected test inputs",
+  "source_unchanged": true,
+  "status": "passed",
+  "version": 1
+}

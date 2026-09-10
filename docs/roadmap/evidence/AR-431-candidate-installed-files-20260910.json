@@ -1,0 +1,7 @@
+{
+  "projection": "runtime-sha256-08689b5b87693f3b02e0d63d5cdce1f78ec4fa6b7bd9f91f5b9ba85d48b74d10",
+  "manifest_sha256": "08689b5b87693f3b02e0d63d5cdce1f78ec4fa6b7bd9f91f5b9ba85d48b74d10",
+  "file_count": 651,
+  "mismatches": [],
+  "native_hook_file_sha256": "b55b821cf9d5c9fc1e2dc199447ec5631ebbf8eb201df864674420cbf0cd139e"
+}

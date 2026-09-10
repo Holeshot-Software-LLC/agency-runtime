@@ -1,0 +1,177 @@
+{
+  "activation_complete": false,
+  "activation_required": true,
+  "complete": true,
+  "contractors_existing": 0,
+  "contractors_installed": 0,
+  "dashboard": {
+    "changed": false,
+    "exit_code": 0,
+    "ok": true,
+    "status": "opted_out"
+  },
+  "hosts": [
+    {
+      "action": "install.codex.v1",
+      "activation_complete": false,
+      "activation_required": true,
+      "backup_path": "/home/holeshot/.agency-runtime/backups/codex/20260910T111147.580305Z",
+      "binding_sha256": "253e3ceb3c32bd66e62d963a4ce37c0a887c648b28004e6e9aa10c6c8221c51c",
+      "canary": null,
+      "canary_attestation_invalidated": false,
+      "candidate_plan_sha256": "437506a97d11c52c63f509b492c0293e1d88497799bb21468378db762f71f795",
+      "candidate_plugin_version": "0.1.0+codex.6876f8d8b8dd",
+      "complete": true,
+      "current_plugin_version": "0.1.0+codex.0bb3a6f3d08e",
+      "enabled": true,
+      "exit_code": 0,
+      "filesystem": {
+        "backup_path": "/home/holeshot/.agency-runtime/backups/codex/20260910T111147.580305Z",
+        "bundle_digest": "7c95df6e135f8a9b4d7471dcd3b79d5ad1ff17e1f7a2992b2260ac4393bfcbe4",
+        "force_replace": true,
+        "owned_files": [
+          ".agency-runtime-launcher.json",
+          ".agents/plugins/marketplace.json",
+          "plugins/agency-preflight/.codex-plugin/plugin.json",
+          "plugins/agency-preflight/.mcp.json",
+          "plugins/agency-preflight/hooks/hooks.json",
+          "plugins/agency-preflight/skills/agency/SKILL.md",
+          ".agency-runtime-install.json"
+        ],
+        "target": "/home/holeshot/.agency-runtime/marketplaces/codex",
+        "unchanged": false,
+        "would_backup": true
+      },
+      "hook_trust_status": "unverified",
+      "host": "codex",
+      "loaded": null,
+      "maturity": "enabled-runtime-unverified",
+      "native_steps": [
+        {
+          "command": [
+            "/home/holeshot/.local/bin/codex",
+            "plugin",
+            "list",
+            "--json"
+          ],
+          "name": "inventory",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        },
+        {
+          "command": [
+            "/home/holeshot/.local/bin/codex",
+            "plugin",
+            "marketplace",
+            "list",
+            "--json"
+          ],
+          "name": "marketplace_inventory",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        },
+        {
+          "command": [
+            "/home/holeshot/.local/bin/codex",
+            "plugin",
+            "remove",
+            "agency-preflight@agency-runtime",
+            "--json"
+          ],
+          "name": "plugin_remove_for_refresh",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        },
+        {
+          "command": [
+            "/home/holeshot/.local/bin/codex",
+            "plugin",
+            "list",
+            "--json"
+          ],
+          "name": "inventory",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        },
+        {
+          "command": [
+            "/home/holeshot/.local/bin/codex",
+            "plugin",
+            "marketplace",
+            "list",
+            "--json"
+          ],
+          "name": "marketplace_inventory",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        },
+        {
+          "command": [
+            "/home/holeshot/.local/bin/codex",
+            "plugin",
+            "add",
+            "agency-preflight@agency-runtime",
+            "--json"
+          ],
+          "name": "plugin_add",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        },
+        {
+          "command": [
+            "/home/holeshot/.local/bin/codex",
+            "plugin",
+            "list",
+            "--json"
+          ],
+          "name": "inventory",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        },
+        {
+          "command": [
+            "/home/holeshot/.local/bin/codex",
+            "plugin",
+            "marketplace",
+            "list",
+            "--json"
+          ],
+          "name": "marketplace_inventory",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        }
+      ],
+      "no_op": false,
+      "ok": true,
+      "plugin_path": "/home/holeshot/.agency-runtime/marketplaces/codex/plugins/agency-preflight/.codex-plugin/plugin.json",
+      "published_bundle_sha256": "7c95df6e135f8a9b4d7471dcd3b79d5ad1ff17e1f7a2992b2260ac4393bfcbe4",
+      "registered": true,
+      "restart_required": true,
+      "status": "registered",
+      "target": "/home/holeshot/.agency-runtime/marketplaces/codex",
+      "transaction_complete": true
+    }
+  ],
+  "ok": true,
+  "profile": "standard",
+  "roster_action": "unchanged_prepared_codex_refresh",
+  "roster_added": 0,
+  "roster_upgraded": 0,
+  "transaction_complete": true
+}

@@ -99,3 +99,6 @@ specialist selection without fresh inference was rejected because historical
 workers may be stale, disabled, or wrong for the new question. Leaving the
 planner with only the literal short message was rejected because it preserves
 generic steward routing instead of resolving the active subject.
+
+AR-431 implementation `05653bc9` extends the existing exact contextual phrase set;
+its evidence and scope are indexed in the related roadmap and worklog registry.
