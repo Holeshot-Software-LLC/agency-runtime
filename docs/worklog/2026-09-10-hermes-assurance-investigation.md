@@ -127,3 +127,13 @@ PR844 carries records only. AR-404/418/430/432 remain open; AR-431 remains close
 No installation, trust, selector, critic, validator or source behavior changed.
 OpenClaw full-card visibility remains unobserved in the prior successful
 review/follow-up; preserve owner order and Zcode deferral for the next package.
+
+## Merge record
+
+PR844 merged atc216d31d884ec795180c8c2a6a4e949afc64c664 on2026-09-10,
+with exact subject `docs: merge PR844 Hermes ordinary-review assurance evidence`.
+The source worktree is historical. The merge-ledger worktree records this
+substantive merge and its reciprocal roadmap commit cell. The scoped evidence
+package is complete; AR-404/418/430/432 remain open and no failed receipt was
+reopened. Strict tracker parity covers423roadmap items, with two historical
+PR-tracked exceptions. No all-host, planner-fact repair or truncation acceptance.

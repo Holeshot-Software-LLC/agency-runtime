@@ -2392,6 +2392,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2a566315` | 2026-09-10 | docs: record exact Hermes assurance evidence boundary | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
 | `49d0511d` | 2026-09-10 | docs: record Hermes assurance demo-ready verification | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
 | `fd69e95e` | 2026-09-10 | docs: record fresh Hermes assurance diagnostic and numeric-plan finding | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md), [AR-432](../roadmap/issue-AR-432-preserve-numeric-facts-in-review-plans.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
+| `c216d31d` | 2026-09-10 | docs: merge PR844 Hermes ordinary-review assurance evidence | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
