@@ -1,0 +1,40 @@
+import json,os,re,signal,subprocess,time,uuid,sys
+from pathlib import Path
+os.umask(0o077)
+root=Path(__file__).parent;repo=Path('/tmp/agency-ar404-hermes-assurance-20260910')
+request=json.loads((root/'manifest.json').read_text())['cases'][0]['request']
+host=sys.argv[1];phase='assurance';case='ordinary_review';dest=root/phase/host/case;dest.mkdir(parents=True,exist_ok=False)
+(root/'complete-team-manifest.json').write_text(json.dumps({'cases':[{'id':case,'request':request}]},indent=2))
+sid=str(uuid.uuid4()) if host=='claude' else None
+if host=='claude':cmd=['claude','--print','--output-format','stream-json','--verbose','--permission-mode','default','--session-id',sid,request]
+elif host=='codex':cmd=['codex','exec','--sandbox','read-only','--skip-git-repo-check','--json','-C',str(root),'-o',str(dest/'response.txt'),request]
+else:cmd=['hermes','chat','--oneshot','--quiet','--in',str(root),'-q',request]
+subprocess.run(['/tmp/agency-ar404-venv.AUBJlC/bin/python',str(repo/'scripts/context_handoff_status.py'),'--json','--threshold','50'],cwd=repo,check=True)
+start=time.monotonic();timed_out=False
+print(json.dumps({'starting':host,'session_id':sid}),flush=True)
+with (dest/'stdout.jsonl').open('w') as out,(dest/'stderr.txt').open('w') as err:
+ child=subprocess.Popen(cmd,stdout=out,stderr=err,cwd=root,start_new_session=True)
+ try:status=child.wait(timeout=360)
+ except subprocess.TimeoutExpired:
+  timed_out=True;os.killpg(child.pid,signal.SIGTERM)
+  try:status=child.wait(timeout=15)
+  except subprocess.TimeoutExpired:os.killpg(child.pid,signal.SIGKILL);status=child.wait(timeout=5)
+raw=(dest/'stdout.jsonl').read_text();response=raw
+if host=='hermes':
+ match=re.search(r'session_id: ([A-Za-z0-9_-]+)',(dest/'stderr.txt').read_text())
+ if match:sid=match.group(1)
+elif host=='codex':
+ response=(dest/'response.txt').read_text() if (dest/'response.txt').exists() else ''
+ for line in raw.splitlines():
+  try:row=json.loads(line)
+  except ValueError:continue
+  if row.get('type')=='thread.started':sid=row.get('thread_id')
+else:
+ response=''
+ for line in raw.splitlines():
+  try:row=json.loads(line)
+  except ValueError:continue
+  if row.get('type')=='result':response=row.get('result','')
+(dest/'response.txt').write_text(response)
+value={'case':case,'host':host,'phase':phase,'command':cmd,'native_session_id':sid,'exit_code':status,'timeout':timed_out,'elapsed_seconds':round(time.monotonic()-start,3)}
+(dest/'invocation.json').write_text(json.dumps(value,indent=2));print(json.dumps(value),flush=True)

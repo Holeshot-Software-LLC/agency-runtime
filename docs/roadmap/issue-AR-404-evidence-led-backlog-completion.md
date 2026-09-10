@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-10
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-432-preserve-numeric-facts-in-review-plans.md
   - docs/worklog/2026-09-10-hermes-assurance-investigation.md
   - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/worklog/2026-09-09-ar429-merged-checkpoint.md
@@ -74,15 +75,18 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
-September10 assurance investigation: fresh parent Agency MCP succeeds with
-verified SQLite binding and293 roster entries. The exact ordinary-review
-trace ending e03a9447 retains its critic veto, but has no persisted plan,
-proposal, selected contracts or raw critic packet. Historical critic correctness
-is indeterminate; no product repair is justified by the retained reason alone.
-The original failure remains unchanged. Focused17, production1151/3skip, UI224,
-routing, Ruff788 and docs pass. Private-permission conformance passes188/188 after the retained documented
-fixture setup failure. One fresh exact-request Hermes diagnostic remains.
-This records demo_ready, not native acceptance. Details and exact evidence are in the linked worklog.
+September10 assurance investigation is complete in PR844. Fresh parent Agency
+MCP succeeds; the exact historical veto remains immutable and indeterminate
+because its rejected plan/proposal/contracts/critic packet were not retained.
+One fresh exact-request Hermes ordinary_review completes86.235s, session
+20260910_081128_6d1bcd, tracedf76d074: all stages applied, independent staffing
+critic approved, one full native card, five Store headers and authoritative
+hashdd9b5b8c match. This is current scoped native evidence, not historical repair.
+The accepted plan misstates the expected mean as2.5; native final correctly
+says1.5. AR-432/#845 tracks that separate factual defect and its unresolved
+planner-versus-normalization origin. Focused17, production1151/3skip, UI224,
+routing, Ruff788, docs/tracker and private conformance188/188 pass. Observer
+restored byte-exact; old run/failure hashes unchanged. Details are in the worklog.
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,

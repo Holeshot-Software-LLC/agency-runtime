@@ -1,0 +1,150 @@
+{
+  "scope": "One fresh ordinary_review native diagnostic; historical assurance veto correctness remains indeterminate.",
+  "session_id": "20260910_081128_6d1bcd",
+  "trace_id": "20260910_081128_6d1bcd:861485c1-b4aa-416f-bcbf-3d6c8332c8e7:df76d074",
+  "elapsed_seconds": 86.235,
+  "recipe": 21,
+  "critic_response": {
+    "approved": true,
+    "reason_codes": []
+  },
+  "plan": {
+    "plan_hash": "sha256:910281981fa6bf70077cf4b323fad36d1b735c75c329a8f3aa92087e164c2e26",
+    "request_summary": "Static review of a supplied Python average() function: identify defects (integer floor division losing fractional results; ZeroDivisionError instead of ValueError on empty input), verify with the given cases, and propose corrections without implementing or executing anything.",
+    "schema_version": 2,
+    "units": [
+      {
+        "acceptance_evidence": [
+          "Evidence proves the requested analysis outcome."
+        ],
+        "artifact_kind": "analysis",
+        "authority": "advise",
+        "claims": [],
+        "depends_on": [],
+        "domains": [
+          "software-engineering"
+        ],
+        "frameworks": [],
+        "languages": [],
+        "lifecycle_phase": "discovery",
+        "mutation_scope": "read_only",
+        "outcome": "Statically analyze the supplied average(values) function: show that // floors the mean so [1.0, 2.0] yields 1.0 instead of 2.5, and that empty input raises ZeroDivisionError instead of ValueError; propose corrected behavior using true division and an explicit empty-input guard, without writing the final corrected function or reading files.",
+        "parallelization": "unspecified",
+        "platforms": [
+          "linux"
+        ],
+        "required_capabilities": [
+          "analysis"
+        ],
+        "required_tools": [
+          "repository-read"
+        ],
+        "resources": [
+          "request",
+          "repository"
+        ],
+        "risks": [],
+        "trust_boundaries": [
+          "repository"
+        ],
+        "unit_id": "unit-defect-analysis"
+      },
+      {
+        "acceptance_evidence": [
+          "Evidence proves the requested review report outcome."
+        ],
+        "artifact_kind": "review-report",
+        "authority": "review",
+        "claims": [],
+        "depends_on": [
+          "unit-defect-analysis"
+        ],
+        "domains": [
+          "software-engineering"
+        ],
+        "frameworks": [],
+        "languages": [],
+        "lifecycle_phase": "review",
+        "mutation_scope": "read_only",
+        "outcome": "Independently review the defect analysis and proposed correction approach against the stated requirements: confirm the fractional-result defect, the empty-input error-type defect, and that the proposal satisfies nonempty numeric sequences and ValueError semantics via static reasoning only, with no execution or file access.",
+        "parallelization": "sequential",
+        "platforms": [
+          "linux"
+        ],
+        "required_capabilities": [
+          "review",
+          "verification"
+        ],
+        "required_tools": [
+          "repository-read"
+        ],
+        "resources": [
+          "request",
+          "repository"
+        ],
+        "risks": [],
+        "trust_boundaries": [
+          "repository"
+        ],
+        "unit_id": "unit-static-review"
+      }
+    ]
+  },
+  "verified_staffing": {
+    "abstention_reasons": [],
+    "status": "accepted",
+    "units": [
+      {
+        "contexts": [
+          [
+            "code-reviewer",
+            "ctx-unit-defect-analysis-code-reviewer"
+          ]
+        ],
+        "delivery": "load",
+        "disabled_shadows": [],
+        "selected": [
+          "code-reviewer"
+        ],
+        "timing": "immediate",
+        "unavailable_shadows": [],
+        "unit_id": "unit-defect-analysis"
+      },
+      {
+        "contexts": [
+          [
+            "code-reviewer",
+            "ctx-unit-static-review-code-reviewer"
+          ]
+        ],
+        "delivery": "load",
+        "disabled_shadows": [],
+        "selected": [
+          "code-reviewer"
+        ],
+        "timing": "after_artifact",
+        "unavailable_shadows": [],
+        "unit_id": "unit-static-review"
+      }
+    ]
+  },
+  "exact_full_card_present": true,
+  "complete_selected_team": {
+    "inferred": [
+      "code-reviewer"
+    ],
+    "retained": [
+      "code-reviewer"
+    ],
+    "missing": [],
+    "unexpected": [],
+    "exact_match": true
+  },
+  "all_five_headers_match": true,
+  "accepted_hash_matches": true,
+  "response_sha256": "dd9b5b8ce1ec1e61d86599c01d1cf20878eec1c7c48d0f2c48b0952314818ef9",
+  "new_plan_factual_defect": "unit-defect-analysis says expected 2.5 for [1.0, 2.0]; native final correctly says 1.5; AR-432 tracks this separately.",
+  "all_attempts_applied": true,
+  "delegated_execution_observed": false,
+  "test_execution_claimed": false
+}

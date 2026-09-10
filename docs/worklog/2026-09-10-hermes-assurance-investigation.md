@@ -6,6 +6,7 @@ created: 2026-09-10
 updated: 2026-09-10
 tags: [hermes, reliability, evidence]
 related:
+  - docs/roadmap/issue-AR-432-preserve-numeric-facts-in-review-plans.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
   - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
@@ -69,14 +70,15 @@ No new product decision or issue closure is made.
 
 Focused critic17passed; named production1151passed/3skipped; UI224passed;
 routing, Ruff788 and documentation checks pass. Private conformance passes188/188 with zero survivors and unchanged source.
-One fresh native observation remains pending. All651 retained Hermes projection files
+The fresh native observation completed; exact results are below. All651 retained Hermes projection files
 match the manifest. Planner/recruiter source and Hermes adapter match47241e5e;
 this is the retained recipe21 projection, not Codex's recipe22 refresh.
 
 ## Follow-ups
 
-Complete the bounded fresh ordinary-review diagnostic with pass-through capture
-of its own recruiter and critic packets, then record exact terminal evidence.
+AR-432 tracks the separately observed incorrect numeric fact in the accepted
+plan. The bounded historical assurance investigation and fresh diagnostic are
+complete; neither repairs nor relabels the original failed receipt.
 AR-418 upstream PR106490 remains OPEN at30f421ecce; actual Hermes checkout
 remains clean7cd91114. Adoption and original provider-cap proof remain unproven.
 AR-404/418/430 stay open; Zcode remains deferred. No exhaustive or Windows run.
@@ -87,3 +89,41 @@ Private077 conformance passes188/188 in341.533s. All required pre-demo checks
 are complete, with the prior invocation failures preserved. PR844 carries this
 records-only package. The clean substantive/ledger pair precedes one bounded
 native ordinary-review observation; no installation or trust refresh is needed.
+
+## Fresh native result
+
+One exact ordinary_review invocation completed in86.235s, exit0, no timeout:
+session20260910_081128_6d1bcd, trace
+20260910_081128_6d1bcd:861485c1-b4aa-416f-bcbf-3d6c8332c8e7:df76d074.
+All provider stages applied; the captured critic approved with no reason codes.
+The plan retains analysis and a dependent independent static-review unit, with
+separate context identifiers. Its one selected code-reviewer card is present
+in full2379characters in native model-facing input. All five Store headers and
+authoritative final hashdd9b5b8ce1ec1e61d86599c01d1cf20878eec1c7c48d0f2c48b0952314818ef9
+match native bytes. No delegated execution or test execution is claimed.
+The CLI toolset warning is preserved in stdout; the actual native assistant
+message supplies the authoritative response hash.
+
+Both recruiter and critic packets were captured without changing bytes; the
+observer recorded no errors and restored configuration byte-for-byte. The first
+observer launcher stopped at import before configuration mutation or a native
+invocation; correcting that helper import started the sole native attempt.
+Original run/failure hashes still match after collection. The original critic's
+correctness remains indeterminate, irrespective of this fresh success.
+
+## Separate factual finding
+
+The accepted plan's unit-defect-analysis says the expected mean of[1.0,2.0]
+is2.5. The native final correctly says1.5. Both captured packets preserve the
+bad plan value; the raw planner transport response is unavailable, so this does
+not establish where it entered the plan. AR-432/#845 records that bounded
+follow-up. A staffing critic's approval is not a mathematical-answer certificate.
+Do not broaden this package into a speculative planner repair or an all-host pass.
+
+## Delivery scope
+
+The scoped investigation and single fresh native diagnostic reached live_demo.
+PR844 carries records only. AR-404/418/430/432 remain open; AR-431 remains closed.
+No installation, trust, selector, critic, validator or source behavior changed.
+OpenClaw full-card visibility remains unobserved in the prior successful
+review/follow-up; preserve owner order and Zcode deferral for the next package.

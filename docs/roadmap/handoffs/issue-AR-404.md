@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-10
 tags: [handoff, hermes, openclaw, live-evaluation]
 related:
+  - docs/roadmap/issue-AR-432-preserve-numeric-facts-in-review-plans.md
   - docs/worklog/2026-09-10-hermes-assurance-investigation.md
   - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/worklog/2026-09-09-ar429-merged-checkpoint.md
@@ -23,8 +24,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-hermes-assurance-20260910
-evidence_commit: 2a5663152f6a6c916596fa92b5c7ba8c902b5745
-minimum_ledger_commit: 4544efd67074be9939aaf56e448ac1de189f2bcb
+evidence_commit: 49d0511d231cd31773e75fa8d54bca116ce41064
+minimum_ledger_commit: f2a1db81ccf8740672bf5b85891c026cc46f2154
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -33,11 +34,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-September10 demo_ready: exact ordinary-review critic correctness is
-indeterminate because the failed trace retained no plan/proposal/critic packet.
-Fresh parent MCP succeeds. Focused17, production1151/3skip, UI224, routing,
-Ruff788 and docs pass; private conformance188/188 passed. One native diagnostic pending.
-No product repair or historical receipt mutation. See current worklog.
+September10 scoped live_demo complete in PR844. Fresh MCP works. Original
+ordinary-review veto remains unchanged and indeterminate: no plan/proposal/critic
+packet retained. One fresh ordinary_review completes86.235s: one full native
+card, five Store headers and authoritative hashdd9b5b8c match; critic approves.
+Captured plan contains wrong expected mean2.5; final correctly says1.5.
+AR-432/#845 tracks that separate factual defect. No product change or closure.
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,
@@ -112,13 +114,19 @@ and continue; never reopen a failed receipt or create an empty recovery pair.
 
 ## Next bounded work package
 
-All pre-demo checks pass. Run one fresh exact-request
-Hermes ordinary-review diagnostic with bounded recruiter/critic packet capture.
-Judge only its own plan/contracts and terminal evidence; do not relabel the old
-veto. AR-418 upstream remains OPEN at30f421ecce and installed native checkout
-clean7cd91114; adoption and original cap remain separate. Preserve owner order.
+Preserve owner order: resolve OpenClaw full-card visibility for the already
+successful review/follow-up before another broad sample. AR-432 separately
+needs raw planner-boundary evidence for the numeric contradiction; do not retry
+the old assurance receipt. AR-418 upstream adoption and original cap remain
+unproven. AR-404/418/430/432 stay open; Zcode remains deferred.
 
 ## Verification
+
+Current focused17, production1151/3skip, UI224, routing, Ruff788, docs/tracker
+and private conformance188/188 pass. Prior default-umask fixture failure is
+retained. Two native packets captured; config restored byte-exact, no observer
+errors. Original run/failure hashes still match. No all-host or independent
+delegated-review claim. Native session20260910_081128_6d1bcd, tracedf76d074.
 
 Recipe21 focused217/1skip, named production1151/3skip, UI224, routing, Ruff788,
 frozen conformance188/188 and canonical build/Twine/installed smoke passed.
