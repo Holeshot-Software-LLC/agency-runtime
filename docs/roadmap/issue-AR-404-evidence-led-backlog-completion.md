@@ -80,10 +80,9 @@ trace ending e03a9447 retains its critic veto, but has no persisted plan,
 proposal, selected contracts or raw critic packet. Historical critic correctness
 is indeterminate; no product repair is justified by the retained reason alone.
 The original failure remains unchanged. Focused17, production1151/3skip, UI224,
-routing, Ruff788 and docs pass. One private-permission conformance run is
-underway after the documented fixture setup failure; one fresh exact-request
-Hermes diagnostic remains gated on it. This records fast_verification, not
-native acceptance. Details and exact evidence are in the linked worklog.
+routing, Ruff788 and docs pass. Private-permission conformance passes188/188 after the retained documented
+fixture setup failure. One fresh exact-request Hermes diagnostic remains.
+This records demo_ready, not native acceptance. Details and exact evidence are in the linked worklog.
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,

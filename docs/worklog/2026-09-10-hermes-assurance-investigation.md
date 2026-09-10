@@ -15,7 +15,7 @@ type: worklog
 commit: 2a5663152f6a6c916596fa92b5c7ba8c902b5745
 short: 2a566315
 date: 2026-09-10
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/844
 related_issues:
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
 ---
@@ -68,8 +68,8 @@ No new product decision or issue closure is made.
 ## Verification
 
 Focused critic17passed; named production1151passed/3skipped; UI224passed;
-routing, Ruff788 and documentation checks pass. Private conformance and one
-fresh native observation are pending. All651 retained Hermes projection files
+routing, Ruff788 and documentation checks pass. Private conformance passes188/188 with zero survivors and unchanged source.
+One fresh native observation remains pending. All651 retained Hermes projection files
 match the manifest. Planner/recruiter source and Hermes adapter match47241e5e;
 this is the retained recipe21 projection, not Codex's recipe22 refresh.
 
@@ -80,3 +80,10 @@ of its own recruiter and critic packets, then record exact terminal evidence.
 AR-418 upstream PR106490 remains OPEN at30f421ecce; actual Hermes checkout
 remains clean7cd91114. Adoption and original provider-cap proof remain unproven.
 AR-404/418/430 stay open; Zcode remains deferred. No exhaustive or Windows run.
+
+## Demo-ready checkpoint
+
+Private077 conformance passes188/188 in341.533s. All required pre-demo checks
+are complete, with the prior invocation failures preserved. PR844 carries this
+records-only package. The clean substantive/ledger pair precedes one bounded
+native ordinary-review observation; no installation or trust refresh is needed.

@@ -23,8 +23,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar404-hermes-assurance-20260910
-evidence_commit: 2f1e7d8965ce822ce1d1a9d3601405ceaac9a66c
-minimum_ledger_commit: d967e45a49b897eda79c6e57905aac916630e923
+evidence_commit: 2a5663152f6a6c916596fa92b5c7ba8c902b5745
+minimum_ledger_commit: 4544efd67074be9939aaf56e448ac1de189f2bcb
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -33,10 +33,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-September10 fast_verification: exact ordinary-review critic correctness is
+September10 demo_ready: exact ordinary-review critic correctness is
 indeterminate because the failed trace retained no plan/proposal/critic packet.
 Fresh parent MCP succeeds. Focused17, production1151/3skip, UI224, routing,
-Ruff788 and docs pass; private conformance and one native diagnostic pending.
+Ruff788 and docs pass; private conformance188/188 passed. One native diagnostic pending.
 No product repair or historical receipt mutation. See current worklog.
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
@@ -112,7 +112,7 @@ and continue; never reopen a failed receipt or create an empty recovery pair.
 
 ## Next bounded work package
 
-Complete the current private conformance run, then run one fresh exact-request
+All pre-demo checks pass. Run one fresh exact-request
 Hermes ordinary-review diagnostic with bounded recruiter/critic packet capture.
 Judge only its own plan/contracts and terminal evidence; do not relabel the old
 veto. AR-418 upstream remains OPEN at30f421ecce and installed native checkout
