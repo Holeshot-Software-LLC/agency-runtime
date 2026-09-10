@@ -2399,6 +2399,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `73df2907` | 2026-09-10 | fix(installer): accept any stable OpenClaw at or above the audited minimum | [AR-435](../roadmap/issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | null |
 | `439b9fc8` | 2026-09-10 | fix(installer): merge PR852 OpenClaw version rule | [AR-435](../roadmap/issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | null |
 | `d1648668` | 2026-09-10 | docs: record AR-433 all-host reinstall and liveness evidence | [AR-433](../roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | null |
+| `0ab364b6` | 2026-09-10 | docs: merge PR854 AR-433 install evidence | [AR-433](../roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
