@@ -1,0 +1,12 @@
+{
+  "actual_checkout_commit": "7cd91114b462b7af76e558cc4e97f82201d2e884",
+  "actual_checkout_clean": true,
+  "upstream_pr": 106490,
+  "upstream_repository": "NousResearch/hermes-agent",
+  "upstream_state": "OPEN",
+  "upstream_head": "30f421ecce28c563a62a97cc227c800954ff9b3b",
+  "merged_at": null,
+  "default_adoption_proven": false,
+  "original_truncation_cap_proven": false,
+  "scope": "Read-only recheck of actual checkout and upstream metadata in this AR-429 package; no upstream adoption or truncation acceptance."
+}

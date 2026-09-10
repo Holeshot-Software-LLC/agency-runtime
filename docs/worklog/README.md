@@ -2371,6 +2371,12 @@ This registry connects repository history to the roadmap and to optional detail 
 | `cbb83fa6` | 2026-09-09 | docs(reliability): retain AR-423 handoff constraints | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
 | `3238dfa4` | 2026-09-09 | docs(reliability): direct recovery to remaining Hermes evidence | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-claude-priority-native.md) |
 | `2cd6413a` | 2026-09-09 | docs(reliability): merge PR832 Claude native context acceptance | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
+| `f6d58d5a` | 2026-09-09 | fix(recruiter): ground required specialties in actual unit scope | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
+| `b20b4417` | 2026-09-09 | docs(hermes): freeze AR-429 native demo artifact and checks | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
+| `98cb36c1` | 2026-09-09 | docs(hermes): correct observer control before native invocation | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
+| `d35d3bfe` | 2026-09-09 | docs(hermes): preserve AR-429 native staffing and finalization evidence | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
+| `c7569ee4` | 2026-09-09 | docs(acceptance): freeze AR-429 native evidence candidate | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
+| `24368c37` | 2026-09-09 | docs(acceptance): complete AR-429 isolated native verification | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar423-native-priority-20260909
-evidence_commit: 5dbe612a7dd3bd7ecca1b2f60411a44b175d278f
-minimum_ledger_commit: adab07907448c152e5a214e8abd5150d535f282d
+branch: codex/ar429-hermes-nomination-relevance-20260909
+evidence_commit: f6d58d5acd5066707190c7f99a7c314875fe393a
+minimum_ledger_commit: 47241e5e085a4f1cea2c41cda6770f5bd5f9b4f2
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -29,6 +29,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 # AR-404 five-host reliability
 
 ## Checkpoint
+
+AR-429/#834 done, PR836 merge pending: sourcef6d58d5a, artifact47241e5e, recipe21. Focused217/1skip,
+production1151/3skip, UI224 and conformance188/188 pass; installed616 files match.
+Hermes refreshed only. Native20260909_213316_5f974b passed3 cards,5 headers and authoritative372378a5
+final hash in111.388s. Critic approved, observer restored; first isolated pass
+091e5a21/bcce1a9a/bc0261d5 satisfied all three criteria. AR-430/#835
+defers2 foundation failures reproduced on unchanged main.
 
 Owner order: OpenClaw, Hermes, Codex, Claude. Zcode changes are deferred but its
 historical failures remain in the five-host scope. AR-428 planning repair merged
@@ -84,9 +91,9 @@ and continue. No empty recovery commits, forced transfer, or failed-receipt reop
 
 ## Next bounded work package
 
-Inspect Hermes's observed nomination packet against selected contracts and eligible neighbours. Choose a
-bounded repair only from that evidence; do not assume a critic mistake. Preserve
-the separate AR-418 upstream terminal gate. Keep the owner's host order and Zcode deferral.
+Merge PR836 with exact ledgers. Next, inspect the remaining Hermes review failure
+against its assurance contracts and exact native receipt before choosing a repair. Preserve the critic veto and separate
+AR-418 upstream terminal gate. Keep the owner's host order and Zcode deferral.
 
 ## Verification
 

@@ -1,0 +1,97 @@
+{
+  "complete": true,
+  "config_path": "/home/holeshot/.agency-runtime/agency.yaml",
+  "contractors_existing": 17,
+  "contractors_installed": 0,
+  "contractors_preserved": 0,
+  "contractors_upgraded": 0,
+  "dashboard": {
+    "changed": false,
+    "exit_code": 0,
+    "ok": true,
+    "status": "opted_out"
+  },
+  "hosts": [
+    {
+      "backup_path": "/home/holeshot/.agency-runtime/backups/hermes/20260910T013019.304017Z",
+      "canary": null,
+      "canary_attestation_invalidated": false,
+      "enabled": true,
+      "exit_code": 0,
+      "filesystem": {
+        "backup_path": "/home/holeshot/.agency-runtime/backups/hermes/20260910T013019.304017Z",
+        "bundle_digest": "85e5cfc752151c5127c7280e5481e9b6fa9692597ad02d33ffbff0d133cfe8d1",
+        "force_replace": false,
+        "owned_files": [
+          ".agency-runtime-launcher.json",
+          ".mcp.json",
+          "__init__.py",
+          "__pycache__/.agency-runtime-cache-denied",
+          "plugin.yaml",
+          ".agency-runtime-install.json"
+        ],
+        "target": "/home/holeshot/.hermes-nexus/plugins/agency-preflight",
+        "unchanged": false,
+        "would_backup": true
+      },
+      "host": "hermes",
+      "loaded": null,
+      "maturity": "enabled-runtime-unverified",
+      "native_steps": [
+        {
+          "command": [
+            "hermes",
+            "plugins",
+            "enable",
+            "agency-preflight"
+          ],
+          "name": "enable",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        },
+        {
+          "command": [
+            "hermes",
+            "plugins",
+            "list"
+          ],
+          "name": "inventory",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        },
+        {
+          "command": [
+            "hermes",
+            "config",
+            "get",
+            "plugins.hook_callback_timeout"
+          ],
+          "name": "hook_budget_read",
+          "ok": true,
+          "returncode": 0,
+          "stderr_truncated": false,
+          "stdout_truncated": false
+        }
+      ],
+      "ok": true,
+      "partial": false,
+      "plugin_path": "/home/holeshot/.hermes-nexus/plugins/agency-preflight/__init__.py",
+      "registered": true,
+      "restart_required": true,
+      "status": "registered",
+      "target": "/home/holeshot/.hermes-nexus/plugins/agency-preflight"
+    }
+  ],
+  "ok": true,
+  "partial": false,
+  "production_container": false,
+  "profile": "standard",
+  "roster_added": 0,
+  "roster_upgraded": 0,
+  "runtime_drift": null,
+  "selected_hosts": "explicit"
+}

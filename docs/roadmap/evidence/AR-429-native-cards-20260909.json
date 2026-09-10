@@ -1,0 +1,67 @@
+{
+  "native_message_ids": [
+    535407,
+    535408,
+    535409,
+    535410,
+    535411,
+    535412
+  ],
+  "native_hook_contexts": [
+    {
+      "native_message_id": 535407,
+      "api_content_chars": 21200,
+      "api_content_sha256": "ad9f46ac40184b19c45b184dc470ba626bd8414d654d2e25ba0af0e134e62f66",
+      "spill_pointer_present": false,
+      "contract_present": true,
+      "delivery_rules_present": true,
+      "native_card_tool_requested": true
+    }
+  ],
+  "native_card_tool_results": [],
+  "card_proofs": [
+    {
+      "slug": "code-reviewer",
+      "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+      "store_hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+      "full_prompt_chars": 2379,
+      "prompt_bytes_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+      "exact_full_card_present": true,
+      "source": "native Hermes exact-request user api_content bound to same-turn assistant final hash, or native tool_result with matching session/trace and same-session preceding tool_call_id"
+    },
+    {
+      "slug": "python-application-engineer",
+      "version": "contractor-4-7fc606fc0e5dda5b",
+      "store_hash": "sha256:7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+      "full_prompt_chars": 3072,
+      "prompt_bytes_sha256": "7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+      "exact_full_card_present": true,
+      "source": "native Hermes exact-request user api_content bound to same-turn assistant final hash, or native tool_result with matching session/trace and same-session preceding tool_call_id"
+    },
+    {
+      "slug": "software-test-engineer",
+      "version": "contractor-4-336f7dccc2212825",
+      "store_hash": "sha256:336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+      "full_prompt_chars": 3193,
+      "prompt_bytes_sha256": "336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+      "exact_full_card_present": true,
+      "source": "native Hermes exact-request user api_content bound to same-turn assistant final hash, or native tool_result with matching session/trace and same-session preceding tool_call_id"
+    }
+  ],
+  "complete_selected_team": {
+    "inferred": [
+      "code-reviewer",
+      "python-application-engineer",
+      "software-test-engineer"
+    ],
+    "retained": [
+      "code-reviewer",
+      "python-application-engineer",
+      "software-test-engineer"
+    ],
+    "missing": [],
+    "unexpected": [],
+    "exact_match": true
+  },
+  "exact_card_injection": true
+}

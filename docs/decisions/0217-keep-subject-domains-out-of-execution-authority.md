@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-05
 tags: [staffing, reliability]
 related:
+  - docs/roadmap/issue-AR-430-align-foundation-tests-with-descriptive-domains.md
   - docs/roadmap/issue-AR-402-separate-subject-domains-from-execution-eligibility.md
   - docs/decisions/0198-waive-the-typed-requirements-the-roster-declares-but-cannot-serve.md
   - docs/decisions/0201-constrain-the-planner-domains-to-what-the-roster-serves.md

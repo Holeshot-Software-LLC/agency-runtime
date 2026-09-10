@@ -1,0 +1,116 @@
+"""Bounded pass-through observer for one synthetic native handoff diagnostic."""
+import copy, hashlib, http.client, json, os, signal, sqlite3, subprocess, tempfile, threading, time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+import yaml
+from agency_runtime.core.configuration import _config_lock, _atomic_write_yaml
+
+ASK = 'Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed.'
+FOLLOWUP = "Review the corrected function."
+def matches_packet(value):
+    return 'critic_contract' in value and (value.get('request') == ASK or (value.get('request') == FOLLOWUP and 'average' in json.dumps(value).lower()))
+PROFILE = 'agency-recruiter-critic'
+MODEL = 'task-agency-critic-v2'
+MODELS = {MODEL}
+LIMIT = 2 * 1024 * 1024
+HOP = {'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade', 'content-length', 'host'}
+
+
+def public_response(data):
+    try:
+        value=json.loads(data)
+        return {'model':value.get('model'), 'choices':[{'message':{'content':row.get('message',{}).get('content')},'finish_reason':row.get('finish_reason')} for row in value.get('choices',[])]}
+    except (ValueError,TypeError,AttributeError):
+        return {'capture_error':'non_json_public_response'}
+
+class Observer(BaseHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+    def do_POST(self):
+        size = int(self.headers.get('Content-Length', '0'))
+        if not 0 < size <= LIMIT:
+            self.send_error(413)
+            return
+        body = self.rfile.read(size)
+        packet = None
+        try:
+            request = json.loads(body)
+            if request.get('model') in MODELS:
+                for message in request.get('messages', []):
+                    if message.get('role') == 'user':
+                        raw_prompt = message.get('content', '{}')
+                        value = json.loads(raw_prompt.split('[RUNTIME VALIDATION FEEDBACK]', 1)[0].strip())
+                        if matches_packet(value):
+                            packet = {'original_input': value, 'native_user_prompt': raw_prompt, 'native_system_prompts': [m.get('content') for m in request.get('messages', []) if m.get('role') == 'system']}
+        except (ValueError, TypeError, AttributeError):
+            pass
+        conn = http.client.HTTPConnection(*self.server.upstream, timeout=65)
+        started = time.time()
+        try:
+            headers = {k:v for k,v in self.headers.items() if k.lower() not in HOP}
+            conn.request('POST', self.path, body=body, headers=headers)
+            response = conn.getresponse()
+            data = response.read(LIMIT + 1)
+            if len(data) > LIMIT:
+                raise ValueError('bounded_response_exceeded')
+            if packet is not None and self.server.capture_dir is not None:
+                record = {'started_at':started, 'ended_at':time.time(), 'request_sha256':hashlib.sha256(body).hexdigest(), 'response_sha256':hashlib.sha256(data).hexdigest(), 'http_status':response.status, 'native_packet':packet, 'stage_model':request.get('model'), 'response_text':json.dumps(public_response(data),ensure_ascii=False)}
+                try:
+                    target = self.server.capture_dir / (str(time.monotonic_ns())+'.json')
+                    with target.open('x') as f:
+                        json.dump(record, f, indent=2)
+                except OSError:
+                    self.server.errors.append('capture_write_failed')
+            self.send_response(response.status)
+            for k,v in response.getheaders():
+                if k.lower() not in HOP:
+                    self.send_header(k,v)
+            self.send_header('Content-Length', str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+        except Exception as exc:
+            self.server.errors.append(type(exc).__name__)
+            self.send_error(502)
+        finally:
+            conn.close()
+
+def server(upstream, capture_dir):
+    instance = ThreadingHTTPServer(('127.0.0.1', 0), Observer)
+    instance.upstream = upstream
+    instance.capture_dir = capture_dir
+    instance.errors = []
+    threading.Thread(target=instance.serve_forever, daemon=True).start()
+    return instance
+
+def atomic_raw(path, raw):
+    descriptor, name = tempfile.mkstemp(prefix='.ar414-',dir=path.parent)
+    try:
+        with os.fdopen(descriptor,'wb') as f:
+            f.write(raw);f.flush();os.fsync(f.fileno())
+        os.replace(name,path)
+    finally:
+        if os.path.exists(name):os.unlink(name)
+
+def smoke():
+    received=[]
+    response=b'{"choices":[{"message":{"content":"{\\"approved\\":false,\\"reason_codes\\":[\\"wrong-neighbor-selection\\"]}"}}]}'
+    class Echo(BaseHTTPRequestHandler):
+        def log_message(self,*args):pass
+        def do_POST(self):
+            received.append((self.path,self.rfile.read(int(self.headers['Content-Length'])),self.headers.get('Authorization')))
+            self.send_response(200);self.send_header('Content-Length',str(len(response)));self.end_headers();self.wfile.write(response)
+    upstream=ThreadingHTTPServer(('127.0.0.1',0),Echo)
+    threading.Thread(target=upstream.serve_forever,daemon=True).start()
+    with tempfile.TemporaryDirectory(prefix='ar414-observer-test-') as scratch:
+        root=Path(scratch);proxy=server(upstream.server_address,root)
+        for request in [{'model':MODEL,'messages':[{'role':'user','content':json.dumps({'request':ASK,'critic_contract':{},'proposal':{}})}]},{'model':MODEL,'messages':[{'role':'user','content':json.dumps({'request':FOLLOWUP,'critic_contract':{},'plan':{'outcome':'Correct average function'}})}]},{'model':MODEL,'messages':[{'role':'user','content':json.dumps({'request':FOLLOWUP,'critic_contract':{},'plan':{'outcome':'Unrelated task'}})}]},{'model':MODEL,'messages':[{'role':'user','content':'unrelated request'}]}]:
+            body=json.dumps(request).encode();client=http.client.HTTPConnection(*proxy.server_address)
+            client.request('POST','/v1/chat/completions',body,{'Authorization':'Bearer synthetic-only'})
+            r=client.getresponse();assert r.status==200 and r.read()==response
+            assert received[-1]==('/v1/chat/completions',body,'Bearer synthetic-only');client.close()
+        captures=list(root.glob('*.json'));assert len(captures)==2
+        assert 'synthetic-only' not in captures[0].read_text()
+        assert not proxy.errors
+        proxy.shutdown();proxy.server_close()
+    upstream.shutdown();upstream.server_close()
+    print(json.dumps({'observer_tests':'passed','cases':['request_response_bytes_preserved','authorization_forwarded_not_recorded','unrelated_request_not_captured']}))

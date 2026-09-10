@@ -1,0 +1,41 @@
+{
+  "source": "AR-428-observed-native-critic-packet-20260909.json",
+  "source_sha256": "3499421b91ccba36f3f4554842c3dc6294b38e185931f1afba9ab9823da87f3b",
+  "request": "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed.",
+  "plan_hash": "sha256:574a1f0653e0d273525ea51a913f56484e35f9b83e9db44a65b48bbcf377f5e6",
+  "critic_response": "{\"model\": \"task-agency-critic-v2\", \"choices\": [{\"message\": {\"content\": \"{\\\"approved\\\":false,\\\"reason_codes\\\":[\\\"wrong-neighbor-selection\\\"]}\"}, \"finish_reason\": \"stop\"}]}",
+  "causal_limit": "The exact critic veto does not identify a sole cause; scope mismatches motivate a bounded prompt repair, not manual staffing or receipt acceptance.",
+  "units": [
+    {
+      "unit_id": "unit-defect-analysis",
+      "required": [
+        "type-design-analyzer",
+        "silent-failure-hunter"
+      ],
+      "selected": [
+        "type-design-analyzer",
+        "silent-failure-hunter"
+      ],
+      "acceptable": [
+        "code-reviewer",
+        "ai-engineer",
+        "minimal-change-engineer"
+      ]
+    },
+    {
+      "unit_id": "unit-static-review",
+      "required": [
+        "code-reviewer",
+        "silent-failure-hunter"
+      ],
+      "selected": [
+        "code-reviewer",
+        "silent-failure-hunter"
+      ],
+      "acceptable": [
+        "type-design-analyzer",
+        "ai-evaluation-engineer"
+      ]
+    }
+  ]
+}

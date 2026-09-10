@@ -1,0 +1,92 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_subject_matter_reviewer_can_complement_test_evidence_owner ________
+
+    def test_subject_matter_reviewer_can_complement_test_evidence_owner() -> None:
+        evidence_owner = _contract(
+            "application-integration-verifier",
+            outcomes=("Application test verification",),
+            artifact="test-evidence",
+            lifecycle="testing",
+            authority="review",
+            domains=("quality-assurance",),
+        )
+        security_reviewer = _contract(
+            "code-reviewer",
+            outcomes=("Security review",),
+            artifact="review-report",
+            lifecycle="review",
+            authority="review",
+            domains=("security", "software-engineering"),
+        )
+        raw_unit = _unit(
+            "unit-security-tests",
+            artifact="test-evidence",
+            lifecycle="testing",
+            capabilities=("testing", "verification", "review"),
+            authority="review",
+        )
+        raw_unit["domains"] = ["security", "software-engineering", "quality-assurance"]
+        plan = _plan(raw_unit)
+        roster = (evidence_owner, security_reviewer)
+    
+        proposal = build_deterministic_proposal(
+            plan,
+            roster,
+            {
+                "unit-security-tests": (
+                    ("application-integration-verifier", 0.98),
+                    ("code-reviewer", 0.95),
+                )
+            },
+            context=_context(),
+        )
+        decision = verify_staffing(plan, proposal, roster, context=_context())
+    
+        assert decision.accepted
+>       assert decision.units[0].selected == (
+            "application-integration-verifier",
+            "code-reviewer",
+        )
+E       AssertionError: assert ('application...on-verifier',) == ('application...ode-reviewer')
+E         
+E         Right contains one more item: 'code-reviewer'
+E         Use -v to get more diff
+
+tests/test_workforce_staffing_foundation.py:700: AssertionError
+__ test_margin_compares_complete_alternative_teams_not_partial_near_neighbors __
+
+    def test_margin_compares_complete_alternative_teams_not_partial_near_neighbors() -> None:
+        unit = _unit("unit-analysis")
+        unit["domains"] = ["security", "software-engineering"]
+        plan = _plan(unit)
+        complete = _contract("complete-reviewer", outcomes=("Technical analysis",))
+        partial = replace(
+            _contract("partial-neighbor", outcomes=("Technical analysis",)),
+            domains=("security",),
+        )
+        complete = replace(
+            complete,
+            domains=("security", "software-engineering"),
+        )
+        context = _context()
+    
+        proposal = build_deterministic_proposal(
+            plan,
+            (partial, complete),
+            {plan.units[0].unit_id: (("partial-neighbor", 1.0), ("complete-reviewer", 0.9))},
+            context=context,
+        )
+        decision = verify_staffing(plan, proposal, (partial, complete), context=context)
+    
+>       assert proposal.units[0].selected == ("complete-reviewer",)
+E       AssertionError: assert ('partial-neighbor',) == ('complete-reviewer',)
+E         
+E         At index 0 diff: 'partial-neighbor' != 'complete-reviewer'
+E         Use -v to get more diff
+
+tests/test_workforce_staffing_foundation.py:988: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_workforce_staffing_foundation.py::test_subject_matter_reviewer_can_complement_test_evidence_owner
+FAILED tests/test_workforce_staffing_foundation.py::test_margin_compares_complete_alternative_teams_not_partial_near_neighbors
+2 failed in 0.11s

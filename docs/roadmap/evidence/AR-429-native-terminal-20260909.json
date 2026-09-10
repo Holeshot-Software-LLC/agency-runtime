@@ -1,0 +1,72 @@
+{
+  "invocation": {
+    "case": "multi_step",
+    "host": "hermes",
+    "phase": "nomination_scope",
+    "command": [
+      "hermes",
+      "chat",
+      "--oneshot",
+      "--quiet",
+      "--in",
+      "/home/holeshot/.agency-runtime/ephemeral/ar429-native-20260909",
+      "-q",
+      "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed."
+    ],
+    "native_session_id": "20260909_213316_5f974b",
+    "exit_code": 0,
+    "timeout": false,
+    "elapsed_seconds": 111.388
+  },
+  "run": {
+    "id": "429536f0-4930-40b4-bc48-5e916c85d221",
+    "trace_id": "20260909_213316_5f974b:011accaf-7dba-4413-b99c-fbbb8508459b:bb0af9fd",
+    "session_id": "20260909_213316_5f974b",
+    "host": "hermes",
+    "started_at": "2026-09-10T01:33:26.600000+00:00",
+    "last_activity_at": "2026-09-10T01:34:58.626000+00:00",
+    "turn_sequence": 1701,
+    "ended_at": "2026-09-10T01:34:58.625495+00:00",
+    "status": "completed",
+    "preflight_state": "ready"
+  },
+  "failure": null,
+  "finalization": {
+    "id": "bc7f2bf2-8964-4b55-9d26-b6b330be5f9d",
+    "trace_id": "20260909_213316_5f974b:011accaf-7dba-4413-b99c-fbbb8508459b:bb0af9fd",
+    "host": "hermes",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "372378a52de65f298cb822d3313cea5205bf466e6fb80239b1b19a68bd49d5fe",
+    "policy_response_hash": null,
+    "terminal_status": "completed",
+    "created_at": "2026-09-10T01:34:58.625495+00:00",
+    "session_id": "20260909_213316_5f974b",
+    "status": "completed",
+    "ended_at": "2026-09-10T01:34:58.625495+00:00",
+    "authoritative": true
+  },
+  "finalization_event_count": 2,
+  "accepted_terminal_event_count": 1,
+  "accepted_hash_matches": true,
+  "terminal_hash_matches": true,
+  "native_final_bound": true,
+  "response_sha256": "372378a52de65f298cb822d3313cea5205bf466e6fb80239b1b19a68bd49d5fe",
+  "headers": {
+    "observed": {
+      "agencies_loaded": "agency-steward, code-reviewer, python-application-engineer, software-test-engineer",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)",
+      "recruited_via": "inference"
+    },
+    "store_projection": {
+      "agencies_loaded": "agency-steward, code-reviewer, python-application-engineer, software-test-engineer",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)",
+      "recruited_via": "inference"
+    },
+    "all_five_match": true
+  }
+}
