@@ -484,7 +484,7 @@ not stable internal identifiers.
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
 | [AR-427](issue-AR-427-preserve-complete-inferred-specialist-team.md) | `176adc19`, `b265f715`, `23ae46bf` | [ADR-0245](../decisions/0245-preserve-complete-inferred-teams-during-delivery.md) |
-| [AR-436](issue-AR-436-durable-dashboard-access-without-a-terminal.md) | `45c5f758` | [ADR-0248](../decisions/0248-let-the-owner-opt-in-to-a-durable-dashboard-access-token.md) |
+| [AR-436](issue-AR-436-durable-dashboard-access-without-a-terminal.md) | `45c5f758`, `ec1a98e1` | [ADR-0248](../decisions/0248-let-the-owner-opt-in-to-a-durable-dashboard-access-token.md) |
 | [AR-435](issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | `73df2907`, `439b9fc8` | [ADR-0247](../decisions/0247-accept-any-stable-openclaw-at-or-above-the-audited-minimum.md) |
 | [AR-434](issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | (filed from the AR-433 investigation; no implementation commit) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 | [AR-433](issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | `80e7bf9c`, `8319ae00`, `438a17dc`, `d1648668`, `0ab364b6` | [ADR-0246](../decisions/0246-make-a-wrong-neighbour-veto-name-its-neighbour.md), [ADR-0205](../decisions/0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md) |
