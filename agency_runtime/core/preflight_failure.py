@@ -59,6 +59,10 @@ _CRITIC_VALIDATION_REASON_CODES = frozenset(
         "critic_reason_codes_invalid",
         "critic_rejection_reason_missing",
         "critic_response_shape_invalid",
+        # AR-433 / ADR-0246: the three ways a wrong-neighbour pointer fails.
+        "critic_wrong_neighbor_shape_invalid",
+        "critic_wrong_neighbor_unnamed",
+        "critic_wrong_neighbor_unverified",
     }
 )
 

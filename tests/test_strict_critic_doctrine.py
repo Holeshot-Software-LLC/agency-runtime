@@ -232,6 +232,39 @@ def _run(critic_reply: dict[str, Any]) -> tuple[Any, list[dict[str, Any]]]:
     return outcome, prompts
 
 
+_NEIGHBOUR = "documentation-evidence-researcher"
+_POINTER = {
+    "unit_id": _UNIT,
+    "selected_agent_id": "operations-manager",
+    "neighbor_agent_id": _NEIGHBOUR,
+}
+
+
+def _run_neighbourhood(critic_reply: dict[str, Any]) -> tuple[Any, list[dict[str, Any]]]:
+    """Like ``_run`` with one more eligible, unranked planner card on the unit.
+
+    AR-433 / ADR-0246: a wrong-neighbour veto must name an eligible card the
+    runtime left unselected, so a veto on that ground needs a neighbourhood
+    larger than the selected team; ``_run``'s is not.
+    """
+
+    replies = iter((_result(_PLAN), _result(_NOMINATION), _result(critic_reply)))
+    prompts: list[dict[str, Any]] = []
+
+    def invoke(*args, **_kwargs):
+        prompts.append(json.loads(str(args[1]).split("\n\n[RUNTIME", 1)[0]))
+        return next(replies)
+
+    outcome = plan_and_staff_workforce(
+        "Put this editor on my machine.",
+        _snapshot(_contract("operations-manager"), _contract(_NEIGHBOUR), _desktop_engineer()),
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+    )
+    return outcome, prompts
+
+
 def _routing(outcome: Any) -> dict[str, Any]:
     return {
         "trace_id": "trace-critic-veto",
@@ -302,7 +335,13 @@ def test_an_approval_leaves_the_verified_decision_and_its_advisories_untouched()
 
 
 def test_a_veto_reaches_both_receipts_and_the_disclosure_beside_the_verifier_codes() -> None:
-    outcome, _prompts = _run({"approved": False, "reason_codes": [_AUTHORITY_CODE, *_FAIR_CODES]})
+    outcome, _prompts = _run_neighbourhood(
+        {
+            "approved": False,
+            "reason_codes": [_AUTHORITY_CODE, *_FAIR_CODES],
+            "wrong_neighbors": [_POINTER],
+        }
+    )
 
     assert not outcome.accepted
     assert outcome.status == "inference_invalid"

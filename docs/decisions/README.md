@@ -3,7 +3,7 @@ title: Decision registry
 status: active
 category: decisions
 created: 2026-07-10
-updated: 2026-09-05
+updated: 2026-09-10
 tags: [architecture, adr, governance]
 related:
   - docs/roadmap/README.md
@@ -150,6 +150,7 @@ Status meanings:
 | [ADR-0218](0218-cache-only-roster-vectors-across-hook-processes.md) | Cache only roster vectors across hook processes | Accepted |
 | [ADR-0214](0214-close-a-preflight-attempt-on-its-token-not-its-lease.md) | Close a preflight attempt on its token, not its lease, and bound hiring by the lease | Accepted |
 | [ADR-0215](0215-accept-one-complete-object-with-a-trailing-bracket.md) | Accept one complete object followed only by closing brackets, and name the repair | Accepted |
+| [ADR-0246](0246-make-a-wrong-neighbour-veto-name-its-neighbour.md) | Make a wrong-neighbour veto name its neighbour, and check the name | Accepted |
 
 ## Evidence and observability
 

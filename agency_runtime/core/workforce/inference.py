@@ -255,6 +255,12 @@ CRITIC_VALIDATION_REASON_CODES = frozenset(
         "critic_reason_codes_invalid",
         "critic_rejection_reason_missing",
         "critic_response_shape_invalid",
+        # AR-433 / ADR-0246: a wrong-neighbour veto must name what it points
+        # at, and the runtime checks the pointer against the neighbourhood it
+        # showed the critic. Each code names one way the pointer failed.
+        "critic_wrong_neighbor_shape_invalid",
+        "critic_wrong_neighbor_unnamed",
+        "critic_wrong_neighbor_unverified",
     }
 )
 _CRITIC_REASON_CODE = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}$")
@@ -556,7 +562,13 @@ _CRITIC_SYSTEM = (
     "ineligible for the unit (authority, artifact kind, host, platform or tools) and can never be the "
     "right neighbor. A wrong-neighbor veto must point at a card in that unit's eligible_neighbourhood "
     "that fits the unit better than a selected worker. When a unit's selected workers are its whole "
-    "eligible neighbourhood, wrong-neighbor selection cannot apply to it. When approved is true, "
+    "eligible neighbourhood, wrong-neighbor selection cannot apply to it. A wrong-neighbor-selection "
+    "code must be accompanied by wrong_neighbors: one object per such unit naming unit_id, the "
+    "selected_agent_id it should not have staffed, and the neighbor_agent_id from that unit's "
+    "eligible_candidate_ids that fits better. The runtime verifies every pointer against the "
+    "neighbourhood it supplied and refuses a wrong-neighbor code that names no verifiable pointer; "
+    "when you cannot name one, the ground does not apply and you must not use it. Omit "
+    "wrong_neighbors for every other ground and when approving. When approved is true, "
     "reason_codes must be exactly an empty JSON array. When approved is false, reason_codes must "
     "contain one or more unique lowercase hyphenated staffing-defect codes. Return only one JSON "
     "object matching the supplied schema."
@@ -775,10 +787,39 @@ COMBINED_RESPONSE_SCHEMA = _closed_object(
     {"plan": PLAN_RESPONSE_SCHEMA, "nominations": NOMINATION_RESPONSE_SCHEMA},
     ("plan", "nominations"),
 )
+# AR-433 / ADR-0246: the pointer a wrong-neighbour veto must carry. Each row
+# names one planned unit, one worker the runtime selected on it, and the
+# eligible card the critic says fits better. The runtime verifies every row
+# against the neighbourhood it showed the critic; the fields are identities
+# from that document, never model prose.
+MAX_CRITIC_WRONG_NEIGHBOR_POINTERS: Final[int] = 8
+_WRONG_NEIGHBOR_POINTER_SCHEMA = _closed_object(
+    {
+        "unit_id": {"pattern": r"^unit-[a-z0-9][a-z0-9-]{0,62}$", "type": "string"},
+        "selected_agent_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": r"^[a-z0-9][a-z0-9-]{0,63}$",
+            "type": "string",
+        },
+        "neighbor_agent_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": r"^[a-z0-9][a-z0-9-]{0,63}$",
+            "type": "string",
+        },
+    },
+    ("unit_id", "selected_agent_id", "neighbor_agent_id"),
+)
 CRITIC_RESPONSE_SCHEMA = _closed_object(
     {
         "approved": {"type": "boolean"},
         "reason_codes": _IDENTIFIER_ARRAY,
+        "wrong_neighbors": {
+            "items": _WRONG_NEIGHBOR_POINTER_SCHEMA,
+            "maxItems": MAX_CRITIC_WRONG_NEIGHBOR_POINTERS,
+            "type": "array",
+        },
     },
     ("approved", "reason_codes"),
 )
@@ -1704,6 +1745,38 @@ def _semantic_retry_prompts(
             ),
             "validation_reason_codes": list(error.violations),
             "violations": list(plan_policy_repair_guidance(error.violations)),
+        }
+    elif isinstance(error, _CriticValidationError):
+        # AR-433 / ADR-0246: the critic is told which contract check its
+        # reply failed. The detail names the check and a planned unit id,
+        # never the reply; the neighbourhood is already in the document. Only
+        # a pointer failure gets the pointer guidance; every other critic
+        # contract failure is told to return the verdict shape it owes.
+        next_system_prompt = system_prompt
+        feedback = {
+            "prior_response_status": "rejected",
+            "validation_reason_codes": list(validation_reason_codes),
+            "deterministic_validation_detail": detail,
+            "required_action": (
+                (
+                    "Return one complete replacement critic verdict that the team "
+                    "actually warrants. A wrong-neighbor-selection code must carry "
+                    "wrong_neighbors pointers that name a planned unit_id, a "
+                    "selected_agent_id the runtime selected on it, and a "
+                    "neighbor_agent_id from that unit's eligible_candidate_ids that is "
+                    "not selected. If no such card exists, that ground does not apply: "
+                    "veto on another listed ground the team exhibits, or approve when "
+                    "none applies."
+                )
+                if error.code.startswith("critic_wrong_neighbor")
+                else (
+                    "Return one complete replacement critic verdict matching the "
+                    "supplied schema: approved as a JSON boolean; reason_codes exactly "
+                    "empty when approved and one or more unique lowercase hyphenated "
+                    "staffing-defect codes when not; wrong_neighbors only beside a "
+                    "wrong-neighbor-selection code."
+                )
+            ),
         }
     elif stage == "planner":
         next_system_prompt = COMPACT_INTENT_REPAIR_SYSTEM
@@ -4489,6 +4562,150 @@ def _critic_eligible_neighbourhood(
     return neighbourhood
 
 
+# AR-433 / ADR-0246. The ground a strict critic used on 26 of its 30 vetoes
+# between 2026-09-08 and 2026-09-10 was wrong-neighbor-selection, and only two
+# of those receipts could say which card the critic preferred, each by a name
+# folded into the code itself: the schema carried codes alone, so the prompt's
+# "must point at a card" had nothing to hold it to. A wrong-neighbour claim is a claim about two identities the
+# runtime already knows -- a worker it selected on a unit and an eligible card
+# it did not -- so the veto now names them and the runtime checks the name
+# against the neighbourhood it showed the critic. A claim that names nothing,
+# or names a card the runtime could not have staffed, is a contract failure
+# with one bounded repair, never a veto and never an approval.
+_WRONG_NEIGHBOR_GROUND: Final[str] = "wrong-neighbor-selection"
+_WRONG_NEIGHBOR_POINTER_FIELDS: Final[tuple[str, ...]] = (
+    "unit_id",
+    "selected_agent_id",
+    "neighbor_agent_id",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class WrongNeighborPointer:
+    """One verified wrong-neighbour claim: identities from the critic's own document."""
+
+    unit_id: str
+    selected_agent_id: str
+    neighbor_agent_id: str
+
+
+def _claims_wrong_neighbor(codes: Sequence[str]) -> bool:
+    """True when a code claims the listed wrong-neighbour ground, bare or qualified.
+
+    The critic's codes are an open vocabulary (ADR-0200), so only the listed
+    ground and its qualified forms (AR-416) are bound to a pointer. A claim
+    phrased as some other code is a bare veto exactly as before, which the
+    receipt shows as such; a valid veto on another code is never re-asked.
+    """
+
+    return any(
+        code == _WRONG_NEIGHBOR_GROUND or code.startswith(_WRONG_NEIGHBOR_GROUND + "-")
+        for code in codes
+    )
+
+
+_POINTER_UNIT_ID = re.compile(r"^unit-[a-z0-9][a-z0-9-]{0,62}$")
+_POINTER_AGENT_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+
+
+def _verify_wrong_neighbor_pointers(
+    value: object,
+    *,
+    selected_by_unit: Mapping[str, set[str]],
+    neighbourhood: Mapping[str, Mapping[str, Any]],
+) -> tuple[WrongNeighborPointer, ...]:
+    """Return the critic's pointers, each proven against the runtime's own facts.
+
+    The detail names the check that failed and the planned unit it failed on,
+    and nothing the critic wrote: an identity the critic named is echoed only
+    when it is one the runtime itself put in the neighbourhood document.
+    """
+
+    if not isinstance(value, list) or len(value) > MAX_CRITIC_WRONG_NEIGHBOR_POINTERS:
+        raise _CriticValidationError(
+            "critic_wrong_neighbor_shape_invalid",
+            "strict critic wrong_neighbors must be a bounded array of pointer objects",
+        )
+    pointers: list[WrongNeighborPointer] = []
+    for ordinal, item in enumerate(value, start=1):
+        if not isinstance(item, Mapping) or set(item) != set(_WRONG_NEIGHBOR_POINTER_FIELDS):
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_shape_invalid",
+                f"strict critic wrong_neighbors pointer {ordinal} must name exactly "
+                "unit_id, selected_agent_id and neighbor_agent_id",
+            )
+        fields = {
+            key: (item[key].strip().casefold() if isinstance(item[key], str) else "")
+            for key in _WRONG_NEIGHBOR_POINTER_FIELDS
+        }
+        # The receipt projection admits only these charsets; a verified
+        # pointer the receipt would then drop whole must fail here with a
+        # code rather than vanish later without one.
+        if (
+            _POINTER_UNIT_ID.fullmatch(fields["unit_id"]) is None
+            or _POINTER_AGENT_ID.fullmatch(fields["selected_agent_id"]) is None
+            or _POINTER_AGENT_ID.fullmatch(fields["neighbor_agent_id"]) is None
+        ):
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_shape_invalid",
+                f"strict critic wrong_neighbors pointer {ordinal} carries an identity outside "
+                "the receipt charset",
+            )
+        unit_id = fields["unit_id"]
+        if unit_id not in neighbourhood:
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_unverified",
+                f"strict critic wrong_neighbors pointer {ordinal} names a unit the plan "
+                "does not contain",
+            )
+        unit = neighbourhood[unit_id]
+        selected = selected_by_unit.get(unit_id, set())
+        eligible = set(unit.get("eligible_candidate_ids", ()))
+        if unit.get("selected_are_whole_neighbourhood"):
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_unverified",
+                f"strict critic wrong_neighbors pointer {ordinal} names {unit_id}, whose "
+                "selected workers are its whole eligible neighbourhood",
+            )
+        if fields["selected_agent_id"] not in selected:
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_unverified",
+                f"strict critic wrong_neighbors pointer {ordinal} names a selected_agent_id "
+                f"the runtime did not select on {unit_id}",
+            )
+        neighbor = fields["neighbor_agent_id"]
+        if neighbor in selected:
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_unverified",
+                f"strict critic wrong_neighbors pointer {ordinal} names a neighbor_agent_id "
+                f"already selected on {unit_id}",
+            )
+        if neighbor not in eligible:
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_unverified",
+                f"strict critic wrong_neighbors pointer {ordinal} names a neighbor_agent_id "
+                f"outside the eligible neighbourhood of {unit_id}",
+            )
+        pointer = WrongNeighborPointer(unit_id, fields["selected_agent_id"], neighbor)
+        if pointer in pointers:
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_shape_invalid",
+                f"strict critic wrong_neighbors pointer {ordinal} repeats an earlier pointer",
+            )
+        pointers.append(pointer)
+    return tuple(pointers)
+
+
+def _wrong_neighbor_pointer_detail(pointers: Sequence[WrongNeighborPointer]) -> str:
+    """Write the verified pointers in the wire form both durable receipts project."""
+
+    from agency_runtime.core.selector.receipt_projection import CRITIC_POINTER_DETAIL_PREFIX
+
+    return CRITIC_POINTER_DETAIL_PREFIX + ",".join(
+        f"{item.unit_id}={item.selected_agent_id}>{item.neighbor_agent_id}" for item in pointers
+    )
+
+
 def _strict_critic(
     *,
     request: str,
@@ -4503,6 +4720,10 @@ def _strict_critic(
     harness: str = "",
 ) -> tuple[list[WorkforceInferenceAttempt], tuple[str, ...]]:
     selected = {agent_id for unit in staffing.units for agent_id in unit.selected}
+    selected_by_unit = {unit.unit_id: set(unit.selected) for unit in staffing.units}
+    neighbourhood = _critic_eligible_neighbourhood(
+        plan, proposal, staffing, snapshot.contracts, context
+    )
     critic_prompt = _json_prompt(
         {
             "request": request,
@@ -4522,6 +4743,11 @@ def _strict_critic(
                 # may point at is the eligible one, stated per unit below.
                 "wrong_neighbor_must_name_an_eligible_card": True,
                 "eligible_neighbourhood_is_complete_per_unit": True,
+                # AR-433 / ADR-0246: the pointer the ground must carry, and
+                # the fact that the runtime checks it.
+                "wrong_neighbor_pointer_required": True,
+                "wrong_neighbor_pointer_fields": list(_WRONG_NEIGHBOR_POINTER_FIELDS),
+                "wrong_neighbor_pointer_verified_by_runtime": True,
                 "veto_grounds": list(_CRITIC_VETO_GROUNDS),
                 "never_veto_for": list(_CRITIC_NEVER_VETO_FOR),
                 "composition_uses_selected_workers_only": True,
@@ -4545,14 +4771,18 @@ def _strict_critic(
             "selected_worker_contracts": [
                 item.to_dict() for item in snapshot.contracts if item.agent_id in selected
             ],
-            "eligible_neighbourhood": _critic_eligible_neighbourhood(
-                plan, proposal, staffing, snapshot.contracts, context
-            ),
+            "eligible_neighbourhood": neighbourhood,
         }
     )
 
-    def parse_critic(value: Mapping[str, Any]) -> tuple[bool, tuple[str, ...]]:
-        if not isinstance(value, Mapping) or set(value) != {"approved", "reason_codes"}:
+    def parse_critic(
+        value: Mapping[str, Any],
+    ) -> tuple[bool, tuple[str, ...], tuple[WrongNeighborPointer, ...]]:
+        if not isinstance(value, Mapping) or not {"approved", "reason_codes"} <= set(value) <= {
+            "approved",
+            "reason_codes",
+            "wrong_neighbors",
+        }:
             raise _CriticValidationError(
                 "critic_response_shape_invalid",
                 "strict critic response shape is invalid",
@@ -4589,7 +4819,33 @@ def _strict_critic(
                 "critic_rejection_reason_missing",
                 "strict critic rejection requires one reason code",
             )
-        return approved, normalized
+        raw_pointers = value.get("wrong_neighbors")
+        claims_wrong_neighbor = _claims_wrong_neighbor(normalized)
+        if approved and raw_pointers:
+            raise _CriticValidationError(
+                "critic_approval_reasons_present",
+                "strict critic approval must not include wrong-neighbor pointers",
+            )
+        if raw_pointers and not claims_wrong_neighbor:
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_shape_invalid",
+                "strict critic wrong_neighbors requires the wrong-neighbor-selection code",
+            )
+        if claims_wrong_neighbor and not raw_pointers:
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_unnamed",
+                "strict critic wrong-neighbor-selection names no wrong_neighbors pointer",
+            )
+        pointers = (
+            _verify_wrong_neighbor_pointers(
+                raw_pointers,
+                selected_by_unit=selected_by_unit,
+                neighbourhood=neighbourhood,
+            )
+            if raw_pointers
+            else ()
+        )
+        return approved, normalized, pointers
 
     critic, attempts, failure = _invoke_stage(
         stage="critic",
@@ -4605,8 +4861,18 @@ def _strict_critic(
     )
     if critic is None:
         return attempts, (failure,)
-    approved, critic_reasons = critic
-    return attempts, () if approved else ("staffing_critic_rejected", *critic_reasons)
+    approved, critic_reasons, pointers = critic
+    if approved:
+        return attempts, ()
+    if pointers and attempts and attempts[-1].status == "applied":
+        # The verified pointers ride the applied critic attempt in the same
+        # wire form a rejected recruiter attempt uses, so both durable
+        # receipts name the card the critic preferred and the worker it
+        # would replace, and a veto is diagnosable after the fact.
+        attempts[-1] = replace(
+            attempts[-1], validation_detail=_wrong_neighbor_pointer_detail(pointers)
+        )
+    return attempts, ("staffing_critic_rejected", *critic_reasons)
 
 
 # --- ADR-0197: typed work subject before planning ---------------------------
@@ -5097,10 +5363,12 @@ __all__ = [
     "COMBINED_RESPONSE_SCHEMA",
     "COMPACT_INTENT_RESPONSE_SCHEMA",
     "CRITIC_RESPONSE_SCHEMA",
+    "MAX_CRITIC_WRONG_NEIGHBOR_POINTERS",
     "NOMINATION_RESPONSE_SCHEMA",
     "PLAN_RESPONSE_SCHEMA",
     "WorkforceInferenceAttempt",
     "WorkforceRoutingOutcome",
+    "WrongNeighborPointer",
     "configured_workforce_providers",
     "plan_and_staff_workforce",
     "staffing_budget_for_config",

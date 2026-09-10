@@ -1573,7 +1573,9 @@ def test_specialty_scope_contract_survives_recruiter_repair_and_critic_veto() ->
             _result(_compact_plan_document()),
             _result({}),
             _result(_nomination_document()),
-            _result({"approved": False, "reason_codes": ["wrong-neighbor-selection"]}),
+            # AR-433: the single-card snapshot has no other eligible neighbour,
+            # so a veto here uses a ground that needs no pointer.
+            _result({"approved": False, "reason_codes": ["unsupported-confidence"]}),
         )
     )
 
@@ -1608,7 +1610,7 @@ def test_specialty_scope_contract_survives_recruiter_repair_and_critic_veto() ->
     assert observations[2][1] == _RECRUITER_REPAIR_SYSTEM
     assert not outcome.accepted
     assert "staffing_critic_rejected" in outcome.abstention_codes
-    assert "wrong-neighbor-selection" in outcome.abstention_codes
+    assert "unsupported-confidence" in outcome.abstention_codes
     assert outcome.calls_used == 4
 
 
@@ -3240,6 +3242,9 @@ def test_strict_mode_critic_can_only_veto_an_already_verified_team() -> None:
         "plan_authority_units_for_host_side_work_are_intended": True,
         "wrong_neighbor_must_name_an_eligible_card": True,
         "eligible_neighbourhood_is_complete_per_unit": True,
+        "wrong_neighbor_pointer_required": True,
+        "wrong_neighbor_pointer_fields": ["unit_id", "selected_agent_id", "neighbor_agent_id"],
+        "wrong_neighbor_pointer_verified_by_runtime": True,
         "veto_grounds": [
             "wrong-neighbor-selection",
             "missing-lifecycle-assurance-the-plan-calls-for",

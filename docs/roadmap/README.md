@@ -3,7 +3,7 @@ title: Roadmap
 status: active
 category: roadmap
 created: 2026-07-10
-updated: 2026-09-07
+updated: 2026-09-10
 tags: [planning, tracker]
 related:
   - docs/roadmap/AR-119-founding-vision.md
@@ -46,6 +46,8 @@ bounded package are in AR-404's
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
 | `AR-427` | [Preserve the complete inferred specialist team during hydration](issue-AR-427-preserve-complete-inferred-specialist-team.md) | done | p1 | reliability | [#825](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825) |
+| `AR-434` | [Plan policy reads a handoff request as a code mutation](issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | open | p2 | reliability | [#848](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/848) |
+| `AR-433` | [Name the neighbour a wrong-neighbour veto points at](issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | open | p1 | reliability | [#847](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/847) |
 | `AR-432` | [Preserve numeric facts in review plans](issue-AR-432-preserve-numeric-facts-in-review-plans.md) | open | p2 | reliability | [#845](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/845) |
 | `AR-431` | [Preserve task context for keep-going recruitment](issue-AR-431-preserve-keep-going-task-context.md) | done | p1 | reliability | [#839](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/839) |
 | `AR-430` | [Align staffing-foundation tests with descriptive subject domains](issue-AR-430-align-foundation-tests-with-descriptive-domains.md) | open | p2 | reliability | [#835](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/835) |
@@ -480,6 +482,8 @@ not stable internal identifiers.
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
 | [AR-427](issue-AR-427-preserve-complete-inferred-specialist-team.md) | `176adc19`, `b265f715`, `23ae46bf` | [ADR-0245](../decisions/0245-preserve-complete-inferred-teams-during-delivery.md) |
+| [AR-434](issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | (filed from the AR-433 investigation; no implementation commit) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
+| [AR-433](issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | `80e7bf9c`, `8319ae00` | [ADR-0246](../decisions/0246-make-a-wrong-neighbour-veto-name-its-neighbour.md), [ADR-0205](../decisions/0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md) |
 | [AR-432](issue-AR-432-preserve-numeric-facts-in-review-plans.md) | `fd69e95e` (observation and filing in AR-404 PR844) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 | [AR-431](issue-AR-431-preserve-keep-going-task-context.md) | `05653bc9`, `48f8c641`, `786f4611`, `8e665ebf`, `bda40f7e`, `5fdcb9d2`, `2f1e7d89`, `6a9039e7`, `60a0c95f` | [ADR-0064](../decisions/0064-classify-turn-intent-from-durable-state.md), [ADR-0163](../decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md) |
 | [AR-430](issue-AR-430-align-foundation-tests-with-descriptive-domains.md) | `f6d58d5a` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |

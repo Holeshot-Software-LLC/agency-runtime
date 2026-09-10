@@ -1,0 +1,326 @@
+{
+  "issue": "AR-433",
+  "scope": "Read-only projection of the live store (file:agency.db?mode=ro) on 2026-09-10; nontrivial runs started at or after 2026-09-08. No receipt was modified, reopened or re-run. Historical critic packets were not retained, so which card any historical veto preferred is unknown.",
+  "owner_observation": "recruitment appears to alternate success/failure every other call",
+  "observed_session": "01a08b2d-acd5-70f3-b4a9-2d5b97b26556",
+  "observed_turns": [
+    {
+      "trace_id": "01a08b2d-caec-78e0-bb55-f920f270fc20",
+      "host": "codex",
+      "started_at": "2026-09-10T11:57:10.324186+00:00",
+      "ended_at": "2026-09-10T12:20:44.060238+00:00",
+      "status": "completed",
+      "turn_sequence": 1707,
+      "preflight_request_kind": "nontrivial",
+      "outcome": "completed",
+      "staffing_reason_codes": [
+        "turn_kind:new_intent",
+        "routing_status:accepted",
+        "inference_mode:inferred",
+        "eligibility:missing_capabilities",
+        "staffing:independent_assurance_missing"
+      ],
+      "selected_count": 7,
+      "provider_attempts": [
+        {
+          "ordinal": 1,
+          "stage": "planner",
+          "status": "applied",
+          "reason_code": "structured_response_applied"
+        },
+        {
+          "ordinal": 2,
+          "status": "applied",
+          "reason_code": "dense_recall_applied"
+        },
+        {
+          "ordinal": 3,
+          "stage": "recall_reranker",
+          "status": "applied",
+          "reason_code": "structured_response_applied"
+        },
+        {
+          "ordinal": 4,
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied"
+        },
+        {
+          "ordinal": 5,
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied"
+        }
+      ]
+    },
+    {
+      "trace_id": "01a08b58-083a-7fe2-8417-2b6364347d8b",
+      "host": "codex",
+      "started_at": "2026-09-10T12:43:18.089688+00:00",
+      "ended_at": "2026-09-10T12:44:01.092000+00:00",
+      "status": "preflight_failed",
+      "turn_sequence": 1709,
+      "preflight_request_kind": "nontrivial",
+      "outcome": "preflight_failed",
+      "reason_code": "workforce_inference_failed",
+      "staffing_reason_codes": [
+        "staffing_critic_rejected",
+        "critic_wrong_neighbor_selection"
+      ],
+      "provider_attempts": [
+        {
+          "ordinal": 1,
+          "stage": "subject",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "latency_ms": 5325
+        },
+        {
+          "ordinal": 2,
+          "stage": "planner",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "latency_ms": 12832
+        },
+        {
+          "stage": "recall_embedding",
+          "status": "applied",
+          "reason_code": "dense_recall_applied",
+          "latency_ms": 2025
+        },
+        {
+          "ordinal": 4,
+          "stage": "recall_reranker",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "latency_ms": 9484
+        },
+        {
+          "ordinal": 5,
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "latency_ms": 2776,
+          "validation_failures": [
+            {
+              "reason_code": "selection_confidence_too_low",
+              "unit_id": "unit-merge-plan"
+            }
+          ]
+        },
+        {
+          "ordinal": 6,
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "latency_ms": 1652
+        },
+        {
+          "ordinal": 7,
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "latency_ms": 7793
+        }
+      ]
+    },
+    {
+      "trace_id": "01a08b59-fcc4-7c21-9663-458e27d875b4",
+      "host": "codex",
+      "started_at": "2026-09-10T12:45:25.990658+00:00",
+      "ended_at": "2026-09-10T12:47:41.356673+00:00",
+      "status": "completed",
+      "turn_sequence": 1710,
+      "preflight_request_kind": "nontrivial",
+      "outcome": "completed",
+      "staffing_reason_codes": [
+        "turn_kind:new_intent",
+        "routing_status:accepted",
+        "inference_mode:inferred",
+        "eligibility:missing_capabilities"
+      ],
+      "selected_count": 4,
+      "provider_attempts": [
+        {
+          "ordinal": 1,
+          "stage": "planner",
+          "status": "applied",
+          "reason_code": "structured_response_applied"
+        },
+        {
+          "ordinal": 2,
+          "status": "applied",
+          "reason_code": "dense_recall_applied"
+        },
+        {
+          "ordinal": 3,
+          "stage": "recall_reranker",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid"
+        },
+        {
+          "ordinal": 4,
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied"
+        },
+        {
+          "ordinal": 5,
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied"
+        }
+      ]
+    },
+    {
+      "trace_id": "01a08c99-d767-70c1-8d5a-a4d1171dc8ca",
+      "host": "codex",
+      "started_at": "2026-09-10T18:34:47.969218+00:00",
+      "ended_at": "2026-09-10T18:36:43.712000+00:00",
+      "status": "preflight_failed",
+      "turn_sequence": 1711,
+      "preflight_request_kind": "nontrivial",
+      "outcome": "preflight_failed",
+      "reason_code": "workforce_inference_failed",
+      "staffing_reason_codes": [
+        "staffing_critic_rejected",
+        "critic_missing_lifecycle_assurance_the_plan_calls_for"
+      ],
+      "provider_attempts": [
+        {
+          "ordinal": 1,
+          "stage": "planner",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "latency_ms": 6465,
+          "validation_reason_codes": [
+            "plan_missing_implementation",
+            "plan_missing_test_implementation",
+            "plan_missing_test_evidence_review"
+          ]
+        },
+        {
+          "ordinal": 2,
+          "stage": "planner",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "latency_ms": 14062
+        },
+        {
+          "stage": "recall_embedding",
+          "status": "applied",
+          "reason_code": "dense_recall_applied",
+          "latency_ms": 40418
+        },
+        {
+          "ordinal": 4,
+          "stage": "recall_reranker",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "latency_ms": 24180
+        },
+        {
+          "ordinal": 5,
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "latency_ms": 17566
+        },
+        {
+          "ordinal": 6,
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "latency_ms": 11694
+        }
+      ]
+    }
+  ],
+  "population_since": "2026-09-08",
+  "outcomes_by_host": {
+    "codex": {
+      "other_failure:workforce_provider_unavailable": 16,
+      "completed": 38,
+      "other_failure:workforce_inference_failed": 6,
+      "other_failure:abandoned": 2,
+      "critic_veto": 15,
+      "other_failure:substantive_specialist_unavailable": 3,
+      "other_failure:response_invalid": 2
+    },
+    "hermes": {
+      "other_failure:workforce_inference_failed": 4,
+      "other_failure:active": 2,
+      "completed": 8,
+      "other_failure:interrupted": 3,
+      "critic_veto": 8,
+      "other_failure:response_invalid": 4,
+      "other_failure:workforce_provider_unavailable": 1
+    },
+    "claude": {
+      "other_failure:workforce_inference_failed": 3,
+      "other_failure:canary_failed": 1,
+      "other_failure:workforce_provider_unavailable": 8,
+      "completed": 9,
+      "critic_veto": 3,
+      "other_failure:response_invalid": 1
+    },
+    "openclaw": {
+      "other_failure:active": 4,
+      "completed": 7,
+      "other_failure:workforce_provider_unavailable": 3,
+      "other_failure:workforce_inference_failed": 1,
+      "critic_veto": 3
+    },
+    "zcode": {
+      "completed": 3,
+      "critic_veto": 1,
+      "other_failure:response_invalid": 2
+    }
+  },
+  "critic_vetoes_by_host": {
+    "codex": 15,
+    "claude": 3,
+    "zcode": 1,
+    "hermes": 8,
+    "openclaw": 3
+  },
+  "critic_veto_codes": {
+    "critic_wrong_neighbor_selection": 24,
+    "critic_wrong_neighbor_selection_discovery_coach": 1,
+    "critic_missing_independent_review_assurance": 1,
+    "critic_wrong_neighbor_selection_code_reviewer": 1,
+    "critic_missing_lifecycle_assurance_the_plan_calls_for": 1
+  },
+  "critic_veto_total": 30,
+  "outcome_sequence_by_host": {
+    "codex": "FFFFFFFFOFFFFFFFFFFFFFOFOCOOCOCCOOFOCOCFFFOCOOOCOFOOOOOOOOCOCOOOOOCOFOCOCFOOOOOCOC",
+    "hermes": "FFFFOOFFOFFOCFCFFOFCFCFCCOCCOO",
+    "claude": "FFFOOOCOFCOFOCOOFOFFFFFFF",
+    "openclaw": "FFOFFFOFFFCOCOCOOO",
+    "zcode": "OOCFFO"
+  },
+  "earlier_stage_rejections_before_critic_veto": {
+    "subject": 3,
+    "(none)": 14,
+    "recall_reranker|recruiter": 1,
+    "subject|recall_reranker": 3,
+    "subject|recruiter": 5,
+    "recruiter": 2,
+    "recall_reranker": 1,
+    "planner|recall_reranker": 1
+  },
+  "earlier_stage_rejections_in_completed_turns": {
+    "recall_reranker": 11,
+    "(none)": 26,
+    "subject|recall_reranker": 6,
+    "subject": 5,
+    "recall_reranker|recruiter|recruiter": 1,
+    "subject|recruiter": 4,
+    "recruiter": 6,
+    "planner|recall_reranker": 2,
+    "subject|recall_reranker|recruiter": 2,
+    "recall_reranker|recruiter": 1,
+    "planner|recall_reranker|recruiter": 1
+  },
+  "legend": "O completed, C critic veto, F other failure, in start order"
+}
