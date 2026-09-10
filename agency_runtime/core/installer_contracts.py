@@ -26,6 +26,10 @@ CODEX_CANARY_PROOF_CONTRACTS = frozenset(
 )
 # 2026-09-01: owner adopted the OpenClaw 2026.8 line (2026.8.2); the live
 # post-install harness battery on this version is the line's hook-compat audit.
+# 2026-09-10 (AR-435 / ADR-0247): the host's OpenClaw moved to 2026.9.3 and the
+# owner decided the installer must accept whatever stable OpenClaw the host
+# runs at or above this minimum; the post-install battery and runtime
+# inspection, not an exact release-line pin, remain the hook-compat evidence.
 MINIMUM_OPENCLAW_VERSION = "2026.8.2"
 OPENCLAW_REQUIRED_HOOKS = frozenset(
     {
@@ -135,11 +139,17 @@ def parse_openclaw_version(value: object) -> tuple[int, int, int] | None:
 
 
 def openclaw_version_supported(value: object) -> bool:
-    """Return whether the host is in the explicitly audited OpenClaw release line."""
+    """Return whether the host runs a stable OpenClaw at or above the audited minimum.
+
+    Prereleases and unparseable strings are refused by the parser; any stable
+    version from the minimum upward is accepted (AR-435 / ADR-0247), so the
+    installer targets the OpenClaw actually on the host instead of one pinned
+    release line.
+    """
 
     observed = parse_openclaw_version(value)
     minimum = tuple(int(part) for part in MINIMUM_OPENCLAW_VERSION.split("."))
-    return observed is not None and observed[:2] == minimum[:2] and observed[2] >= minimum[2]
+    return observed is not None and observed >= minimum
 
 
 # ``HOSTS`` intentionally stays JSON-like because the dashboard and downstream

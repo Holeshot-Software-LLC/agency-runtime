@@ -3,7 +3,7 @@ title: "Troubleshooting Agency Runtime"
 status: active
 category: operations
 created: 2026-07-10
-updated: 2026-08-30
+updated: 2026-09-10
 tags: [operations, troubleshooting]
 related:
   - README.md
@@ -259,9 +259,10 @@ The installer will not restart a live OpenClaw gateway. If the result says
 `host_restart_consent_required`, schedule a maintenance window, stop the gateway
 with the host's native procedure, rerun the installer, and restart it yourself.
 Then use native inventory and runtime inspection to establish loaded/canary
-state. Installation also refuses prereleases, versions older than `2026.7.1`,
-and release lines newer than `2026.7.x`; each release line must be requalified
-against OpenClaw's typed-hook and final-delivery behavior before it is enabled.
+state. Installation also refuses prereleases and versions older than the
+audited minimum (`2026.8.2`); any stable OpenClaw at or above it is accepted
+(AR-435 / ADR-0247), and the post-install harness battery plus runtime
+inspection, not a release-line pin, carry the hook-compatibility evidence.
 The runtime inspection step proves required hook registration only. Its
 `delivery_behavior_proven: false` result is expected until a profile-bound live
 canary supplies behavioral evidence.

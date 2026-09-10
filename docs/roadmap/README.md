@@ -46,6 +46,7 @@ bounded package are in AR-404's
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
 | `AR-427` | [Preserve the complete inferred specialist team during hydration](issue-AR-427-preserve-complete-inferred-specialist-team.md) | done | p1 | reliability | [#825](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825) |
+| `AR-435` | [Install into the OpenClaw version the host runs](issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | open | p1 | reliability | [#851](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/851) |
 | `AR-434` | [Plan policy reads a handoff request as a code mutation](issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | open | p2 | reliability | [#848](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/848) |
 | `AR-433` | [Name the neighbour a wrong-neighbour veto points at](issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | open | p1 | reliability | [#847](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/847) |
 | `AR-432` | [Preserve numeric facts in review plans](issue-AR-432-preserve-numeric-facts-in-review-plans.md) | open | p2 | reliability | [#845](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/845) |
@@ -482,6 +483,7 @@ not stable internal identifiers.
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
 | [AR-427](issue-AR-427-preserve-complete-inferred-specialist-team.md) | `176adc19`, `b265f715`, `23ae46bf` | [ADR-0245](../decisions/0245-preserve-complete-inferred-teams-during-delivery.md) |
+| [AR-435](issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | pending | [ADR-0247](../decisions/0247-accept-any-stable-openclaw-at-or-above-the-audited-minimum.md) |
 | [AR-434](issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | (filed from the AR-433 investigation; no implementation commit) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 | [AR-433](issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | `80e7bf9c`, `8319ae00`, `438a17dc` | [ADR-0246](../decisions/0246-make-a-wrong-neighbour-veto-name-its-neighbour.md), [ADR-0205](../decisions/0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md) |
 | [AR-432](issue-AR-432-preserve-numeric-facts-in-review-plans.md) | `fd69e95e` (observation and filing in AR-404 PR844) | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
