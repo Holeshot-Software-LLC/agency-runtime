@@ -2382,6 +2382,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2e594286` | 2026-09-09 | docs(roadmap): checkpoint merged AR-429 and remaining host gates (#837) | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-ar429-merged-checkpoint.md) |
 | `05653bc9` | 2026-09-10 | fix(routing): preserve task context for keep-going replies | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 | `48f8c641` | 2026-09-10 | docs: record AR-431 verified candidate and native trust gate | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
+| `786f4611` | 2026-09-10 | fix(routing): merge PR840 keep-going recruitment context repair | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

@@ -76,3 +76,11 @@ No native provider call or trust bypass was attempted. The package waits for
 operator review in a fresh Codex TUI /hooks; then run the bounded completed-task
 and keep-going follow-up. The stale parent and its separate closed MCP transport
 are not repaired by installation. No isolated acceptance pass has run for AR-431.
+
+## Merge record
+
+PR840 merged at786f4611a094ef827fb0d8ed8bcfeccadbf3c93b with exact subject
+`fix(routing): merge PR840 keep-going recruitment context repair`. The source
+worktree is now historical. AR-431/#839 remains open and waiting_for_operator
+for eight modified candidate hooks; native and isolated acceptance remain pending.
+The next package uses a fresh owned worktree after normal native trust review.
