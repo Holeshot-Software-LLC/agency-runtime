@@ -21,9 +21,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar431-codex-recruitment-20260910
-evidence_commit: 05653bc9ed4222ddf4c779a105bd01fd79255fa4
-minimum_ledger_commit: f95e0ab617ff565ecf7794ec9522d30cf07aa51d
+branch: codex/ar431-native-acceptance-20260910
+evidence_commit: 2f1e7d8965ce822ce1d1a9d3601405ceaac9a66c
+minimum_ledger_commit: d967e45a49b897eda79c6e57905aac916630e923
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
