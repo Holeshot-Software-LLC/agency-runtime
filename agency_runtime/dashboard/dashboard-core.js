@@ -387,6 +387,9 @@ export function createCore(runtime = globalThis) {
 		}
 		const responseId = requestId;
 		if (!response.ok) {
+			// A rejected bearer is stale: a rotated durable token must not be
+			// replayed from the browser profile on the next visit.
+			if (response.status === 401) forgetDurableToken();
 			runtime.console?.error?.(
 				`Agency dashboard request ${responseId} failed with HTTP ${response.status}.`,
 			);
@@ -402,13 +405,38 @@ export function createCore(runtime = globalThis) {
 		}
 	}
 
+	const TOKEN_KEY = "agency-dashboard-token";
+
+	function durableStore() {
+		// AR-436 / ADR-0248: the owner opt-in remembers the token in this browser
+		// profile. The store is optional: a harness or a locked-down browser may
+		// not provide it, and every access is guarded.
+		return runtime.localStorage || null;
+	}
+
+	function rememberDurableToken(token) {
+		try { durableStore()?.setItem(TOKEN_KEY, token); } catch { /* storage unavailable */ }
+	}
+
+	function forgetDurableToken() {
+		try { durableStore()?.removeItem(TOKEN_KEY); } catch { /* storage unavailable */ }
+	}
+
+	function rememberedDurableToken() {
+		try { return durableStore()?.getItem(TOKEN_KEY) || ""; } catch { return ""; }
+	}
+
 	function installToken() {
 		const hash = new URLSearchParams(window.location.hash.slice(1));
 		const hasToken = hash.has("token");
 		const incoming = hash.get("token");
-		if (incoming) sessionStorage.setItem("agency-dashboard-token", incoming);
-		state.token = incoming || sessionStorage.getItem("agency-dashboard-token") || "";
-		if (hasToken) {
+		const durable = hash.get("durable") === "1";
+		if (incoming) {
+			sessionStorage.setItem(TOKEN_KEY, incoming);
+			if (durable) rememberDurableToken(incoming);
+		}
+		state.token = incoming || sessionStorage.getItem(TOKEN_KEY) || rememberedDurableToken() || "";
+		if (hasToken || hash.has("durable")) {
 			history.replaceState(
 				null,
 				"",

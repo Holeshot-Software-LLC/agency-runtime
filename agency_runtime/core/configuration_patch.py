@@ -244,6 +244,7 @@ _SET_VALIDATORS = {
         item, "server.max_body_size", minimum=1024, maximum=64 * 1024 * 1024
     ),
     "dashboard.port": lambda item: _integer(item, "dashboard.port", minimum=1, maximum=65535),
+    "dashboard.durable_access": lambda item: _boolean(item, "dashboard.durable_access"),
     "observability.capture_content": lambda item: _boolean(item, "observability.capture_content"),
     "observability.retention_days": lambda item: _integer(
         item, "observability.retention_days", minimum=1, maximum=3650

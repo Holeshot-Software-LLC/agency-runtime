@@ -64,6 +64,7 @@ from agency_runtime.core.dashboard_operational import (
 )
 from agency_runtime.core.dashboard_runtime import (
     dashboard_broker_request_allowed,
+    load_or_create_durable_dashboard_token,
     remove_dashboard_runtime,
     write_dashboard_runtime,
 )
@@ -3148,6 +3149,18 @@ def _remove_service_runtime(
         )
 
 
+def _owner_access_token(cfg: Any, *, service_mode: bool, home_dir: str | Path | None) -> str:
+    """Return the owner bearer: durable on opt-in for the service, rotating otherwise."""
+
+    if service_mode and cfg.dashboard.durable_access:
+        # AR-436 / ADR-0248: the owner opted in; the same owner-private token
+        # is reused across restarts so a remembered bookmark keeps working.
+        token = load_or_create_durable_dashboard_token(home_dir=home_dir)
+        logger.info("dashboard service is using the durable access token (owner opt-in)")
+        return token
+    return secrets.token_urlsafe(32)
+
+
 def run_dashboard(
     *,
     port: int = 0,
@@ -3169,7 +3182,7 @@ def run_dashboard(
         if db_path is not None
         else Store(config_path=canonical_config_path)
     )
-    token = secrets.token_urlsafe(32)
+    token = _owner_access_token(cfg, service_mode=service_mode, home_dir=home_dir)
     broker_token = secrets.token_urlsafe(32) if service_mode and os.name == "nt" else ""
     server = DashboardHTTPServer(
         store,

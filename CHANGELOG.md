@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-10
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md
   - docs/roadmap/issue-AR-435-install-into-the-openclaw-version-the-host-runs.md
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
   - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
@@ -82,6 +83,12 @@ Faithful commit history and reasoning-rich implementation notes remain in the
 changes rather than duplicating every commit.
 
 ## Unreleased
+
+- Add an owner opt-in for durable dashboard access: `dashboard.durable_access`
+  (or `agency dashboard service install --durable-access`) keeps one
+  owner-private token across service restarts and lets the page remember it in
+  the browser, so a plain bookmark works without a terminal; `uninstall`
+  rotates it. Off by default (AR-436, ADR-0248).
 
 - Accept any stable OpenClaw at or above the audited minimum `2026.8.2` instead
   of only the `2026.8` release line, so the installer targets the OpenClaw

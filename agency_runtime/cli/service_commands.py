@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import time
 
+from agency_runtime.core.config import load_config
 from agency_runtime.core.configuration import resolve_config_path
 from agency_runtime.core.store.sqlite import Store
 
@@ -73,7 +74,9 @@ def _wait_dashboard_ready(timeout_seconds: float = 60.0) -> bool:
     return False
 
 
-def _open_dashboard_with_recovery(*, open_browser: bool) -> dict[str, object]:
+def _open_dashboard_with_recovery(
+    *, open_browser: bool, durable: bool = False
+) -> dict[str, object]:
     """Open the service, repairing only an already-owned local registration."""
 
     from agency_runtime.core.dashboard_runtime import (
@@ -87,7 +90,7 @@ def _open_dashboard_with_recovery(*, open_browser: bool) -> dict[str, object]:
         start_dashboard_service,
     )
 
-    opened = open_dashboard_service(open_browser=open_browser)
+    opened = open_dashboard_service(open_browser=open_browser, durable=durable)
     if opened.get("ok"):
         return opened
     common = {"config_path": resolve_config_path()}
@@ -158,13 +161,61 @@ def _open_dashboard_with_recovery(*, open_browser: bool) -> dict[str, object]:
     return {**reopened, "action": "open", "recovery_action": recovery_action}
 
 
+def _dashboard_service_open(
+    args: argparse.Namespace, common: dict[str, object]
+) -> dict[str, object]:
+    return _open_dashboard_with_recovery(
+        open_browser=not args.no_open,
+        durable=load_config(common["config_path"]).dashboard.durable_access,
+    )
+
+
+def _dashboard_service_install(
+    args: argparse.Namespace, common: dict[str, object]
+) -> dict[str, object]:
+    from agency_runtime.core.dashboard_runtime import dashboard_service_reachable
+    from agency_runtime.core.dashboard_service import install_dashboard_service
+
+    if getattr(args, "durable_access", False):
+        # AR-436 / ADR-0248: the opt-in is a persisted config setting, so the
+        # service keeps it across restarts and reinstalls.
+        _enable_durable_dashboard_access(common["config_path"])
+    result = install_dashboard_service(
+        **common,
+        reachability_probe=dashboard_service_reachable,
+        readiness_probe=_wait_dashboard_ready,
+    )
+    if result.get("ok"):
+        result["durable_access"] = load_config(
+            common["config_path"], reload=True
+        ).dashboard.durable_access
+    return result
+
+
+def _enable_durable_dashboard_access(config_path) -> None:
+    """Persist dashboard.durable_access: true through the locked config transaction."""
+
+    from agency_runtime.core.configuration import (
+        apply_config_operations,
+        read_config_state,
+    )
+
+    state = read_config_state(config_path)
+    if state.effective.get("dashboard", {}).get("durable_access") is True:
+        return
+    apply_config_operations(
+        [{"op": "set", "path": "dashboard.durable_access", "value": True}],
+        expected_revision=state.revision,
+        path=config_path,
+    )
+
+
 def cmd_dashboard_service(args: argparse.Namespace) -> int:
     from agency_runtime.core.dashboard_runtime import (
         dashboard_service_reachable,
     )
     from agency_runtime.core.dashboard_service import (
         inspect_dashboard_service,
-        install_dashboard_service,
         plan_dashboard_service,
         restart_dashboard_service,
         start_dashboard_service,
@@ -175,7 +226,7 @@ def cmd_dashboard_service(args: argparse.Namespace) -> int:
     action = args.dashboard_service_action
     common = {"config_path": resolve_config_path()}
     if action == "open":
-        result = _open_dashboard_with_recovery(open_browser=not args.no_open)
+        result = _dashboard_service_open(args, common)
     elif action == "status":
         result = inspect_dashboard_service(
             **common,
@@ -185,11 +236,7 @@ def cmd_dashboard_service(args: argparse.Namespace) -> int:
     elif action == "install" and args.dry_run:
         result = plan_dashboard_service(**common)
     elif action == "install":
-        result = install_dashboard_service(
-            **common,
-            reachability_probe=dashboard_service_reachable,
-            readiness_probe=_wait_dashboard_ready,
-        )
+        result = _dashboard_service_install(args, common)
     elif action == "start":
         result = start_dashboard_service(
             **common,
@@ -215,17 +262,31 @@ def cmd_dashboard_service(args: argparse.Namespace) -> int:
     else:  # parser choices make this defensive only
         raise ValueError(f"unknown dashboard service action: {action}")
 
-    if args.json:
-        _print_json(result)
-    elif result.get("ok"):
-        status = result.get("status") or result.get("action") or action
-        print(f"✅ Dashboard service {status}")
-        if action == "open":
-            print(f"   {result.get('url')}")
-        elif action in {"install", "start", "restart"}:
-            print("   Open it with: agency dashboard service open")
-        if result.get("reachable") is False:
-            print("   Warning: registration exists, but the dashboard is not reachable.")
-    else:
-        print(f"❌ Dashboard service {action}: {result.get('error', 'operation failed')}")
+    _print_dashboard_service_result(action, result, as_json=args.json)
     return int(result.get("exit_code", 0 if result.get("ok") else 1))
+
+
+def _print_dashboard_service_result(
+    action: str, result: dict[str, object], *, as_json: bool
+) -> None:
+    if as_json:
+        _print_json(result)
+        return
+    if not result.get("ok"):
+        print(f"❌ Dashboard service {action}: {result.get('error', 'operation failed')}")
+        return
+    status = result.get("status") or result.get("action") or action
+    print(f"✅ Dashboard service {status}")
+    if action == "open":
+        print(f"   {result.get('url')}")
+        if result.get("durable_access"):
+            print("   Durable access is on: this browser remembers the token; bookmark the URL.")
+    elif action in {"install", "start", "restart"}:
+        print("   Open it with: agency dashboard service open")
+        if result.get("durable_access"):
+            print(
+                "   Durable access is on: open it once per browser, then the bookmark works "
+                "without a terminal."
+            )
+    if result.get("reachable") is False:
+        print("   Warning: registration exists, but the dashboard is not reachable.")

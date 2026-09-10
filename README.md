@@ -3,7 +3,7 @@ title: "Agency Runtime"
 status: active
 category: overview
 created: 2026-07-08
-updated: 2026-08-26
+updated: 2026-09-10
 tags: [agents, routing, delegation, dashboard]
 related:
   - CONTRIBUTING.md
@@ -160,6 +160,19 @@ If you installed the dashboard, open it with:
 ```bash
 agency dashboard service open
 ```
+
+By default the access token rotates with every service process and lives only
+in the browser session, so a bookmark needs that command again after a restart.
+To make the dashboard available all the time without a terminal, opt in once:
+
+```bash
+agency dashboard service install --durable-access
+agency dashboard service open   # once per browser; then bookmark the URL
+```
+
+This keeps one owner-private token across restarts and lets the page remember
+it in your browser (AR-436, ADR-0248). `agency dashboard service uninstall`
+rotates it.
 
 ### Current prerelease state
 

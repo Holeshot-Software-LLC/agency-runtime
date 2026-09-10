@@ -628,12 +628,14 @@ def _validate_server(value: Any) -> dict[str, Any]:
 
 def _validate_dashboard(value: Any) -> dict[str, Any]:
     section = _mapping(value, "dashboard")
-    if set(section) - {"port"}:
+    if set(section) - {"port", "durable_access"}:
         raise _error("dashboard", "contains unsupported fields")
-    return {
-        name: _integer(item, "dashboard.port", minimum=1, maximum=65535)
-        for name, item in section.items()
+    validators: dict[str, Any] = {
+        "port": lambda item: _integer(item, "dashboard.port", minimum=1, maximum=65535),
+        # AR-436 / ADR-0248: owner opt-in to a durable dashboard access token.
+        "durable_access": lambda item: _boolean(item, "dashboard.durable_access"),
     }
+    return {name: validators[name](item) for name, item in section.items()}
 
 
 def _validate_observability(value: Any) -> dict[str, Any]:

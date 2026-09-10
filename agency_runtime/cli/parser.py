@@ -1682,6 +1682,15 @@ def _register_dashboard_service_actions(
     install.add_argument(
         "--dry-run", action="store_true", help="Print the service plan without changing the host"
     )
+    install.add_argument(
+        "--durable-access",
+        action="store_true",
+        help=(
+            "Opt in to a durable access token: set dashboard.durable_access in the config so the "
+            "service keeps one owner-private token across restarts and the page remembers it in "
+            "your browser (open it once with `agency dashboard service open`, then bookmark it)"
+        ),
+    )
     install.add_argument("--json", action="store_true", help="Print machine-readable results")
     _bind(
         install,

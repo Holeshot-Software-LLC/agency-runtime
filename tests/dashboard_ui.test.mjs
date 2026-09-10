@@ -719,6 +719,7 @@ function createAppHarness(fetchImpl) {
   const historyCalls = [];
   const missingIds = new Set();
   const sessionValues = new Map();
+  const localValues = new Map();
   const windowListeners = new Map();
   const selectorNodes = new Map();
   const node = (id) => {
@@ -791,6 +792,11 @@ function createAppHarness(fetchImpl) {
       getItem: (key) => sessionValues.get(key) ?? null,
       setItem: (key, value) => sessionValues.set(key, String(value)),
     },
+    localStorage: {
+      getItem: (key) => localValues.get(key) ?? null,
+      setItem: (key, value) => localValues.set(key, String(value)),
+      removeItem: (key) => localValues.delete(key),
+    },
     window,
   };
   const api = createDashboard(context);
@@ -805,6 +811,7 @@ function createAppHarness(fetchImpl) {
     nodes,
     missing(id) { missingIds.add(id); },
     sessionValues,
+    localValues,
     select(selector, values) { selectorNodes.set(selector, values); },
     timers,
     windowListeners,
@@ -822,6 +829,47 @@ test("app.js accepts a token fragment that arrives after initial page load", () 
   assert.equal(harness.api.state.token, "late-token");
   assert.equal(harness.sessionValues.get("agency-dashboard-token"), "late-token");
   assert.equal(harness.historyCalls.length, 1);
+});
+
+test("app.js remembers a durable token fragment in local storage and strips it (AR-436)", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("this test does not fetch");
+  });
+  harness.context.window.location.hash = "#token=durable-secret&durable=1";
+  harness.api.installToken();
+  assert.equal(harness.api.state.token, "durable-secret");
+  assert.equal(harness.sessionValues.get("agency-dashboard-token"), "durable-secret");
+  assert.equal(harness.localValues.get("agency-dashboard-token"), "durable-secret");
+  assert.deepEqual(harness.historyCalls.at(-1), [null, "", "/"]);
+});
+
+test("app.js keeps a plain token fragment out of local storage (AR-436)", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("this test does not fetch");
+  });
+  harness.context.window.location.hash = "#token=session-only";
+  harness.api.installToken();
+  assert.equal(harness.api.state.token, "session-only");
+  assert.equal(harness.localValues.has("agency-dashboard-token"), false);
+});
+
+test("app.js falls back to the remembered durable token on a plain bookmark (AR-436)", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("this test does not fetch");
+  });
+  harness.localValues.set("agency-dashboard-token", "remembered-secret");
+  harness.context.window.location.hash = "";
+  harness.api.installToken();
+  assert.equal(harness.api.state.token, "remembered-secret");
+  assert.equal(harness.historyCalls.length, 0);
+});
+
+test("app.js still refuses a bookmark with nothing remembered (AR-436)", () => {
+  const harness = createAppHarness(() => {
+    throw new Error("this test does not fetch");
+  });
+  harness.context.window.location.hash = "";
+  assert.throws(() => harness.api.installToken(), /no active access token/);
 });
 
 test("app.js preserves non-token fragments for native in-page navigation", () => {

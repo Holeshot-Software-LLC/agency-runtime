@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from agency_runtime.core.configuration import ConfigurationError
+from agency_runtime.core.dashboard_runtime import remove_durable_dashboard_token
 from agency_runtime.core.dashboard_service_core import (
     OWNER_MARKER,
     SYSTEMD_UNIT_NAME,
@@ -734,7 +735,7 @@ def uninstall_dashboard_service(
         return _unsupported("uninstall", platform_name)
     try:
         with _service_lock(ctx):
-            return _uninstall_dashboard_service_locked(
+            result = _uninstall_dashboard_service_locked(
                 home_dir=home_dir,
                 platform_name=platform_name,
                 config_path=config_path,
@@ -744,6 +745,9 @@ def uninstall_dashboard_service(
             )
     except (ConfigurationError, OSError, RuntimeError) as exc:
         return _failed("uninstall", ctx, error=str(exc), commands=[])
+    # AR-436 / ADR-0248: uninstall is also the durable-token rotation point.
+    result["durable_access_token_removed"] = remove_durable_dashboard_token(home_dir=home_dir)
+    return result
 
 
 @dataclass(slots=True)
