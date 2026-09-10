@@ -2372,6 +2372,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `3238dfa4` | 2026-09-09 | docs(reliability): direct recovery to remaining Hermes evidence | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-09-claude-priority-native.md) |
 | `2cd6413a` | 2026-09-09 | docs(reliability): merge PR832 Claude native context acceptance | [AR-423](../roadmap/issue-AR-423-preserve-claude-hook-specialist-context.md) | [Detail](2026-09-09-claude-priority-native.md) |
 | `f6d58d5a` | 2026-09-09 | fix(recruiter): ground required specialties in actual unit scope | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
+| `b20b4417` | 2026-09-09 | docs(hermes): freeze AR-429 native demo artifact and checks | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
