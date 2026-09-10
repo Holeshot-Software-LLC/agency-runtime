@@ -1,0 +1,151 @@
+{
+  "request": "Given this Python function: def average(values): return sum(values) // len(values). First identify its correctness defects. Then provide a corrected function that returns the arithmetic mean for nonempty numeric sequences, including fractional results, and raises ValueError for empty input. Finally provide three focused regression tests covering [1.0, 2.0], negative numbers, and []. Work only from this supplied code; do not read or modify files and do not claim tests were executed.",
+  "recipe": 21,
+  "actual_recruiter_system_has_exact_installed_prompt_prefix": true,
+  "suffix_note": "The provider transport appends the unchanged JSON schema instruction.",
+  "installed_recruiter_prompt_prefix_sha256": "db368bf35b6bddf0ce97fe64cb3a0f02058cade4658bc2c2a758a2c93b8977c0",
+  "recruiter_packet_source": "AR-429-native-recruiter-packet-20260909.json",
+  "critic_packet_source": "AR-429-native-critic-packet-20260909.json",
+  "critic_response": {
+    "approved": true,
+    "reason_codes": []
+  },
+  "verified_staffing": {
+    "abstention_reasons": [],
+    "status": "accepted",
+    "units": [
+      {
+        "contexts": [
+          [
+            "code-reviewer",
+            "ctx-unit-defect-analysis-code-reviewer"
+          ]
+        ],
+        "delivery": "load",
+        "disabled_shadows": [],
+        "selected": [
+          "code-reviewer"
+        ],
+        "timing": "immediate",
+        "unavailable_shadows": [],
+        "unit_id": "unit-defect-analysis"
+      },
+      {
+        "contexts": [
+          [
+            "python-application-engineer",
+            "ctx-unit-corrected-function-python-application-engineer"
+          ]
+        ],
+        "delivery": "load",
+        "disabled_shadows": [],
+        "selected": [
+          "python-application-engineer"
+        ],
+        "timing": "immediate",
+        "unavailable_shadows": [],
+        "unit_id": "unit-corrected-function"
+      },
+      {
+        "contexts": [
+          [
+            "software-test-engineer",
+            "ctx-unit-regression-tests-software-test-engineer"
+          ]
+        ],
+        "delivery": "load",
+        "disabled_shadows": [],
+        "selected": [
+          "software-test-engineer"
+        ],
+        "timing": "immediate",
+        "unavailable_shadows": [],
+        "unit_id": "unit-regression-tests"
+      },
+      {
+        "contexts": [
+          [
+            "code-reviewer",
+            "ctx-unit-static-review-code-reviewer"
+          ]
+        ],
+        "delivery": "load",
+        "disabled_shadows": [],
+        "selected": [
+          "code-reviewer"
+        ],
+        "timing": "after_artifact",
+        "unavailable_shadows": [],
+        "unit_id": "unit-static-review"
+      }
+    ]
+  },
+  "nominations": [
+    {
+      "unit_id": "unit-defect-analysis",
+      "required": [
+        "code-reviewer"
+      ],
+      "other_scope_roles": [
+        {
+          "agent_id": "silent-failure-hunter",
+          "classification": "acceptable",
+          "negative_evidence": [],
+          "positive_evidence": [
+            "exception-and-error-path-review",
+            "empty-input-defect",
+            "silent-failure-detection"
+          ],
+          "score": 0.8
+        },
+        {
+          "agent_id": "type-design-analyzer",
+          "classification": "acceptable",
+          "negative_evidence": [
+            "not-for-implementation-decision",
+            "type-invariants-not-the-primary-defect"
+          ],
+          "positive_evidence": [
+            "numeric-type-semantics",
+            "invariant-vs-implementation-review"
+          ],
+          "score": 0.6
+        }
+      ]
+    },
+    {
+      "unit_id": "unit-corrected-function",
+      "required": [
+        "python-application-engineer"
+      ],
+      "other_scope_roles": []
+    },
+    {
+      "unit_id": "unit-regression-tests",
+      "required": [
+        "software-test-engineer"
+      ],
+      "other_scope_roles": []
+    },
+    {
+      "unit_id": "unit-static-review",
+      "required": [
+        "code-reviewer"
+      ],
+      "other_scope_roles": [
+        {
+          "agent_id": "silent-failure-hunter",
+          "classification": "acceptable",
+          "negative_evidence": [
+            "secondary-to-code-review"
+          ],
+          "positive_evidence": [
+            "exception-handling-review",
+            "edge-case-failure-paths"
+          ],
+          "score": 0.7
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "unit_id": "unit-defect-analysis",
+    "eligible_count": 246,
+    "selected_are_whole_neighbourhood": false,
+    "eligible_comparison_cards": [
+      {
+        "agent_id": "code-reviewer",
+        "archetype": "reviewer",
+        "authority": "review",
+        "display_name": "Code Reviewer",
+        "domains": [
+          "software-engineering",
+          "security",
+          "quality-assurance"
+        ],
+        "not_for": [
+          "the task asks for implementation rather than review or supplies no reviewable artifact"
+        ],
+        "outcomes": [
+          "review diffs for correctness and regressions",
+          "identify security and maintainability defects",
+          "rank findings by impact and evidence"
+        ]
+      }
+    ]
+  },
+  {
+    "unit_id": "unit-static-review",
+    "eligible_count": 83,
+    "selected_are_whole_neighbourhood": false,
+    "eligible_comparison_cards": [
+      {
+        "agent_id": "code-reviewer",
+        "archetype": "reviewer",
+        "authority": "review",
+        "display_name": "Code Reviewer",
+        "domains": [
+          "software-engineering",
+          "security",
+          "quality-assurance"
+        ],
+        "not_for": [
+          "the task asks for implementation rather than review or supplies no reviewable artifact"
+        ],
+        "outcomes": [
+          "review diffs for correctness and regressions",
+          "identify security and maintainability defects",
+          "rank findings by impact and evidence"
+        ]
+      }
+    ]
+  }
+]

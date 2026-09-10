@@ -1,0 +1,40 @@
+Agency/Agencies loaded: agency-steward, code-reviewer, python-application-engineer, software-test-engineer
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: observed execution receipt: alias-hermes-chat -> alias-hermes-chat (host)
+Recruited via: inference
+
+Correctness defects:
+- Uses floor division (`//`), so fractional means are truncated/floored instead of returned. Example: `[1.0, 2.0]` returns `1.0`, not `1.5`.
+- For negative fractional means, `//` floors downward, which is even more surprising. Example: `[-1, -2]` returns `-2`, not `-1.5`.
+- Empty input raises `ZeroDivisionError`; the requested contract is `ValueError`.
+
+Corrected function:
+
+```python
+def average(values):
+    if not values:
+        raise ValueError("average requires at least one value")
+    return sum(values) / len(values)
+```
+
+Focused regression tests:
+
+```python
+import pytest
+
+
+def test_average_returns_fractional_mean_for_floats():
+    assert average([1.0, 2.0]) == 1.5
+
+
+def test_average_handles_negative_numbers():
+    assert average([-1, -2]) == -1.5
+
+
+def test_average_rejects_empty_input():
+    with pytest.raises(ValueError):
+        average([])
+```
+
+No files were read or modified, and these tests were not executed.

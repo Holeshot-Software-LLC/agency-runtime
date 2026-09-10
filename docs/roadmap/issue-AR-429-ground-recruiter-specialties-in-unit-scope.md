@@ -34,19 +34,25 @@ a sole cause and is preserved without reinterpretation or manual acceptance.
 
 ## Current state
 
-Package demo_ready. The initial and bounded repair recruiter prompts now
-require a concrete connection between each required specialty and the unit's
-artifact, outcome or risk. The rule applies to additional teammates and keeps
-actual specialized defects, typed coverage complements and independent review
-in scope. Recipe21 distinguishes the new prompt from earlier durable context.
-Bounded focused217 passed/1skipped, production1151/3skipped, UI224 and routing
-passed. Initial/repair prompt delivery and enforced critic veto are covered.
-Broader optional tests240 passed/1skipped with2 unchanged-main failures recorded
-separately in AR-430. Frozen conformance188/188 killed, zero survivors. Canonical artifact47241e5e
-passes build/Twine/verification and installed smoke; all616 installed package
-files match. Hermes refreshed on recipe21; other host projections unchanged.
-Native gates are pending.
-No native success is claimed yet. PR836 carries this bounded package.
+Package live_demo completed; isolated acceptance pending. Sourcef6d58d5a and
+artifact47241e5e carry recipe21. Bounded focused217/1skip, production1151/3skip,
+UI224, routing, Ruff788 and frozen conformance188/188 pass. Canonical build,
+strict Twine, artifact verification and installed smoke pass; all616 installed
+files match. Hermes refreshed only. The2 optional foundation failures reproduce
+on unchanged main and are separately deferred as AR-430.
+
+Fresh Hermes session `20260909_213316_5f974b`, trace
+`20260909_213316_5f974b:011accaf-7dba-4413-b99c-fbbb8508459b:bb0af9fd`, completed
+in111.388s. Recruiter-required team: code-reviewer, python-application-engineer,
+software-test-engineer. Type-design and silent-failure roles remain acceptable
+alternatives, not required or selected. The independent critic approved; the
+four-unit plan retains independent static review. All3 full native card bodies,
+five Store headers and authoritative final hash
+`372378a52de65f298cb822d3313cea5205bf466e6fb80239b1b19a68bd49d5fe` match.
+Both exact stage packets were captured; observer config restored byte-for-byte.
+The actual recruiter prompt includes the exact new source prefix. This single
+native sample is scoped acceptance evidence, not a reliability-rate claim.
+PR836 carries the package; failed prior receipts and AR-418 remain unchanged.
 
 ## Approach
 

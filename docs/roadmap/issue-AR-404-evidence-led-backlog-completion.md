@@ -71,8 +71,10 @@ repeat work and risk reintroducing superseded behavior.
 
 ## Current state
 
-AR-429/#834 is the next bounded Hermes nomination-relevance repair, grounded in
-the exact AR-428 observed critic packet. Native acceptance remains pending.
+AR-429/#834 sourcef6d58d5a, artifact47241e5e, recipe21 passed one exact-request
+Hermes native turn20260909_213316_5f974b: three cards, five headers and authoritative
+372378a5 final hash in111.388s. Critic approved, observer restored. Isolated
+acceptance is pending; AR-430/#835 records two unchanged-main fixture failures.
 
 Owner priority is OpenClaw, Hermes, Codex, Claude; Zcode changes are deferred.
 OpenClaw's fresh review/follow-up diagnostic passed headers and terminal hashes,

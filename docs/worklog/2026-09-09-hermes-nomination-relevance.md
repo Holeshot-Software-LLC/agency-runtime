@@ -67,9 +67,13 @@ passed. Ruff788 and documentation checks passed before deferred AR-430 filing.
 Frozen conformance188/188 killed, zero survivors. Canonical47241e5e artifact
 passes build, strict Twine, verification and installed smoke; all616 files match
 wheel41a6e9e76daa3da165ba03b9e933c2f71ccfe54a64d116fff5cc8bf842ebafe0.
-Hermes refreshed only. Native proof follows this clean checkpoint. No exhaustive or Windows workflow requested.
+Hermes refreshed only. Native session20260909_213316_5f974b completed in111.388s: three exact cards,
+five Store headers and authoritative372378a5 hash. The actual recruiter prompt
+contains the installed recipe21 prefix plus the normal JSON-schema suffix.
+Critic approved; both stage packets captured; owner config restored byte-exact.
+No specialist delegation or tests-executed claim. Isolated review follows. No exhaustive or Windows workflow requested.
 
 ## Follow-ups
 
-AR-429 native/isolated acceptance remains pending. AR-418 retains actual-checkout
+AR-429 native acceptance passed; isolated verification remains pending. AR-418 retains actual-checkout
 upstream adoption and original truncation-cap evidence. AR-404 stays open.

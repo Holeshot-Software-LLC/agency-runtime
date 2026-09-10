@@ -139,3 +139,6 @@ Commit `0ac9d78e` clarifies static proposed-test review versus observed results 
 the active compact planner and repair prompt. The independent critic and advisory
 doctrine are unchanged; both fresh Hermes vetoes remain retained. AR-428's three
 isolated criteria satisfy the bounded planning repair, not whole-host reliability.
+
+AR-429 source `f6d58d5a` clarifies recruiter unit-scope grounding while preserving
+this critic doctrine; see its canonical issue and worklog links above.

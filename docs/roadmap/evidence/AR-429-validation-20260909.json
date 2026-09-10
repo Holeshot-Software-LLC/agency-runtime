@@ -47,7 +47,7 @@
   "distribution_verifier": "passed",
   "portable_installed_smoke": "passed",
   "host_refresh": "Hermes only; other host projections unchanged",
-  "native": "pending",
+  "native": "one fresh Hermes case completed with three exact full native cards, five Store headers and authoritative final hash; source AR-429-native-terminal-20260909.json",
   "exhaustive_workflow_ran": false,
   "windows_workflow_ran": false
 }

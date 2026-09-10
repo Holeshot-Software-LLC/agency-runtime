@@ -32,7 +32,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 AR-429/#834 demo_ready: sourcef6d58d5a, artifact47241e5e, recipe21. Focused217/1skip,
 production1151/3skip, UI224 and conformance188/188 pass; installed616 files match.
-Hermes refreshed only. Exact-request observed native acceptance is next. AR-430/#835
+Hermes refreshed only. Native20260909_213316_5f974b passed3 cards,5 headers and authoritative372378a5
+final hash in111.388s. Critic approved, observer restored; isolated review is next. AR-430/#835
 defers2 foundation failures reproduced on unchanged main.
 
 Owner order: OpenClaw, Hermes, Codex, Claude. Zcode changes are deferred but its
@@ -89,8 +90,8 @@ and continue. No empty recovery commits, forced transfer, or failed-receipt reop
 
 ## Next bounded work package
 
-Finish AR-429 focused/fast checks, freeze the canonical artifact, refresh Hermes
-and observe one exact-request native turn. Preserve the critic veto and separate
+Freeze AR-429 evidence for the first isolated acceptance pass, then merge PR836
+with exact ledgers; close only if every criterion is satisfied. Preserve the critic veto and separate
 AR-418 upstream terminal gate. Keep the owner's host order and Zcode deferral.
 
 ## Verification
