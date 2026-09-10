@@ -46,7 +46,11 @@ The owner's "every other call" recruitment observation is AR-433/#847: 26 of
 30 critic vetoes since 2026-09-08 were wrong-neighbour claims, 24 naming no
 card; ADR-0246 makes the veto name and verify its neighbour, and an ungrounded
 claim is re-asked and may approve. AR-434/#848 files the
-handoff-as-code-mutation plan-policy defect the same session exposed.
+handoff-as-code-mutation plan-policy defect the same session exposed. All five
+hosts and the dashboard are on runtime digest c2d5c60e (main83994e2b) after the
+2026-09-10 reinstall; claude/hermes/zcode/openclaw proved live by observed
+critic packets, codex waits on the owner's Trust screen (AR-435/#851 widened
+the OpenClaw version rule; the npm tree needed doctor --fix-perms).
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,

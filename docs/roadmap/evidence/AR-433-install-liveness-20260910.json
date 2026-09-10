@@ -1,0 +1,550 @@
+{
+  "issues": [
+    "AR-433",
+    "AR-435"
+  ],
+  "scope": "Reinstall of the merged runtime on the five hosts on 2026-09-10 and per-host liveness proof from fresh native turns observed on the critic route. Store read-only; no receipt modified. Codex hooks are untrusted after every digest change and need the owner's Trust screen, so codex has no fresh turn here.",
+  "installs": {
+    "first": {
+      "commit": "a354e9a5",
+      "started": "2026-09-10T20:44:47Z",
+      "ended": "2026-09-10T20:45:01Z"
+    },
+    "second": {
+      "commit": "83994e2b",
+      "started": "2026-09-10T20:55:12Z",
+      "ended": "2026-09-10T20:55:25Z"
+    },
+    "openclaw_rerun_after_fix_perms": "install-openclaw-83994e2b-2.log"
+  },
+  "wheels_sha256": {
+    "ar433-a354e9a5": "10815bdaff825fe0d1aff7555a4d309ffd9dc3a84d4148ab24224a14fa362d1d",
+    "ar435-83994e2b": "4c959237cfc2a45b8b78ebce80cbac8582ee3921621bdb1c98c6b94dda3bbf25"
+  },
+  "hosts": {
+    "claude": {
+      "pointer": {
+        "runtime_digest": "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334",
+        "launcher_tree_matches_venv": true
+      },
+      "projection_digests": [
+        "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334"
+      ],
+      "installs": [
+        {
+          "log": "install-claude-83994e2b.log",
+          "maturity": "enabled-runtime-unverified",
+          "blocked": false,
+          "failed_step": null
+        },
+        {
+          "log": "install-claude.log",
+          "maturity": "enabled-runtime-unverified",
+          "blocked": false,
+          "failed_step": null
+        }
+      ]
+    },
+    "codex": {
+      "pointer": {
+        "runtime_digest": "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334",
+        "launcher_tree_matches_venv": true
+      },
+      "projection_digests": [
+        "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334"
+      ],
+      "installs": [
+        {
+          "log": "install-codex-83994e2b.log",
+          "maturity": "activation-required",
+          "blocked": false,
+          "failed_step": null
+        },
+        {
+          "log": "install-codex.log",
+          "maturity": "activation-required",
+          "blocked": false,
+          "failed_step": null
+        }
+      ]
+    },
+    "hermes": {
+      "pointer": {
+        "runtime_digest": "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334",
+        "launcher_tree_matches_venv": true
+      },
+      "projection_digests": [
+        "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334"
+      ],
+      "installs": [
+        {
+          "log": "install-hermes-83994e2b.log",
+          "maturity": "enabled-runtime-unverified",
+          "blocked": false,
+          "failed_step": null
+        },
+        {
+          "log": "install-hermes.log",
+          "maturity": "enabled-runtime-unverified",
+          "blocked": false,
+          "failed_step": null
+        }
+      ]
+    },
+    "zcode": {
+      "pointer": {
+        "runtime_digest": "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334",
+        "launcher_tree_matches_venv": true
+      },
+      "projection_digests": [
+        "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334"
+      ],
+      "installs": [
+        {
+          "log": "install-zcode-83994e2b.log",
+          "maturity": "enabled-runtime-unverified",
+          "blocked": false,
+          "failed_step": null
+        },
+        {
+          "log": "install-zcode.log",
+          "maturity": "enabled-runtime-unverified",
+          "blocked": false,
+          "failed_step": null
+        }
+      ]
+    },
+    "openclaw": {
+      "pointer": {
+        "runtime_digest": "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334",
+        "launcher_tree_matches_venv": true
+      },
+      "projection_digests": [
+        "c2d5c60e79b8de0767693b0a0c3c97a479d4797c8bec49041295d56ef469b334"
+      ],
+      "installs": [
+        {
+          "log": "install-openclaw-83994e2b-2.log",
+          "maturity": "runtime-verified",
+          "blocked": false,
+          "failed_step": null
+        },
+        {
+          "log": "install-openclaw-83994e2b.log",
+          "maturity": null,
+          "blocked": true,
+          "failed_step": "host_capability_unproven"
+        },
+        {
+          "log": "install-openclaw.log",
+          "maturity": null,
+          "blocked": true,
+          "failed_step": "host_capability_unproven"
+        }
+      ]
+    }
+  },
+  "liveness_first_install": {
+    "owner_config_restored_byte_exact": true,
+    "observer_errors": [],
+    "captured_packets": 3,
+    "hosts": {
+      "claude": {
+        "native_session_id": "60252608-cc7e-4677-aeef-0544a62a7085",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 110.22
+      },
+      "hermes": {
+        "native_session_id": "20260910_164854_a4e027",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 83.412
+      },
+      "zcode": {
+        "native_session_id": null,
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 105.949
+      }
+    },
+    "packets": [
+      {
+        "capture": "1730975594583729.json",
+        "started_at_epoch": 1789073302.9282417,
+        "model": "task-agency-critic-v2",
+        "http_status": 200,
+        "request_sha256": "82bacf37bcb747b88de550d5f961c3ec3de601cd7b33ff7f51da2a64138b0526",
+        "response_sha256": "57f6f3377387ffd09ca36eb72715434b6944d988a24ac79734460f6a49ccc52b",
+        "contract_wrong_neighbor_pointer_required": true,
+        "contract_wrong_neighbor_pointer_verified_by_runtime": true,
+        "units": [
+          "unit-defect-analysis",
+          "unit-proposal-review"
+        ],
+        "critic_reply": {
+          "approved": false,
+          "reason_codes": [
+            "missing-lifecycle-assurance-the-plan-calls-for"
+          ]
+        }
+      },
+      {
+        "capture": "1731062901477432.json",
+        "started_at_epoch": 1789073398.6529841,
+        "model": "task-agency-critic-v2",
+        "http_status": 200,
+        "request_sha256": "a4c0c640431799d129d3c192da451e8047185d98a7d446ab2087377571df987f",
+        "response_sha256": "e34c8d75045ceff35f26b6a07749b348e46f84c62ef7d4737e28e2a00b7e236e",
+        "contract_wrong_neighbor_pointer_required": true,
+        "contract_wrong_neighbor_pointer_verified_by_runtime": true,
+        "units": [
+          "unit-correctness-review",
+          "unit-defect-analysis"
+        ],
+        "critic_reply": {
+          "approved": true,
+          "reason_codes": []
+        }
+      },
+      {
+        "capture": "1731127665650723.json",
+        "started_at_epoch": 1789073464.867486,
+        "model": "task-agency-critic-v2",
+        "http_status": 200,
+        "request_sha256": "54825acd23694c6958e635f58c3b7b419e7a2212ffa1a9fec7079962d9fc7114",
+        "response_sha256": "66cd067b1f483b8a70b1220a7d48f62e680fab3a98c135dd95f5e519d41b381e",
+        "contract_wrong_neighbor_pointer_required": true,
+        "contract_wrong_neighbor_pointer_verified_by_runtime": true,
+        "units": [
+          "unit-defect-analysis",
+          "unit-independent-review"
+        ],
+        "critic_reply": {
+          "approved": true,
+          "reason_codes": []
+        }
+      }
+    ]
+  },
+  "liveness_second_install": {
+    "owner_config_restored_byte_exact": true,
+    "observer_errors": [],
+    "captured_packets": 4,
+    "hosts": {
+      "claude": {
+        "native_session_id": "65011b6e-cedc-4dc9-861e-d306e99941b7",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 39.347
+      },
+      "hermes": {
+        "native_session_id": "20260910_165747_45886b",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 58.409
+      },
+      "zcode": {
+        "native_session_id": null,
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 93.91
+      },
+      "openclaw": {
+        "native_session_id": "agent:openclaw:ar433-liveness-2",
+        "exit_code": 0,
+        "timeout": false,
+        "elapsed_seconds": 96.647
+      }
+    },
+    "packets": [
+      {
+        "capture": "1731508819800297.json",
+        "started_at_epoch": 1789073849.2650573,
+        "model": "task-agency-critic-v2",
+        "http_status": 200,
+        "request_sha256": "82bacf37bcb747b88de550d5f961c3ec3de601cd7b33ff7f51da2a64138b0526",
+        "response_sha256": "cc545141e854686cfaa620e3b078d3e3ee774420d20592ca63228ed3d17bfe23",
+        "contract_wrong_neighbor_pointer_required": true,
+        "contract_wrong_neighbor_pointer_verified_by_runtime": true,
+        "units": [
+          "unit-defect-analysis",
+          "unit-proposal-review"
+        ],
+        "critic_reply": {
+          "approved": false,
+          "reason_codes": [
+            "missing-lifecycle-assurance-the-plan-calls-for"
+          ]
+        }
+      },
+      {
+        "capture": "1731567773257436.json",
+        "started_at_epoch": 1789073904.8791952,
+        "model": "task-agency-critic-v2",
+        "http_status": 200,
+        "request_sha256": "486fddf17c8a268aae8a72c48b4d90d5fcd0e419fd28d49982e087bfabcd1614",
+        "response_sha256": "32970cb4e6b94bbe59c40413149501878df9add89c447aedce2efa98bd6f0352",
+        "contract_wrong_neighbor_pointer_required": true,
+        "contract_wrong_neighbor_pointer_verified_by_runtime": true,
+        "units": [
+          "unit-correctness-review",
+          "unit-defect-analysis"
+        ],
+        "critic_reply": {
+          "approved": true,
+          "reason_codes": []
+        }
+      },
+      {
+        "capture": "1731634245685148.json",
+        "started_at_epoch": 1789073971.716184,
+        "model": "task-agency-critic-v2",
+        "http_status": 200,
+        "request_sha256": "1cd4f7654f1604f4ee8e824385cbd8cebb83d2e37f73161f1f571f9c3f019180",
+        "response_sha256": "86f1d32cc5a22e10f8cd1b98de4a7b3d5637d9000f9f707dc9804d545a5fba5a",
+        "contract_wrong_neighbor_pointer_required": true,
+        "contract_wrong_neighbor_pointer_verified_by_runtime": true,
+        "units": [
+          "unit-defect-analysis",
+          "unit-independent-review"
+        ],
+        "critic_reply": {
+          "approved": true,
+          "reason_codes": []
+        }
+      },
+      {
+        "capture": "1731761299417411.json",
+        "started_at_epoch": 1789074089.568295,
+        "model": "task-agency-critic-v2",
+        "http_status": 200,
+        "request_sha256": "a8c8fbfe51a8414fde098cb5998af94cb7e4469a24373206c78403fdf5d56f01",
+        "response_sha256": "68de8d9e4112fbae8be9793bc259da9e8ff32a4dbe4ad08b77fa2bc74505bdbb",
+        "contract_wrong_neighbor_pointer_required": true,
+        "contract_wrong_neighbor_pointer_verified_by_runtime": true,
+        "units": [
+          "unit-defect-analysis",
+          "unit-static-review"
+        ],
+        "critic_reply": {
+          "approved": false,
+          "reason_codes": [
+            "missing-lifecycle-assurance-the-plan-calls-for"
+          ]
+        }
+      }
+    ]
+  },
+  "store_runs_since_first_install": [
+    {
+      "host": "claude",
+      "session_id": "60252608-cc7e-4677-aeef-0544a62a7085",
+      "trace_id": "33f1f812-574b-4665-a7c2-73353319cfb0",
+      "started_at": "2026-09-10T20:47:07.526165+00:00",
+      "status": "preflight_failed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [],
+      "finalization": null,
+      "failure_receipt": {
+        "reason_code": "workforce_inference_failed",
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_missing_lifecycle_assurance_the_plan_calls_for"
+        ]
+      }
+    },
+    {
+      "host": "claude",
+      "session_id": "ba9a39e4-5de0-44e9-8597-731a342a5d3a",
+      "trace_id": "676dc377-29c5-4c5b-a8ef-ea25e99a2eca",
+      "started_at": "2026-09-10T20:48:49.784904+00:00",
+      "status": "preflight_failed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [],
+      "finalization": null,
+      "failure_receipt": {
+        "reason_code": "workforce_provider_unavailable",
+        "staffing_reason_codes": [
+          "inference_unavailable",
+          "workforce_credential_env_unset"
+        ]
+      }
+    },
+    {
+      "host": "hermes",
+      "session_id": "20260910_164854_a4e027",
+      "trace_id": "20260910_164854_a4e027:751bb03e-5b57-44da-8932-bac2cb7bb7a7:5045b13e",
+      "started_at": "2026-09-10T20:49:05.617000+00:00",
+      "status": "completed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [
+        "code-reviewer",
+        "silent-failure-hunter"
+      ],
+      "finalization": {
+        "action": "accept",
+        "terminal_status": null
+      },
+      "failure_receipt": null
+    },
+    {
+      "host": "claude",
+      "session_id": "c0ee743d-5d01-480f-ac9b-10395d2b450d",
+      "trace_id": "c06c9ca8-351b-4cf9-ab1a-d6b776f94fb5",
+      "started_at": "2026-09-10T20:49:31.884060+00:00",
+      "status": "preflight_failed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [],
+      "finalization": null,
+      "failure_receipt": {
+        "reason_code": "workforce_provider_unavailable",
+        "staffing_reason_codes": [
+          "inference_unavailable",
+          "workforce_credential_env_unset"
+        ]
+      }
+    },
+    {
+      "host": "zcode",
+      "session_id": "sess_8d017bee-8ee8-4c65-9d2f-fdef203d2f80",
+      "trace_id": "b50474af-2a4e-4ffb-8532-35784eb47016",
+      "started_at": "2026-09-10T20:50:18.631372+00:00",
+      "status": "completed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [
+        "code-reviewer"
+      ],
+      "finalization": {
+        "action": "accept",
+        "terminal_status": "completed"
+      },
+      "failure_receipt": null
+    },
+    {
+      "host": "claude",
+      "session_id": "c0ee743d-5d01-480f-ac9b-10395d2b450d",
+      "trace_id": "79354747-1d86-4bed-9b64-83567d17794e",
+      "started_at": "2026-09-10T20:50:36.260157+00:00",
+      "status": "preflight_failed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [],
+      "finalization": null,
+      "failure_receipt": {
+        "reason_code": "workforce_provider_unavailable",
+        "staffing_reason_codes": [
+          "inference_unavailable",
+          "workforce_credential_env_unset"
+        ]
+      }
+    },
+    {
+      "host": "claude",
+      "session_id": "c0ee743d-5d01-480f-ac9b-10395d2b450d",
+      "trace_id": "524d9d3e-5199-4dc2-ae84-0029d99c5209",
+      "started_at": "2026-09-10T20:52:33.962265+00:00",
+      "status": "preflight_failed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [],
+      "finalization": null,
+      "failure_receipt": {
+        "reason_code": "workforce_provider_unavailable",
+        "staffing_reason_codes": [
+          "inference_unavailable",
+          "workforce_credential_env_unset"
+        ]
+      }
+    },
+    {
+      "host": "claude",
+      "session_id": "65011b6e-cedc-4dc9-861e-d306e99941b7",
+      "trace_id": "b6e075c9-29fd-41d9-9278-3571b99f2b60",
+      "started_at": "2026-09-10T20:57:08.735824+00:00",
+      "status": "preflight_failed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [],
+      "finalization": null,
+      "failure_receipt": {
+        "reason_code": "workforce_inference_failed",
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_missing_lifecycle_assurance_the_plan_calls_for"
+        ]
+      }
+    },
+    {
+      "host": "hermes",
+      "session_id": "20260910_165747_45886b",
+      "trace_id": "20260910_165747_45886b:1b78d8d2-d192-45a9-86ed-0d9c98839868:36ecd1b9",
+      "started_at": "2026-09-10T20:57:59.003000+00:00",
+      "status": "completed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [
+        "code-reviewer"
+      ],
+      "finalization": {
+        "action": "accept",
+        "terminal_status": null
+      },
+      "failure_receipt": null
+    },
+    {
+      "host": "zcode",
+      "session_id": "sess_8de99334-a18d-477e-a485-0c7728ea822d",
+      "trace_id": "762be378-0090-42ed-9e68-032534383740",
+      "started_at": "2026-09-10T20:58:46.863050+00:00",
+      "status": "completed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [
+        "code-reviewer",
+        "silent-failure-hunter"
+      ],
+      "finalization": {
+        "action": "accept",
+        "terminal_status": "completed"
+      },
+      "failure_receipt": null
+    },
+    {
+      "host": "openclaw",
+      "session_id": "agent:openclaw:ar433-liveness-2",
+      "trace_id": "b45bc505-3f76-4d19-8f16-c6c555161645",
+      "started_at": "2026-09-10T21:00:21.381000+00:00",
+      "status": "preflight_failed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [],
+      "finalization": null,
+      "failure_receipt": {
+        "reason_code": "workforce_inference_failed",
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_missing_lifecycle_assurance_the_plan_calls_for"
+        ]
+      }
+    },
+    {
+      "host": "claude",
+      "session_id": "c0ee743d-5d01-480f-ac9b-10395d2b450d",
+      "trace_id": "983d2ed6-abb9-45d7-b76a-47fe6f5ff5ac",
+      "started_at": "2026-09-10T21:01:56.493375+00:00",
+      "status": "preflight_failed",
+      "preflight_request_kind": "nontrivial",
+      "specialists_loaded": [],
+      "finalization": null,
+      "failure_receipt": {
+        "reason_code": "workforce_provider_unavailable",
+        "staffing_reason_codes": [
+          "inference_unavailable",
+          "workforce_credential_env_unset"
+        ]
+      }
+    }
+  ],
+  "openclaw_root_cause": "The installer's version probe was refused before running: the OpenClaw 2026.9.3 npm tree was group-writable (PermissionError: executable artifact permits group or other writes), which the installer summarised as a version-compatibility refusal; agency doctor --fix-perms repaired 37143 group-writable paths and the probe then passed. The version rule itself also needed AR-435 for the 2026.9 line.",
+  "dashboard": {
+    "service_execstart_digest": [
+      "c2d5c60e79b8"
+    ],
+    "url": "http://127.0.0.1:7810/"
+  }
+}

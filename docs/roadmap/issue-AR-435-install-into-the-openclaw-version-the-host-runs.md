@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/TROUBLESHOOTING.md
+  - docs/roadmap/evidence/AR-433-install-liveness-20260910.json
 supersedes: []
 superseded_by: null
 type: issue
@@ -39,11 +40,23 @@ OpenClaw version is on the host machine.
 
 ## Current state
 
-Repaired on branch `claude/ar435-openclaw-newer-lines-20260910`: any stable
+Merged in PR852 at `439b9fc8` (ledger PR853, main `83994e2b`): any stable
 OpenClaw at or above the audited minimum is accepted; prereleases and older
 versions are still refused; the parser and the gateway guard are otherwise
 unchanged. The troubleshooting text that still described a `2026.7.x` line pin
 is corrected. Focused installer suites pass.
+
+The first reinstall from the merged rule still refused openclaw with the same
+summary. The actual cause was one step earlier: the installer refused to run
+the `openclaw --version` probe at all because the upgraded 2026.9.3 npm tree
+was group-writable (`PermissionError: executable artifact permits group or
+other writes: .../node_modules/openclaw/openclaw.mjs`), and the guard reports
+a failed probe with the version-compatibility text. `agency doctor --fix-perms`
+repaired 37143 group-writable paths, the probe then passed, and the rerun
+registered openclaw `runtime-verified` on runtime digest `c2d5c60e`. Follow-up
+worth its own bounded change: when the probe itself fails, the summary should
+say the probe was refused and why rather than naming the version rule. See
+[AR-433-install-liveness-20260910.json](evidence/AR-433-install-liveness-20260910.json).
 
 ## Approach
 
@@ -68,4 +81,5 @@ package.
       troubleshooting text matches the rule.
 - [ ] One openclaw reinstall on the host completes registration with the
       a354e9a5-or-later runtime and a fresh native openclaw turn shows the new
-      runtime live, with tracker and worklog parity.
+      runtime live, with tracker and worklog parity. (Reinstall done on
+      `c2d5c60e`; the fresh-turn evidence is in the AR-433 install file.)
