@@ -1557,6 +1557,61 @@ def test_recruiter_receives_complete_positive_and_negative_activation_contract()
     assert "declare a gap" in systems[1]
 
 
+def test_specialty_scope_contract_survives_recruiter_repair_and_critic_veto() -> None:
+    qualifiers = ("The supplied artifact contains a concrete specialized defect",)
+    exclusions = ("An unrelated defect with only a shared domain label",)
+    snapshot = _snapshot(
+        replace(
+            _contract("technical-analyst"),
+            scope_qualifiers=qualifiers,
+            not_for=exclusions,
+        )
+    )
+    observations: list[tuple[dict[str, Any], str]] = []
+    responses = iter(
+        (
+            _result(_compact_plan_document()),
+            _result({}),
+            _result(_nomination_document()),
+            _result({"approved": False, "reason_codes": ["wrong-neighbor-selection"]}),
+        )
+    )
+
+    def invoke(_provider, prompt, _schema, **kwargs):
+        payload = json.loads(prompt.split("\n\n[RUNTIME VALIDATION FEEDBACK]", 1)[0])
+        observations.append((payload, str(kwargs["system_prompt"])))
+        return next(responses)
+
+    outcome = plan_and_staff_workforce(
+        "Analyze the supplied artifact for its concrete correctness defect.",
+        snapshot,
+        config=_config("strict"),
+        context=_context(),
+        invoker=invoke,
+    )
+
+    assert [attempt.stage for attempt in outcome.attempts] == [
+        "planner",
+        "recruiter",
+        "recruiter",
+        "critic",
+    ]
+    for payload, system in observations[1:3]:
+        assert payload["detail_cards"][0]["scope_qualifiers"] == list(qualifiers)
+        assert payload["detail_cards"][0]["not_for"] == list(exclusions)
+        assert "every additional teammate as well as the lead" in system
+        assert "Do not invent a specialized defect" in system
+        assert "Actual type-level invariant work or evidence of failure-hiding behavior" in system
+        assert "Required typed-coverage complements still follow typed_recall" in system
+        assert "Preserve every independent review the plan requires" in system
+    assert observations[1][1] == _RECRUITER_SYSTEM
+    assert observations[2][1] == _RECRUITER_REPAIR_SYSTEM
+    assert not outcome.accepted
+    assert "staffing_critic_rejected" in outcome.abstention_codes
+    assert "wrong-neighbor-selection" in outcome.abstention_codes
+    assert outcome.calls_used == 4
+
+
 def test_open_ended_pool_can_declare_gap_without_inventing_a_roster_candidate() -> None:
     snapshot = _snapshot(_contract("technical-analyst"))
     novel_plan = _compact_plan_document()

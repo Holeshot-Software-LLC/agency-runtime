@@ -6,6 +6,8 @@ created: 2026-09-03
 updated: 2026-09-03
 tags: [workforce, critic, staffing, receipts, inference]
 related:
+  - docs/roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md
+  - docs/worklog/2026-09-09-hermes-nomination-relevance.md
   - docs/roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md
   - docs/roadmap/issue-AR-386-strict-critic-vetoes-verifier-accepted-install-turns.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md

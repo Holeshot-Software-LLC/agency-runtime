@@ -405,6 +405,8 @@ changes rather than duplicating every commit.
 
 ### Fixed
 
+- Ground recruiter-required specialties in each work unit, including additional teammates, while preserving independent criticism (AR-429).
+
 - AR-428: distinguish static review of proposed tests from observed test results in
   initial and repair planning, preserving independent review and execution gates.
 

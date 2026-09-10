@@ -19,9 +19,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar423-native-priority-20260909
-evidence_commit: 5dbe612a7dd3bd7ecca1b2f60411a44b175d278f
-minimum_ledger_commit: adab07907448c152e5a214e8abd5150d535f282d
+branch: codex/ar429-hermes-nomination-relevance-20260909
+evidence_commit: 6d76e6a7d1eb0e02f6c3fd57a812d9ff88db63d7
+minimum_ledger_commit: 6d76e6a7d1eb0e02f6c3fd57a812d9ff88db63d7
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -29,6 +29,9 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 # AR-404 five-host reliability
 
 ## Checkpoint
+
+AR-429/#834 implementing unit-scope grounding in both recruiter prompts. Recipe21
+source is under focused/fast validation; native acceptance is pending.
 
 Owner order: OpenClaw, Hermes, Codex, Claude. Zcode changes are deferred but its
 historical failures remain in the five-host scope. AR-428 planning repair merged
@@ -84,9 +87,9 @@ and continue. No empty recovery commits, forced transfer, or failed-receipt reop
 
 ## Next bounded work package
 
-Inspect Hermes's observed nomination packet against selected contracts and eligible neighbours. Choose a
-bounded repair only from that evidence; do not assume a critic mistake. Preserve
-the separate AR-418 upstream terminal gate. Keep the owner's host order and Zcode deferral.
+Finish AR-429 focused/fast checks, freeze the canonical artifact, refresh Hermes
+and observe one exact-request native turn. Preserve the critic veto and separate
+AR-418 upstream terminal gate. Keep the owner's host order and Zcode deferral.
 
 ## Verification
 

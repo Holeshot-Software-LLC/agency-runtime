@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-09
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md
   - docs/roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md
   - docs/worklog/2026-09-09-hermes-context-spill.md
   - docs/decisions/0242-align-hermes-openclaw-with-owner-shared-staffing.md
@@ -69,6 +70,9 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+AR-429/#834 is the next bounded Hermes nomination-relevance repair, grounded in
+the exact AR-428 observed critic packet. Native acceptance remains pending.
 
 Owner priority is OpenClaw, Hermes, Codex, Claude; Zcode changes are deferred.
 OpenClaw's fresh review/follow-up diagnostic passed headers and terminal hashes,
