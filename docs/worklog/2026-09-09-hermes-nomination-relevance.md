@@ -78,6 +78,5 @@ actual checkout7cd91114 clean. No exhaustive or Windows workflow requested.
 ## Follow-ups
 
 AR-429 native acceptance and first isolated pass satisfied all three criteria
-(091e5a21/bcce1a9a/bc0261d5) against candidate0d89987d. PR836 merge and ledger
-follow. AR-418 retains actual-checkout
+(091e5a21/bcce1a9a/bc0261d5) against candidate0d89987d. PR836 merged at82090e11 and tracker834 closed; ledger a3ba3215 records the merge. AR-418 retains actual-checkout
 upstream adoption and original truncation-cap evidence. AR-404 stays open.
