@@ -2383,6 +2383,11 @@ This registry connects repository history to the roadmap and to optional detail 
 | `05653bc9` | 2026-09-10 | fix(routing): preserve task context for keep-going replies | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 | `48f8c641` | 2026-09-10 | docs: record AR-431 verified candidate and native trust gate | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 | `786f4611` | 2026-09-10 | fix(routing): merge PR840 keep-going recruitment context repair | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
+| `8e665ebf` | 2026-09-10 | docs: record AR-431 trusted fresh Codex review | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
+| `bda40f7e` | 2026-09-10 | docs: record AR-431 native follow-up and acceptance evidence | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
+| `5fdcb9d2` | 2026-09-10 | docs: freeze AR-431 isolated acceptance candidate | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
+| `2f1e7d89` | 2026-09-10 | docs: accept AR-431 native keep-going recruitment | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
+| `6a9039e7` | 2026-09-10 | docs: pin AR-431 completed native recovery checkpoint | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

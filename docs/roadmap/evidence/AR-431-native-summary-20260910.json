@@ -1,0 +1,87 @@
+{
+  "scope": "One fresh Codex initial review followed by exact keep going in the same session. No all-host reliability or reversal of earlier failed receipts. No delegation or tests-executed claim.",
+  "artifact_commit": "f95e0ab617ff565ecf7794ec9522d30cf07aa51d",
+  "projection": "08689b5b87693f3b02e0d63d5cdce1f78ec4fa6b7bd9f91f5b9ba85d48b74d10",
+  "hook_trust": "8 of 8 current candidate hashes trusted before initial native invocation",
+  "session_id": "01a08b18-19fc-76f3-b5ea-4033b22c3291",
+  "initial": {
+    "run": {
+      "trace_id": "01a08b18-1a43-7cb2-8b48-3d7f75b55d25",
+      "session_id": "01a08b18-19fc-76f3-b5ea-4033b22c3291",
+      "host": "codex",
+      "started_at": "2026-09-10T11:33:30.656057+00:00",
+      "ended_at": "2026-09-10T11:34:45.624135+00:00",
+      "status": "completed"
+    },
+    "recipe_version": 22,
+    "accepted_hash_matches": true,
+    "response_sha256": "40bace52ff987bfa41c5b12dd25eb23408f71660701acd389498a1c56ad9e040"
+  },
+  "followup": {
+    "run": {
+      "trace_id": "01a08b1a-f50d-76d0-bb24-eb624109f97f",
+      "session_id": "01a08b18-19fc-76f3-b5ea-4033b22c3291",
+      "host": "codex",
+      "started_at": "2026-09-10T11:36:37.074298+00:00",
+      "ended_at": "2026-09-10T11:39:11.688588+00:00",
+      "status": "completed"
+    },
+    "recipe_version": 22,
+    "recipe_turn_classification": {
+      "classifier_version": 7,
+      "confidence": 0.9,
+      "continuation_of": "01a08b18-1a43-7cb2-8b48-3d7f75b55d25",
+      "execution_decision_required": true,
+      "message_fingerprint": "6e7ecf10083ec035057bdce834a72bbe2bffae8df9383ed10eb06c78dd70944b",
+      "reason_codes": [
+        "completed_task_context",
+        "continuation_reply_requires_reroute"
+      ],
+      "reroute_required": true,
+      "selection_required": true,
+      "state_revision": "4ba1b249d8d323ac2b48be1e973de335985e437da2a7d15780b12d672159b6d5",
+      "turn_kind": "continuation"
+    },
+    "accepted_hash_matches": true,
+    "response_sha256": "5c36ceba1fef8642fefb75573a94c643937f197c3f0b0fbbcb652a28df65c73f"
+  },
+  "initial_elapsed_seconds": 78.818,
+  "followup_elapsed_seconds": 157.872,
+  "followup_routing": {
+    "source": "workforce_inference",
+    "cache_hit": false,
+    "continuation_reused": false,
+    "turn_context_applied": true
+  },
+  "followup_staffing": "accepted",
+  "fresh_provider_stages": [
+    {
+      "stage": "planner",
+      "status": "applied",
+      "provider_call_attempted": true
+    },
+    {
+      "stage": "recruiter",
+      "status": "failed",
+      "provider_call_attempted": true
+    },
+    {
+      "stage": "recruiter",
+      "status": "applied",
+      "provider_call_attempted": true
+    },
+    {
+      "stage": "critic",
+      "status": "applied",
+      "provider_call_attempted": true
+    }
+  ],
+  "all_headers_match": true,
+  "all_cards_present": true,
+  "all_native_request_and_final_bytes_bound": true,
+  "retained_degradations": [
+    "recall_reranker:provider_response_contract_invalid",
+    "agency-recruiter:provider_call_timed_out",
+    "agency-recruiter-content-fallback:structured_response_applied"
+  ]
+}

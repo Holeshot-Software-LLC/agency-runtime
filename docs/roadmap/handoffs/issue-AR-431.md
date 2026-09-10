@@ -12,9 +12,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-431
-branch: codex/ar431-codex-recruitment-20260910
-evidence_commit: 05653bc9ed4222ddf4c779a105bd01fd79255fa4
-minimum_ledger_commit: f95e0ab617ff565ecf7794ec9522d30cf07aa51d
+branch: codex/ar431-native-acceptance-20260910
+evidence_commit: 2f1e7d8965ce822ce1d1a9d3601405ceaac9a66c
+minimum_ledger_commit: d967e45a49b897eda79c6e57905aac916630e923
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/839
 ---
@@ -23,47 +23,48 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/839
 
 ## Checkpoint
 
-Source05653bc9/artifactf95e0ab6, classifier7/recipe22; PR840 carries the repair; tracker839 remains open.
-Package waiting_for_operator after successful installation and required checks.
+PR840/841 merged source05653bc9/artifactf95e0ab6. PR842 carries fresh native
+initial/follow-up evidence after user trust. Classifier7/recipe22; all three
+isolated criteria satisfied on the first pass atcandidate2a3f7a5b. Native receipts remain immutable.
 
 ## Completed evidence
 
-Read-only reconstructed state exactly matches failed trace01a088e1's revision.
-Existing go-ahead retains context; old keep-going loses it. Negative control3
-failed/27 passed; repaired focused163, production1151/3skip, UI224, routing,
-Ruff788, docs/tracker and frozen conformance188/188 passed. Canonical build,
-Twine, artifact and installed smoke pass. All616 wheel files and651 candidate
-projection08689b5b8769 files match.
+Trust8/8 on exact08689b5b8769 hashes. Native session01a08b18-19fc-76f3-b5ea-4033b22c3291:
+initial01a08b18-1a43-7cb2-8b48-3d7f75b55d25 completed78.818s with four full cards;
+follow-up01a08b1a-f50d-76d0-bb24-eb624109f97f completed157.872s with five. All five
+headers and finalhash40bace52/5c36ceba match native bytes. Keep-going has exact
+continuation_of the completed review, context applied, fresh inference, no replay.
+Focused163+critic5, production1151/3skip, UI224, routing, Ruff788, docs/tracker,
+conformance188/188 and canonical artifact/smoke passed;616 wheel/651 projection files match.
 
 ## Exact blocker
 
-Before refresh:651 published37c1bf7d5eb0 files match,8/8 trusted hooks.
-After refresh:8 modified/0trusted hooks. Operator must review current hashes in a
-fresh Codex TUI /hooks; no native provider call, manual trust or bypass attempted.
-Fresh native follow-up and isolated acceptance are pending. Original recruiter
-shape repair succeeded then critic vetoed; raw model packets unavailable. Prior
-finalizer Transport closed is separate and unconfirmed. Parent remains stale.
+No remaining acceptance blocker in this scope. Follow-up reranker reply was invalid and primary
+recruiter timed out; configured content fallback and critic succeeded. This is
+not a zero-failure or all-host reliability claim. Original failed receipts and
+old parent MCP Transport closed remain separate from the successful native finals.
 
 ## Same-task continuity
 
-Continue in the owned worktree while PR840 is open; after merge create a new one.
-Preserve unrelated scratchpad/Windows work. At or below50percent checkpoint the
-smallest safe substantive/ledger pair then continue. No failed receipt reopening.
+This owned worktree carries PR842. Once merged it is historical; create a new one
+for new implementation. Preserve unrelated scratchpad/Windows work. At or below
+50percent checkpoint the smallest safe substantive/ledger pair and continue.
 
 ## Next bounded work package
 
-After operator hook review, perform one read-only8/8 trust check, then the frozen AR-431-planned-native-manifest-20260910.json in a fresh
-Codex completed task and exact keep-going follow-up. Prove correlated bounded
-subject, fresh critic-approved recruitment, full cards, five Store headers and
-authoritative finalization. Run isolated acceptance only with complete evidence.
+After the PR842 tracker/merge-ledger checkpoint, inspect the remaining Hermes
+ordinary-review assurance receipt under AR-404 and keep AR-418
+upstream adoption/original truncation-cap proof separate. Zcode stays deferred.
 
 ## Verification
 
-AR-431-validation-20260910.json and installed/trust artifacts retain exact checks.
-No exhaustive or Windows workflow, native success or all-host reliability claim.
+AR-431-native-summary-20260910.json retains correlation, fresh inference, native
+card/header/final evidence and degradation limits. Native raw card contexts and
+collector are retained. No exhaustive or Windows workflow or delegation claim.
 
 ## Constraints
 
-Inference-only staffing, independent critic, validators and trust remain enforced.
-No manual acceptance, selection or unbounded retries. Owner order OpenClaw,
-Hermes, Codex, Claude; Zcode remains deferred. Existing Claude approvals unchanged.
+Inference-only staffing, independent critic, validators and trust stay enforced.
+No manual acceptance, failed receipt reopening or unbounded retries. Default two
+isolated review passes applies; first pass satisfied all three criteria. Owner order OpenClaw, Hermes,
+Codex, Claude; Zcode deferred. Claude exact Allow rules remain saved.

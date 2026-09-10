@@ -6,6 +6,7 @@ created: 2026-09-10
 updated: 2026-09-10
 tags: [codex, recruitment, reliability]
 related:
+  - docs/roadmap/acceptance/issue-AR-431.md
   - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/decisions/0064-classify-turn-intent-from-durable-state.md
   - docs/decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md
@@ -84,3 +85,44 @@ PR840 merged at786f4611a094ef827fb0d8ed8bcfeccadbf3c93b with exact subject
 worktree is now historical. AR-431/#839 remains open and waiting_for_operator
 for eight modified candidate hooks; native and isolated acceptance remain pending.
 The next package uses a fresh owned worktree after normal native trust review.
+
+## Trusted native initial review
+
+Owner confirmed Codex trust on2026-09-10. Fresh hooks/list proves8/8 trusted
+against the exact candidate hashes. Native session01a08b18-19fc-76f3-b5ea-4033b22c3291
+initial trace01a08b18-1a43-7cb2-8b48-3d7f75b55d25 completed in78.818s with
+recipe22/classifier7, four complete native cards, five matching Store headers
+and authoritative finalization. The collector compares native developer context
+and exact native user/final bytes with immutable Store evidence; no prior
+assignment replay, trust bypass, specialist delegation or execution claim.
+The exact same-session keep-going follow-up remains next, then isolated review.
+
+## Native follow-up and acceptance packet
+
+Native session01a08b18-19fc-76f3-b5ea-4033b22c3291 passed the frozen initial
+review in78.818s and exact keep-going follow-up in157.872s. Follow-up trace
+01a08b1a-f50d-76d0-bb24-eb624109f97f is classifier7 continuation of completed
+01a08b18-1a43-7cb2-8b48-3d7f75b55d25. Recipe22 applies bounded context and fresh
+inference, with no cache/assignment replay. Four initial and five follow-up full
+cards, all five Store headers and authoritative response hashes40bace52/5c36ceba
+match exact native bytes. The follow-up retained an invalid reranker reply and
+a primary recruiter timeout; configured content fallback succeeded, then the
+independent critic accepted staffing. No caller retry, manual selection, bypass,
+delegation or executed-test claim. PR842 carries these observations; isolated
+acceptance remains pending. No all-host reliability or historical-receipt repair.
+
+Native evidence PR: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/842
+Additional focused critic-boundary5 tests passed in0.37s. The original fast
+spine/conformance remain applicable to unchanged source05653bc9/artifactf95e0ab6.
+
+Local packet validation caught four out-of-range excerpt ends; corrected before
+any isolated verifier call. No review pass was consumed by this local check.
+
+## Isolated acceptance
+
+All three first-pass isolated verdicts satisfy candidate2a3f7a5b: AR-431.1-20260910-5a49eba6, AR-431.2-20260910-be7d8c4a, AR-431.3-20260910-36fe1218.
+PR842 records scoped completion after exact native proof. The current parent
+MCP host-status call still returned Transport closed after trust confirmation;
+this is separate from two fresh native authoritative finalizations. No manual
+finalization or old receipt reopening occurred. Final docs and tracker checks
+remain required after the normal PR merge and closure transaction.

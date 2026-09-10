@@ -1,0 +1,61 @@
+{
+  "native_provenance": {
+    "source_file": "rollout-2026-09-10T07-33-27-01a08b18-19fc-76f3-b5ea-4033b22c3291.jsonl",
+    "source_sha256": "4664e50470660bb8dc046a45661a479679e2a2a9805e6df622d4c9f3f960db80",
+    "trace_id": "01a08b18-1a43-7cb2-8b48-3d7f75b55d25",
+    "first_line": 2,
+    "last_line": 18,
+    "exact_user_request_present": true,
+    "final_response_hash_present": true,
+    "developer_context_count": 6
+  },
+  "complete_team": {
+    "inferred": [
+      "code-reviewer",
+      "python-application-engineer",
+      "software-test-engineer",
+      "reality-checker"
+    ],
+    "retained": [
+      "code-reviewer",
+      "python-application-engineer",
+      "software-test-engineer",
+      "reality-checker"
+    ],
+    "exact_match": true
+  },
+  "cards": [
+    {
+      "slug": "code-reviewer",
+      "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+      "store_hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+      "prompt_chars": 2379,
+      "prompt_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+      "exact_full_card_present": true
+    },
+    {
+      "slug": "python-application-engineer",
+      "version": "contractor-4-7fc606fc0e5dda5b",
+      "store_hash": "sha256:7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+      "prompt_chars": 3072,
+      "prompt_sha256": "7fc606fc0e5dda5b35b7a461006a1ae13f7331c4967b3e95510c59d2cf6881f4",
+      "exact_full_card_present": true
+    },
+    {
+      "slug": "software-test-engineer",
+      "version": "contractor-4-336f7dccc2212825",
+      "store_hash": "sha256:336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+      "prompt_chars": 3193,
+      "prompt_sha256": "336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+      "exact_full_card_present": true
+    },
+    {
+      "slug": "reality-checker",
+      "version": "sha256:7042d9d85875f991e7c51c778bc77c6313e4c8e595dee16103a058949237a2d6",
+      "store_hash": "7714fe185c23326a8aa38d292e6c57a61ebf3c555e0855354ccaf578000d0d86",
+      "prompt_chars": 2476,
+      "prompt_sha256": "7714fe185c23326a8aa38d292e6c57a61ebf3c555e0855354ccaf578000d0d86",
+      "exact_full_card_present": true
+    }
+  ]
+}

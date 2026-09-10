@@ -1,6 +1,6 @@
 ---
 title: "AR-431: Preserve task context for keep-going recruitment"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-10
 updated: 2026-09-10
@@ -31,27 +31,24 @@ an invalid response, then the independent critic vetoed the repaired team.
 
 ## Current state
 
-Implementing a bounded classifier repair. Exact failed trace
-`01a088e1-a95b-7190-b0fb-760284a0c92c` and reconstructed prior state are retained in
-`evidence/AR-431-original-context-loss-20260910.json`. The reconstruction exactly
-matches the recorded state hash. Classifier6 drops context for `keep going`;
-`go ahead` retains it against the same state. The original raw model packets
-are unavailable, so the critic veto is not declared erroneous or attributed
-solely to context loss. Separate finalization returned Transport closed and
-remains unconfirmed. No old receipt is reopened.
+Scoped acceptance complete against candidate2a3f7a5b; all three isolated criteria
+satisfied. PR842 records native verification; source was merged in PR840.
 
-Classifier7 recognizes the exact phrase; recipe/context22 separates current
-classification from historical projections. Source05653bc9 and artifactf95e0ab6
-are carried by PR840. Negative control3 failed/27 passed; focused163,
-production1151/3skip, UI224, routing and frozen conformance188/188 passed.
-Canonical build/Twine/artifact/smoke passed and616 package files match the wheel.
-All651 projected files match candidate08689b5b8769. A fresh hook inventory now
-reports8 modified/0 trusted after the necessary refresh (before:8/8 trusted on
-37c1bf7d5eb0). Delivery is waiting_for_operator under the normal /hooks workflow;
-no native candidate call or trust bypass was attempted. Fresh native and isolated
-acceptance remain pending. Current parent runs stale6db15efbecbe; reinstalling
-cannot refresh it or confirm recovery of the separate closed MCP transport.
-Zcode work remains deferred.
+Native session01a08b18-19fc-76f3-b5ea-4033b22c3291 passed the frozen initial
+review in78.818s and exact keep-going follow-up in157.872s. Follow-up trace
+01a08b1a-f50d-76d0-bb24-eb624109f97f is classifier7 continuation of completed
+01a08b18-1a43-7cb2-8b48-3d7f75b55d25. Recipe22 applies bounded context and fresh
+inference, with no cache/assignment replay. Four initial and five follow-up full
+cards, all five Store headers and authoritative response hashes40bace52/5c36ceba
+match exact native bytes. The follow-up retained an invalid reranker reply and
+a primary recruiter timeout; configured content fallback succeeded, then the
+independent critic accepted staffing. No caller retry, manual selection, bypass,
+delegation or executed-test claim. PR842 carries these observations; isolated
+acceptance satisfied all three criteria on the first isolated pass. No all-host reliability or historical-receipt repair.
+
+Required source checks passed: focused163, additional critic5, production1151/3skip,
+UI224, routing and conformance188/188; canonical artifact/smoke and exact installed
+file checks passed. User trust is confirmed8/8 on candidate08689b5b8769.
 
 ## Approach
 
@@ -68,6 +65,6 @@ trust and a fresh process; no bypass or manual acceptance is permitted.
 
 ## Acceptance
 
-- [ ] Reproduce exact context loss and distinguish it from critic and transport outcomes.
-- [ ] Preserve bounded subject context for this phrase without weakening inference, critic or state guards.
-- [ ] Demonstrate fresh native recruitment, full selected cards, five Store-matching headers and authoritative finalization after focused and required fast checks.
+- [x] Reproduce exact context loss and distinguish it from critic and transport outcomes.
+- [x] Preserve bounded subject context for this phrase without weakening inference, critic or state guards.
+- [x] Demonstrate fresh native recruitment, full selected cards, five Store-matching headers and authoritative finalization after focused and required fast checks.

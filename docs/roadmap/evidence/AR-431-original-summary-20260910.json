@@ -1,0 +1,54 @@
+{
+  "source": "AR-431-original-context-loss-20260910.json",
+  "failed_trace": "01a088e1-a95b-7190-b0fb-760284a0c92c",
+  "recorded_state_revision": "5a66f8e5f238fdabb46e16a7f58378733d0fbb8a2ac224aba48668f42665ef82",
+  "reconstructed_state_revision": "5a66f8e5f238fdabb46e16a7f58378733d0fbb8a2ac224aba48668f42665ef82",
+  "exact_reconstructed_state_match": true,
+  "old_keep_going": {
+    "turn_kind": "new_intent",
+    "selection_required": true,
+    "reroute_required": true,
+    "execution_decision_required": true,
+    "continuation_of": "",
+    "confidence": 0.9,
+    "reason_codes": [
+      "requested_question_task_or_output"
+    ],
+    "state_revision": "5a66f8e5f238fdabb46e16a7f58378733d0fbb8a2ac224aba48668f42665ef82",
+    "classifier_version": 6,
+    "message_fingerprint": "6e7ecf10083ec035057bdce834a72bbe2bffae8df9383ed10eb06c78dd70944b",
+    "legacy_request_kind": "nontrivial"
+  },
+  "old_go_ahead": {
+    "turn_kind": "continuation",
+    "selection_required": true,
+    "reroute_required": true,
+    "execution_decision_required": true,
+    "continuation_of": "01a0878e-6383-7201-848a-eca3280b283b",
+    "confidence": 0.9,
+    "reason_codes": [
+      "completed_task_context",
+      "continuation_reply_requires_reroute"
+    ],
+    "state_revision": "5a66f8e5f238fdabb46e16a7f58378733d0fbb8a2ac224aba48668f42665ef82",
+    "classifier_version": 6,
+    "message_fingerprint": "d44fcf731c17b28d746d1558dedab8e8540162ee63b87e10e8b9918037c277ee",
+    "legacy_request_kind": "nontrivial"
+  },
+  "recruiter_attempts": [
+    {
+      "status": "rejected",
+      "reason_code": "provider_response_contract_invalid"
+    },
+    {
+      "status": "applied",
+      "reason_code": "structured_response_applied"
+    }
+  ],
+  "critic_reason_codes": [
+    "staffing_critic_rejected",
+    "critic_wrong_neighbor_selection"
+  ],
+  "authoritative_finalization_id": null,
+  "causal_limit": "Missing context is proven; raw model packets were not retained and the critic veto is not assumed erroneous or attributable solely to context loss. Separate parent Transport closed was unconfirmed."
+}

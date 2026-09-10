@@ -1,0 +1,730 @@
+{
+  "invocation": {
+    "phase": "followup",
+    "host": "codex",
+    "command": [
+      "codex",
+      "exec",
+      "resume",
+      "--skip-git-repo-check",
+      "--json",
+      "-o",
+      "/home/holeshot/.agency-runtime/ephemeral/ar431-native-20260910/acceptance/followup/response.txt",
+      "01a08b18-19fc-76f3-b5ea-4033b22c3291",
+      "keep going"
+    ],
+    "request": "keep going",
+    "native_session_id": "01a08b18-19fc-76f3-b5ea-4033b22c3291",
+    "exit_code": 0,
+    "timeout": false,
+    "elapsed_seconds": 157.872
+  },
+  "run": {
+    "id": "90da51f8-be53-4909-9e77-538c97d551d1",
+    "trace_id": "01a08b1a-f50d-76d0-bb24-eb624109f97f",
+    "session_id": "01a08b18-19fc-76f3-b5ea-4033b22c3291",
+    "host": "codex",
+    "started_at": "2026-09-10T11:36:37.074298+00:00",
+    "last_activity_at": "2026-09-10T11:39:11.689000+00:00",
+    "turn_sequence": 1705,
+    "ended_at": "2026-09-10T11:39:11.688588+00:00",
+    "status": "completed",
+    "preflight_state": "ready"
+  },
+  "classification": {
+    "classifier_version": 7,
+    "continuation_of": "01a08b18-1a43-7cb2-8b48-3d7f75b55d25",
+    "execution_decision_required": true,
+    "request_fingerprint": "6e7ecf10083ec035057bdce834a72bbe2bffae8df9383ed10eb06c78dd70944b",
+    "request_kind": "nontrivial",
+    "reroute_required": true,
+    "selection_required": true,
+    "source": "preflight_attempt",
+    "state_revision": "4ba1b249d8d323ac2b48be1e973de335985e437da2a7d15780b12d672159b6d5",
+    "turn_kind": "continuation"
+  },
+  "recipe_turn_classification": {
+    "classifier_version": 7,
+    "confidence": 0.9,
+    "continuation_of": "01a08b18-1a43-7cb2-8b48-3d7f75b55d25",
+    "execution_decision_required": true,
+    "message_fingerprint": "6e7ecf10083ec035057bdce834a72bbe2bffae8df9383ed10eb06c78dd70944b",
+    "reason_codes": [
+      "completed_task_context",
+      "continuation_reply_requires_reroute"
+    ],
+    "reroute_required": true,
+    "selection_required": true,
+    "state_revision": "4ba1b249d8d323ac2b48be1e973de335985e437da2a7d15780b12d672159b6d5",
+    "turn_kind": "continuation"
+  },
+  "recipe_version": 22,
+  "recipe_keys": [
+    "context_limit",
+    "delivery_mode",
+    "host",
+    "policy_fingerprint",
+    "recipe_version",
+    "resident_manager_binding",
+    "roster_generation",
+    "roster_size",
+    "routing",
+    "selection_refs",
+    "session_id",
+    "specialist_refs",
+    "trace_id",
+    "trivial",
+    "turn_classification",
+    "turn_context_guard",
+    "unit_assignment_agents"
+  ],
+  "routing_decision": {
+    "available_companion_ids": [],
+    "available_fallback_companion_ids": [],
+    "cache_hit": false,
+    "candidate_count": 293,
+    "companion_actions": [],
+    "companion_ids": [],
+    "confidence": 1.0,
+    "context_fingerprint": "e0c2c5fc1316fa014c7f36857844205e0e55288525f6c2efc284a36a4d7aeeaa",
+    "continuation_resolution_required": false,
+    "continuation_reused": false,
+    "execution_context": {
+      "capabilities": [
+        "code-execution",
+        "native-delegation",
+        "package-management",
+        "repository-read",
+        "repository-write",
+        "runtime-evidence",
+        "shell-execution",
+        "source-control",
+        "test-execution"
+      ],
+      "contract_version": "1",
+      "evidence": [
+        "native-adapter-event:codex",
+        "managed-host-contract:1"
+      ],
+      "execution_host": "codex",
+      "inference_surface": "",
+      "observed_at": "2026-09-10T11:36:37.082525+00:00",
+      "platform": "linux",
+      "session_id": "01a08b18-19fc-76f3-b5ea-4033b22c3291",
+      "source": "native-adapter-event",
+      "status": "native-contract-verified",
+      "surface": "codex",
+      "trace_id": "01a08b1a-f50d-76d0-bb24-eb624109f97f",
+      "unknown_tools": []
+    },
+    "fallback_applied": false,
+    "fallback_companion_ids": [],
+    "fallback_considered": false,
+    "latency_ms": 140006,
+    "query_hash": "6e7ecf10083ec035057bdce834a72bbe2bffae8df9383ed10eb06c78dd70944b",
+    "routing_receipt": {
+      "compatibility": {
+        "added_requirements": [],
+        "compatible": false,
+        "contract_version": 0,
+        "overflow_review_ids": [],
+        "rejected_count": 0,
+        "rejection_reason_counts": [],
+        "rejections": [],
+        "requested_ids": [],
+        "selected_ids": [],
+        "selected_root_ids": [],
+        "selection_limit": 0,
+        "separate_context_pairs": []
+      },
+      "effect_codes": [
+        "inference_attempted",
+        "turn_context_applied",
+        "eligibility_exclusions_applied",
+        "specialists_selected",
+        "hiring_not_attempted"
+      ],
+      "eligibility": {
+        "eligible_count": 74,
+        "evaluated_count": 293,
+        "rejected_count": 219,
+        "rejection_reason_counts": [
+          {
+            "count": 21,
+            "reason_code": "missing_capabilities"
+          }
+        ],
+        "rejections": [
+          {
+            "reason_code": "missing_capabilities:monitoring-observability",
+            "slug": "application-observability-engineer"
+          },
+          {
+            "reason_code": "missing_capabilities:product-analytics-reader",
+            "slug": "behavioral-nudge-engine"
+          },
+          {
+            "reason_code": "missing_capabilities:browser-interaction",
+            "slug": "cms-developer"
+          },
+          {
+            "reason_code": "missing_capabilities:current-policy-research",
+            "slug": "compliance-auditor"
+          },
+          {
+            "reason_code": "missing_capabilities:current-cultural-research",
+            "slug": "cultural-intelligence-strategist"
+          },
+          {
+            "reason_code": "missing_capabilities:database-access",
+            "slug": "database-optimizer"
+          },
+          {
+            "reason_code": "missing_capabilities:cross-platform-test-host",
+            "slug": "developer-tooling-engineer"
+          },
+          {
+            "reason_code": "missing_capabilities:web-research",
+            "slug": "feedback-synthesizer"
+          },
+          {
+            "reason_code": "missing_capabilities:jira",
+            "slug": "jira-workflow-steward"
+          },
+          {
+            "reason_code": "missing_capabilities:language-server-runtime",
+            "slug": "lsp-index-engineer"
+          },
+          {
+            "reason_code": "missing_capabilities:official-mcp-documentation",
+            "slug": "mcp-builder"
+          },
+          {
+            "reason_code": "missing_capabilities:orgscript-cli",
+            "slug": "orgscript-engineer"
+          },
+          {
+            "reason_code": "missing_capabilities:web-research",
+            "slug": "proposal-strategist"
+          },
+          {
+            "reason_code": "missing_capabilities:browser-interaction",
+            "slug": "rapid-prototyper"
+          },
+          {
+            "reason_code": "missing_capabilities:roblox-studio",
+            "slug": "roblox-systems-scripter"
+          },
+          {
+            "reason_code": "missing_capabilities:current-policy-research",
+            "slug": "security-architect"
+          },
+          {
+            "reason_code": "missing_capabilities:browser-interaction",
+            "slug": "senior-developer"
+          },
+          {
+            "reason_code": "missing_capabilities:security-analysis",
+            "slug": "senior-secops-engineer"
+          },
+          {
+            "reason_code": "missing_capabilities:media-processing",
+            "slug": "short-video-editing-coach"
+          },
+          {
+            "reason_code": "missing_capabilities:monitoring-observability",
+            "slug": "threat-detection-engineer"
+          },
+          {
+            "reason_code": "missing_capabilities:browser-interaction",
+            "slug": "ux-architect"
+          }
+        ],
+        "sample_truncated": true
+      },
+      "hiring": {
+        "attempted_count": 0,
+        "calls_used": 0,
+        "events": [],
+        "outcome": "no_attempt",
+        "truncated": false,
+        "workforce_changes": 0
+      },
+      "inference": {
+        "attempted": true,
+        "configured": true,
+        "mode": "inferred",
+        "provider_attempts": [
+          {
+            "metadata_version": 1,
+            "model_group": "task-agency-planner-v2",
+            "ordinal": 1,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-planner",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-planner-v2",
+            "stage": "planner",
+            "status": "applied"
+          },
+          {
+            "model_group": "",
+            "ordinal": 2,
+            "provider_name": "local-workforce-embedding",
+            "provider_type": "ollama",
+            "reason_code": "dense_recall_applied",
+            "requested_model": "qwen3-embedding:latest",
+            "status": "applied"
+          },
+          {
+            "metadata_version": 1,
+            "model_group": "",
+            "ordinal": 3,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "local-workforce-reranker",
+            "provider_type": "ollama",
+            "reason_code": "provider_response_contract_invalid",
+            "requested_model": "qwen3-14b-abliterated:latest",
+            "stage": "recall_reranker",
+            "status": "rejected"
+          },
+          {
+            "metadata_version": 1,
+            "model_group": "task-agency-recruiter-v2",
+            "ordinal": 4,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter",
+            "provider_type": "litellm",
+            "reason_code": "provider_call_timed_out",
+            "requested_model": "task-agency-recruiter-v2",
+            "stage": "recruiter",
+            "status": "failed"
+          },
+          {
+            "metadata_version": 1,
+            "model_group": "task-agency-recruiter-v2-content-fallback",
+            "ordinal": 5,
+            "provider_call_attempted": true,
+            "provider_chain_index": 1,
+            "provider_fallback_count": 1,
+            "provider_name": "agency-recruiter-content-fallback",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-recruiter-v2-content-fallback",
+            "stage": "recruiter",
+            "status": "applied"
+          },
+          {
+            "metadata_version": 1,
+            "model_group": "task-agency-critic-v2",
+            "ordinal": 6,
+            "provider_call_attempted": true,
+            "provider_chain_index": 0,
+            "provider_fallback_count": 0,
+            "provider_name": "agency-recruiter-critic",
+            "provider_type": "litellm",
+            "reason_code": "structured_response_applied",
+            "requested_model": "task-agency-critic-v2",
+            "stage": "critic",
+            "status": "applied"
+          }
+        ],
+        "required": true
+      },
+      "reason_codes": [
+        "turn_kind:continuation",
+        "routing_status:accepted",
+        "inference_mode:inferred",
+        "eligibility:missing_capabilities"
+      ],
+      "receipt_version": 1,
+      "retrieval": {
+        "candidate_union_count": 0,
+        "full_roster_count": 0,
+        "hard_negative_count": 0,
+        "lexical_count": 0,
+        "mode": "unavailable",
+        "semantic_count": 0
+      },
+      "staffing": {
+        "gap_count": 0,
+        "global_reason_codes": [],
+        "status": "accepted",
+        "truncated": false,
+        "units": [
+          {
+            "nominated_ids": [
+              "codebase-onboarding-engineer",
+              "code-reviewer",
+              "minimal-change-engineer"
+            ],
+            "proposed_ids": [
+              "codebase-onboarding-engineer"
+            ],
+            "reason_codes": [],
+            "unit_id": "unit-discovery-map-repo"
+          },
+          {
+            "nominated_ids": [
+              "minimal-change-engineer",
+              "backend-service-engineer",
+              "developer-tooling-engineer"
+            ],
+            "proposed_ids": [
+              "minimal-change-engineer"
+            ],
+            "reason_codes": [],
+            "unit_id": "unit-impl-change"
+          },
+          {
+            "nominated_ids": [
+              "software-test-engineer",
+              "test-automation-engineer",
+              "minimal-change-engineer"
+            ],
+            "proposed_ids": [
+              "software-test-engineer"
+            ],
+            "reason_codes": [],
+            "unit_id": "unit-test-code"
+          },
+          {
+            "nominated_ids": [
+              "code-reviewer",
+              "silent-failure-hunter",
+              "application-security-engineer"
+            ],
+            "proposed_ids": [
+              "code-reviewer"
+            ],
+            "reason_codes": [],
+            "unit_id": "unit-review-correctness"
+          },
+          {
+            "nominated_ids": [
+              "reality-checker",
+              "evidence-collector",
+              "test-results-analyzer"
+            ],
+            "proposed_ids": [
+              "reality-checker"
+            ],
+            "reason_codes": [],
+            "unit_id": "unit-test-evidence"
+          }
+        ]
+      }
+    },
+    "selected_ids": [
+      "codebase-onboarding-engineer",
+      "minimal-change-engineer",
+      "software-test-engineer",
+      "code-reviewer",
+      "reality-checker"
+    ],
+    "semantic_ids": [
+      "codebase-onboarding-engineer",
+      "minimal-change-engineer",
+      "software-test-engineer",
+      "code-reviewer",
+      "reality-checker"
+    ],
+    "session_reused": false,
+    "source": "workforce_inference",
+    "source_message_hash": "6e7ecf10083ec035057bdce834a72bbe2bffae8df9383ed10eb06c78dd70944b",
+    "status": "accepted",
+    "top_score": 1.0,
+    "trace_id": "01a08b1a-f50d-76d0-bb24-eb624109f97f",
+    "turn_context_applied": true,
+    "turn_context_revision": "e9adb60b752453210795895061e07377153553d4ba174d0df98c289591a8ccc9",
+    "turn_context_source_trace_id": "01a08b18-1a43-7cb2-8b48-3d7f75b55d25",
+    "unavailable_companion_ids": [],
+    "unavailable_fallback_companion_ids": [],
+    "work_units": {
+      "confidence": "high",
+      "count": 5,
+      "delegate": false,
+      "source": "verified-workforce-plan"
+    },
+    "workforce_subject_hints": {
+      "capability_ids": [
+        "analysis",
+        "investigation",
+        "implementation",
+        "testing",
+        "review",
+        "verification"
+      ],
+      "domains": [
+        "software-engineering",
+        "codebase-discovery",
+        "quality-assurance"
+      ],
+      "frameworks": [],
+      "languages": [],
+      "platforms": [
+        "linux"
+      ]
+    },
+    "workforce_unit_bindings": [
+      {
+        "artifact_kind": "analysis",
+        "confidence": 1.0,
+        "delivery": "load",
+        "depends_on": [],
+        "mutation_scope": "read_only",
+        "parallelization": "unspecified",
+        "required_evidence": [
+          "Evidence proves the requested analysis outcome."
+        ],
+        "required_tools": [
+          "repository-read"
+        ],
+        "selected": [
+          "codebase-onboarding-engineer"
+        ],
+        "timing": "immediate",
+        "work_unit_id": "unit-60eaa531d8"
+      },
+      {
+        "artifact_kind": "implementation-change",
+        "confidence": 1.0,
+        "delivery": "load",
+        "depends_on": [
+          "unit-60eaa531d8"
+        ],
+        "mutation_scope": "workspace_write",
+        "parallelization": "sequential",
+        "required_evidence": [
+          "Evidence proves the requested implementation change outcome."
+        ],
+        "required_tools": [
+          "repository-read",
+          "repository-write",
+          "code-execution"
+        ],
+        "selected": [
+          "minimal-change-engineer"
+        ],
+        "timing": "immediate",
+        "work_unit_id": "unit-22ebc2d725"
+      },
+      {
+        "artifact_kind": "test-code",
+        "confidence": 1.0,
+        "delivery": "load",
+        "depends_on": [
+          "unit-22ebc2d725"
+        ],
+        "mutation_scope": "workspace_write",
+        "parallelization": "sequential",
+        "required_evidence": [
+          "Evidence proves the requested test code outcome."
+        ],
+        "required_tools": [
+          "repository-read",
+          "repository-write",
+          "code-execution",
+          "test-execution"
+        ],
+        "selected": [
+          "software-test-engineer"
+        ],
+        "timing": "immediate",
+        "work_unit_id": "unit-c8591da24c"
+      },
+      {
+        "artifact_kind": "review-report",
+        "confidence": 1.0,
+        "delivery": "load",
+        "depends_on": [
+          "unit-22ebc2d725",
+          "unit-c8591da24c"
+        ],
+        "mutation_scope": "read_only",
+        "parallelization": "sequential",
+        "required_evidence": [
+          "Evidence proves the requested review report outcome."
+        ],
+        "required_tools": [
+          "repository-read"
+        ],
+        "selected": [
+          "code-reviewer"
+        ],
+        "timing": "after_artifact",
+        "work_unit_id": "unit-60b80edee5"
+      },
+      {
+        "artifact_kind": "test-evidence",
+        "confidence": 1.0,
+        "delivery": "load",
+        "depends_on": [
+          "unit-c8591da24c"
+        ],
+        "mutation_scope": "read_only",
+        "parallelization": "sequential",
+        "required_evidence": [
+          "Evidence proves the requested test evidence outcome."
+        ],
+        "required_tools": [
+          "repository-read",
+          "test-execution"
+        ],
+        "selected": [
+          "reality-checker"
+        ],
+        "timing": "after_artifact",
+        "work_unit_id": "unit-bbcbc33be6"
+      }
+    ],
+    "workforce_unit_descriptors": [
+      {
+        "artifact_kind": "analysis",
+        "authority": "advise",
+        "lifecycle_phase": "discovery",
+        "mutation_scope": "read_only",
+        "ordinal": 1
+      },
+      {
+        "artifact_kind": "implementation-change",
+        "authority": "modify",
+        "lifecycle_phase": "implementation",
+        "mutation_scope": "workspace_write",
+        "ordinal": 2
+      },
+      {
+        "artifact_kind": "test-code",
+        "authority": "modify",
+        "lifecycle_phase": "testing",
+        "mutation_scope": "workspace_write",
+        "ordinal": 3
+      },
+      {
+        "artifact_kind": "review-report",
+        "authority": "review",
+        "lifecycle_phase": "review",
+        "mutation_scope": "read_only",
+        "ordinal": 4
+      },
+      {
+        "artifact_kind": "test-evidence",
+        "authority": "review",
+        "lifecycle_phase": "testing",
+        "mutation_scope": "read_only",
+        "ordinal": 5
+      }
+    ]
+  },
+  "failure": null,
+  "finalization": {
+    "id": "e4607fd0-0246-40fc-ae15-7dc59896b6aa",
+    "trace_id": "01a08b1a-f50d-76d0-bb24-eb624109f97f",
+    "host": "codex",
+    "action": "accept",
+    "missing": null,
+    "response_hash": "5c36ceba1fef8642fefb75573a94c643937f197c3f0b0fbbcb652a28df65c73f",
+    "policy_response_hash": null,
+    "terminal_status": "completed",
+    "created_at": "2026-09-10T11:39:11.688588+00:00",
+    "session_id": "01a08b18-19fc-76f3-b5ea-4033b22c3291",
+    "status": "completed",
+    "ended_at": "2026-09-10T11:39:11.688588+00:00",
+    "authoritative": true
+  },
+  "response_sha256": "5c36ceba1fef8642fefb75573a94c643937f197c3f0b0fbbcb652a28df65c73f",
+  "accepted_hash_matches": true,
+  "headers": {
+    "observed": {
+      "agencies_loaded": "agency-steward, codebase-onboarding-engineer, minimal-change-engineer, software-test-engineer, code-reviewer, reality-checker",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+      "recruited_via": "inference"
+    },
+    "expected": {
+      "agencies_loaded": "agency-steward, codebase-onboarding-engineer, minimal-change-engineer, software-test-engineer, code-reviewer, reality-checker",
+      "agencies_delegated": "none",
+      "skills_loaded": "none",
+      "actual_model_selected": "workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)",
+      "recruited_via": "inference"
+    },
+    "all_five_match": true
+  },
+  "cards": [
+    {
+      "slug": "codebase-onboarding-engineer",
+      "version": "sha256:36a665df48c915f15ba2447e871d510aac1141e677a8bcc3b6f16562c473d23b",
+      "store_hash": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+      "prompt_chars": 2496,
+      "prompt_sha256": "4af8a247f59be94a61fe50543964b2bf8298265c69cfbc9373c8339a7bc42491",
+      "exact_full_card_present": true
+    },
+    {
+      "slug": "minimal-change-engineer",
+      "version": "sha256:27cdb6d8ce5961e3a4add47310c5005e1b630ae93df8432dfe5836abceb7a318",
+      "store_hash": "59e444fc13167eb173684b7da02f94dcf0fbea18ed3daaca4a7cd29f5671e98d",
+      "prompt_chars": 2673,
+      "prompt_sha256": "59e444fc13167eb173684b7da02f94dcf0fbea18ed3daaca4a7cd29f5671e98d",
+      "exact_full_card_present": true
+    },
+    {
+      "slug": "software-test-engineer",
+      "version": "contractor-4-336f7dccc2212825",
+      "store_hash": "sha256:336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+      "prompt_chars": 3193,
+      "prompt_sha256": "336f7dccc2212825ad5b5617a047ccf9f7022568081d23fea1a76f36fb3388aa",
+      "exact_full_card_present": true
+    },
+    {
+      "slug": "code-reviewer",
+      "version": "sha256:863182746a035e4b011fe28f9c86c931f3a11dde53e654429c635248a7a22297",
+      "store_hash": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+      "prompt_chars": 2379,
+      "prompt_sha256": "e409b2c8b42430b9e69b1e0a93a42e8b790e6ae86c1a3e3e31c03ea0ed9820bd",
+      "exact_full_card_present": true
+    },
+    {
+      "slug": "reality-checker",
+      "version": "sha256:7042d9d85875f991e7c51c778bc77c6313e4c8e595dee16103a058949237a2d6",
+      "store_hash": "7714fe185c23326a8aa38d292e6c57a61ebf3c555e0855354ccaf578000d0d86",
+      "prompt_chars": 2476,
+      "prompt_sha256": "7714fe185c23326a8aa38d292e6c57a61ebf3c555e0855354ccaf578000d0d86",
+      "exact_full_card_present": true
+    }
+  ],
+  "complete_team": {
+    "inferred": [
+      "codebase-onboarding-engineer",
+      "minimal-change-engineer",
+      "software-test-engineer",
+      "code-reviewer",
+      "reality-checker"
+    ],
+    "retained": [
+      "codebase-onboarding-engineer",
+      "minimal-change-engineer",
+      "software-test-engineer",
+      "code-reviewer",
+      "reality-checker"
+    ],
+    "exact_match": true
+  },
+  "native_provenance": {
+    "source_file": "rollout-2026-09-10T07-33-27-01a08b18-19fc-76f3-b5ea-4033b22c3291.jsonl",
+    "source_sha256": "cc66dd163af29bbe0e0c5460040a143cfc5ec39671fc592433d0a219c48c7bc1",
+    "trace_id": "01a08b1a-f50d-76d0-bb24-eb624109f97f",
+    "first_line": 20,
+    "last_line": 31,
+    "exact_user_request_present": true,
+    "final_response_hash_present": true,
+    "developer_context_count": 1
+  },
+  "passed": true
+}

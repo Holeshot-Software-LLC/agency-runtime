@@ -1,0 +1,57 @@
+{
+  "status": "trusted",
+  "expected_count": 8,
+  "observed_count": 8,
+  "trusted_count": 8,
+  "managed_count": 0,
+  "modified_count": 0,
+  "untrusted_count": 0,
+  "disabled_count": 0,
+  "missing_count": 0,
+  "unexpected_count": 0,
+  "duplicate_count": 0,
+  "warning_count": 0,
+  "error_count": 0,
+  "events": {
+    "sessionStart": {
+      "enabled": true,
+      "trustStatus": "trusted",
+      "currentHash": "sha256:a0d89d0a0c1a3369f2c48762d4d4c76eb02c5b15e3ed963816bf219cf8f6ba35"
+    },
+    "userPromptSubmit": {
+      "enabled": true,
+      "trustStatus": "trusted",
+      "currentHash": "sha256:5d973bb0f80f99a8db6383b1816686966b9f37a306b4603da7f2c1b39c851633"
+    },
+    "preToolUse": {
+      "enabled": true,
+      "trustStatus": "trusted",
+      "currentHash": "sha256:22041b989418182590c9c187bfc6bfecaa4cd890234e2cb7820c26d33352eccd"
+    },
+    "postToolUse": {
+      "enabled": true,
+      "trustStatus": "trusted",
+      "currentHash": "sha256:7e27b09583115713809ddcb7fc32c38c3decdc4591d7f1fb8d91a6856458d3e8"
+    },
+    "subagentStart": {
+      "enabled": true,
+      "trustStatus": "trusted",
+      "currentHash": "sha256:5e0918289bacae1a03728e93c80e5a8bcbd2f792f75b472ca8b42c5cdbeae0bb"
+    },
+    "subagentStop": {
+      "enabled": true,
+      "trustStatus": "trusted",
+      "currentHash": "sha256:3cd3ab30f40e99f05543f7b3d82abef329da329abcb57b357df488e143bfec37"
+    },
+    "postCompact": {
+      "enabled": true,
+      "trustStatus": "trusted",
+      "currentHash": "sha256:7def8a78c2ec1c59419d0c2c28fd761ff734dc54c044a25a7aba8972fff5f412"
+    },
+    "stop": {
+      "enabled": true,
+      "trustStatus": "trusted",
+      "currentHash": "sha256:cff29ee9488c152bf168f7d3de74e48bf30591c6cb2b3db86d2289cc0f34335f"
+    }
+  }
+}
