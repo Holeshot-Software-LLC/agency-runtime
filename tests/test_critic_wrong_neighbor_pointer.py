@@ -1,9 +1,9 @@
 """AR-433 / ADR-0246: a wrong-neighbour veto names its neighbour, and the runtime checks it.
 
 Between 2026-09-08 and 2026-09-10 the strict critic vetoed 30 turns across
-five hosts and used ``wrong-neighbor-selection`` on 27 of them; not one
-durable receipt could say which card the critic preferred, because the
-critic's schema carried codes alone. The contract now requires a
+five hosts and used ``wrong-neighbor-selection`` on 26 of them; only two
+durable receipts could say which card the critic preferred, each by a name
+folded into the code, because the critic's schema carried codes alone. The contract now requires a
 ``wrong_neighbors`` pointer beside that code, the runtime verifies the
 pointer against the eligible neighbourhood it showed the critic (ADR-0205),
 an unverifiable claim gets one bounded repair and then fails the stage as a
@@ -210,7 +210,7 @@ def test_an_unnamed_claim_is_repaired_once_and_an_approval_then_stands() -> None
     feedback = _feedback(prompts[3])
     assert feedback["validation_reason_codes"] == ["critic_wrong_neighbor_unnamed"]
     assert "names no wrong_neighbors pointer" in feedback["deterministic_validation_detail"]
-    assert "do not use that ground" in feedback["required_action"]
+    assert "that ground does not apply" in feedback["required_action"]
     # The repair re-sends the same document: the neighbourhood was already there.
     assert prompts[3].split("\n\n[RUNTIME", 1)[0] == prompts[2]
 
@@ -301,6 +301,57 @@ def test_a_whole_neighbourhood_admits_no_wrong_neighbour_claim() -> None:
     assert (
         "whole eligible neighbourhood" in _feedback(prompts[3])["deterministic_validation_detail"]
     )
+
+
+def test_only_a_pointer_failure_gets_the_pointer_guidance() -> None:
+    # A malformed rejection that never claimed a neighbour is told to return
+    # the verdict shape it owes, not to fix pointers it never named.
+    outcome, prompts = _run_replies({"approved": False, "reason_codes": []}, _APPROVAL)
+    assert outcome.accepted
+    assert outcome.attempts[-2].validation_reason_codes == ("critic_rejection_reason_missing",)
+    action = _feedback(prompts[3])["required_action"]
+    assert "matching the supplied schema" in action
+    assert "wrong_neighbors pointers" not in action
+    # The pointer guidance names the ground's own conditions, and offers
+    # approval only as the case where no ground applies.
+    outcome, prompts = _run_replies(_VETO, _APPROVAL)
+    action = _feedback(prompts[3])["required_action"]
+    assert "wrong_neighbors pointers" in action
+    assert action.endswith("or approve when none applies.")
+
+
+def test_only_the_listed_ground_is_bound_to_a_pointer() -> None:
+    # The vocabulary is open (ADR-0200): a veto on any other code, including
+    # one that sounds like the ground, is a bare terminal veto exactly as
+    # before and is never re-asked. The receipt shows it as such.
+    for code in ("wrong-neighbor-risk", "wrong-worker-selection", "neighbour-fit"):
+        outcome, _ = _run_replies({"approved": False, "reason_codes": [code]})
+        assert outcome.abstention_codes[-2:] == ("staffing_critic_rejected", code), code
+        assert outcome.attempts[-1].status == "applied"
+    # The qualified form is the ground (AR-416) and is bound.
+    outcome, _ = _run_replies(
+        {"approved": False, "reason_codes": ["wrong-neighbor-selection-anything"]}, _APPROVAL
+    )
+    assert outcome.attempts[-2].validation_reason_codes == ("critic_wrong_neighbor_unnamed",)
+
+
+def test_a_pointer_outside_the_receipt_charset_is_a_shape_failure() -> None:
+    for pointer in (
+        {**_POINTER, "neighbor_agent_id": "Documentation.Evidence"},
+        {**_POINTER, "selected_agent_id": "operations_manager"},
+        {**_POINTER, "unit_id": "install-plan"},
+    ):
+        outcome, _ = _run_replies({**_VETO, "wrong_neighbors": [pointer]}, _APPROVAL)
+        assert outcome.attempts[-2].validation_reason_codes == (
+            "critic_wrong_neighbor_shape_invalid",
+        ), pointer
+
+
+def test_the_receipt_and_inference_critic_code_sets_agree() -> None:
+    from agency_runtime.core import preflight_failure
+    from agency_runtime.core.workforce.inference import CRITIC_VALIDATION_REASON_CODES
+
+    assert preflight_failure._CRITIC_VALIDATION_REASON_CODES == CRITIC_VALIDATION_REASON_CODES
 
 
 def test_pointer_shape_failures_are_their_own_code() -> None:

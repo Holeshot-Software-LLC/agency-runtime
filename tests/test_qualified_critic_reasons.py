@@ -25,11 +25,12 @@ _OMITTED = "critic_reason_detail_omitted"
 
 
 def test_captured_qualified_veto_survives_receipts_and_terminal_header(tmp_path: Path) -> None:
-    # Pin the observed native response directly: JSON evidence attachments are
-    # intentionally outside the governed sdist payload (AR-417). The complete
-    # packet remains in docs/roadmap/evidence/AR-414-native-critic-packet.json.
-    # AR-433 / ADR-0246: the same qualified code now also names its card as a
-    # verifiable pointer; the neighbourhood runner holds that card eligible.
+    # The observed native code (AR-414 packet in docs/roadmap/evidence/), with
+    # the wrong_neighbors pointer that code always implied added under AR-433 /
+    # ADR-0246, on a neighbourhood that holds the named card eligible. The
+    # exact captured reply without a pointer is replayed in
+    # test_the_captured_native_reply_without_a_pointer_is_repaired_not_vetoed.
+    # JSON evidence attachments stay outside the governed sdist payload (AR-417).
     verdict = {
         "approved": False,
         "reason_codes": ["wrong-neighbor-selection-documentation-evidence-researcher"],
@@ -79,6 +80,58 @@ def test_captured_qualified_veto_survives_receipts_and_terminal_header(tmp_path:
     assert store.get_run("qualified-critic")["status"] == "preflight_failed"
     with store._connect() as connection:
         assert connection.execute("SELECT COUNT(*) FROM finalization_events").fetchone()[0] == 0
+
+
+def test_the_captured_native_reply_without_a_pointer_is_repaired_not_vetoed() -> None:
+    """AR-433: the exact AR-414 reply carries no pointer, so it is no longer a veto."""
+
+    from agency_runtime.core.workforce.cache import clear_workforce_caches
+    from tests.test_strict_critic_doctrine import _NEIGHBOUR as _NAMED_CARD
+    from tests.test_strict_critic_doctrine import (
+        _NOMINATION,
+        _PLAN,
+        _config,
+        _context,
+        _contract,
+        _desktop_engineer,
+        _result,
+        _snapshot,
+    )
+
+    captured = {
+        "approved": False,
+        "reason_codes": ["wrong-neighbor-selection-documentation-evidence-researcher"],
+    }
+    clear_workforce_caches()
+    replies = iter(
+        (
+            _result(_PLAN),
+            _result(_NOMINATION),
+            _result(captured),
+            _result({"approved": True, "reason_codes": []}),
+        )
+    )
+    prompts: list[str] = []
+
+    def invoke(*args, **_kwargs):
+        prompts.append(str(args[1]))
+        return next(replies)
+
+    from agency_runtime.core.workforce.inference import plan_and_staff_workforce
+
+    outcome = plan_and_staff_workforce(
+        "Put this editor on my machine.",
+        _snapshot(_contract("operations-manager"), _contract(_NAMED_CARD), _desktop_engineer()),
+        config=_config(),
+        context=_context(),
+        invoker=invoke,
+    )
+    # The name inside the code is not a pointer: the runtime cannot verify it
+    # there, so the reply is refused once and the next verdict stands.
+    assert outcome.attempts[-2].validation_reason_codes == ("critic_wrong_neighbor_unnamed",)
+    assert "staffing_critic_rejected" not in outcome.abstention_codes
+    assert "[RUNTIME VALIDATION FEEDBACK]" in prompts[3]
+    assert outcome.accepted
 
 
 @pytest.mark.parametrize(

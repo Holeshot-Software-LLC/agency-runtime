@@ -5,8 +5,10 @@
   "findings": [
     "Candidate: both requests reached the critic and were approved on the critic's first reply under the pointer contract; no repair re-ask was needed; the merge request staffed git-workflow-master plus two verifiers, the handoff request staffed six units.",
     "Control: the merge request was vetoed by the critic with a bare wrong-neighbor-selection code naming no card, the exact historical shape; the handoff request was approved after three recruiter repairs.",
+    "Confound on the merge case: the candidate critic judged a team led by git-workflow-master while the control critic judged a team led by devops-automator (service-operations-engineer, monitoring-engineer and developer-tooling-engineer acceptable); the control veto is consistent with the critic correctly rejecting a different team, so this pair is not evidence of the contract's effect on a given team.",
     "AR-434 reproduced in both modes: the planner's first reply for the handoff request was rejected with plan_missing_implementation, plan_missing_test_implementation and plan_missing_test_evidence_review, and the accepted plan carried implementation and test units for a handoff document.",
-    "The recall reranker reply was invalid in three of four runs; staffing proceeded on configured fallback each time."
+    "The recall reranker reply was invalid in three of four runs; staffing proceeded on configured fallback each time.",
+    "No live run produced a verified pointer, so no durable receipt yet carries the new validation_failures row; that projection is stage-proven by tests only."
   ],
   "runs": [
     {

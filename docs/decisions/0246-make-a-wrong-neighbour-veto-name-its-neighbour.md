@@ -36,10 +36,11 @@ in that list. The instruction lived in the prompt and the contract; the
 response schema (`approved`, `reason_codes`) had nowhere to put the pointer.
 The critic could satisfy the letter of the schema with the bare code, and did:
 between 2026-09-08 and 2026-09-10 it vetoed 30 nontrivial turns across five
-hosts, 27 of them on `wrong-neighbor-selection`, and no durable receipt could
-say which card it preferred or which selected worker it would replace. Twice
-it wrote a name into the code itself (AR-416), which is the only channel it
-had. Whether those vetoes were right is unknowable from the records.
+hosts: 26 on `wrong-neighbor-selection`, two on another ground, two naming no
+ground. Of the 26, only two could say which card it preferred, each by a name
+written into the code itself (AR-416), the only channel it had; none could
+say which selected worker it would replace. Whether those vetoes were right
+is unknowable from the records.
 
 The owner saw this as recruitment failing every other call. The immutable
 receipts of the observed session show two terminal critic vetoes on
@@ -61,21 +62,28 @@ eligible card it did not.
    ground does not apply.
 2. **The runtime checks the pointer against its own facts.** For any
    `wrong-neighbor-selection` code, bare or qualified, the parser requires a
-   non-empty pointer array and verifies each row against the same
-   `eligible_neighbourhood` document it sent: the unit is planned, the
+   non-empty pointer array
+   and verifies each row against the same `eligible_neighbourhood` document
+   it sent: identities in the receipt charset, the unit is planned, the
    selected worker was selected on it, the neighbour is eligible on it, the
    neighbour is not itself selected, and the unit's selected workers are not
    its whole neighbourhood. A pointer without the code, or on an approval, is
    a shape failure. The three outcomes are closed critic validation codes:
    `critic_wrong_neighbor_unnamed`, `critic_wrong_neighbor_unverified` and
    `critic_wrong_neighbor_shape_invalid`, registered beside the existing six.
-3. **A failed check is a contract failure, never a verdict.** It takes the
-   existing bounded semantic repair (one re-ask carrying the failed check and
-   a planned unit id, never the critic's text), and if the repair also fails
-   the stage fails as `workforce_inference_failed` with the critic's
-   validation code on the attempt. The turn is not staffed and not vetoed;
-   the receipt says the critic could not ground its claim. The runtime
-   approves nothing and selects nothing (ADR-0118).
+3. **A failed check is a contract failure, never a runtime verdict.** It
+   takes the existing bounded semantic repair: one re-ask carrying the failed
+   check and a planned unit id, never the critic's text, asking for the
+   verdict the team warrants (a pointer, another listed ground the team
+   exhibits, or approval when none applies). The critic's second reply is
+   then read exactly as any first reply, so a critic that cannot ground its
+   claim may approve where its bare code used to be a terminal veto; that is
+   the intended change in outcome, and the runtime itself approves nothing
+   and selects nothing (ADR-0118). If the repair also fails, the stage fails
+   as `workforce_inference_failed` with the critic's validation code on the
+   attempt: not staffed, not vetoed, and the receipt says why. Every other
+   critic contract failure keeps a generic repair asking for the verdict
+   shape the schema owes.
 4. **A verified pointer is retained.** It rides the applied critic attempt's
    `validation_detail` in the wire form `unit=selected>neighbor` under the
    prefix `workforce critic wrong-neighbor pointers: `, and both receipts
@@ -97,9 +105,24 @@ eligible card it did not.
   the critic preferred and the worker it would replace, so the next
   investigation can read the veto instead of capturing it.
 - A critic that cannot name an eligible better card can no longer use the
-  ground. The fresh diagnostic in AR-433 records how the live critic behaves
-  under the new contract on the two exact vetoed requests; the decision does
-  not predict the outcome.
+  ground, and may approve instead; a critic that is right about a bad team
+  but names a card outside the neighbourhood is refused and re-asked, and the
+  team it disliked can be staffed if it then approves. The fresh diagnostic
+  in AR-433 records how the live critic behaved under the new contract on the
+  two exact vetoed requests (approved both, first reply); single samples that
+  judged different recruiter teams from the control runs, so they are not
+  evidence of effect on a given team.
+- The check binds exactly the listed ground and its qualified forms. The
+  critic's vocabulary is open by decision (ADR-0200), so a claim about a
+  better card phrased as any other code stays a bare terminal veto as before
+  and is never re-asked; this record does not close the vocabulary, and the
+  receipt shows such a code for what it is.
+- `wrong_neighbors` is the one optional property in the package's structured
+  schemas, sent under the transport's strict flag. The current gateway
+  deployment answered both live critic calls with valid objects; a backend
+  that enforces every property as required would refuse every critic call,
+  and the parser tolerates a forced `null` or `[]` beside a non-neighbour
+  code.
 - Fixtures that vetoed with a bare `wrong-neighbor-selection` on a snapshot
   whose selected team was its whole neighbourhood either name a pointer on a
   larger neighbourhood or use a ground that needs none. The captured

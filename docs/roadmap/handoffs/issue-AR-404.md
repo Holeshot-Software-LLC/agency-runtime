@@ -42,9 +42,10 @@ packet retained. One fresh ordinary_review completes86.235s: one full native
 card, five Store headers and authoritative hashdd9b5b8c match; critic approves.
 Captured plan contains wrong expected mean2.5; final correctly says1.5.
 AR-432/#845 tracks that separate factual defect. No product change or closure.
-The owner's "every other call" recruitment observation is AR-433/#847: 27 of
-30 critic vetoes since 2026-09-08 were unaccountable wrong-neighbour claims;
-ADR-0246 makes the veto name and verify its neighbour. AR-434/#848 files the
+The owner's "every other call" recruitment observation is AR-433/#847: 26 of
+30 critic vetoes since 2026-09-08 were wrong-neighbour claims, 24 naming no
+card; ADR-0246 makes the veto name and verify its neighbour, and an ungrounded
+claim is re-asked and may approve. AR-434/#848 files the
 handoff-as-code-mutation plan-policy defect the same session exposed.
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh

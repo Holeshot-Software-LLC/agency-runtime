@@ -30,9 +30,9 @@ related_issues:
 The owner reported recruitment failing "every other call". The immutable
 receipts of the observed Codex session show two terminal strict-critic vetoes
 on operational requests between two staffed engineering requests, and the
-population since 2026-09-08 shows 27 of 30 critic vetoes across five hosts on
-`wrong-neighbor-selection` with no receipt able to name the card the critic
-preferred. The critic schema carried codes alone, so ADR-0205's "must point at
+population since 2026-09-08 shows 26 of 30 critic vetoes across five hosts on
+`wrong-neighbor-selection`, only two of them able to name the card the critic
+preferred and none the worker it would replace. The critic schema carried codes alone, so ADR-0205's "must point at
 a card" had nothing to hold it to. This commit makes the claim accountable.
 
 ## Approach
@@ -44,8 +44,10 @@ and that the runtime checks it. The parser verifies each pointer against the
 selected worker, eligible unselected neighbour, team not the whole
 neighbourhood. An unnamed or unverifiable claim raises one of three new closed
 critic validation codes and takes the existing bounded semantic repair with
-critic-specific feedback; if that fails the stage fails as
-`workforce_inference_failed`, never a veto and never an approval. A verified
+pointer-specific feedback (other critic failures get a generic schema
+reminder); the second reply is read as any first reply, so the critic may
+approve where its bare code was a terminal veto, and if the repair also fails
+the stage fails as `workforce_inference_failed`. A verified
 pointer is written to the applied critic attempt's `validation_detail` under a
 new prefix and both receipts project it through `project_nomination_failures`
 as a four-key per-unit row admitted only in that exact shape.
@@ -84,12 +86,17 @@ and 3 skipped; UI 224 passed; docs metadata, policy availability, worklog,
 `verify_docs` with and without `--require-tracker`, strict tracker parity
 (425 items), Ruff and `git diff --check` passed. Routing eval correctness
 gates all passed while two `retrieval_scale` warm-latency gates failed under
-concurrent load; clean main also exits non-zero on this machine for the same
-area. Six `tests/test_fail_open_disclosure.py` failures pre-exist on clean
-main and are unrelated. Decision conformance: 188 of 188 mutations killed, zero survivors, source unchanged. Live
+concurrent load (clean main 28b0a76d also exited non-zero at the same time,
+`routing-main-28b0a76d.json` beside the diagnostic); an idle rerun passed all
+gates with exit 0. Six `tests/test_fail_open_disclosure.py` failures pre-exist
+on clean main and are unrelated. One adversarial review pass (Opus) ran on
+PR849 before merge; its count correction, generic-critic-feedback defect,
+captured-packet replay, charset check, code-set parity test and framing
+corrections are applied in the follow-up commit on the same branch. Decision conformance: 188 of 188 mutations killed, zero survivors, source unchanged. Live
 diagnostic: candidate approved 2 of 2 on the critic's first reply; control
 vetoed the merge request with a bare unnamed code and approved the handoff
-request. No exhaustive or Windows workflow ran.
+request; the merge-case critics judged different recruiter teams, so the pair
+is not evidence of effect on a given team. No exhaustive or Windows workflow ran.
 
 ## Follow-ups
 

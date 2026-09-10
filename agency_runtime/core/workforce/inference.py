@@ -1749,20 +1749,33 @@ def _semantic_retry_prompts(
     elif isinstance(error, _CriticValidationError):
         # AR-433 / ADR-0246: the critic is told which contract check its
         # reply failed. The detail names the check and a planned unit id,
-        # never the reply; the neighbourhood is already in the document.
+        # never the reply; the neighbourhood is already in the document. Only
+        # a pointer failure gets the pointer guidance; every other critic
+        # contract failure is told to return the verdict shape it owes.
         next_system_prompt = system_prompt
         feedback = {
             "prior_response_status": "rejected",
             "validation_reason_codes": list(validation_reason_codes),
             "deterministic_validation_detail": detail,
             "required_action": (
-                "Return one complete replacement critic verdict. A "
-                "wrong-neighbor-selection code must carry wrong_neighbors pointers "
-                "that name a planned unit_id, a selected_agent_id the runtime "
-                "selected on it, and a neighbor_agent_id from that unit's "
-                "eligible_candidate_ids that is not selected. If no such card "
-                "exists, do not use that ground: approve, or veto on another "
-                "listed ground the team actually exhibits."
+                (
+                    "Return one complete replacement critic verdict that the team "
+                    "actually warrants. A wrong-neighbor-selection code must carry "
+                    "wrong_neighbors pointers that name a planned unit_id, a "
+                    "selected_agent_id the runtime selected on it, and a "
+                    "neighbor_agent_id from that unit's eligible_candidate_ids that is "
+                    "not selected. If no such card exists, that ground does not apply: "
+                    "veto on another listed ground the team exhibits, or approve when "
+                    "none applies."
+                )
+                if error.code.startswith("critic_wrong_neighbor")
+                else (
+                    "Return one complete replacement critic verdict matching the "
+                    "supplied schema: approved as a JSON boolean; reason_codes exactly "
+                    "empty when approved and one or more unique lowercase hyphenated "
+                    "staffing-defect codes when not; wrong_neighbors only beside a "
+                    "wrong-neighbor-selection code."
+                )
             ),
         }
     elif stage == "planner":
@@ -4549,11 +4562,11 @@ def _critic_eligible_neighbourhood(
     return neighbourhood
 
 
-# AR-433 / ADR-0246. The ground a strict critic used on 27 of its 30 vetoes
-# between 2026-09-08 and 2026-09-10 was wrong-neighbor-selection, and not one
-# of those receipts could say which card the critic preferred: the schema
-# carried codes alone, so the prompt's "must point at a card" had nothing to
-# hold it to. A wrong-neighbour claim is a claim about two identities the
+# AR-433 / ADR-0246. The ground a strict critic used on 26 of its 30 vetoes
+# between 2026-09-08 and 2026-09-10 was wrong-neighbor-selection, and only two
+# of those receipts could say which card the critic preferred, each by a name
+# folded into the code itself: the schema carried codes alone, so the prompt's
+# "must point at a card" had nothing to hold it to. A wrong-neighbour claim is a claim about two identities the
 # runtime already knows -- a worker it selected on a unit and an eligible card
 # it did not -- so the veto now names them and the runtime checks the name
 # against the neighbourhood it showed the critic. A claim that names nothing,
@@ -4577,10 +4590,22 @@ class WrongNeighborPointer:
 
 
 def _claims_wrong_neighbor(codes: Sequence[str]) -> bool:
+    """True when a code claims the listed wrong-neighbour ground, bare or qualified.
+
+    The critic's codes are an open vocabulary (ADR-0200), so only the listed
+    ground and its qualified forms (AR-416) are bound to a pointer. A claim
+    phrased as some other code is a bare veto exactly as before, which the
+    receipt shows as such; a valid veto on another code is never re-asked.
+    """
+
     return any(
         code == _WRONG_NEIGHBOR_GROUND or code.startswith(_WRONG_NEIGHBOR_GROUND + "-")
         for code in codes
     )
+
+
+_POINTER_UNIT_ID = re.compile(r"^unit-[a-z0-9][a-z0-9-]{0,62}$")
+_POINTER_AGENT_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 
 
 def _verify_wrong_neighbor_pointers(
@@ -4613,6 +4638,19 @@ def _verify_wrong_neighbor_pointers(
             key: (item[key].strip().casefold() if isinstance(item[key], str) else "")
             for key in _WRONG_NEIGHBOR_POINTER_FIELDS
         }
+        # The receipt projection admits only these charsets; a verified
+        # pointer the receipt would then drop whole must fail here with a
+        # code rather than vanish later without one.
+        if (
+            _POINTER_UNIT_ID.fullmatch(fields["unit_id"]) is None
+            or _POINTER_AGENT_ID.fullmatch(fields["selected_agent_id"]) is None
+            or _POINTER_AGENT_ID.fullmatch(fields["neighbor_agent_id"]) is None
+        ):
+            raise _CriticValidationError(
+                "critic_wrong_neighbor_shape_invalid",
+                f"strict critic wrong_neighbors pointer {ordinal} carries an identity outside "
+                "the receipt charset",
+            )
         unit_id = fields["unit_id"]
         if unit_id not in neighbourhood:
             raise _CriticValidationError(
