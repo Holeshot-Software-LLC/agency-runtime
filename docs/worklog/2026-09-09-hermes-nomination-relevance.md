@@ -14,7 +14,7 @@ type: worklog
 commit: null
 short: null
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/836
 related_issues:
   - docs/roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md
 ---
