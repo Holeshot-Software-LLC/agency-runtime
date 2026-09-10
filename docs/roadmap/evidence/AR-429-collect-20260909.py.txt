@@ -1,0 +1,170 @@
+import json,sqlite3,hashlib,sys
+from pathlib import Path
+from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.header import contract as h
+root=Path(__file__).parent
+repo=Path('/tmp/agency-ar429-hermes-nomination-relevance-20260909')
+s=Store();db=sqlite3.connect(f'file:{s.db_path}?mode=ro',uri=True);db.row_factory=sqlite3.Row
+host=sys.argv[1];phase=sys.argv[2] if len(sys.argv)>2 else 'after_repair'
+manifest=json.loads((root/'complete-team-manifest.json').read_text())
+result={'manifest':'unchanged multi_step request; full invocation retained','phase':phase,'installed_source':'47241e5e085a4f1cea2c41cda6770f5bd5f9b4f2','host':host,'cases':[]}
+seen=set()
+for c in manifest['cases']:
+ d=root/phase/host/c['id']
+ if not (d/'invocation.json').exists():continue
+ inv=json.loads((d/'invocation.json').read_text());sid=inv.get('native_session_id');entry={'case':c['id'],'invocation':inv};result['cases'].append(entry)
+ if not sid:entry['status']='blocked: native session unavailable';continue
+ runs=db.execute('SELECT trace_id FROM runs WHERE session_id=? ORDER BY turn_sequence',(sid,)).fetchall()
+ runs=[r[0] for r in runs if r[0] not in seen]
+ if not runs:entry['status']='no correlated Agency run';continue
+ tr=runs[0];seen.add(tr);run=s.get_run(tr);snap=s.get_completion_evidence_snapshot(sid,tr);fin=s.get_authoritative_finalization(sid,tr)
+ entry.update(run=run,failure=s.get_preflight_failure_receipt(sid,tr),finalization=fin)
+ entry['model_receipts']=[dict(r) for r in db.execute('SELECT requested_model,model_group,resolved_provider,resolved_model,source,status,latency_ms FROM model_receipts WHERE session_id=? AND trace_id=? ORDER BY recorded_at',(sid,tr))]
+ entry['finalization_event_count']=db.execute('SELECT COUNT(*) FROM finalization_events WHERE trace_id=?',(tr,)).fetchone()[0]
+ entry['accepted_terminal_event_count']=db.execute("SELECT COUNT(*) FROM finalization_events WHERE trace_id=? AND action='accept' AND terminal_status='completed'",(tr,)).fetchone()[0]
+ entry['model_receipt_timing_note']='Zero latency values are unreported here; do not interpret as instantaneous inference.'
+ raw=db.execute('SELECT metadata FROM runs WHERE trace_id=?',(tr,)).fetchone();meta=json.loads(raw[0] or '{}');entry['classification_metadata']=meta
+ rr=db.execute('SELECT status,selected_ids,latency_ms,decision FROM routing_decisions WHERE trace_id=? ORDER BY created_at DESC LIMIT 1',(tr,)).fetchone();receipt={}
+ if rr:
+  entry['routing_decision']=json.loads(rr['decision'])
+  receipt=json.loads(rr['decision']).get('routing_receipt',{});entry['routing']={'status':rr['status'],'selected_ids':json.loads(rr['selected_ids']),'latency_ms':rr['latency_ms'],'receipt':receipt}
+ answer=(d/'response.txt').read_text() if (d/'response.txt').exists() else ''
+ variants=[answer,answer.rstrip('\n')]
+ if 'Agency/Agencies loaded:' in answer:variants.extend([answer[answer.index('Agency/Agencies loaded:'):],answer[answer.index('Agency/Agencies loaded:'):].rstrip('\n')])
+ accepted=next((x for x in variants if fin and hashlib.sha256(x.encode()).hexdigest()==fin['response_hash']),None)
+ answer=accepted if accepted is not None else answer
+ entry.update(response=answer,response_sha256=hashlib.sha256(answer.encode()).hexdigest(),accepted_hash_matches=accepted is not None and bool(fin) and fin.get('action')=='accept',terminal_hash_matches=accepted is not None)
+ fields=h.parse_header(answer);agents=list(dict.fromkeys(snap['resident_managers']+snap['specialists']))
+ expected={'agencies_loaded':', '.join(agents) or 'none','agencies_delegated':h._delegation_line(snap['delegations']),'skills_loaded':', '.join(dict.fromkeys(snap['skills'])) or 'none','actual_model_selected':h._scoped_model_line(snap['model_receipt'],'',receipt,specialist_loaded=bool(snap['specialists']),launch_models=h._specialist_launch_models(snap['specialist_activations'])),'recruited_via':h._failed_preflight_line(snap) if snap['status']=='preflight_failed' else h._recruited_via_line(receipt)}
+ if snap['status']=='preflight_failed':
+  expected=h.parse_header(h.failed_preflight_header(s,sid,tr) or '')
+ entry['headers']={'observed':fields,'store_projection':expected,'all_five_match':all(fields.get(k)==v for k,v in expected.items())}
+ texts=[];source='unavailable'
+ if host=='codex':
+  files=list(Path('/home/holeshot/.codex/sessions/2026/09/09').glob('*'+sid+'.jsonl'))
+  if files:
+   active=False
+   for line in files[0].read_text().splitlines():
+    r=json.loads(line);p=r.get('payload',{})
+    if r.get('type')=='event_msg' and p.get('type')=='task_started':active=p.get('turn_id')==tr
+    if active and r.get('type')=='response_item' and p.get('role')=='developer':texts.extend(z.get('text','') for z in p.get('content',[]))
+   source='native Codex response_item developer context between this exact turn task_started and the next task_started'
+ elif host=='hermes':
+  native_db=sqlite3.connect('file:/home/holeshot/.hermes/state.db?mode=ro',uri=True)
+  native_db.row_factory=sqlite3.Row
+  rows=[dict(row) for row in native_db.execute('SELECT id,role,content,api_content,tool_call_id,tool_calls,tool_name FROM messages WHERE session_id=? ORDER BY id',(sid,))]
+  active=False;turn_rows=[]
+  for row in rows:
+   if row['role']=='user':active=row['content']==c['request']
+   if active:turn_rows.append(row)
+  entry['native_message_ids']=[row['id'] for row in turn_rows]
+  entry['native_card_tool_results']=[]
+  def decoded_objects(value,depth=0):
+   if depth>6:return
+   if isinstance(value,str):
+    try:value=json.loads(value)
+    except ValueError:return
+   if isinstance(value,dict):
+    yield value
+    for child in value.values():yield from decoded_objects(child,depth+1)
+   elif isinstance(value,list):
+    for child in value:yield from decoded_objects(child,depth+1)
+  native_final_bound=any(row['role']=='assistant' and fin and hashlib.sha256((row['content'] or '').encode()).hexdigest()==fin['response_hash'] for row in turn_rows)
+  entry['native_final_bound']=native_final_bound
+  entry['native_hook_contexts']=[]
+  for row in turn_rows:
+   if row['role']=='user':
+    api=row['api_content'] or ''
+    entry['native_hook_contexts'].append({'native_message_id':row['id'],'api_content_chars':len(api),'api_content_sha256':hashlib.sha256(api.encode()).hexdigest(),'spill_pointer_present':'plugin hook output truncated' in api,'contract_present':'[AGENCY RESPONSE CONTRACT' in api,'delivery_rules_present':'[AGENCY HERMES DELIVERY RULES]' in api,'native_card_tool_requested':'agency_load_specialist' in api})
+    if native_final_bound:texts.append(api)
+   if row['role']=='tool':
+    for result_object in decoded_objects(row['content']):
+     if result_object.get('trace_id')!=tr or result_object.get('session_id')!=sid or not isinstance(result_object.get('prompt'),str):continue
+     calls=[prior for prior in turn_rows if prior['id']<row['id'] and prior['role']=='assistant' and any(item.get('id')==row['tool_call_id'] for item in decoded_objects(prior['tool_calls']))]
+     if not calls:continue
+     texts.append(result_object['prompt'])
+     entry['native_card_tool_results'].append({'native_message_id':row['id'],'native_call_message_id':calls[-1]['id'],'tool_call_id':row['tool_call_id'],'tool_name':row['tool_name'],'session_id':sid,'trace_id':tr,'slug':result_object.get('slug'),'version':result_object.get('version'),'prompt_hash':result_object.get('prompt_hash'),'prompt_chars':len(result_object['prompt']),'prompt_bytes_sha256':hashlib.sha256(result_object['prompt'].encode()).hexdigest(),'native_result_chars':len(row['content'] or ''),'prompt_truncated':result_object.get('prompt_truncated')})
+  source='native Hermes exact-request user api_content bound to same-turn assistant final hash, or native tool_result with matching session/trace and same-session preceding tool_call_id'
+ elif host=='zcode':
+  f=Path('/home/holeshot/.zcode/cli/rollout')/('model-io-'+sid+'.jsonl')
+  native=json.loads((d/'stdout.jsonl').read_text());native_trace=native.get('traceId');entry['native_trace_id']=native_trace
+  def strings(v):
+   if isinstance(v,str):
+    yield v
+    try: parsed=json.loads(v)
+    except ValueError: return
+    if not isinstance(parsed,str):yield from strings(parsed)
+   elif isinstance(v,list):
+    for z in v:yield from strings(z)
+   elif isinstance(v,dict):
+    for k,z in v.items():
+     if k not in ['headers','apiKey','token']:yield from strings(z)
+  if f.exists():
+   for line in f.read_text().splitlines():
+    r=json.loads(line)
+    if r.get('traceId')==native_trace and r.get('sessionId')==sid:
+     candidate_texts=list(strings(r.get('request',{})))
+     if any(tr in t for t in candidate_texts):texts.extend(candidate_texts)
+     entry['native_execution_model']=r.get('model')
+   source='native Zcode model_io matched CLI sessionId/native traceId and contains the exact Agency traceId'
+ elif host=='claude':
+  files=list(Path('/home/holeshot/.claude/projects').glob('*/*'+sid+'.jsonl'))
+  tool_calls={};entry['native_card_tool_results']=[]
+  def result_strings(v):
+   if isinstance(v,str):
+    yield v
+    try:parsed=json.loads(v)
+    except ValueError:return
+    if not isinstance(parsed,str):yield from result_strings(parsed)
+   elif isinstance(v,list):
+    for item in v:yield from result_strings(item)
+   elif isinstance(v,dict):
+    for key,item in v.items():
+     if key not in ['headers','apiKey','token']:yield from result_strings(item)
+  if files:
+   for line in files[0].read_text().splitlines():
+    r=json.loads(line)
+    if r.get('sessionId')!=sid:continue
+    a=r.get('attachment',{})
+    if r.get('type')=='attachment' and a.get('type')=='hook_additional_context':
+     content=a.get('content','')
+     if isinstance(content,list):content='\n'.join(content)
+     if isinstance(content,str) and tr in content:texts.append(content)
+    message=r.get('message',{});blocks=message.get('content',[]) if isinstance(message,dict) else []
+    for block in blocks if isinstance(blocks,list) else []:
+     if not isinstance(block,dict):continue
+     if block.get('type')=='tool_use' and block.get('name','').endswith('__agency_load_specialist'):
+      args=block.get('input',{})
+      if args.get('session_id')==sid and args.get('trace_id')==tr:tool_calls[block.get('id')]=args
+     if block.get('type')=='tool_result' and block.get('tool_use_id') in tool_calls and not block.get('is_error'):
+      args=tool_calls[block['tool_use_id']];values=list(result_strings(block.get('content')))
+      texts.extend(values)
+      entry['native_card_tool_results'].append({'tool_use_id':block['tool_use_id'],'slug':args.get('slug'),'session_id':sid,'trace_id':tr,'native_record_uuid':r.get('uuid'),'content_sha256':hashlib.sha256(json.dumps(block.get('content'),sort_keys=True,ensure_ascii=False).encode()).hexdigest()})
+   source='native Claude hook with exact trace or native tool_result correlated to same-session agency_load_specialist tool_use with exact session/trace arguments'
+ elif host=='openclaw':
+  f=root/'openclaw-events-planner-context.jsonl'
+  if f.exists():
+   for line in f.read_text().splitlines():
+    r=json.loads(line)
+    if r.get('runId')==tr and r.get('sessionKey')==sid and r.get('hook')=='llm_input':
+     def native_strings(v):
+      if isinstance(v,str):yield v
+      elif isinstance(v,list):
+       for z in v:yield from native_strings(z)
+      elif isinstance(v,dict):
+       for z in v.values():yield from native_strings(z)
+     texts.extend(native_strings([r.get('systemPrompt'),r.get('prompt'),r.get('historyMessages')]))
+   source='native llm_input observer matched exact sessionKey and runId'
+ entry['card_proofs']=[]
+ for card in snap['selected_specialists']:
+  p=s.get_versioned_specialist_prompt(card['slug'],card['version'],card['hash']);body=p['prompt_body'] if p else ''
+  entry['card_proofs'].append({'slug':card['slug'],'version':card['version'],'store_hash':card['hash'],'full_prompt_chars':len(body),'prompt_bytes_sha256':hashlib.sha256(body.encode()).hexdigest(),'exact_full_card_present':bool(body) and any(body in t for t in texts),'source':source})
+ inferred=entry.get('routing',{}).get('selected_ids',[])
+ retained=[card['slug'] for card in snap['selected_specialists']]
+ entry['complete_selected_team']={'inferred':inferred,'retained':retained,'missing':sorted(set(inferred)-set(retained)),'unexpected':sorted(set(retained)-set(inferred)),'exact_match':bool(inferred) and set(inferred)==set(retained)}
+ entry['exact_card_injection']=bool(entry['card_proofs']) and all(p['exact_full_card_present'] for p in entry['card_proofs'])
+ entry['completion_snapshot']={k:snap[k] for k in ['request_kind','model_receipt','skills','specialists','selected_specialists','delegations']}
+ entry['status']='accepted native evidence' if run['status']=='completed' and fin and fin['action']=='accept' and entry['accepted_hash_matches'] and entry['headers']['all_five_match'] and entry['exact_card_injection'] and entry['complete_selected_team']['exact_match'] else 'acceptance gates incomplete'
+path=repo/f'docs/roadmap/evidence/AR-429-{host}-native-{phase.replace("_","-")}-20260909.json';path.write_text(json.dumps(result,indent=2,ensure_ascii=False)+'\n')
+print(path)
+for e in result['cases']:print(e['case'],e.get('run',{}).get('status'),e['status'],e.get('headers',{}).get('all_five_match'),e.get('exact_card_injection'),e.get('accepted_hash_matches'))

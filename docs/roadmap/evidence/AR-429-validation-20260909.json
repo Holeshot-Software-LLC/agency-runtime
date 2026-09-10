@@ -1,0 +1,53 @@
+{
+  "source_commit": "f6d58d5a",
+  "artifact_source_commit": "47241e5e085a4f1cea2c41cda6770f5bd5f9b4f2",
+  "bounded_focused": {
+    "passed": 217,
+    "skipped": 1,
+    "failed": 0,
+    "source": "AR-429-bounded-focused-20260909.txt"
+  },
+  "broader_optional_focused": {
+    "passed": 240,
+    "skipped": 1,
+    "failed": 2,
+    "baseline_failures_reproduced": 2,
+    "deferred_issue": "AR-430",
+    "source": "AR-429-focused-20260909.txt"
+  },
+  "production": {
+    "passed": 1151,
+    "skipped": 3,
+    "failed": 0,
+    "seconds": 72.11,
+    "source": "AR-429-production-20260909.txt"
+  },
+  "ui": {
+    "passed": 224,
+    "failed": 0,
+    "source": "AR-429-ui-20260909.txt"
+  },
+  "routing": "passed",
+  "ruff": "788 files passed",
+  "conformance": {
+    "invalid": 0,
+    "killed": 188,
+    "mutations": 188,
+    "survived": 0
+  },
+  "artifact": {
+    "artifact_source_commit": "47241e5e085a4f1cea2c41cda6770f5bd5f9b4f2",
+    "wheel_sha256": "41a6e9e76daa3da165ba03b9e933c2f71ccfe54a64d116fff5cc8bf842ebafe0",
+    "installed_package_files": 616,
+    "mismatches": [],
+    "fresh_isolated_recipe_version": 21
+  },
+  "canonical_build": "passed",
+  "strict_twine": "passed",
+  "distribution_verifier": "passed",
+  "portable_installed_smoke": "passed",
+  "host_refresh": "Hermes only; other host projections unchanged",
+  "native": "pending",
+  "exhaustive_workflow_ran": false,
+  "windows_workflow_ran": false
+}

@@ -58,7 +58,10 @@ new bounded evidentiary reason. Prompt tests prove delivery, not model behavior.
 
 Bounded focused217/1skipped, named production1151/3skipped, UI224 and routing
 passed. Ruff788 and documentation checks passed before deferred AR-430 filing.
-Frozen conformance is running; native proof follows the source checkpoint. No exhaustive or Windows workflow requested.
+Frozen conformance188/188 killed, zero survivors. Canonical47241e5e artifact
+passes build, strict Twine, verification and installed smoke; all616 files match
+wheel41a6e9e76daa3da165ba03b9e933c2f71ccfe54a64d116fff5cc8bf842ebafe0.
+Hermes refreshed only. Native proof follows this clean checkpoint. No exhaustive or Windows workflow requested.
 
 ## Follow-ups
 

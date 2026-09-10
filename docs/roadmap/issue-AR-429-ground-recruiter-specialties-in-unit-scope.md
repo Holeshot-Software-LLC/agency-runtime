@@ -34,7 +34,7 @@ a sole cause and is preserved without reinterpretation or manual acceptance.
 
 ## Current state
 
-Package fast_verification. The initial and bounded repair recruiter prompts now
+Package demo_ready. The initial and bounded repair recruiter prompts now
 require a concrete connection between each required specialty and the unit's
 artifact, outcome or risk. The rule applies to additional teammates and keeps
 actual specialized defects, typed coverage complements and independent review
@@ -42,8 +42,11 @@ in scope. Recipe21 distinguishes the new prompt from earlier durable context.
 Bounded focused217 passed/1skipped, production1151/3skipped, UI224 and routing
 passed. Initial/repair prompt delivery and enforced critic veto are covered.
 Broader optional tests240 passed/1skipped with2 unchanged-main failures recorded
-separately in AR-430. Frozen conformance and native gates are pending.
-No native success or host adoption of this candidate is claimed yet.
+separately in AR-430. Frozen conformance188/188 killed, zero survivors. Canonical artifact47241e5e
+passes build/Twine/verification and installed smoke; all616 installed package
+files match. Hermes refreshed on recipe21; other host projections unchanged.
+Native gates are pending.
+No native success is claimed yet. PR836 carries this bounded package.
 
 ## Approach
 

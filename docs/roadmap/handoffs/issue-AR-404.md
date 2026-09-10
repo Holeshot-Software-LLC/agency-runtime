@@ -20,8 +20,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-404
 branch: codex/ar429-hermes-nomination-relevance-20260909
-evidence_commit: 6d76e6a7d1eb0e02f6c3fd57a812d9ff88db63d7
-minimum_ledger_commit: 6d76e6a7d1eb0e02f6c3fd57a812d9ff88db63d7
+evidence_commit: f6d58d5acd5066707190c7f99a7c314875fe393a
+minimum_ledger_commit: 47241e5e085a4f1cea2c41cda6770f5bd5f9b4f2
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -30,8 +30,10 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-AR-429/#834 implementing unit-scope grounding in both recruiter prompts. Recipe21
-source is under focused/fast validation; native acceptance is pending.
+AR-429/#834 demo_ready: sourcef6d58d5a, artifact47241e5e, recipe21. Focused217/1skip,
+production1151/3skip, UI224 and conformance188/188 pass; installed616 files match.
+Hermes refreshed only. Exact-request observed native acceptance is next. AR-430/#835
+defers2 foundation failures reproduced on unchanged main.
 
 Owner order: OpenClaw, Hermes, Codex, Claude. Zcode changes are deferred but its
 historical failures remain in the five-host scope. AR-428 planning repair merged

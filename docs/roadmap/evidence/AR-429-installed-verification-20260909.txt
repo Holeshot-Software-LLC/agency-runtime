@@ -1,0 +1,7 @@
+{
+  "artifact_source_commit": "47241e5e085a4f1cea2c41cda6770f5bd5f9b4f2",
+  "wheel_sha256": "41a6e9e76daa3da165ba03b9e933c2f71ccfe54a64d116fff5cc8bf842ebafe0",
+  "installed_package_files": 616,
+  "mismatches": [],
+  "fresh_isolated_recipe_version": 21
+}
