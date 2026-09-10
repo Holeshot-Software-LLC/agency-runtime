@@ -12,10 +12,10 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: dd61b2e0abda90d2ef7128ee1427e1d1658b2cac
+short: dd61b2e0
 date: 2026-09-09
-pr: null
+pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/837
 related_issues:
   - docs/roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md

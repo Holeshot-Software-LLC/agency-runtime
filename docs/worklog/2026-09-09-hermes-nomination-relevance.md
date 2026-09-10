@@ -11,8 +11,8 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: f6d58d5acd5066707190c7f99a7c314875fe393a
+short: f6d58d5a
 date: 2026-09-09
 pr: https://github.com/Holeshot-Software-LLC/agency-runtime/pull/836
 related_issues:
