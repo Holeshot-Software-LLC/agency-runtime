@@ -2389,6 +2389,9 @@ This registry connects repository history to the roadmap and to optional detail 
 | `2f1e7d89` | 2026-09-10 | docs: accept AR-431 native keep-going recruitment | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 | `6a9039e7` | 2026-09-10 | docs: pin AR-431 completed native recovery checkpoint | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 | `60a0c95f` | 2026-09-10 | docs: merge PR842 AR-431 native acceptance | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
+| `2a566315` | 2026-09-10 | docs: record exact Hermes assurance evidence boundary | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
+| `49d0511d` | 2026-09-10 | docs: record Hermes assurance demo-ready verification | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
+| `fd69e95e` | 2026-09-10 | docs: record fresh Hermes assurance diagnostic and numeric-plan finding | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md), [AR-432](../roadmap/issue-AR-432-preserve-numeric-facts-in-review-plans.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

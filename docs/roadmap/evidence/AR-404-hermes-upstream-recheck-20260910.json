@@ -1,0 +1,11 @@
+{
+  "headRefOid": "30f421ecce28c563a62a97cc227c800954ff9b3b",
+  "mergedAt": null,
+  "number": 106490,
+  "state": "OPEN",
+  "url": "https://github.com/NousResearch/hermes-agent/pull/106490",
+  "actual_checkout_commit": "7cd91114b462b7af76e558cc4e97f82201d2e884",
+  "actual_checkout_clean": true,
+  "default_adoption_proven": false,
+  "original_truncation_cap_proven": false
+}

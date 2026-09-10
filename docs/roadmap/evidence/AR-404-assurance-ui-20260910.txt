@@ -1,0 +1,1437 @@
+TAP version 13
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 rejected a mismatched response correlation.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 403.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Subtest: inverse workforce refresh order keeps one current revision set (older-first)
+ok 1 - inverse workforce refresh order keeps one current revision set (older-first)
+  ---
+  duration_ms: 11.690263
+  type: 'test'
+  ...
+# Subtest: inverse workforce refresh order keeps one current revision set (newer-first)
+ok 2 - inverse workforce refresh order keeps one current revision set (newer-first)
+  ---
+  duration_ms: 0.899473
+  type: 'test'
+  ...
+# Subtest: inverse full refresh order keeps one current revision set (older-first)
+ok 3 - inverse full refresh order keeps one current revision set (older-first)
+  ---
+  duration_ms: 0.453586
+  type: 'test'
+  ...
+# Subtest: inverse full refresh order keeps one current revision set (newer-first)
+ok 4 - inverse full refresh order keeps one current revision set (newer-first)
+  ---
+  duration_ms: 0.397318
+  type: 'test'
+  ...
+# Subtest: app.js accepts a token fragment that arrives after initial page load
+ok 5 - app.js accepts a token fragment that arrives after initial page load
+  ---
+  duration_ms: 0.34784
+  type: 'test'
+  ...
+# Subtest: app.js preserves non-token fragments for native in-page navigation
+ok 6 - app.js preserves non-token fragments for native in-page navigation
+  ---
+  duration_ms: 0.185455
+  type: 'test'
+  ...
+# Subtest: app.js API requests keep credentials in-memory and fail closed on malformed errors
+ok 7 - app.js API requests keep credentials in-memory and fail closed on malformed errors
+  ---
+  duration_ms: 1.902842
+  type: 'test'
+  ...
+# Subtest: present invalid response IDs cannot fall back to an absent legacy identity
+ok 8 - present invalid response IDs cannot fall back to an absent legacy identity
+  ---
+  duration_ms: 1.909352
+  type: 'test'
+  ...
+# Subtest: HTTP null error bodies retain status and safe browser request identity
+ok 9 - HTTP null error bodies retain status and safe browser request identity
+  ---
+  duration_ms: 0.636351
+  type: 'test'
+  ...
+# Subtest: app.js typed confirmations trap focus and reject incorrect phrases
+ok 10 - app.js typed confirmations trap focus and reject incorrect phrases
+  ---
+  duration_ms: 0.461586
+  type: 'test'
+  ...
+# Subtest: app.js renders provider configuration without reflecting stored API keys
+ok 11 - app.js renders provider configuration without reflecting stored API keys
+  ---
+  duration_ms: 0.599722
+  type: 'test'
+  ...
+# Subtest: provider secret selector follows owner controls and rejects empty or invalid lists
+ok 12 - provider secret selector follows owner controls and rejects empty or invalid lists
+  ---
+  duration_ms: 1.31967
+  type: 'test'
+  ...
+# Subtest: provider builder exposes and stages a LiteLLM router alias
+ok 13 - provider builder exposes and stages a LiteLLM router alias
+  ---
+  duration_ms: 0.29546
+  type: 'test'
+  ...
+# Subtest: provider builder discovers signed-in Codex models and keeps manual fallback
+ok 14 - provider builder discovers signed-in Codex models and keeps manual fallback
+  ---
+  duration_ms: 0.487205
+  type: 'test'
+  ...
+# Subtest: provider builder recommends subscription-safe timeouts without overwriting custom values
+ok 15 - provider builder recommends subscription-safe timeouts without overwriting custom values
+  ---
+  duration_ms: 0.115277
+  type: 'test'
+  ...
+# Subtest: workforce fallback provider exposes configured providers without model discovery
+ok 16 - workforce fallback provider exposes configured providers without model discovery
+  ---
+  duration_ms: 0.144655
+  type: 'test'
+  ...
+# Subtest: lifecycle reason presence renders fixed text and never raw content or hashes
+ok 17 - lifecycle reason presence renders fixed text and never raw content or hashes
+  ---
+  duration_ms: 1.342589
+  type: 'test'
+  ...
+# Subtest: workforce detail renders comparison, promotion, prompt, history, and state-safe actions
+ok 18 - workforce detail renders comparison, promotion, prompt, history, and state-safe actions
+  ---
+  duration_ms: 1.766246
+  type: 'test'
+  ...
+# Subtest: workforce cards use one delegated click listener across repeated live renders
+ok 19 - workforce cards use one delegated click listener across repeated live renders
+  ---
+  duration_ms: 16.636582
+  type: 'test'
+  ...
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 500.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Subtest: hiring summaries load full exact evidence through one delegated control
+ok 20 - hiring summaries load full exact evidence through one delegated control
+  ---
+  duration_ms: 1.117926
+  type: 'test'
+  ...
+# Subtest: exact hiring evidence rejects malformed, summary, and wrong-case responses
+ok 21 - exact hiring evidence rejects malformed, summary, and wrong-case responses
+  ---
+  duration_ms: 0.868703
+  type: 'test'
+  ...
+# Subtest: a stale exact hiring response cannot replace a newer case
+ok 22 - a stale exact hiring response cannot replace a newer case
+  ---
+  duration_ms: 0.376808
+  type: 'test'
+  ...
+# Subtest: failed exact hiring loads preserve the last-good full case
+ok 23 - failed exact hiring loads preserve the last-good full case
+  ---
+  duration_ms: 0.440006
+  type: 'test'
+  ...
+# Subtest: hiring evidence controls retain one delegated listener across repeated renders
+ok 24 - hiring evidence controls retain one delegated listener across repeated renders
+  ---
+  duration_ms: 1.036038
+  type: 'test'
+  ...
+# Subtest: hiring filters apply on the first request, preserve type while paging, and clear directly
+ok 25 - hiring filters apply on the first request, preserve type while paging, and clear directly
+  ---
+  duration_ms: 1.013739
+  type: 'test'
+  ...
+# Subtest: aborted hiring filter intents restore only the still-current committed state
+ok 26 - aborted hiring filter intents restore only the still-current committed state
+  ---
+  duration_ms: 0.580233
+  type: 'test'
+  ...
+# Subtest: destroy aborts an exact hiring load and removes its delegated listener
+ok 27 - destroy aborts an exact hiring load and removes its delegated listener
+  ---
+  duration_ms: 0.428087
+  type: 'test'
+  ...
+# Subtest: provider builder validates, updates, removes, and reports discovery fallbacks
+ok 28 - provider builder validates, updates, removes, and reports discovery fallbacks
+  ---
+  duration_ms: 0.852424
+  type: 'test'
+  ...
+# Subtest: provider configuration defensive branches stay bounded
+ok 29 - provider configuration defensive branches stay bounded
+  ---
+  duration_ms: 1.155094
+  type: 'test'
+  ...
+# Subtest: app.js config controls normalize typed values and preserve dirty edits on refresh
+ok 30 - app.js config controls normalize typed values and preserve dirty edits on refresh
+  ---
+  duration_ms: 0.32293
+  type: 'test'
+  ...
+# Subtest: live workforce change controls stay typed and bounded
+ok 31 - live workforce change controls stay typed and bounded
+  ---
+  duration_ms: 0.29909
+  type: 'test'
+  ...
+# Subtest: config snapshots keep effective privacy and retention summaries current
+ok 32 - config snapshots keep effective privacy and retention summaries current
+  ---
+  duration_ms: 0.184574
+  type: 'test'
+  ...
+# Subtest: app.js host and formatting helpers distinguish unknown, stale, and installed states
+ok 33 - app.js host and formatting helpers distinguish unknown, stale, and installed states
+  ---
+  duration_ms: 0.147555
+  type: 'test'
+  ...
+# Subtest: host views disclose empty inventories and unknown runtime controls truthfully
+ok 34 - host views disclose empty inventories and unknown runtime controls truthfully
+  ---
+  duration_ms: 1.106026
+  type: 'test'
+  ...
+# Subtest: host view copies only the write-free attended uninstall preview
+ok 35 - host view copies only the write-free attended uninstall preview
+  ---
+  duration_ms: 0.293921
+  type: 'test'
+  ...
+# Subtest: host cards render activation proof truthfully without adding canary controls
+ok 36 - host cards render activation proof truthfully without adding canary controls
+  ---
+  duration_ms: 0.32118
+  type: 'test'
+  ...
+# Subtest: Route Lab offers only unambiguous bounded execution hosts and preserves explicit choice
+ok 37 - Route Lab offers only unambiguous bounded execution hosts and preserves explicit choice
+  ---
+  duration_ms: 0.566943
+  type: 'test'
+  ...
+# Subtest: Route Lab UI refuses duplicate and oversized host inventories before POST
+ok 38 - Route Lab UI refuses duplicate and oversized host inventories before POST
+  ---
+  duration_ms: 1.799685
+  type: 'test'
+  ...
+# Subtest: owner settings surface materializes the ZCode adapter field
+ok 39 - owner settings surface materializes the ZCode adapter field
+  ---
+  duration_ms: 0.424407
+  type: 'test'
+  ...
+# Subtest: setup journey reports configuration and native registration without claiming live proof
+ok 40 - setup journey reports configuration and native registration without claiming live proof
+  ---
+  duration_ms: 0.127086
+  type: 'test'
+  ...
+# Subtest: inference topology projects routes, thinking, recall, and native host authority
+ok 41 - inference topology projects routes, thinking, recall, and native host authority
+  ---
+  duration_ms: 0.434396
+  type: 'test'
+  ...
+# Subtest: inference topology withholds oversized untrusted projections
+ok 42 - inference topology withholds oversized untrusted projections
+  ---
+  duration_ms: 0.232683
+  type: 'test'
+  ...
+# Subtest: setup journey copies only inert attended commands and focuses the provider editor
+ok 43 - setup journey copies only inert attended commands and focuses the provider editor
+  ---
+  duration_ms: 0.251552
+  type: 'test'
+  ...
+# Subtest: Route Lab renders authoritative host evidence and bounded eligibility rejections
+ok 44 - Route Lab renders authoritative host evidence and bounded eligibility rejections
+  ---
+  duration_ms: 0.804806
+  type: 'test'
+  ...
+# Subtest: bucketActivity returns a bounded empty series for absent or malformed data
+ok 45 - bucketActivity returns a bounded empty series for absent or malformed data
+  ---
+  duration_ms: 0.188464
+  type: 'test'
+  ...
+# Subtest: charts.js preserves its legacy global fallback without weakening CommonJS exports
+ok 46 - charts.js preserves its legacy global fallback without weakening CommonJS exports
+  ---
+  duration_ms: 0.846264
+  type: 'test'
+  ...
+# Subtest: bucketActivity falls back safely for missing clocks and non-finite numeric timestamps
+ok 47 - bucketActivity falls back safely for missing clocks and non-finite numeric timestamps
+  ---
+  duration_ms: 0.120497
+  type: 'test'
+  ...
+# Subtest: bucketActivity counts only valid in-window routing and delegation timestamps
+ok 48 - bucketActivity counts only valid in-window routing and delegation timestamps
+  ---
+  duration_ms: 0.163675
+  type: 'test'
+  ...
+# Subtest: bucketActivity remains deterministic for dense data and parseable now values
+ok 49 - bucketActivity remains deterministic for dense data and parseable now values
+  ---
+  duration_ms: 0.33836
+  type: 'test'
+  ...
+# Subtest: outcomeCounts classifies known outcomes and treats malformed statuses as unknown
+ok 50 - outcomeCounts classifies known outcomes and treats malformed statuses as unknown
+  ---
+  duration_ms: 0.087568
+  type: 'test'
+  ...
+# Subtest: renderOutcomeChart exposes each non-empty segment to keyboard and assistive technology
+ok 51 - renderOutcomeChart exposes each non-empty segment to keyboard and assistive technology
+  ---
+  duration_ms: 0.34778
+  type: 'test'
+  ...
+# Subtest: renderActivityChart draws bounded series with readable axes and focusable observations
+ok 52 - renderActivityChart draws bounded series with readable axes and focusable observations
+  ---
+  duration_ms: 0.548653
+  type: 'test'
+  ...
+# Subtest: chart renderers support ambient documents, one-point windows, and empty outcomes
+ok 53 - chart renderers support ambient documents, one-point windows, and empty outcomes
+  ---
+  duration_ms: 0.33718
+  type: 'test'
+  ...
+# Subtest: pure chart helpers preserve hostile labels as inert input data
+ok 54 - pure chart helpers preserve hostile labels as inert input data
+  ---
+  duration_ms: 0.152295
+  type: 'test'
+  ...
+# Subtest: retryDelay is deterministic, bounded, integer, and capped
+ok 55 - retryDelay is deterministic, bounded, integer, and capped
+  ---
+  duration_ms: 0.166235
+  type: 'test'
+  ...
+# Subtest: app.js renders hostile runtime labels as inert text across dashboard surfaces
+ok 56 - app.js renders hostile runtime labels as inert text across dashboard surfaces
+  ---
+  duration_ms: 0.839514
+  type: 'test'
+  ...
+# Subtest: delegation-event rows render only observed execution identity
+ok 57 - delegation-event rows render only observed execution identity
+  ---
+  duration_ms: 0.392638
+  type: 'test'
+  ...
+# Subtest: app.js roster and empty evidence renderers expose actionable, scoped controls
+ok 58 - app.js roster and empty evidence renderers expose actionable, scoped controls
+  ---
+  duration_ms: 0.750117
+  type: 'test'
+  ...
+# Subtest: app.js model receipts show requested alias, LiteLLM router, and actual model separately
+ok 59 - app.js model receipts show requested alias, LiteLLM router, and actual model separately
+  ---
+  duration_ms: 0.168935
+  type: 'test'
+  ...
+# Subtest: app.js specialist evidence separates current turns from immutable history
+ok 60 - app.js specialist evidence separates current turns from immutable history
+  ---
+  duration_ms: 0.386008
+  type: 'test'
+  ...
+# Subtest: evidence context is static prose and deduplicates live-render writes
+ok 61 - evidence context is static prose and deduplicates live-render writes
+  ---
+  duration_ms: 0.394318
+  type: 'test'
+  ...
+# Subtest: app.js evidence tabs implement roving keyboard focus and labelled panels
+ok 62 - app.js evidence tabs implement roving keyboard focus and labelled panels
+  ---
+  duration_ms: 0.288732
+  type: 'test'
+  ...
+# Subtest: dashboard scroll regions have keyboard access and names
+ok 63 - dashboard scroll regions have keyboard access and names
+  ---
+  duration_ms: 0.210104
+  type: 'test'
+  ...
+# Subtest: dashboard evidence metrics wrap within their panel instead of clipping cards
+ok 64 - dashboard evidence metrics wrap within their panel instead of clipping cards
+  ---
+  duration_ms: 0.119287
+  type: 'test'
+  ...
+# Subtest: dashboard navigation numbers use the accessible muted color
+ok 65 - dashboard navigation numbers use the accessible muted color
+  ---
+  duration_ms: 0.113176
+  type: 'test'
+  ...
+# Subtest: dashboard named static groups expose a nameable role
+ok 66 - dashboard named static groups expose a nameable role
+  ---
+  duration_ms: 0.093377
+  type: 'test'
+  ...
+# Subtest: app UI honors reduced motion, canonical CSS, and live toggle semantics
+ok 67 - app UI honors reduced motion, canonical CSS, and live toggle semantics
+  ---
+  duration_ms: 0.681289
+  type: 'test'
+  ...
+# Subtest: overview metric evidence renders explicit selection denominators and latency attribution
+ok 68 - overview metric evidence renders explicit selection denominators and latency attribution
+  ---
+  duration_ms: 0.709838
+  type: 'test'
+  ...
+# Subtest: overview metric evidence keeps last-good data on partial failure and stays view scoped
+ok 69 - overview metric evidence keeps last-good data on partial failure and stays view scoped
+  ---
+  duration_ms: 0.933072
+  type: 'test'
+  ...
+# Subtest: overview metric evidence distinguishes first-load unavailability for either source
+ok 70 - overview metric evidence distinguishes first-load unavailability for either source
+  ---
+  duration_ms: 0.621461
+  type: 'test'
+  ...
+# Subtest: overview metric evidence treats empty observations as unknown rather than healthy
+ok 71 - overview metric evidence treats empty observations as unknown rather than healthy
+  ---
+  duration_ms: 0.371578
+  type: 'test'
+  ...
+# Subtest: metric evidence rejects inconsistent projections and malformed apply snapshots
+ok 72 - metric evidence rejects inconsistent projections and malformed apply snapshots
+  ---
+  duration_ms: 0.304911
+  type: 'test'
+  ...
+# Subtest: routing latency rejects the retired causal remainder field
+ok 73 - routing latency rejects the retired causal remainder field
+  ---
+  duration_ms: 0.172465
+  type: 'test'
+  ...
+# Subtest: metric evidence renders bounded selection tails and equality-at-budget latency
+ok 74 - metric evidence renders bounded selection tails and equality-at-budget latency
+  ---
+  duration_ms: 0.547664
+  type: 'test'
+  ...
+# Subtest: Vision Evidence validators reject inconsistent bounded projections
+ok 75 - Vision Evidence validators reject inconsistent bounded projections
+  ---
+  duration_ms: 2.326879
+  type: 'test'
+  ...
+# Subtest: Vision Evidence renders three source contracts with accessible bounded freshness
+ok 76 - Vision Evidence renders three source contracts with accessible bounded freshness
+  ---
+  duration_ms: 1.105017
+  type: 'test'
+  ...
+# Subtest: Vision Evidence renders an unverified v6 delivery without calling it legacy
+ok 77 - Vision Evidence renders an unverified v6 delivery without calling it legacy
+  ---
+  duration_ms: 0.476646
+  type: 'test'
+  ...
+# Subtest: Vision Evidence marks an initial source failure unavailable without stale evidence
+ok 78 - Vision Evidence marks an initial source failure unavailable without stale evidence
+  ---
+  duration_ms: 0.439537
+  type: 'test'
+  ...
+# Subtest: Vision Evidence empty states preserve bounded unknown semantics
+ok 79 - Vision Evidence empty states preserve bounded unknown semantics
+  ---
+  duration_ms: 0.501835
+  type: 'test'
+  ...
+# Subtest: Vision Evidence retains last-good data only for a failed source
+ok 80 - Vision Evidence retains last-good data only for a failed source
+  ---
+  duration_ms: 2.270411
+  type: 'test'
+  ...
+# Subtest: Vision Evidence request generations reject races and navigation restores busy state
+ok 81 - Vision Evidence request generations reject races and navigation restores busy state
+  ---
+  duration_ms: 0.693739
+  type: 'test'
+  ...
+# Subtest: Vision Evidence never joins the live poll
+ok 82 - Vision Evidence never joins the live poll
+  ---
+  duration_ms: 0.484545
+  type: 'test'
+  ...
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 500.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 404.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 404.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 404.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Subtest: Evidence navigation waits for full refresh, loads once, and forced controls refetch
+ok 83 - Evidence navigation waits for full refresh, loads once, and forced controls refetch
+  ---
+  duration_ms: 7.366855
+  type: 'test'
+  ...
+# Subtest: app.js live snapshots are single-flight
+ok 84 - app.js live snapshots are single-flight
+  ---
+  duration_ms: 0.246433
+  type: 'test'
+  ...
+# Subtest: app.js validates live schemas, deduplicates revisions, and retries transient failures
+ok 85 - app.js validates live schemas, deduplicates revisions, and retries transient failures
+  ---
+  duration_ms: 0.852414
+  type: 'test'
+  ...
+# Subtest: app.js rejects stale live generations and treats abort rejection as cancellation
+ok 86 - app.js rejects stale live generations and treats abort rejection as cancellation
+  ---
+  duration_ms: 0.436307
+  type: 'test'
+  ...
+# Subtest: app.js cancels stale full refresh generations before they can render
+ok 87 - app.js cancels stale full refresh generations before they can render
+  ---
+  duration_ms: 0.346049
+  type: 'test'
+  ...
+# Subtest: app.js initial refresh reuses the live fast path and preserves control-plane fields
+ok 88 - app.js initial refresh reuses the live fast path and preserves control-plane fields
+  ---
+  duration_ms: 0.879793
+  type: 'test'
+  ...
+# Subtest: app.js control-plane refresh is single-flight and updates only current responses
+ok 89 - app.js control-plane refresh is single-flight and updates only current responses
+  ---
+  duration_ms: 0.757056
+  type: 'test'
+  ...
+# Subtest: control refresh fails closed on missing or wrong-version contracts
+ok 90 - control refresh fails closed on missing or wrong-version contracts
+  ---
+  duration_ms: 0.592652
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (missing-endpoint)
+ok 91 - control boundary refreshControlPlane preserves state without legacy fanout (missing-endpoint)
+  ---
+  duration_ms: 0.635631
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (missing-schema)
+ok 92 - control boundary refreshControlPlane preserves state without legacy fanout (missing-schema)
+  ---
+  duration_ms: 0.350349
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (wrong-schema)
+ok 93 - control boundary refreshControlPlane preserves state without legacy fanout (wrong-schema)
+  ---
+  duration_ms: 0.32927
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (null-payload)
+ok 94 - control boundary refreshControlPlane preserves state without legacy fanout (null-payload)
+  ---
+  duration_ms: 0.304931
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (malformed-json)
+ok 95 - control boundary refreshControlPlane preserves state without legacy fanout (malformed-json)
+  ---
+  duration_ms: 0.30687
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (network)
+ok 96 - control boundary refreshControlPlane preserves state without legacy fanout (network)
+  ---
+  duration_ms: 0.30718
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (abort)
+ok 97 - control boundary refreshControlPlane preserves state without legacy fanout (abort)
+  ---
+  duration_ms: 0.285921
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (aborted-invalid)
+ok 98 - control boundary refreshControlPlane preserves state without legacy fanout (aborted-invalid)
+  ---
+  duration_ms: 0.301921
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (suspended-invalid)
+ok 99 - control boundary refreshControlPlane preserves state without legacy fanout (suspended-invalid)
+  ---
+  duration_ms: 0.274072
+  type: 'test'
+  ...
+# Subtest: control boundary refreshControlPlane preserves state without legacy fanout (obsolete-invalid)
+ok 100 - control boundary refreshControlPlane preserves state without legacy fanout (obsolete-invalid)
+  ---
+  duration_ms: 3.809404
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (missing-endpoint)
+ok 101 - control boundary refreshAll preserves state without legacy fanout (missing-endpoint)
+  ---
+  duration_ms: 0.573293
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (missing-schema)
+ok 102 - control boundary refreshAll preserves state without legacy fanout (missing-schema)
+  ---
+  duration_ms: 0.459966
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (wrong-schema)
+ok 103 - control boundary refreshAll preserves state without legacy fanout (wrong-schema)
+  ---
+  duration_ms: 0.359519
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (null-payload)
+ok 104 - control boundary refreshAll preserves state without legacy fanout (null-payload)
+  ---
+  duration_ms: 0.361989
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (malformed-json)
+ok 105 - control boundary refreshAll preserves state without legacy fanout (malformed-json)
+  ---
+  duration_ms: 0.395858
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (network)
+ok 106 - control boundary refreshAll preserves state without legacy fanout (network)
+  ---
+  duration_ms: 0.364159
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (abort)
+ok 107 - control boundary refreshAll preserves state without legacy fanout (abort)
+  ---
+  duration_ms: 0.383908
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (aborted-invalid)
+ok 108 - control boundary refreshAll preserves state without legacy fanout (aborted-invalid)
+  ---
+  duration_ms: 0.349189
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (suspended-invalid)
+ok 109 - control boundary refreshAll preserves state without legacy fanout (suspended-invalid)
+  ---
+  duration_ms: 0.307241
+  type: 'test'
+  ...
+# Subtest: control boundary refreshAll preserves state without legacy fanout (obsolete-invalid)
+ok 110 - control boundary refreshAll preserves state without legacy fanout (obsolete-invalid)
+  ---
+  duration_ms: 0.33476
+  type: 'test'
+  ...
+# Subtest: store identity drift stays visible and disables routing, roster, and host controls
+ok 111 - store identity drift stays visible and disables routing, roster, and host controls
+  ---
+  duration_ms: 1.284771
+  type: 'test'
+  ...
+# Subtest: store binding renders bounded fallbacks when paths or controls are unavailable
+ok 112 - store binding renders bounded fallbacks when paths or controls are unavailable
+  ---
+  duration_ms: 0.145235
+  type: 'test'
+  ...
+# Subtest: late control and full-refresh responses cannot cross restart generations
+ok 113 - late control and full-refresh responses cannot cross restart generations
+  ---
+  duration_ms: 0.461516
+  type: 'test'
+  ...
+# Subtest: view-scoped intent wins deferred races with control and full refreshes
+ok 114 - view-scoped intent wins deferred races with control and full refreshes
+  ---
+  duration_ms: 0.919092
+  type: 'test'
+  ...
+# Subtest: a newer view request aborts every globally invalidated scope and clears remediation busy state
+ok 115 - a newer view request aborts every globally invalidated scope and clears remediation busy state
+  ---
+  duration_ms: 0.558193
+  type: 'test'
+  ...
+# Subtest: app.js routing lab posts bounded tasks and reconciles live evidence
+ok 116 - app.js routing lab posts bounded tasks and reconciles live evidence
+  ---
+  duration_ms: 0.938401
+  type: 'test'
+  ...
+# Subtest: app.js binds lifecycle controls for live pause, page cleanup, and late fragments
+ok 117 - app.js binds lifecycle controls for live pause, page cleanup, and late fragments
+  ---
+  duration_ms: 0.351629
+  type: 'test'
+  ...
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 403.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 403.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 403.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 403.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 403.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 418.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed before response.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 401.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Agency dashboard request 00000000-0000-4000-8000-000000000001 failed with HTTP 503.
+# Subtest: app.js executes bound navigation, provider, workforce, hash, and startup callbacks
+ok 118 - app.js executes bound navigation, provider, workforce, hash, and startup callbacks
+  ---
+  duration_ms: 6.850122
+  type: 'test'
+  ...
+# Subtest: Route Lab and worker-detail failures remain visible and lifecycle bounded
+ok 119 - Route Lab and worker-detail failures remain visible and lifecycle bounded
+  ---
+  duration_ms: 1.015628
+  type: 'test'
+  ...
+# Subtest: worker identity validation retains last-good detail and the sent request ID
+ok 120 - worker identity validation retains last-good detail and the sent request ID
+  ---
+  duration_ms: 0.33104
+  type: 'test'
+  ...
+# Subtest: exact roster lookup rejects pagination before a wrong-worker second page
+ok 121 - exact roster lookup rejects pagination before a wrong-worker second page
+  ---
+  duration_ms: 0.251683
+  type: 'test'
+  ...
+# Subtest: app.js keeps inactive views out of the live render path and hides panels semantically
+ok 122 - app.js keeps inactive views out of the live render path and hides panels semantically
+  ---
+  duration_ms: 0.478876
+  type: 'test'
+  ...
+# Subtest: app.js marks malformed configuration JSON invalid and clears the error after correction
+ok 123 - app.js marks malformed configuration JSON invalid and clears the error after correction
+  ---
+  duration_ms: 0.211574
+  type: 'test'
+  ...
+# Subtest: app.js pauses while hidden, resumes visibly, and gates BFCache restoration
+ok 124 - app.js pauses while hidden, resumes visibly, and gates BFCache restoration
+  ---
+  duration_ms: 0.368269
+  type: 'test'
+  ...
+# Subtest: app.js treats 401 and 403 live responses as terminal
+    # Subtest: HTTP 401
+    ok 1 - HTTP 401
+      ---
+      duration_ms: 0.266172
+      type: 'test'
+      ...
+    # Subtest: HTTP 403
+    ok 2 - HTTP 403
+      ---
+      duration_ms: 0.182034
+      type: 'test'
+      ...
+    1..2
+ok 125 - app.js treats 401 and 403 live responses as terminal
+  ---
+  duration_ms: 0.663029
+  type: 'test'
+  ...
+# Subtest: app.js covers fallback helpers and forward modal focus trapping
+ok 126 - app.js covers fallback helpers and forward modal focus trapping
+  ---
+  duration_ms: 0.189334
+  type: 'test'
+  ...
+# Subtest: app.js reconnects from stored credentials and surfaces missing tokens
+ok 127 - app.js reconnects from stored credentials and surfaces missing tokens
+  ---
+  duration_ms: 0.549323
+  type: 'test'
+  ...
+# Subtest: a secondary evidence 401 remains visible after the primary connection succeeds
+    # Subtest: overview
+    ok 1 - overview
+      ---
+      duration_ms: 0.444146
+      type: 'test'
+      ...
+    # Subtest: evidence
+    ok 2 - evidence
+      ---
+      duration_ms: 0.3233
+      type: 'test'
+      ...
+    1..2
+ok 128 - a secondary evidence 401 remains visible after the primary connection succeeds
+  ---
+  duration_ms: 0.927361
+  type: 'test'
+  ...
+# Subtest: app.js omits retired dependency graphs and renders roster control refreshes
+ok 129 - app.js omits retired dependency graphs and renders roster control refreshes
+  ---
+  duration_ms: 0.257652
+  type: 'test'
+  ...
+# Subtest: app.js handles control-plane and full-refresh error classes
+ok 130 - app.js handles control-plane and full-refresh error classes
+  ---
+  duration_ms: 0.686279
+  type: 'test'
+  ...
+# Subtest: app.js reports post-mutation reconciliation failures without hiding success
+ok 131 - app.js reports post-mutation reconciliation failures without hiding success
+  ---
+  duration_ms: 0.66739
+  type: 'test'
+  ...
+# Subtest: app.js supports every evidence-tab keyboard command
+ok 132 - app.js supports every evidence-tab keyboard command
+  ---
+  duration_ms: 0.267952
+  type: 'test'
+  ...
+# Subtest: app.js exercises defensive configuration and optional-DOM branches
+ok 133 - app.js exercises defensive configuration and optional-DOM branches
+  ---
+  duration_ms: 0.515985
+  type: 'test'
+  ...
+# Subtest: app.js renders sparse and changing runtime evidence defensively
+ok 134 - app.js renders sparse and changing runtime evidence defensively
+  ---
+  duration_ms: 0.802306
+  type: 'test'
+  ...
+# Subtest: app.js covers nested confirmations and final parsing fallbacks
+ok 135 - app.js covers nested confirmations and final parsing fallbacks
+  ---
+  duration_ms: 0.30826
+  type: 'test'
+  ...
+# Subtest: app.js covers sparse configuration and chart payload fallbacks
+ok 136 - app.js covers sparse configuration and chart payload fallbacks
+  ---
+  duration_ms: 0.485905
+  type: 'test'
+  ...
+# Subtest: app.js covers sparse receipts and live snapshots
+ok 137 - app.js covers sparse receipts and live snapshots
+  ---
+  duration_ms: 0.577263
+  type: 'test'
+  ...
+# Subtest: app.js covers cancellation, stale control responses, and fallback retry
+ok 138 - app.js covers cancellation, stale control responses, and fallback retry
+  ---
+  duration_ms: 0.427907
+  type: 'test'
+  ...
+# Subtest: app.js rejects sparse collection payloads while paused and preserves last-good state
+ok 139 - app.js rejects sparse collection payloads while paused and preserves last-good state
+  ---
+  duration_ms: 0.472566
+  type: 'test'
+  ...
+# Subtest: app.js rejects null governance without replacing the last-good control state
+ok 140 - app.js rejects null governance without replacing the last-good control state
+  ---
+  duration_ms: 0.217513
+  type: 'test'
+  ...
+# Subtest: ES-module bootstrap and lifecycle teardown are deterministic
+ok 141 - ES-module bootstrap and lifecycle teardown are deterministic
+  ---
+  duration_ms: 0.309601
+  type: 'test'
+  ...
+# Subtest: connection and reconciliation generations reject stale async completions
+ok 142 - connection and reconciliation generations reject stale async completions
+  ---
+  duration_ms: 0.489025
+  type: 'test'
+  ...
+# Subtest: paged roster metadata drives global counts and accessible truncation disclosure
+ok 143 - paged roster metadata drives global counts and accessible truncation disclosure
+  ---
+  duration_ms: 0.764357
+  type: 'test'
+  ...
+# Subtest: collection completion fails closed on missing initial cursor or revision
+ok 144 - collection completion fails closed on missing initial cursor or revision
+  ---
+  duration_ms: 0.767877
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good state when initial roster omits cursor
+ok 145 - refreshAll retains last-good state when initial roster omits cursor
+  ---
+  duration_ms: 0.695569
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good state when initial roster omits revision
+ok 146 - refreshAll retains last-good state when initial roster omits revision
+  ---
+  duration_ms: 0.404197
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good state when initial snapshots omits cursor
+ok 147 - refreshAll retains last-good state when initial snapshots omits cursor
+  ---
+  duration_ms: 0.374548
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good state when initial snapshots omits revision
+ok 148 - refreshAll retains last-good state when initial snapshots omits revision
+  ---
+  duration_ms: 0.489625
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good state when initial reviews omits cursor
+ok 149 - refreshAll retains last-good state when initial reviews omits cursor
+  ---
+  duration_ms: 0.400788
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good state when initial reviews omits revision
+ok 150 - refreshAll retains last-good state when initial reviews omits revision
+  ---
+  duration_ms: 0.417737
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good state when initial roster omits cursor
+ok 151 - refreshControlPlane retains last-good state when initial roster omits cursor
+  ---
+  duration_ms: 0.279422
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good state when initial roster omits revision
+ok 152 - refreshControlPlane retains last-good state when initial roster omits revision
+  ---
+  duration_ms: 0.204973
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good state when initial snapshots omits cursor
+ok 153 - refreshControlPlane retains last-good state when initial snapshots omits cursor
+  ---
+  duration_ms: 0.239313
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good state when initial snapshots omits revision
+ok 154 - refreshControlPlane retains last-good state when initial snapshots omits revision
+  ---
+  duration_ms: 0.257372
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good state when initial reviews omits cursor
+ok 155 - refreshControlPlane retains last-good state when initial reviews omits cursor
+  ---
+  duration_ms: 0.229003
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good state when initial reviews omits revision
+ok 156 - refreshControlPlane retains last-good state when initial reviews omits revision
+  ---
+  duration_ms: 0.223634
+  type: 'test'
+  ...
+# Subtest: workforce and hiring retain last-good data independently
+ok 157 - workforce and hiring retain last-good data independently
+  ---
+  duration_ms: 1.121516
+  type: 'test'
+  ...
+# Subtest: first-load source failures stay unavailable while validated empty peers stay current
+ok 158 - first-load source failures stay unavailable while validated empty peers stay current
+  ---
+  duration_ms: 0.580012
+  type: 'test'
+  ...
+# Subtest: roster paging rejects activation-policy changes under a stable Store generation
+ok 159 - roster paging rejects activation-policy changes under a stable Store generation
+  ---
+  duration_ms: 0.283512
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good control state on config drift in initial
+ok 160 - refreshAll retains last-good control state on config drift in initial
+  ---
+  duration_ms: 0.579912
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good control state on config drift in primary-page
+ok 161 - refreshAll retains last-good control state on config drift in primary-page
+  ---
+  duration_ms: 0.368789
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good control state on config drift in exact
+ok 162 - refreshAll retains last-good control state on config drift in exact
+  ---
+  duration_ms: 0.382829
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good control state on config drift in operational-initial
+ok 163 - refreshAll retains last-good control state on config drift in operational-initial
+  ---
+  duration_ms: 0.368359
+  type: 'test'
+  ...
+# Subtest: refreshAll retains last-good control state on config drift in operational-page
+ok 164 - refreshAll retains last-good control state on config drift in operational-page
+  ---
+  duration_ms: 0.403838
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good control state on config drift in initial
+ok 165 - refreshControlPlane retains last-good control state on config drift in initial
+  ---
+  duration_ms: 0.227433
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good control state on config drift in primary-page
+ok 166 - refreshControlPlane retains last-good control state on config drift in primary-page
+  ---
+  duration_ms: 0.193414
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good control state on config drift in exact
+ok 167 - refreshControlPlane retains last-good control state on config drift in exact
+  ---
+  duration_ms: 0.208694
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good control state on config drift in operational-initial
+ok 168 - refreshControlPlane retains last-good control state on config drift in operational-initial
+  ---
+  duration_ms: 0.263412
+  type: 'test'
+  ...
+# Subtest: refreshControlPlane retains last-good control state on config drift in operational-page
+ok 169 - refreshControlPlane retains last-good control state on config drift in operational-page
+  ---
+  duration_ms: 0.277491
+  type: 'test'
+  ...
+# Subtest: roster search markup permits the normalization performed before lookup
+ok 170 - roster search markup permits the normalization performed before lookup
+  ---
+  duration_ms: 0.172204
+  type: 'test'
+  ...
+# Subtest: roster search rolls back failed lookups and refuses inactive lifecycles
+ok 171 - roster search rolls back failed lookups and refuses inactive lifecycles
+  ---
+  duration_ms: 0.272912
+  type: 'test'
+  ...
+# Subtest: a stale roster search cannot roll back a newer successful search
+ok 172 - a stale roster search cannot roll back a newer successful search
+  ---
+  duration_ms: 0.690169
+  type: 'test'
+  ...
+# Subtest: a failed current roster search restores committed data instead of a pending intent
+ok 173 - a failed current roster search restores committed data instead of a pending intent
+  ---
+  duration_ms: 0.514685
+  type: 'test'
+  ...
+# Subtest: operational roster intent supersedes a pending exact search in either response order
+ok 174 - operational roster intent supersedes a pending exact search in either response order
+  ---
+  duration_ms: 0.683039
+  type: 'test'
+  ...
+# Subtest: a failed operational roster intent restores the committed exact roster
+ok 175 - a failed operational roster intent restores the committed exact roster
+  ---
+  duration_ms: 0.347159
+  type: 'test'
+  ...
+# Subtest: same-revision live snapshots render only when master state changes visibly
+ok 176 - same-revision live snapshots render only when master state changes visibly
+  ---
+  duration_ms: 0.395838
+  type: 'test'
+  ...
+# Subtest: Route Lab reconciles a server-side master bypass without rendering a receipt
+ok 177 - Route Lab reconciles a server-side master bypass without rendering a receipt
+  ---
+  duration_ms: 0.33941
+  type: 'test'
+  ...
+# Subtest: Route Lab performs no request while Agency is globally bypassed
+ok 178 - Route Lab performs no request while Agency is globally bypassed
+  ---
+  duration_ms: 0.172595
+  type: 'test'
+  ...
+# Subtest: master control markup and motion treatment preserve accessibility
+ok 179 - master control markup and motion treatment preserve accessibility
+  ---
+  duration_ms: 0.205333
+  type: 'test'
+  ...
+# Subtest: operational dashboard renders governed roster, quarantine, and inference evidence
+ok 180 - operational dashboard renders governed roster, quarantine, and inference evidence
+  ---
+  duration_ms: 1.758616
+  type: 'test'
+  ...
+# Subtest: remediation queue controls page pending and history independently
+ok 181 - remediation queue controls page pending and history independently
+  ---
+  duration_ms: 1.228642
+  type: 'test'
+  ...
+# Subtest: queued control refresh preserves the remediation extent already loaded by the operator
+ok 182 - queued control refresh preserves the remediation extent already loaded by the operator
+  ---
+  duration_ms: 0.499284
+  type: 'test'
+  ...
+# Subtest: automatic review refresh invalidates stale paged history when a repair reopens
+ok 183 - automatic review refresh invalidates stale paged history when a repair reopens
+  ---
+  duration_ms: 3.757725
+  type: 'test'
+  ...
+# Subtest: operational roster filters are bounded, reversible, and lifecycle safe
+ok 184 - operational roster filters are bounded, reversible, and lifecycle safe
+  ---
+  duration_ms: 0.730837
+  type: 'test'
+  ...
+# Subtest: operational dashboard markup and accessibility policies stay discoverable
+ok 185 - operational dashboard markup and accessibility policies stay discoverable
+  ---
+  duration_ms: 0.64929
+  type: 'test'
+  ...
+# Subtest: dashboard update surface traces authenticated status to a fixed attended command
+ok 186 - dashboard update surface traces authenticated status to a fixed attended command
+  ---
+  duration_ms: 0.699429
+  type: 'test'
+  ...
+# Subtest: dashboard update surface rejects cross-field and target-identity mismatches
+ok 187 - dashboard update surface rejects cross-field and target-identity mismatches
+  ---
+  duration_ms: 0.277102
+  type: 'test'
+  ...
+# Subtest: owner dashboard controls dispatch confirmed revision-bound mutations
+ok 188 - owner dashboard controls dispatch confirmed revision-bound mutations
+  ---
+  duration_ms: 2.958089
+  type: 'test'
+  ...
+# Subtest: hiring approval rejects missing or oversized audit identity before confirmation or POST
+ok 189 - hiring approval rejects missing or oversized audit identity before confirmation or POST
+  ---
+  duration_ms: 0.173005
+  type: 'test'
+  ...
+# Subtest: authenticated dashboard exposes the owner control surface and mutation request client
+ok 190 - authenticated dashboard exposes the owner control surface and mutation request client
+  ---
+  duration_ms: 0.410008
+  type: 'test'
+  ...
+# Subtest: obsolete full refresh network cannot downgrade newer success (surfaceErrors=true)
+ok 191 - obsolete full refresh network cannot downgrade newer success (surfaceErrors=true)
+  ---
+  duration_ms: 0.496285
+  type: 'test'
+  ...
+# Subtest: obsolete full refresh network cannot downgrade newer success (surfaceErrors=false)
+ok 192 - obsolete full refresh network cannot downgrade newer success (surfaceErrors=false)
+  ---
+  duration_ms: 0.362349
+  type: 'test'
+  ...
+# Subtest: obsolete runLivePoll network cannot downgrade newer success
+ok 193 - obsolete runLivePoll network cannot downgrade newer success
+  ---
+  duration_ms: 0.431977
+  type: 'test'
+  ...
+# Subtest: obsolete refreshRuntimeEvidence network cannot downgrade newer success
+ok 194 - obsolete refreshRuntimeEvidence network cannot downgrade newer success
+  ---
+  duration_ms: 0.33059
+  type: 'test'
+  ...
+# Subtest: obsolete reconcileRuntimeEvidence network cannot downgrade newer success
+ok 195 - obsolete reconcileRuntimeEvidence network cannot downgrade newer success
+  ---
+  duration_ms: 0.354419
+  type: 'test'
+  ...
+# Subtest: obsolete reconcileAll network cannot downgrade newer success
+ok 196 - obsolete reconcileAll network cannot downgrade newer success
+  ---
+  duration_ms: 0.32583
+  type: 'test'
+  ...
+# Subtest: obsolete control network respects control generation on its error path
+ok 197 - obsolete control network respects control generation on its error path
+  ---
+  duration_ms: 0.197184
+  type: 'test'
+  ...
+# Subtest: obsolete control network respects commit generation on its error path
+ok 198 - obsolete control network respects commit generation on its error path
+  ---
+  duration_ms: 0.089378
+  type: 'test'
+  ...
+# Subtest: obsolete full network respects full generation on its error path
+ok 199 - obsolete full network respects full generation on its error path
+  ---
+  duration_ms: 0.123267
+  type: 'test'
+  ...
+# Subtest: obsolete full network respects commit generation on its error path
+ok 200 - obsolete full network respects commit generation on its error path
+  ---
+  duration_ms: 0.103997
+  type: 'test'
+  ...
+# Subtest: obsolete full refresh 401 cannot downgrade newer success (surfaceErrors=true)
+ok 201 - obsolete full refresh 401 cannot downgrade newer success (surfaceErrors=true)
+  ---
+  duration_ms: 0.393648
+  type: 'test'
+  ...
+# Subtest: obsolete full refresh 401 cannot downgrade newer success (surfaceErrors=false)
+ok 202 - obsolete full refresh 401 cannot downgrade newer success (surfaceErrors=false)
+  ---
+  duration_ms: 0.354799
+  type: 'test'
+  ...
+# Subtest: obsolete runLivePoll 401 cannot downgrade newer success
+ok 203 - obsolete runLivePoll 401 cannot downgrade newer success
+  ---
+  duration_ms: 0.31971
+  type: 'test'
+  ...
+# Subtest: obsolete refreshRuntimeEvidence 401 cannot downgrade newer success
+ok 204 - obsolete refreshRuntimeEvidence 401 cannot downgrade newer success
+  ---
+  duration_ms: 0.31133
+  type: 'test'
+  ...
+# Subtest: obsolete reconcileRuntimeEvidence 401 cannot downgrade newer success
+ok 205 - obsolete reconcileRuntimeEvidence 401 cannot downgrade newer success
+  ---
+  duration_ms: 0.381328
+  type: 'test'
+  ...
+# Subtest: obsolete reconcileAll 401 cannot downgrade newer success
+ok 206 - obsolete reconcileAll 401 cannot downgrade newer success
+  ---
+  duration_ms: 0.382648
+  type: 'test'
+  ...
+# Subtest: obsolete control 401 respects control generation on its error path
+ok 207 - obsolete control 401 respects control generation on its error path
+  ---
+  duration_ms: 0.143396
+  type: 'test'
+  ...
+# Subtest: obsolete control 401 respects commit generation on its error path
+ok 208 - obsolete control 401 respects commit generation on its error path
+  ---
+  duration_ms: 0.248062
+  type: 'test'
+  ...
+# Subtest: obsolete full 401 respects full generation on its error path
+ok 209 - obsolete full 401 respects full generation on its error path
+  ---
+  duration_ms: 0.080177
+  type: 'test'
+  ...
+# Subtest: obsolete full 401 respects commit generation on its error path
+ok 210 - obsolete full 401 respects commit generation on its error path
+  ---
+  duration_ms: 0.070058
+  type: 'test'
+  ...
+# Subtest: obsolete full refresh 503 cannot downgrade newer success (surfaceErrors=true)
+ok 211 - obsolete full refresh 503 cannot downgrade newer success (surfaceErrors=true)
+  ---
+  duration_ms: 0.30011
+  type: 'test'
+  ...
+# Subtest: obsolete full refresh 503 cannot downgrade newer success (surfaceErrors=false)
+ok 212 - obsolete full refresh 503 cannot downgrade newer success (surfaceErrors=false)
+  ---
+  duration_ms: 0.33512
+  type: 'test'
+  ...
+# Subtest: obsolete runLivePoll 503 cannot downgrade newer success
+ok 213 - obsolete runLivePoll 503 cannot downgrade newer success
+  ---
+  duration_ms: 0.307211
+  type: 'test'
+  ...
+# Subtest: obsolete refreshRuntimeEvidence 503 cannot downgrade newer success
+ok 214 - obsolete refreshRuntimeEvidence 503 cannot downgrade newer success
+  ---
+  duration_ms: 0.441407
+  type: 'test'
+  ...
+# Subtest: obsolete reconcileRuntimeEvidence 503 cannot downgrade newer success
+ok 215 - obsolete reconcileRuntimeEvidence 503 cannot downgrade newer success
+  ---
+  duration_ms: 0.302691
+  type: 'test'
+  ...
+# Subtest: obsolete reconcileAll 503 cannot downgrade newer success
+ok 216 - obsolete reconcileAll 503 cannot downgrade newer success
+  ---
+  duration_ms: 0.32374
+  type: 'test'
+  ...
+# Subtest: obsolete control 503 respects control generation on its error path
+ok 217 - obsolete control 503 respects control generation on its error path
+  ---
+  duration_ms: 0.141406
+  type: 'test'
+  ...
+# Subtest: obsolete control 503 respects commit generation on its error path
+ok 218 - obsolete control 503 respects commit generation on its error path
+  ---
+  duration_ms: 0.088067
+  type: 'test'
+  ...
+# Subtest: obsolete full 503 respects full generation on its error path
+ok 219 - obsolete full 503 respects full generation on its error path
+  ---
+  duration_ms: 0.092287
+  type: 'test'
+  ...
+# Subtest: obsolete full 503 respects commit generation on its error path
+ok 220 - obsolete full 503 respects commit generation on its error path
+  ---
+  duration_ms: 0.080097
+  type: 'test'
+  ...
+1..220
+# tests 224
+# suites 0
+# pass 224
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 234.957833

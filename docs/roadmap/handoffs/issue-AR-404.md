@@ -6,6 +6,8 @@ created: 2026-09-05
 updated: 2026-09-10
 tags: [handoff, hermes, openclaw, live-evaluation]
 related:
+  - docs/roadmap/issue-AR-432-preserve-numeric-facts-in-review-plans.md
+  - docs/worklog/2026-09-10-hermes-assurance-investigation.md
   - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/worklog/2026-09-09-ar429-merged-checkpoint.md
   - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
@@ -21,9 +23,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar431-native-acceptance-20260910
-evidence_commit: 2f1e7d8965ce822ce1d1a9d3601405ceaac9a66c
-minimum_ledger_commit: d967e45a49b897eda79c6e57905aac916630e923
+branch: codex/ar404-hermes-assurance-20260910
+evidence_commit: 49d0511d231cd31773e75fa8d54bca116ce41064
+minimum_ledger_commit: f2a1db81ccf8740672bf5b85891c026cc46f2154
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -31,6 +33,13 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 # AR-404 five-host reliability
 
 ## Checkpoint
+
+September10 scoped live_demo complete in PR844. Fresh MCP works. Original
+ordinary-review veto remains unchanged and indeterminate: no plan/proposal/critic
+packet retained. One fresh ordinary_review completes86.235s: one full native
+card, five Store headers and authoritative hashdd9b5b8c match; critic approves.
+Captured plan contains wrong expected mean2.5; final correctly says1.5.
+AR-432/#845 tracks that separate factual defect. No product change or closure.
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,
@@ -82,8 +91,10 @@ rules unchanged; prior79138e80 projection had651 matching files.
 
 Remaining original Hermes ordinary_review session20260909_113727_2e00b0, trace
 20260909_113727_2e00b0:6c87a1d6-a92a-493a-9f11-7c1b27e84a58:e03a9447 failed with
-staffing_critic_rejected and critic_missing_independent_review_assurance. Inspect
-that exact receipt and its available plan/contracts before assuming a critic bug.
+staffing_critic_rejected and critic_missing_independent_review_assurance. Read-only
+audit found zero routing/intent/selected-card/finalization/model rows, empty
+preflight_result and no raw critic packet. The veto alone cannot establish a
+critic bug. Historical assurance correctness remains indeterminate.
 Source: AR-404-hermes-suite-after-planner-context-20260909.json. The historical
 follow-up and multi-step invalid receipts omitted all five headers and stay failed.
 
@@ -103,12 +114,19 @@ and continue; never reopen a failed receipt or create an empty recovery pair.
 
 ## Next bounded work package
 
-AR-431 native/isolated acceptance is complete. Inspect the exact Hermes ordinary_review failure above against its assurance
-contract. Choose a bounded repair only if that evidence supports one, then run
-focused/fast checks and the affected native gate. Keep AR-418 upstream terminal
-acceptance separate. Preserve all five hosts and the owner's Zcode deferral.
+Preserve owner order: resolve OpenClaw full-card visibility for the already
+successful review/follow-up before another broad sample. AR-432 separately
+needs raw planner-boundary evidence for the numeric contradiction; do not retry
+the old assurance receipt. AR-418 upstream adoption and original cap remain
+unproven. AR-404/418/430/432 stay open; Zcode remains deferred.
 
 ## Verification
+
+Current focused17, production1151/3skip, UI224, routing, Ruff788, docs/tracker
+and private conformance188/188 pass. Prior default-umask fixture failure is
+retained. Two native packets captured; config restored byte-exact, no observer
+errors. Original run/failure hashes still match. No all-host or independent
+delegated-review claim. Native session20260910_081128_6d1bcd, tracedf76d074.
 
 Recipe21 focused217/1skip, named production1151/3skip, UI224, routing, Ruff788,
 frozen conformance188/188 and canonical build/Twine/installed smoke passed.
