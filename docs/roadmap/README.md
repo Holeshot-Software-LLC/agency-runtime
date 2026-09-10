@@ -479,7 +479,7 @@ not stable internal identifiers.
 |---|---|---|
 | [AR-427](issue-AR-427-preserve-complete-inferred-specialist-team.md) | `176adc19`, `b265f715`, `23ae46bf` | [ADR-0245](../decisions/0245-preserve-complete-inferred-teams-during-delivery.md) |
 | [AR-430](issue-AR-430-align-foundation-tests-with-descriptive-domains.md) | `f6d58d5a` | [ADR-0217](../decisions/0217-keep-subject-domains-out-of-execution-authority.md) |
-| [AR-429](issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | `f6d58d5a`, `b20b4417`, `98cb36c1`, `d35d3bfe`, `c7569ee4`, `24368c37` | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
+| [AR-429](issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | `f6d58d5a`, `b20b4417`, `98cb36c1`, `d35d3bfe`, `c7569ee4`, `24368c37`, `82090e11`, `dd61b2e0` | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 | [AR-428](issue-AR-428-avoid-test-results-units-without-test-results.md) | `0ac9d78e`, `826fbf25`, `10df4e6b`, `7ff8e5bc`, `817e6722`, `0969646d`, `5b1632e6`, `0839e158` | [ADR-0200](../decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md) |
 | [AR-426](issue-AR-426-preserve-hermes-hook-specialist-context.md) | `ab924385`, `d73eda4d`, `faf5645a`, `8f81d89f`, `843030cf`, `e67b70ae`, `4186af41`, `a6d8f8a2`, `a5b5caac`, `abdb69aa`, `73ab49d2`, `d8b7b418`, `acdc9231`, `3d29e07b`, `e81f8e00` | [ADR-0244](../decisions/0244-deliver-large-hermes-card-sets-through-native-tools.md) |
 | [AR-421](issue-AR-421-preserve-completed-task-followup-context.md) | `cf4ed77f` | [ADR-0064](../decisions/0064-classify-turn-intent-from-durable-state.md), [ADR-0163](../decisions/0163-resolve-contextual-turns-from-transcript-free-subjects.md) |

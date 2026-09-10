@@ -13,9 +13,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-429
-branch: codex/ar429-hermes-nomination-relevance-20260909
-evidence_commit: d35d3bfef248968015f4aaf6cf47e146b573dd3f
-minimum_ledger_commit: 0d89987db3135b72627daf9e9aed9e85eefef036
+branch: codex/ar429-completed-checkpoint-20260909
+evidence_commit: 82090e1163b56f0cf6022751d2edbea8a08eea85
+minimum_ledger_commit: a3ba3215a34b04e5f3b8aafaf336d3a143901a92
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/834
 ---
@@ -26,7 +26,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/834
 
 PR836 carries sourcef6d58d5a; canonical47241e5e artifact/recipe21 installed and
 Hermes refreshed. Native exact-request gate and all three first-pass isolated criteria satisfied.
-Candidate0d89987d; verifier091e5a21/bcce1a9a/bc0261d5. PR836 merge/ledger next.
+Candidate0d89987d; verifier091e5a21/bcce1a9a/bc0261d5. PR836 merged at82090e11 and tracker834 closed; merge ledger a3ba3215.
 
 ## Completed evidence
 
@@ -45,12 +45,13 @@ default adoption and original truncation cap unproven.
 
 ## Same-task continuity
 
-Use this owned worktree through PR836. Preserve other worktrees and Windows work.
+The AR-429 implementation worktree is historical and merged. Start any new
+implementation in a fresh owned worktree; preserve other worktrees and Windows work.
 At or below50percent commit the smallest safe state and exact ledger, then continue.
 
 ## Next bounded work package
 
-Merge PR836 with exact ledgers and tracker closure. Continue the remaining
+Merge record maintenance, then continue the remaining
 Hermes review/assurance receipt diagnosis under AR-404. AR-418 and AR-430 stay open.
 
 ## Verification

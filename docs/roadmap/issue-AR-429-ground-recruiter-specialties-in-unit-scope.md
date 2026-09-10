@@ -6,6 +6,7 @@ created: 2026-09-09
 updated: 2026-09-09
 tags: [reliability, workforce, hermes]
 related:
+  - docs/worklog/2026-09-09-ar429-merged-checkpoint.md
   - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
   - docs/roadmap/issue-AR-404-evidence-led-backlog-completion.md
   - docs/roadmap/issue-AR-428-avoid-test-results-units-without-test-results.md
@@ -35,7 +36,7 @@ a sole cause and is preserved without reinterpretation or manual acceptance.
 ## Current state
 
 Package done: first isolated pass satisfied all three criteria
-(091e5a21/bcce1a9a/bc0261d5) against candidate0d89987d. PR836 merge is next. Sourcef6d58d5a and
+(091e5a21/bcce1a9a/bc0261d5) against candidate0d89987d. PR836 merged at82090e11; tracker834 is closed. Sourcef6d58d5a and
 artifact47241e5e carry recipe21. Bounded focused217/1skip, production1151/3skip,
 UI224, routing, Ruff788 and frozen conformance188/188 pass. Canonical build,
 strict Twine, artifact verification and installed smoke pass; all616 installed
@@ -53,7 +54,7 @@ five Store headers and authoritative final hash
 Both exact stage packets were captured; observer config restored byte-for-byte.
 The actual recruiter prompt includes the exact new source prefix. This single
 native sample is scoped acceptance evidence, not a reliability-rate claim.
-PR836 carries the package; failed prior receipts and AR-418 remain unchanged.
+PR836 merged the package; failed prior receipts and AR-418 remain unchanged.
 
 ## Approach
 

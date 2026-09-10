@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-09
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/worklog/2026-09-09-ar429-merged-checkpoint.md
   - docs/roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md
   - docs/roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md
   - docs/worklog/2026-09-09-hermes-context-spill.md
@@ -75,7 +76,7 @@ AR-429/#834 sourcef6d58d5a, artifact47241e5e, recipe21 passed one exact-request
 Hermes native turn20260909_213316_5f974b: three cards, five headers and authoritative
 372378a5 final hash in111.388s. Critic approved, observer restored. Isolated
 acceptance satisfied all three criteria on the first pass; AR-430/#835 records
-two unchanged-main fixture failures. PR836 merge and exact ledger follow.
+two unchanged-main fixture failures. PR836 merged at82090e11 and AR-429/#834 is closed; merge ledger a3ba3215.
 
 Owner priority is OpenClaw, Hermes, Codex, Claude; Zcode changes are deferred.
 OpenClaw's fresh review/follow-up diagnostic passed headers and terminal hashes,

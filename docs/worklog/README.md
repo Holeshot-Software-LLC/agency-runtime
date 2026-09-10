@@ -2377,6 +2377,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d35d3bfe` | 2026-09-09 | docs(hermes): preserve AR-429 native staffing and finalization evidence | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
 | `c7569ee4` | 2026-09-09 | docs(acceptance): freeze AR-429 native evidence candidate | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
 | `24368c37` | 2026-09-09 | docs(acceptance): complete AR-429 isolated native verification | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
+| `82090e11` | 2026-09-09 | fix(recruiter): ground required specialties in actual unit scope (#836) | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-hermes-nomination-relevance.md) |
+| `dd61b2e0` | 2026-09-09 | docs(roadmap): checkpoint merged AR-429 and remaining host gates | [AR-429](../roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | [Detail](2026-09-09-ar429-merged-checkpoint.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
