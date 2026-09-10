@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: acceptance-verification
 issue_id: AR-429
-candidate_commit: pending
+candidate_commit: 0d89987db3135b72627daf9e9aed9e85eefef036
 evidence_cutoff: 2026-09-09
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/834
 ---
