@@ -98,6 +98,13 @@ vetoed the merge request with a bare unnamed code and approved the handoff
 request; the merge-case critics judged different recruiter teams, so the pair
 is not evidence of effect on a given team. No exhaustive or Windows workflow ran.
 
+## Merge record
+
+PR849 merged at `438a17dc` with exact subject
+`fix(workforce): merge PR849 wrong-neighbour veto pointer`. The source worktree
+is historical; AR-433 stays open for its acceptance record and isolated
+verdicts, AR-434 stays open for its repair.
+
 ## Follow-ups
 
 - AR-433 acceptance record and isolated verdicts after merge.
