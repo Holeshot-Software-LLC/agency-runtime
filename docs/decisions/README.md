@@ -151,6 +151,7 @@ Status meanings:
 | [ADR-0214](0214-close-a-preflight-attempt-on-its-token-not-its-lease.md) | Close a preflight attempt on its token, not its lease, and bound hiring by the lease | Accepted |
 | [ADR-0215](0215-accept-one-complete-object-with-a-trailing-bracket.md) | Accept one complete object followed only by closing brackets, and name the repair | Accepted |
 | [ADR-0246](0246-make-a-wrong-neighbour-veto-name-its-neighbour.md) | Make a wrong-neighbour veto name its neighbour, and check the name | Accepted |
+| [ADR-0247](0247-accept-any-stable-openclaw-at-or-above-the-audited-minimum.md) | Accept any stable OpenClaw at or above the audited minimum | Accepted |
 
 ## Evidence and observability
 

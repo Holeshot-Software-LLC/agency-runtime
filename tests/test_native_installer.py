@@ -1781,10 +1781,14 @@ def test_openclaw_refuses_install_that_would_silently_restart_live_gateway(
         ("OpenClaw 2026.8.2-1 (0965053)", True),
         ("openclaw v2026.8.3+build.9", True),
         ("OpenClaw 2026.8.999", True),
+        # AR-435 / ADR-0247: newer stable lines are accepted; the host that
+        # motivated the change reports exactly this string.
+        ("OpenClaw 2026.9.3 (1391f7c)", True),
+        ("OpenClaw 2026.9.0", True),
+        ("2027.1.0", True),
         ("OpenClaw 2026.8.1", False),
-        ("OpenClaw 2026.9.0", False),
-        ("2027.1.0", False),
         ("OpenClaw 2026.8.2-rc.1", False),
+        ("OpenClaw 2026.9.0-rc.1", False),
         ("OpenClaw 2026.8.2rc1", False),
         ("OpenClaw 2026.8.2.1", False),
         ("OpenClaw 2026.7.1", False),
@@ -1803,8 +1807,7 @@ def test_openclaw_minimum_hook_version_contract(version: str, supported: bool) -
         "OpenClaw 2026.7.1",
         "OpenClaw 2026.8.2-rc.1",
         "OpenClaw 2026.8.1",
-        "OpenClaw 2026.9.0",
-        "OpenClaw 2027.1.0",
+        "OpenClaw 2026.9.0-rc.1",
         "unknown",
     ],
 )
