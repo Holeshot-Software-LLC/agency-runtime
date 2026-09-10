@@ -12,8 +12,8 @@ related:
 supersedes: []
 superseded_by: null
 type: worklog
-commit: null
-short: null
+commit: 2a5663152f6a6c916596fa92b5c7ba8c902b5745
+short: 2a566315
 date: 2026-09-10
 pr: null
 related_issues:
