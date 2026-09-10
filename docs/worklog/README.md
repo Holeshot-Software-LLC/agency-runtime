@@ -2393,6 +2393,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `49d0511d` | 2026-09-10 | docs: record Hermes assurance demo-ready verification | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
 | `fd69e95e` | 2026-09-10 | docs: record fresh Hermes assurance diagnostic and numeric-plan finding | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md), [AR-432](../roadmap/issue-AR-432-preserve-numeric-facts-in-review-plans.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
 | `c216d31d` | 2026-09-10 | docs: merge PR844 Hermes ordinary-review assurance evidence | [AR-404](../roadmap/issue-AR-404-evidence-led-backlog-completion.md) | [Detail](2026-09-10-hermes-assurance-investigation.md) |
+| `80e7bf9c` | 2026-09-10 | fix(workforce): make a wrong-neighbour veto name its neighbour | [AR-433](../roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md) | [Detail](2026-09-10-ar433-wrong-neighbour-pointer.md) |
 <!-- worklog:end -->
 
 ## Provenance notes
