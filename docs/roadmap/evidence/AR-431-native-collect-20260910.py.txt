@@ -1,0 +1,38 @@
+import json,sqlite3,hashlib,sys
+from pathlib import Path
+from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.header import contract as h
+root=Path(__file__).parent;phase=sys.argv[1];dest=root/'acceptance'/phase;inv=json.loads((dest/'invocation.json').read_text());sid=inv['native_session_id'];s=Store();db=sqlite3.connect(f'file:{s.db_path}?mode=ro',uri=True);db.row_factory=sqlite3.Row
+runs=[dict(r) for r in db.execute('SELECT trace_id,status,metadata,preflight_result FROM runs WHERE session_id=? ORDER BY turn_sequence',(sid,))]
+index=0 if phase=='initial' else 1
+assert len(runs)==index+1,(phase,len(runs))
+r=runs[index];tr=r['trace_id'];snap=s.get_completion_evidence_snapshot(sid,tr);fin=s.get_authoritative_finalization(sid,tr)
+rr=db.execute('SELECT selected_ids,decision FROM routing_decisions WHERE trace_id=? ORDER BY created_at DESC LIMIT 1',(tr,)).fetchone();decision=json.loads(rr['decision']) if rr else {};receipt=decision.get('routing_receipt',{})
+answer=(dest/'response.txt').read_text() if (dest/'response.txt').exists() else '';variants=[answer,answer.rstrip('\n')];accepted=next((x for x in variants if fin and hashlib.sha256(x.encode()).hexdigest()==fin['response_hash']),None);answer=accepted if accepted is not None else answer
+expected={'agencies_loaded':', '.join(dict.fromkeys(snap['resident_managers']+snap['specialists'])) or 'none','agencies_delegated':h._delegation_line(snap['delegations']),'skills_loaded':', '.join(dict.fromkeys(snap['skills'])) or 'none','actual_model_selected':h._scoped_model_line(snap['model_receipt'],'',receipt,specialist_loaded=bool(snap['specialists']),launch_models=h._specialist_launch_models(snap['specialist_activations'])),'recruited_via':h._failed_preflight_line(snap) if snap['status']=='preflight_failed' else h._recruited_via_line(receipt)}
+files=list(Path('/home/holeshot/.codex/sessions').glob('*/*/*/*'+sid+'.jsonl'));assert len(files)==1,files
+native=[];active=False
+for lineno,line in enumerate(files[0].read_text().splitlines(),1):
+ row=json.loads(line);p=row.get('payload',{})
+ if row.get('type')=='event_msg' and p.get('type')=='task_started':active=p.get('turn_id')==tr
+ if active:native.append({'line':lineno,'record':row})
+texts=[];user_texts=[];final_texts=[]
+for item in native:
+ row=item['record'];p=row.get('payload',{})
+ if row.get('type')=='response_item' and p.get('type')=='message':
+  values=[b.get('text','') for b in p.get('content',[]) if isinstance(b,dict)]
+  if p.get('role')=='developer':texts.extend(values)
+  elif p.get('role')=='user':user_texts.extend(values)
+  elif p.get('role')=='assistant' and p.get('phase')=='final_answer':final_texts.extend(values)
+ if row.get('type')=='event_msg' and p.get('type')=='agent_message' and p.get('phase')=='final_answer':final_texts.append(p.get('message',''))
+cards=[]
+for card in snap['selected_specialists']:
+ prompt=s.get_versioned_specialist_prompt(card['slug'],card['version'],card['hash']);body=prompt['prompt_body'] if prompt else ''
+ cards.append({'slug':card['slug'],'version':card['version'],'store_hash':card['hash'],'prompt_chars':len(body),'prompt_sha256':hashlib.sha256(body.encode()).hexdigest(),'exact_full_card_present':bool(body) and any(body in text for text in texts)})
+inferred=json.loads(rr['selected_ids']) if rr else [];retained=[c['slug'] for c in cards];observed=h.parse_header(answer)
+recipe=json.loads(r['preflight_result']) if r['preflight_result'] else {};meta=json.loads(r['metadata'])
+result={'invocation':inv,'run':s.get_run(tr),'classification':meta,'recipe_version':recipe.get('recipe_version',recipe.get('version')),'recipe_keys':sorted(recipe),'routing_decision':decision,'failure':s.get_preflight_failure_receipt(sid,tr),'finalization':fin,'response_sha256':hashlib.sha256(answer.encode()).hexdigest(),'accepted_hash_matches':accepted is not None and bool(fin) and fin['action']=='accept','headers':{'observed':observed,'expected':expected,'all_five_match':all(observed.get(k)==v for k,v in expected.items())},'cards':cards,'complete_team':{'inferred':inferred,'retained':retained,'exact_match':bool(inferred) and set(inferred)==set(retained)},'native_provenance':{'source_file':files[0].name,'source_sha256':hashlib.sha256(files[0].read_bytes()).hexdigest(),'trace_id':tr,'first_line':native[0]['line'] if native else None,'last_line':native[-1]['line'] if native else None,'exact_user_request_present':inv['request'] in user_texts,'final_response_hash_present':bool(fin) and any(hashlib.sha256(x.encode()).hexdigest()==fin['response_hash'] for x in final_texts),'developer_context_count':len(texts)}}
+result['passed']=r['status']=='completed' and result['accepted_hash_matches'] and result['headers']['all_five_match'] and result['complete_team']['exact_match'] and bool(cards) and all(c['exact_full_card_present'] for c in cards) and result['native_provenance']['exact_user_request_present'] and result['native_provenance']['final_response_hash_present']
+(dest/'collected.json').write_text(json.dumps(result,indent=2)+'\n');(dest/'native-turn.json').write_text(json.dumps(native,indent=2)+'\n');(dest/'native-developer-context.txt').write_text('\n\n'.join(texts)+'\n');(dest/'accepted-response.txt').write_text(answer)
+if result['passed']:(dest/'accepted.json').write_text(json.dumps({'trace_id':tr,'response_sha256':result['response_sha256']})+'\n')
+print(json.dumps({k:v for k,v in result.items() if k not in ['routing_decision','recipe_keys']},indent=2))

@@ -12,7 +12,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-431
-branch: codex/ar431-codex-recruitment-20260910
+branch: codex/ar431-native-acceptance-20260910
 evidence_commit: 05653bc9ed4222ddf4c779a105bd01fd79255fa4
 minimum_ledger_commit: f95e0ab617ff565ecf7794ec9522d30cf07aa51d
 hard_checkpoint_percent: 50
@@ -23,8 +23,15 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/839
 
 ## Checkpoint
 
-Source05653bc9/artifactf95e0ab6, classifier7/recipe22; PR840 carries the repair; tracker839 remains open.
-Package waiting_for_operator after successful installation and required checks.
+AR-431 source05653bc9/artifactf95e0ab6 merged through PR840/841. The owner
+confirmed trust; fresh inventory proves8/8 trusted candidate08689b5b8769 hooks.
+The fixed initial native review passed on recipe22/classifier7 in78.818s:
+session01a08b18-19fc-76f3-b5ea-4033b22c3291, trace01a08b18-1a43-7cb2-8b48-3d7f75b55d25,
+four full cards, five Store-matching headers and authoritative finalization.
+This proves the fresh-process initial gate, not the keep-going follow-up.
+Delivery is live_demo; the exact same-session follow-up and isolated acceptance
+remain pending. Prior failed receipts and the old parent's closed transport
+remain separate. No all-host reliability claim.
 
 ## Completed evidence
 
@@ -37,12 +44,9 @@ projection08689b5b8769 files match.
 
 ## Exact blocker
 
-Before refresh:651 published37c1bf7d5eb0 files match,8/8 trusted hooks.
-After refresh:8 modified/0trusted hooks. Operator must review current hashes in a
-fresh Codex TUI /hooks; no native provider call, manual trust or bypass attempted.
-Fresh native follow-up and isolated acceptance are pending. Original recruiter
-shape repair succeeded then critic vetoed; raw model packets unavailable. Prior
-finalizer Transport closed is separate and unconfirmed. Parent remains stale.
+Hook trust is satisfied. Exact same-session keep-going evidence and isolated
+acceptance are pending. The old failed recruitment and Transport closed receipts
+remain unchanged; fresh initial finalization succeeded independently.
 
 ## Same-task continuity
 

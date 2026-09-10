@@ -84,3 +84,14 @@ PR840 merged at786f4611a094ef827fb0d8ed8bcfeccadbf3c93b with exact subject
 worktree is now historical. AR-431/#839 remains open and waiting_for_operator
 for eight modified candidate hooks; native and isolated acceptance remain pending.
 The next package uses a fresh owned worktree after normal native trust review.
+
+## Trusted native initial review
+
+Owner confirmed Codex trust on2026-09-10. Fresh hooks/list proves8/8 trusted
+against the exact candidate hashes. Native session01a08b18-19fc-76f3-b5ea-4033b22c3291
+initial trace01a08b18-1a43-7cb2-8b48-3d7f75b55d25 completed in78.818s with
+recipe22/classifier7, four complete native cards, five matching Store headers
+and authoritative finalization. The collector compares native developer context
+and exact native user/final bytes with immutable Store evidence; no prior
+assignment replay, trust bypass, specialist delegation or execution claim.
+The exact same-session keep-going follow-up remains next, then isolated review.

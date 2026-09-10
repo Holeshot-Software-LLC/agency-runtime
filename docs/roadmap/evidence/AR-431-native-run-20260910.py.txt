@@ -1,0 +1,32 @@
+import json,os,signal,subprocess,time,sys
+from pathlib import Path
+os.umask(0o077)
+root=Path(__file__).parent;repo=Path('/tmp/agency-ar431-native-acceptance-20260910');manifest=json.loads((root/'native-manifest.json').read_text());phase=sys.argv[1]
+assert phase in ['initial','followup']
+trust=json.loads((root/'approved-hook-trust.json').read_text());prior=json.loads((root/'candidate-hook-trust.json').read_text())
+assert trust['status']=='trusted' and trust['trusted_count']==8
+assert {k:v['currentHash'] for k,v in trust['events'].items()}=={k:v['currentHash'] for k,v in prior['events'].items()}
+dest=root/'acceptance'/phase;dest.mkdir(parents=True,exist_ok=False);request=manifest[phase+'_request'];sid=None
+if phase=='initial':cmd=['codex','exec','--sandbox','read-only','--skip-git-repo-check','--json','-C',str(root),'-o',str(dest/'response.txt'),request]
+else:
+ sid=json.loads((root/'acceptance/initial/invocation.json').read_text())['native_session_id']
+ assert sid and (root/'acceptance/initial/accepted.json').is_file()
+ cmd=['codex','exec','resume','--skip-git-repo-check','--json','-o',str(dest/'response.txt'),sid,request]
+subprocess.run(['/tmp/agency-ar404-venv.AUBJlC/bin/python',str(repo/'scripts/context_handoff_status.py'),'--json','--threshold','50'],cwd=repo,check=True)
+start=time.monotonic();timed_out=False
+print(json.dumps({'starting':phase,'native_session_id':sid}),flush=True)
+with (dest/'stdout.jsonl').open('w') as out,(dest/'stderr.txt').open('w') as err:
+ child=subprocess.Popen(cmd,stdout=out,stderr=err,cwd=root,start_new_session=True)
+ try:status=child.wait(timeout=manifest['per_turn_timeout_seconds'])
+ except subprocess.TimeoutExpired:
+  timed_out=True;os.killpg(child.pid,signal.SIGTERM)
+  try:status=child.wait(timeout=15)
+  except subprocess.TimeoutExpired:os.killpg(child.pid,signal.SIGKILL);status=child.wait(timeout=5)
+for line in (dest/'stdout.jsonl').read_text().splitlines():
+ try:row=json.loads(line)
+ except ValueError:continue
+ if row.get('type')=='thread.started':
+  if sid:assert sid==row['thread_id']
+  sid=row['thread_id']
+value={'phase':phase,'host':'codex','command':cmd,'request':request,'native_session_id':sid,'exit_code':status,'timeout':timed_out,'elapsed_seconds':round(time.monotonic()-start,3)}
+(dest/'invocation.json').write_text(json.dumps(value,indent=2)+'\n');print(json.dumps(value),flush=True)

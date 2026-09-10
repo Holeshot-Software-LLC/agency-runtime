@@ -1,0 +1,17 @@
+Agency/Agencies loaded: agency-steward, code-reviewer, python-application-engineer, software-test-engineer, reality-checker
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)
+Recruited via: inference
+
+Why: Review the supplied function within your stated scope.
+How it shaped outcome: Static analysis only; implementation and test proposals deferred.
+
+The supplied function has two correctness defects:
+
+- **Floor division changes the mean.** `//` rounds down: `[1, 2]` produces `1` instead of `1.5`, and `[-1, -2]` produces `-2` instead of `-1.5`. Float inputs also undergo floor division.
+- **Empty input raises `ZeroDivisionError`.** Its sum and length are both zero, so the function attempts `0 // 0`. An empty sequence has no arithmetic mean and needs an explicit policy.
+
+For correction, check the sequence’s length first. For empty input, raise a descriptive `ValueError`; for nonempty numeric sequences, divide the sum by the length using `/`.
+
+I’ve left the corrected function and three proposed regression tests for your follow-up. No files were read or modified, and no tests were executed.
