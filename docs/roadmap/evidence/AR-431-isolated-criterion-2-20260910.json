@@ -1,0 +1,4 @@
+{
+  "verdict": "satisfied",
+  "reason": "turn_intent.py:62-66,855-879 carries the completed subject for the bounded phrase yet forces selection, reroute and execution decisions; preflight.py:250-279,1465-1482 clears context unless source/revision guards match; inference.py:5047-5079 keeps the critic veto; the followup tests cover it."
+}

@@ -1,0 +1,4 @@
+{
+  "verdict": "satisfied",
+  "reason": "AR-431-original-summary reproduces the failure with exact state-revision and fingerprint match (new_intent), keeping critic reason codes and null finalization/transport as separate outcomes; the collect script shows read-only reconstruction and the negative run isolates the old classifier."
+}

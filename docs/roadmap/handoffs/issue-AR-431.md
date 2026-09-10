@@ -24,8 +24,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/839
 ## Checkpoint
 
 PR840/841 merged source05653bc9/artifactf95e0ab6. PR842 carries fresh native
-initial/follow-up evidence after user trust. Classifier7/recipe22; isolated
-acceptance is the remaining gate. Native receipts remain authoritative and immutable.
+initial/follow-up evidence after user trust. Classifier7/recipe22; all three
+isolated criteria satisfied on the first pass atcandidate2a3f7a5b. Native receipts remain immutable.
 
 ## Completed evidence
 
@@ -39,7 +39,7 @@ conformance188/188 and canonical artifact/smoke passed;616 wheel/651 projection 
 
 ## Exact blocker
 
-Isolated acceptance pending. Follow-up reranker reply was invalid and primary
+No remaining acceptance blocker in this scope. Follow-up reranker reply was invalid and primary
 recruiter timed out; configured content fallback and critic succeeded. This is
 not a zero-failure or all-host reliability claim. Original failed receipts and
 old parent MCP Transport closed remain separate from the successful native finals.
@@ -52,9 +52,9 @@ for new implementation. Preserve unrelated scratchpad/Windows work. At or below
 
 ## Next bounded work package
 
-Freeze the complete acceptance packet, run one isolated pass for each criterion,
-then close only if all verdicts satisfy the scope. Merge PR842 and exact ledger.
-Return remaining Hermes/AR-418 gates to AR-404; Zcode changes remain deferred.
+Merge PR842 with tracker closure and exact worklog ledger. Then return to the
+remaining Hermes ordinary-review assurance receipt under AR-404 and keep AR-418
+upstream adoption/original truncation-cap proof separate. Zcode stays deferred.
 
 ## Verification
 
@@ -66,5 +66,5 @@ collector are retained. No exhaustive or Windows workflow or delegation claim.
 
 Inference-only staffing, independent critic, validators and trust stay enforced.
 No manual acceptance, failed receipt reopening or unbounded retries. Default two
-isolated review passes applies; none used yet. Owner order OpenClaw, Hermes,
+isolated review passes applies; first pass satisfied all three criteria. Owner order OpenClaw, Hermes,
 Codex, Claude; Zcode deferred. Claude exact Allow rules remain saved.

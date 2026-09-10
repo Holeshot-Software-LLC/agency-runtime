@@ -1,6 +1,6 @@
 ---
 title: "AR-431: Preserve task context for keep-going recruitment"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-10
 updated: 2026-09-10
@@ -31,6 +31,9 @@ an invalid response, then the independent critic vetoed the repaired team.
 
 ## Current state
 
+Scoped acceptance complete against candidate2a3f7a5b; all three isolated criteria
+satisfied. PR842 records native verification; source was merged in PR840.
+
 Native session01a08b18-19fc-76f3-b5ea-4033b22c3291 passed the frozen initial
 review in78.818s and exact keep-going follow-up in157.872s. Follow-up trace
 01a08b1a-f50d-76d0-bb24-eb624109f97f is classifier7 continuation of completed
@@ -41,7 +44,7 @@ match exact native bytes. The follow-up retained an invalid reranker reply and
 a primary recruiter timeout; configured content fallback succeeded, then the
 independent critic accepted staffing. No caller retry, manual selection, bypass,
 delegation or executed-test claim. PR842 carries these observations; isolated
-acceptance remains pending. No all-host reliability or historical-receipt repair.
+acceptance satisfied all three criteria on the first isolated pass. No all-host reliability or historical-receipt repair.
 
 Required source checks passed: focused163, additional critic5, production1151/3skip,
 UI224, routing and conformance188/188; canonical artifact/smoke and exact installed
@@ -62,6 +65,6 @@ trust and a fresh process; no bypass or manual acceptance is permitted.
 
 ## Acceptance
 
-- [ ] Reproduce exact context loss and distinguish it from critic and transport outcomes.
-- [ ] Preserve bounded subject context for this phrase without weakening inference, critic or state guards.
-- [ ] Demonstrate fresh native recruitment, full selected cards, five Store-matching headers and authoritative finalization after focused and required fast checks.
+- [x] Reproduce exact context loss and distinguish it from critic and transport outcomes.
+- [x] Preserve bounded subject context for this phrase without weakening inference, critic or state guards.
+- [x] Demonstrate fresh native recruitment, full selected cards, five Store-matching headers and authoritative finalization after focused and required fast checks.

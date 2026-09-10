@@ -77,7 +77,7 @@ AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,
 five headers and authoritative hashes40bace52/5c36ceba match. Context correlates
 to the exact completed review with fresh inference and no replay. PR842 carries
-the evidence; isolated acceptance is pending. Reranker-invalid and recruiter-timeout
+the evidence; all three isolated criteria satisfied on the first pass. Reranker-invalid and recruiter-timeout
 degradations remain visible despite successful configured fallback and critic.
 
 AR-429/#834 sourcef6d58d5a, artifact47241e5e, recipe21 passed one exact-request

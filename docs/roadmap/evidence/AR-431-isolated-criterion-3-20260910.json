@@ -1,0 +1,4 @@
+{
+  "verdict": "satisfied",
+  "reason": "Snapshot matches excerpts: native-summary shows fresh inference routing (cache_hit false); followup-cards shows 5 inferred==retained cards, full text in card context; followup-native 626-659 shows authoritative accept and all_five_match headers; validation shows focused 163 passed, 13 checks exit 0."
+}

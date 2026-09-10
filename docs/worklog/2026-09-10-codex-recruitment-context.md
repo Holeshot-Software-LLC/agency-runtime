@@ -117,3 +117,12 @@ spine/conformance remain applicable to unchanged source05653bc9/artifactf95e0ab6
 
 Local packet validation caught four out-of-range excerpt ends; corrected before
 any isolated verifier call. No review pass was consumed by this local check.
+
+## Isolated acceptance
+
+All three first-pass isolated verdicts satisfy candidate2a3f7a5b: AR-431.1-20260910-5a49eba6, AR-431.2-20260910-be7d8c4a, AR-431.3-20260910-36fe1218.
+PR842 records scoped completion after exact native proof. The current parent
+MCP host-status call still returned Transport closed after trust confirmation;
+this is separate from two fresh native authoritative finalizations. No manual
+finalization or old receipt reopening occurred. Final docs and tracker checks
+remain required after the normal PR merge and closure transaction.

@@ -36,7 +36,7 @@ AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,
 five headers and authoritative hashes40bace52/5c36ceba match. Context correlates
 to the exact completed review with fresh inference and no replay. PR842 carries
-the evidence; isolated acceptance is pending. Reranker-invalid and recruiter-timeout
+the evidence; all three isolated criteria satisfied on the first pass. Reranker-invalid and recruiter-timeout
 degradations remain visible despite successful configured fallback and critic.
 
 Owner order remains OpenClaw, Hermes, Codex, Claude; Zcode changes are deferred,
@@ -103,8 +103,7 @@ and continue; never reopen a failed receipt or create an empty recovery pair.
 
 ## Next bounded work package
 
-Complete AR-431 after native hook trust: fresh completed-task/keep-going evidence
-then isolated acceptance. After that, inspect the exact Hermes ordinary_review failure above against its assurance
+AR-431 native/isolated acceptance is complete. Inspect the exact Hermes ordinary_review failure above against its assurance
 contract. Choose a bounded repair only if that evidence supports one, then run
 focused/fast checks and the affected native gate. Keep AR-418 upstream terminal
 acceptance separate. Preserve all five hosts and the owner's Zcode deferral.
