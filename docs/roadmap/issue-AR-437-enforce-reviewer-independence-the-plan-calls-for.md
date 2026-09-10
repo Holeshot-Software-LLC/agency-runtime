@@ -1,0 +1,86 @@
+---
+title: "AR-437: Enforce the reviewer independence the plan calls for"
+status: open
+category: roadmap
+created: 2026-09-10
+updated: 2026-09-10
+tags: [workforce, staffing, verifier, critic, reliability]
+related:
+  - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
+  - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
+  - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
+  - docs/decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md
+  - docs/roadmap/evidence/AR-433-install-liveness-20260910.json
+supersedes: []
+superseded_by: null
+type: issue
+epic: reliability
+issue_id: AR-437
+priority: p1
+tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/859
+depends_on: []
+blocks: []
+---
+
+# AR-437: Enforce the reviewer independence the plan calls for
+
+## Problem
+
+On the same ordinary-review request, observed on the critic route during the
+2026-09-10 liveness runs, the strict critic vetoed claude twice and openclaw
+once with `missing-lifecycle-assurance-the-plan-calls-for` and approved hermes
+and zcode. All five captured packets share one shape: an `analysis` unit in the
+discovery phase plus a `review-report` unit in the review phase whose outcome
+says "independently review" that analysis, and the recruiter staffed
+`code-reviewer` on both units. The reviewer reviews its own work. The plan
+calls for independence; the team does not have it; the critic is right when
+it vetoes and lax when it approves, so the outcome is a coin flip on a plan
+requirement the runtime never enforced.
+
+The verifier's `_assurance` check requires independent assurance only for
+`modify`-authority units, so it never looks at this shape, and its
+`review_independence_class_reused` finding fires only on explicit review
+relations. The recruiter contract states
+`separate_independent_assurance_required` but nothing checks that a
+review-report unit downstream of a unit is staffed by a worker not selected
+on the reviewed unit when the eligible neighbourhood offers one; in every
+vetoed packet `silent-failure-hunter` and `type-design-analyzer` were ranked
+and eligible on the review unit.
+
+## Current state
+
+Filed from the AR-433 install evidence; no repair yet. Evidence: the critic
+packets summarised in
+[AR-433-install-liveness-20260910.json](evidence/AR-433-install-liveness-20260910.json)
+and their raw captures beside the install directory.
+
+## Approach
+
+At the verifier, when a review-authority `review-report` unit depends on a
+unit and shares a selected worker (or independence class) with it, and the
+unit's eligible neighbourhood holds another ranked eligible worker, raise a
+repairable staffing verification failure (for example
+`review_reviewer_reused`) with repair guidance naming the unit, so the
+recruiter repairs the team before the critic sees it. Keep it advisory when no
+eligible alternative exists, keep inference-only selection, and leave the
+critic's ground unchanged: after the fix the critic should see a team that
+either has the independence or provably could not.
+
+## Dependencies
+
+AR-433 supplies the captured packets. ADR-0213 keeps safety at the verifier and
+fit at retrieval; independence of a required review is a composition property
+the verifier already owns for modify-authority units.
+
+## Acceptance
+
+- [ ] A regression reproduces the captured shape (analysis plus dependent
+      independent review, same worker on both, an eligible alternative
+      ranked) as a repairable verifier failure, and a shape with no eligible
+      alternative stays advisory and staffable.
+- [ ] Focused staffing suites, the named fast checks and conformance pass with
+      no change to inference-only selection, the critic contract or the
+      receipts.
+- [ ] One bounded fresh diagnostic on the exact ordinary-review request shows
+      the review unit staffed independently of the analysis unit on at least
+      one host, with tracker and worklog parity.
