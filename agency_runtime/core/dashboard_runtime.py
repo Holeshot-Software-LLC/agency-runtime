@@ -7,6 +7,8 @@ import hmac
 import json
 import math
 import os
+import re
+import secrets
 import stat
 import tempfile
 import time
@@ -241,6 +243,119 @@ def dashboard_runtime_path(
 
     home = Path(home_dir).expanduser() if home_dir is not None else Path.home()
     return home / ".agency-runtime" / "run" / "dashboard.json"
+
+
+# AR-436 / ADR-0248: the opt-in durable access token. It lives beside the
+# rotating descriptor in the same owner-private, identity-checked directory,
+# is written through the same hardened publication path, and survives service
+# restarts on purpose; ``agency dashboard service uninstall`` removes it and a
+# restart then mints a new one.
+ACCESS_TOKEN_SCHEMA_VERSION = 1
+_ACCESS_TOKEN = re.compile(r"^[A-Za-z0-9_-]{32,128}$")
+_MAX_ACCESS_RECORD_BYTES = 1024
+
+
+def dashboard_access_token_path(
+    *,
+    home_dir: str | Path | None = None,
+) -> Path:
+    """Return the owner-private path of the opt-in durable access token."""
+
+    home = Path(home_dir).expanduser() if home_dir is not None else Path.home()
+    return home / ".agency-runtime" / "run" / "dashboard-access.json"
+
+
+def _validate_access_record(value: Any) -> dict[str, Any]:
+    if not isinstance(value, Mapping) or set(value) != {"schema_version", "token"}:
+        raise ValueError("dashboard access token record is invalid")
+    schema = value.get("schema_version")
+    token = value.get("token")
+    if (
+        isinstance(schema, bool)
+        or schema != ACCESS_TOKEN_SCHEMA_VERSION
+        or not isinstance(token, str)
+        or _ACCESS_TOKEN.fullmatch(token) is None
+    ):
+        raise ValueError("dashboard access token record is invalid")
+    return {"schema_version": ACCESS_TOKEN_SCHEMA_VERSION, "token": token}
+
+
+def read_durable_dashboard_token(
+    *,
+    path: str | Path | None = None,
+    home_dir: str | Path | None = None,
+) -> str | None:
+    """Return the persisted durable token, ``None`` when absent, or raise when invalid."""
+
+    target = _absolute_target(
+        Path(path) if path is not None else dashboard_access_token_path(home_dir=home_dir)
+    )
+    try:
+        directory_snapshot = _directory_snapshot(target.parent)
+        raw = read_bounded_regular_file(
+            target,
+            limit=_MAX_ACCESS_RECORD_BYTES,
+            label="dashboard access token record",
+        )
+        _validate_directory_snapshot(directory_snapshot)
+    except FileNotFoundError:
+        return None
+    except FileSizeLimitError as exc:
+        raise ValueError("dashboard access token record exceeds the size limit") from exc
+    except OSError as exc:
+        raise ValueError("dashboard access token record could not be read") from exc
+    try:
+        return _validate_access_record(safe_load_bounded_json(raw))["token"]
+    except (BoundedJSONError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ValueError("dashboard access token record is invalid") from exc
+
+
+def load_or_create_durable_dashboard_token(
+    *,
+    path: str | Path | None = None,
+    home_dir: str | Path | None = None,
+) -> str:
+    """Reuse the persisted durable token, minting and publishing one when absent or invalid."""
+
+    target = _absolute_target(
+        Path(path) if path is not None else dashboard_access_token_path(home_dir=home_dir)
+    )
+    with _runtime_lock(target) as directory_snapshot:
+        try:
+            existing = read_durable_dashboard_token(path=target)
+        except ValueError:
+            existing = None
+        if existing:
+            return existing
+        token = secrets.token_urlsafe(32)
+        _publish_dashboard_runtime(
+            target,
+            {"schema_version": ACCESS_TOKEN_SCHEMA_VERSION, "token": token},
+            expected_directory_snapshot=directory_snapshot,
+        )
+        return token
+
+
+def remove_durable_dashboard_token(
+    *,
+    path: str | Path | None = None,
+    home_dir: str | Path | None = None,
+) -> bool:
+    """Remove the durable token record; the next service start mints a new one."""
+
+    target = _absolute_target(
+        Path(path) if path is not None else dashboard_access_token_path(home_dir=home_dir)
+    )
+    try:
+        with _runtime_lock(target) as directory_snapshot:
+            _validate_directory_snapshot(directory_snapshot)
+            identity = os.lstat(target)
+            if _link_like(identity) or not stat.S_ISREG(identity.st_mode):
+                return False
+            target.unlink()
+            return True
+    except (OSError, RuntimeError, ValueError):
+        return False
 
 
 @contextmanager
@@ -684,8 +799,13 @@ def open_dashboard_service(
     path: str | Path | None = None,
     home_dir: str | Path | None = None,
     open_browser: bool = True,
+    durable: bool = False,
 ) -> dict[str, Any]:
-    """Open the running service without exposing its token in the result."""
+    """Open the running service without exposing its token in the result.
+
+    With ``durable`` (AR-436 / ADR-0248) the fragment also carries
+    ``durable=1`` so the page remembers the token in the browser profile.
+    """
 
     try:
         descriptor = read_dashboard_runtime(path=path, home_dir=home_dir)
@@ -702,7 +822,7 @@ def open_dashboard_service(
     public_url = f"http://127.0.0.1:{descriptor['port']}/"
     if open_browser:
         webbrowser.open(
-            f"{public_url}#token={descriptor['token']}",
+            f"{public_url}#token={descriptor['token']}" + ("&durable=1" if durable else ""),
             new=2,
         )
     return {
@@ -713,18 +833,24 @@ def open_dashboard_service(
         "port": descriptor["port"],
         "started_at": descriptor["started_at"],
         "url": public_url,
+        "durable_access": bool(durable),
     }
 
 
 __all__ = [
+    "ACCESS_TOKEN_SCHEMA_VERSION",
     "DESCRIPTOR_SCHEMA_VERSION",
+    "dashboard_access_token_path",
     "dashboard_api_request",
     "dashboard_broker_request_allowed",
     "dashboard_runtime_instance_fingerprint",
     "dashboard_runtime_path",
     "dashboard_service_reachable",
+    "load_or_create_durable_dashboard_token",
     "open_dashboard_service",
     "read_dashboard_runtime",
+    "read_durable_dashboard_token",
     "remove_dashboard_runtime",
+    "remove_durable_dashboard_token",
     "write_dashboard_runtime",
 ]

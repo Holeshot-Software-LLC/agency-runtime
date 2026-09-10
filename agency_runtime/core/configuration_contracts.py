@@ -16,6 +16,7 @@ RESTART_REQUIRED_PATHS = (
     "server.port",
     "server.max_body_size",
     "dashboard.port",
+    "dashboard.durable_access",
 )
 
 ENV_OVERRIDE_PATHS: tuple[tuple[str, str], ...] = (

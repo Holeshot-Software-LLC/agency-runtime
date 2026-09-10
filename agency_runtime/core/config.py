@@ -388,6 +388,11 @@ class DashboardConfig:
     """Operational settings for the user-scoped dashboard service."""
 
     port: int = 7810
+    # AR-436 / ADR-0248: when true, the installed service reuses one
+    # owner-private access token across restarts and the page remembers it in
+    # the browser, so a plain bookmark works without a terminal. Off by
+    # default: the token then rotates with every process as before.
+    durable_access: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -840,6 +845,9 @@ def _dict_to_config(raw: dict[str, Any], config_path: str = "") -> AgencyConfig:
         ),
         dashboard=DashboardConfig(
             port=int(dashboard_raw.get("port", 7810)),
+            durable_access=(
+                _normalize_enabled(dashboard_raw.get("durable_access", False)) == "true"
+            ),
         ),
         observability=ObservabilityConfig(
             capture_content=(

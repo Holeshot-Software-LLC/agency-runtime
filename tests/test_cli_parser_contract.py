@@ -328,7 +328,7 @@ EXPECTED_BINDINGS = {
     "agency workforce show": "cmd_workforce_show",
     "agency workforce suspend": "cmd_workforce_transition",
 }
-EXPECTED_MANIFEST_SHA256 = "7326a90eb99bf336caaa3412054c92210f5e50e58ed9e4869981ba41e0a86657"
+EXPECTED_MANIFEST_SHA256 = "0cf1b9d11759f245569a0e864a53aa0a431b10bfb40593f34fd3405d6507c980"
 
 
 def _handler(name: str):
@@ -599,6 +599,7 @@ def test_child_evidence_parser_exposes_no_receipt_writing_mode() -> None:
                 "dashboard_command": "service",
                 "dashboard_service_action": "install",
                 "dry_run": False,
+                "durable_access": False,
                 "json": False,
                 "func": "cmd_dashboard_service",
             },

@@ -630,6 +630,23 @@ and expires when the process stops. An old tab cannot authenticate to a new
 process. The server rejects non-loopback `Host` values and cross-origin
 requests. Do not bind or proxy the dashboard to another interface.
 
+If you want the installed service reachable from a plain bookmark without a
+terminal, opt in to a durable token (AR-436 / ADR-0248):
+
+```bash
+agency dashboard service install --durable-access   # or: agency config set dashboard.durable_access true
+agency dashboard service restart
+agency dashboard service open                        # once per browser profile
+```
+
+The service then reuses one owner-private token from
+`~/.agency-runtime/run/dashboard-access.json` across restarts and the page
+remembers it in that browser. "This dashboard URL has no active access token"
+on a bookmark means the browser has nothing remembered yet (run `open` once),
+the token was rotated (`agency dashboard service uninstall` removes it and the
+next start mints a new one), or a 401 cleared it. Turn the setting off with
+`agency config set dashboard.durable_access false` and restart.
+
 If the port is busy, omit `--port` to select a free one or choose another
 loopback port. The service uses `dashboard.port` (7810 by default); change it
 through Settings or `agency config set dashboard.port <port>`, then restart the
