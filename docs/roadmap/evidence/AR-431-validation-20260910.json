@@ -1,0 +1,92 @@
+{
+  "source_commit": "05653bc9ed4222ddf4c779a105bd01fd79255fa4",
+  "artifact_commit": "f95e0ab617ff565ecf7794ec9522d30cf07aa51d",
+  "focused": "163 passed; old-classifier negative control3 failed/27 passed",
+  "required_checks": [
+    {
+      "command": "python scripts/docs_metadata.py --check",
+      "exit_code": 0,
+      "elapsed_seconds": 0.052,
+      "log": "docs/roadmap/evidence/AR-431-check-0-20260910.txt"
+    },
+    {
+      "command": "python scripts/update_policy_availability.py --check",
+      "exit_code": 0,
+      "elapsed_seconds": 0.389,
+      "log": "docs/roadmap/evidence/AR-431-check-1-20260910.txt"
+    },
+    {
+      "command": "python scripts/update_worklog.py --check",
+      "exit_code": 0,
+      "elapsed_seconds": 0.093,
+      "log": "docs/roadmap/evidence/AR-431-check-2-20260910.txt"
+    },
+    {
+      "command": "python scripts/verify_docs.py",
+      "exit_code": 0,
+      "elapsed_seconds": 11.346,
+      "log": "docs/roadmap/evidence/AR-431-check-3-20260910.txt"
+    },
+    {
+      "command": "ruff check agency_runtime tests scripts",
+      "exit_code": 0,
+      "elapsed_seconds": 0.047,
+      "log": "docs/roadmap/evidence/AR-431-check-4-20260910.txt"
+    },
+    {
+      "command": "ruff format --check agency_runtime tests scripts",
+      "exit_code": 0,
+      "elapsed_seconds": 0.047,
+      "log": "docs/roadmap/evidence/AR-431-check-5-20260910.txt"
+    },
+    {
+      "command": "python -m pytest   tests/test_senior_audit_hardening.py   tests/test_configuration_namespace_security.py   tests/test_executable_namespace_security.py   tests/test_storage_file_trust.py   tests/test_dashboard_auth_boundary_regression.py   tests/test_dashboard_transaction_refactors.py   tests/test_routing_correctness.py   tests/test_workforce_hiring_contract.py   tests/test_workforce_selection_safety.py   tests/test_workforce_dynamic_hiring.py   tests/test_upstream_selection_eval.py   tests/test_decision_conformance.py   tests/test_delegation_p1_correctness.py   tests/test_store_turn_atomicity.py   tests/test_roster_snapshot_generation.py   tests/test_mcp_protocol_hardening.py   tests/test_cli_parser_contract.py   tests/test_cli_upgrade.py   tests/test_update_service.py   tests/test_native_installer.py   tests/test_host_uninstall.py   tests/test_cli_uninstall.py   tests/test_host_boundary_hardening.py   tests/test_cli_owner_authority.py   tests/test_security_turn_boundaries.py   tests/test_canary_coverage_complete.py   tests/test_complexity_refactors.py   tests/test_coverage_final_host_cli.py   tests/test_resident_manager_lifecycle.py   -q -W error",
+      "exit_code": 0,
+      "elapsed_seconds": 71.486,
+      "log": "docs/roadmap/evidence/AR-431-check-6-20260910.txt"
+    },
+    {
+      "command": "node --test tests/dashboard_ui.test.mjs",
+      "exit_code": 0,
+      "elapsed_seconds": 0.246,
+      "log": "docs/roadmap/evidence/AR-431-check-7-20260910.txt"
+    },
+    {
+      "command": "agency eval routing --json --no-details",
+      "exit_code": 0,
+      "elapsed_seconds": 6.388,
+      "log": "docs/roadmap/evidence/AR-431-check-8-20260910.txt"
+    },
+    {
+      "command": "agency eval decision-conformance --repository . --json",
+      "exit_code": 0,
+      "elapsed_seconds": 340.187,
+      "log": "docs/roadmap/evidence/AR-431-check-9-20260910.txt"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "elapsed_seconds": 0.004,
+      "log": "docs/roadmap/evidence/AR-431-check-10-20260910.txt"
+    },
+    {
+      "command": "python scripts/verify_docs.py --require-tracker",
+      "exit_code": 0,
+      "elapsed_seconds": 11.529,
+      "log": "docs/roadmap/evidence/AR-431-check-11-20260910.txt"
+    },
+    {
+      "command": "python scripts/verify_tracker.py",
+      "exit_code": 0,
+      "elapsed_seconds": 2.438,
+      "log": "docs/roadmap/evidence/AR-431-check-12-20260910.txt"
+    }
+  ],
+  "conformance_counts": {
+    "invalid": 0,
+    "killed": 188,
+    "mutations": 188,
+    "survived": 0
+  },
+  "package_scope": "No exhaustive or Windows workflow; no live native acceptance yet."
+}

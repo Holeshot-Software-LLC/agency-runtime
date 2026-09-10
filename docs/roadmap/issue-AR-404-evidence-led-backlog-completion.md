@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-09
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/worklog/2026-09-09-ar429-merged-checkpoint.md
   - docs/roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md
   - docs/roadmap/issue-AR-426-preserve-hermes-hook-specialist-context.md
@@ -71,6 +72,13 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+AR-431/#839 addresses the new Codex keep-going recruitment context loss with
+source05653bc9/artifactf95e0ab6 in PR840. Focused163, production1151/3skip, UI224
+and conformance188/188 pass. Candidate08689b5b8769 has616 matching package files
+and651 matching projection files; its8 changed hooks need native operator trust.
+Fresh native acceptance is pending. The prior critic veto and separate closed
+MCP finalizer transport are retained without manual repair of failed receipts.
 
 AR-429/#834 sourcef6d58d5a, artifact47241e5e, recipe21 passed one exact-request
 Hermes native turn20260909_213316_5f974b: three cards, five headers and authoritative

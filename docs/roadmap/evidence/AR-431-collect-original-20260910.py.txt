@@ -1,0 +1,18 @@
+import sqlite3,json,types,dataclasses
+from pathlib import Path
+from agency_runtime.core.store.sqlite import Store
+from agency_runtime.core.turn_intent import TurnState,classify_turn_intent
+TRACE='01a088e1-a95b-7190-b0fb-760284a0c92c';SESSION='01a086f5-780c-7620-9d07-f006ca43cfab'
+def connect():
+ c=sqlite3.connect('file:/home/holeshot/.agency-runtime/agency.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
+ c.execute('CREATE TEMP VIEW runs AS SELECT * FROM main.runs WHERE turn_sequence < 1700')
+ return c
+state=Store.get_turn_state_context(types.SimpleNamespace(_connect=connect),SESSION,before_trace_id=TRACE,host='codex')
+s=TurnState.from_mapping(state)
+c=sqlite3.connect('file:/home/holeshot/.agency-runtime/agency.db?mode=ro',uri=True);c.row_factory=sqlite3.Row
+run=dict(c.execute('SELECT trace_id,session_id,host,started_at,ended_at,status,turn_sequence,user_message,metadata,terminal_finalization_id FROM runs WHERE trace_id=?',(TRACE,)).fetchone());run['metadata']=json.loads(run['metadata'])
+fail=[dict(r) for r in c.execute('SELECT * FROM preflight_failure_receipts WHERE trace_id=?',(TRACE,))]
+assert s.revision=='5a66f8e5f238fdabb46e16a7f58378733d0fbb8a2ac224aba48668f42665ef82'
+result={'scope':'Read-only current retained evidence, temporally restricted with a TEMP view; reconstructed state revision exactly matches recorded failure. No receipt writes. Original model packets unavailable; critic veto not assumed erroneous. Transport closed is separate, authoritative finalization absent.','run':run,'failure_receipts':fail,'reconstructed_state':state,'state_revision':s.revision,'installed_classifier_keep_going':classify_turn_intent('keep going',s).as_dict(),'installed_classifier_go_ahead':classify_turn_intent('go ahead',s).as_dict()}
+Path('/tmp/agency-ar431-codex-recruitment-20260910/docs/roadmap/evidence/AR-431-original-context-loss-20260910.json').write_text(json.dumps(result,indent=2)+'\n')
+print('Exact read-only reconstruction recorded')

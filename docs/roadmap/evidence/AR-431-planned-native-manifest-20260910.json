@@ -1,0 +1,6 @@
+{
+  "scope": "One fresh native Codex session, then exact same-session follow-up after authoritative completion; only after eight current hooks are trusted. No manual selection, trust bypass or failed receipt retry.",
+  "initial_request": "Review this supplied Python function: def average(values): return sum(values) // len(values). Explain its correctness defects and outline a correction for nonempty numeric sequences and empty input. Leave the corrected function and three proposed regression tests for my follow-up. Work only from the supplied code; do not read or modify files and do not claim tests were executed.",
+  "followup_request": "keep going",
+  "per_turn_timeout_seconds": 360
+}

@@ -1,0 +1,18 @@
+{
+  "projection": "runtime-sha256-37c1bf7d5eb0625b32c0966845c5f4038b768febf535f7d9256b6339d6394ede",
+  "manifest_sha256": "37c1bf7d5eb0625b32c0966845c5f4038b768febf535f7d9256b6339d6394ede",
+  "file_count": 651,
+  "mismatches": [],
+  "marketplace_file_hashes": {
+    ".agency-runtime-launcher.json": "e1ea4196c4a257c9c853645b9623254a5cb497522faf43051cea5b2e77a01339",
+    ".agents/plugins/marketplace.json": "79383678fdae619382a23386af0a14f5e93654ffd7b7e42a7d2c4684bc18856a",
+    "plugins/agency-preflight/.codex-plugin/plugin.json": "c095fa4f13a27d23b4af7cfa4a2bd54700197d6c5862aa372184277321642fa9",
+    "plugins/agency-preflight/.mcp.json": "5fccd25ccbdb8f2ac929ea0b1324cc419481718c11de69669a53cae9de22b029",
+    "plugins/agency-preflight/hooks/hooks.json": "9296b68b03283fd46e360fb49701b53adc27824719a49528b6de9e90611a92f5",
+    "plugins/agency-preflight/skills/agency/SKILL.md": "af6a00f9aa13a4c48771160591bae9b8f65d4bc324f44cf736c414aaf84b67fb"
+  },
+  "matching_native_hook_caches": [
+    "/home/holeshot/.codex/plugins/cache/agency-runtime/agency-preflight/0.1.0+codex.0bb3a6f3d08e/hooks/hooks.json"
+  ],
+  "scope": "Read-only installed file comparison; fresh app-server hooks/list separately proves eight enabled trusted hooks. This does not refresh the long-lived parent or prove candidate adoption."
+}

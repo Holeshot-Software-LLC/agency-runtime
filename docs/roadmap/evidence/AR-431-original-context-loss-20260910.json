@@ -1,0 +1,320 @@
+{
+  "scope": "Read-only current retained evidence, temporally restricted with a TEMP view; reconstructed state revision exactly matches recorded failure. No receipt writes. Original model packets unavailable; critic veto not assumed erroneous. Transport closed is separate, authoritative finalization absent.",
+  "run": {
+    "trace_id": "01a088e1-a95b-7190-b0fb-760284a0c92c",
+    "session_id": "01a086f5-780c-7620-9d07-f006ca43cfab",
+    "host": "codex",
+    "started_at": "2026-09-10T01:14:45.936580+00:00",
+    "ended_at": "2026-09-10T01:16:54.907000+00:00",
+    "status": "preflight_failed",
+    "turn_sequence": 1700,
+    "user_message": "",
+    "metadata": {
+      "classifier_version": 6,
+      "execution_decision_required": true,
+      "request_fingerprint": "6e7ecf10083ec035057bdce834a72bbe2bffae8df9383ed10eb06c78dd70944b",
+      "request_kind": "nontrivial",
+      "reroute_required": true,
+      "selection_required": true,
+      "source": "preflight_attempt",
+      "state_revision": "5a66f8e5f238fdabb46e16a7f58378733d0fbb8a2ac224aba48668f42665ef82",
+      "turn_kind": "new_intent",
+      "failed_resident_manager_binding": {
+        "version": 2,
+        "binding_id": "rmb-e423882a55c55d00c706152a6259bb90",
+        "host": "codex",
+        "host_mode": "request_scoped",
+        "delivery_mode": "request",
+        "control_epoch": {
+          "master_generation": 6,
+          "master_materialized": true,
+          "host_generation": 2,
+          "host_materialized": true
+        },
+        "kernel": {
+          "version": 5,
+          "content_hash": "62c94d87e5beb88cecb711fb5a95c7c4eb56feaa17419cf021e3cb68220f5ed6",
+          "slugs": [
+            "agency-steward"
+          ]
+        }
+      }
+    },
+    "terminal_finalization_id": null
+  },
+  "failure_receipts": [
+    {
+      "id": "995f8898-bbb0-4c6d-bd09-d0546eb3c662",
+      "session_id": "01a086f5-780c-7620-9d07-f006ca43cfab",
+      "trace_id": "01a088e1-a95b-7190-b0fb-760284a0c92c",
+      "host": "codex",
+      "stage": "routing",
+      "reason_code": "workforce_inference_failed",
+      "invariant_code": "",
+      "exception_category": "runtime_error",
+      "provider_attempts": [
+        {
+          "actual_model": "task-agency-planner-v2",
+          "latency_ms": 4055,
+          "metadata_version": 1,
+          "model_group": "task-agency-planner-v2",
+          "model_receipt_source": "response.body.model",
+          "ordinal": 1,
+          "provider_call_attempted": true,
+          "provider_chain_index": 0,
+          "provider_fallback_count": 0,
+          "provider_name": "agency-planner",
+          "provider_type": "litellm",
+          "reason_code": "provider_response_contract_invalid",
+          "requested_model": "task-agency-planner-v2",
+          "stage": "subject",
+          "status": "rejected",
+          "timeout_ms": 60000
+        },
+        {
+          "actual_model": "task-agency-planner-v2",
+          "latency_ms": 10947,
+          "metadata_version": 1,
+          "model_group": "task-agency-planner-v2",
+          "model_receipt_source": "response.body.model",
+          "ordinal": 2,
+          "provider_call_attempted": true,
+          "provider_chain_index": 0,
+          "provider_fallback_count": 0,
+          "provider_name": "agency-planner",
+          "provider_type": "litellm",
+          "reason_code": "structured_response_applied",
+          "requested_model": "task-agency-planner-v2",
+          "stage": "planner",
+          "status": "applied",
+          "timeout_ms": 60000
+        },
+        {
+          "actual_model": "qwen3-embedding:latest",
+          "catalog_cache_hit": false,
+          "catalog_identity": "sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107",
+          "input_count": 295,
+          "latency_ms": 39634,
+          "model_group": "",
+          "model_receipt_source": "response.body.model",
+          "provider_call_count": 1,
+          "provider_name": "local-workforce-embedding",
+          "provider_type": "ollama",
+          "reason_code": "dense_recall_applied",
+          "requested_model": "qwen3-embedding:latest",
+          "stage": "recall_embedding",
+          "status": "applied"
+        },
+        {
+          "actual_model": "qwen3-14b-abliterated:latest",
+          "input_count": 0,
+          "latency_ms": 18024,
+          "metadata_version": 1,
+          "model_group": "",
+          "model_receipt_source": "response.body.model",
+          "ordinal": 4,
+          "provider_call_attempted": true,
+          "provider_call_count": 1,
+          "provider_chain_index": 0,
+          "provider_fallback_count": 0,
+          "provider_name": "local-workforce-reranker",
+          "provider_type": "ollama",
+          "reason_code": "structured_response_applied",
+          "requested_model": "qwen3-14b-abliterated:latest",
+          "stage": "recall_reranker",
+          "status": "applied",
+          "timeout_ms": 120000
+        },
+        {
+          "actual_model": "task-agency-recruiter-v2",
+          "latency_ms": 23391,
+          "metadata_version": 1,
+          "model_group": "task-agency-recruiter-v2",
+          "model_receipt_source": "response.body.model",
+          "ordinal": 5,
+          "provider_call_attempted": true,
+          "provider_chain_index": 0,
+          "provider_fallback_count": 0,
+          "provider_name": "agency-recruiter",
+          "provider_type": "litellm",
+          "reason_code": "provider_response_contract_invalid",
+          "requested_model": "task-agency-recruiter-v2",
+          "stage": "recruiter",
+          "status": "rejected",
+          "timeout_ms": 60000,
+          "validation_failures": [
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-discover-current-state"
+            },
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-plan-next-steps"
+            }
+          ],
+          "validation_reason_codes": [
+            "recruiter_response_shape_invalid"
+          ]
+        },
+        {
+          "actual_model": "task-agency-recruiter-v2",
+          "latency_ms": 17230,
+          "metadata_version": 1,
+          "model_group": "task-agency-recruiter-v2",
+          "model_receipt_source": "response.body.model",
+          "ordinal": 6,
+          "provider_call_attempted": true,
+          "provider_chain_index": 0,
+          "provider_fallback_count": 0,
+          "provider_name": "agency-recruiter",
+          "provider_type": "litellm",
+          "reason_code": "structured_response_applied",
+          "requested_model": "task-agency-recruiter-v2",
+          "stage": "recruiter",
+          "status": "applied",
+          "timeout_ms": 60000
+        },
+        {
+          "actual_model": "task-agency-critic-v2",
+          "latency_ms": 14509,
+          "metadata_version": 1,
+          "model_group": "task-agency-critic-v2",
+          "model_receipt_source": "response.body.model",
+          "ordinal": 7,
+          "provider_call_attempted": true,
+          "provider_chain_index": 0,
+          "provider_fallback_count": 0,
+          "provider_name": "agency-recruiter-critic",
+          "provider_type": "litellm",
+          "reason_code": "structured_response_applied",
+          "requested_model": "task-agency-critic-v2",
+          "stage": "critic",
+          "status": "applied",
+          "timeout_ms": 60000
+        }
+      ],
+      "staffing_reason_codes": [
+        "staffing_critic_rejected",
+        "critic_wrong_neighbor_selection"
+      ],
+      "hiring_reason_codes": [],
+      "eligibility_reason_codes": [],
+      "recorded_at": "2026-09-10T01:16:54.908000+00:00"
+    }
+  ],
+  "reconstructed_state": {
+    "state_known": true,
+    "previous_trace_id": "01a0878e-6383-7201-848a-eca3280b283b",
+    "previous_status": "completed",
+    "previous_turn_kind": "new_intent",
+    "active_plan": false,
+    "unfinished_work": false,
+    "pending_question": false,
+    "pending_authorization": false,
+    "retry_pending": false,
+    "configuration_revision": "5715ef258afcea00f9744142c158f481683f768d47838f36c299341def2229eb",
+    "roster_revision": "395",
+    "specialist_revision": "5405bdbe03997cb48f21833ee54e54d3e34d0b8c0fb5869f1b99a219332f63af",
+    "delegation_revision": "",
+    "turn_routing_context": {
+      "context_version": 1,
+      "source_trace_id": "01a0878e-6383-7201-848a-eca3280b283b",
+      "source_status": "completed",
+      "source_turn_kind": "new_intent",
+      "specialists": [
+        {
+          "slug": "codebase-onboarding-engineer",
+          "description": "Expert developer onboarding specialist who helps new engineers understand unfamiliar codebases fast by reading source code, tracing code paths, and stating only facts grounded in the code.",
+          "capabilities": [
+            "map repository structure and execution flow",
+            "trace concepts to concrete files",
+            "produce evidence-only onboarding guides"
+          ]
+        },
+        {
+          "slug": "project-shepherd",
+          "description": "Expert project manager specializing in cross-functional project coordination, timeline management, and stakeholder alignment. Focused on shepherding projects from conception to completion while managing resources, risks, and communications across multiple",
+          "capabilities": [
+            "build delivery plans",
+            "surface dependencies and risks",
+            "draft stakeholder-ready status"
+          ]
+        }
+      ],
+      "workforce_unit_descriptors": [
+        {
+          "ordinal": 1,
+          "artifact_kind": "analysis",
+          "lifecycle_phase": "discovery",
+          "authority": "advise",
+          "mutation_scope": "read_only"
+        },
+        {
+          "ordinal": 2,
+          "artifact_kind": "plan",
+          "lifecycle_phase": "planning",
+          "authority": "plan",
+          "mutation_scope": "read_only"
+        }
+      ],
+      "workforce_subject_hints": {
+        "domains": [
+          "software-engineering",
+          "codebase-discovery"
+        ],
+        "languages": [],
+        "frameworks": [],
+        "capability_ids": [
+          "analysis",
+          "investigation",
+          "planning",
+          "plan"
+        ],
+        "platforms": [
+          "linux"
+        ]
+      }
+    },
+    "turn_routing_context_guard": {
+      "guard_version": 1,
+      "source_trace_id": "01a0878e-6383-7201-848a-eca3280b283b",
+      "source_turn_sequence": 1694,
+      "source_evidence_revision": 17,
+      "source_roster_generation": 395,
+      "source_recipe_digest": "a14fb96a78c0eb680005fd3660946459e40fdb464f58688346f38276de4b284d",
+      "source_context_revision": "0b724e2a71b26b4a268fb2f7c4db7714b7d2eebd49f275d850f4890a96909e2b"
+    }
+  },
+  "state_revision": "5a66f8e5f238fdabb46e16a7f58378733d0fbb8a2ac224aba48668f42665ef82",
+  "installed_classifier_keep_going": {
+    "turn_kind": "new_intent",
+    "selection_required": true,
+    "reroute_required": true,
+    "execution_decision_required": true,
+    "continuation_of": "",
+    "confidence": 0.9,
+    "reason_codes": [
+      "requested_question_task_or_output"
+    ],
+    "state_revision": "5a66f8e5f238fdabb46e16a7f58378733d0fbb8a2ac224aba48668f42665ef82",
+    "classifier_version": 6,
+    "message_fingerprint": "6e7ecf10083ec035057bdce834a72bbe2bffae8df9383ed10eb06c78dd70944b",
+    "legacy_request_kind": "nontrivial"
+  },
+  "installed_classifier_go_ahead": {
+    "turn_kind": "continuation",
+    "selection_required": true,
+    "reroute_required": true,
+    "execution_decision_required": true,
+    "continuation_of": "01a0878e-6383-7201-848a-eca3280b283b",
+    "confidence": 0.9,
+    "reason_codes": [
+      "completed_task_context",
+      "continuation_reply_requires_reroute"
+    ],
+    "state_revision": "5a66f8e5f238fdabb46e16a7f58378733d0fbb8a2ac224aba48668f42665ef82",
+    "classifier_version": 6,
+    "message_fingerprint": "d44fcf731c17b28d746d1558dedab8e8540162ee63b87e10e8b9918037c277ee",
+    "legacy_request_kind": "nontrivial"
+  }
+}

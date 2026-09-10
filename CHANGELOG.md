@@ -80,6 +80,9 @@ changes rather than duplicating every commit.
 
 ## Unreleased
 
+- Preserve bounded completed-task context for “keep going” before fresh specialist
+  recruitment, retaining failed-state guards and independent criticism.
+
 - Preserve the complete inference-selected specialist team during preflight; reject
   incomplete delivery before recording loads. Hermes delivers large card sets
   through bounded native callbacks so its hook spill limit cannot discard cards

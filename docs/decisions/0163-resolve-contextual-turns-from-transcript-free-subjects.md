@@ -6,6 +6,7 @@ created: 2026-08-24
 updated: 2026-08-24
 tags: [routing, classification, privacy, workforce, correlation]
 related:
+  - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/roadmap/issue-AR-421-preserve-completed-task-followup-context.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
   - docs/roadmap/handoffs/issue-AR-265.md
@@ -98,3 +99,6 @@ specialist selection without fresh inference was rejected because historical
 workers may be stale, disabled, or wrong for the new question. Leaving the
 planner with only the literal short message was rejected because it preserves
 generic steward routing instead of resolving the active subject.
+
+AR-431 implementation `05653bc9` extends the existing exact contextual phrase set;
+its evidence and scope are indexed in the related roadmap and worklog registry.

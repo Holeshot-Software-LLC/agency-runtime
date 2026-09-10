@@ -6,6 +6,7 @@ created: 2026-07-18
 updated: 2026-07-18
 tags: [routing, lifecycle, correlation, inference]
 related:
+  - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/roadmap/issue-AR-421-preserve-completed-task-followup-context.md
   - docs/roadmap/issue-AR-85-state-aware-turn-classification.md
   - docs/roadmap/issue-AR-265-contextual-turn-classification.md
@@ -121,3 +122,6 @@ without starting preflight.
   valid continuation correlation and needlessly repeats selection and planning.
 - Reuse the last selection for every short reply. Rejected because configuration,
   roster, specialist versions, or work-unit state may have changed.
+
+AR-431 implementation `05653bc9` extends the existing exact contextual phrase set;
+its evidence and scope are indexed in the related roadmap and worklog registry.

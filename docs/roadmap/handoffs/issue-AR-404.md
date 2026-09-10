@@ -3,9 +3,10 @@ title: "AR-404 native terminal repairs and remaining gates"
 status: active
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-09
+updated: 2026-09-10
 tags: [handoff, hermes, openclaw, live-evaluation]
 related:
+  - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/worklog/2026-09-09-ar429-merged-checkpoint.md
   - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
   - docs/roadmap/issue-AR-419-finalize-openclaw-cli-responses.md
@@ -20,9 +21,9 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar429-completed-checkpoint-20260909
-evidence_commit: 82090e1163b56f0cf6022751d2edbea8a08eea85
-minimum_ledger_commit: a3ba3215a34b04e5f3b8aafaf336d3a143901a92
+branch: codex/ar431-codex-recruitment-20260910
+evidence_commit: 05653bc9ed4222ddf4c779a105bd01fd79255fa4
+minimum_ledger_commit: f95e0ab617ff565ecf7794ec9522d30cf07aa51d
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 ---
@@ -30,6 +31,11 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 # AR-404 five-host reliability
 
 ## Checkpoint
+
+AR-431/#839 now owns the requested Codex recruitment repair. Source05653bc9 /
+artifactf95e0ab6 preserve keep-going context; PR840 carries the repair. Candidate08689b5b8769
+installed,616 package/651 projection files match. Its8 hooks are modified after
+refresh, so delivery waits for operator /hooks review and fresh native proof.
 
 Owner order remains OpenClaw, Hermes, Codex, Claude; Zcode changes are deferred,
 with its historical failures still in the five-host scope. AR-429/#834 merged
@@ -42,8 +48,8 @@ AR-418/#796 and deferred fixture maintenance AR-430/#835 remain open.
 AR-429 sourcef6d58d5a, artifact47241e5e, recipe21 ground required specialties in
 actual unit scope while preserving inference selection and the independent critic.
 All616 installed package files match wheel41a6e9e76daa3da165ba03b9e933c2f71ccfe54a64d116fff5cc8bf842ebafe0.
-Only Hermes refreshed for recipe21; Claude retains recipe20 and Codex/OpenClaw/
-Zcode their prior projections.
+At that checkpoint only Hermes refreshed for recipe21. Claude retains recipe20;
+OpenClaw/Zcode retain their prior projections. Codex now has AR-431 recipe22.
 
 Hermes session20260909_213316_5f974b, trace
 20260909_213316_5f974b:011accaf-7dba-4413-b99c-fbbb8508459b:bb0af9fd completed in
@@ -60,7 +66,7 @@ agent:openclaw:ar404-20260909-priority-review-followup passed headers and final
 hashes in82.956s/58.928s. Full-card injection was unobserved. Final gateway RPC
 healthy, PID2680971, no restarts or active observer.
 
-Codex8/8 trust and651 published37c1bf7d5eb0 projection files were verified.
+Before AR-431 refresh, Codex8/8 trust and651 published37c1bf7d5eb0 files matched.
 Prior fresh session01a0877b-45dd-7b01-b99d-92c03587393f passed five cards/headers/
 finalization in103.434s. This long-lived parent remains stale6db15efbecbe;
 reinstallation cannot refresh it or establish a new native-process claim.
@@ -95,7 +101,8 @@ and continue; never reopen a failed receipt or create an empty recovery pair.
 
 ## Next bounded work package
 
-Inspect the exact Hermes ordinary_review failure above against its assurance
+Complete AR-431 after native hook trust: fresh completed-task/keep-going evidence
+then isolated acceptance. After that, inspect the exact Hermes ordinary_review failure above against its assurance
 contract. Choose a bounded repair only if that evidence supports one, then run
 focused/fast checks and the affected native gate. Keep AR-418 upstream terminal
 acceptance separate. Preserve all five hosts and the owner's Zcode deferral.
@@ -113,5 +120,5 @@ No exhaustive or Windows workflow ran; no all-host reliability claim.
 
 Shared staffing and inference-only selection. Preserve independent critic,
 validators, trust, native limits and caller scope. No manual selection, acceptance,
-external messages or unbounded retries. No pending Codex trust or Claude tool
-approval. Necessary Hermes/OpenClaw refresh and normal maintenance remain authorized.
+external messages or unbounded retries. AR-431 Codex hook trust is now pending;
+Claude tool approval remains complete. Necessary Hermes/OpenClaw refresh and normal maintenance remain authorized.
