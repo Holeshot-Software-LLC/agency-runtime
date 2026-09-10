@@ -2388,6 +2388,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5fdcb9d2` | 2026-09-10 | docs: freeze AR-431 isolated acceptance candidate | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 | `2f1e7d89` | 2026-09-10 | docs: accept AR-431 native keep-going recruitment | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 | `6a9039e7` | 2026-09-10 | docs: pin AR-431 completed native recovery checkpoint | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
+| `60a0c95f` | 2026-09-10 | docs: merge PR842 AR-431 native acceptance | [AR-431](../roadmap/issue-AR-431-preserve-keep-going-task-context.md) | [Detail](2026-09-10-codex-recruitment-context.md) |
 <!-- worklog:end -->
 
 ## Provenance notes

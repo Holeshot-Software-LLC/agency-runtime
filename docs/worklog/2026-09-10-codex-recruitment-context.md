@@ -126,3 +126,13 @@ MCP host-status call still returned Transport closed after trust confirmation;
 this is separate from two fresh native authoritative finalizations. No manual
 finalization or old receipt reopening occurred. Final docs and tracker checks
 remain required after the normal PR merge and closure transaction.
+
+## Native acceptance merge
+
+PR842 merged at60a0c95fb34075ad1b3547b9244f1767f94633a5 with exact subject
+`docs: merge PR842 AR-431 native acceptance`. Tracker839 closed on2026-09-10
+at11:51:11Z after all three isolated criteria satisfied. The acceptance worktree
+is historical; the next implementation starts in a new owned worktree. Current
+Codex trust is8/8 and both fresh native terminals are authoritative. The existing
+parent MCP transport remains separately unconfirmed; no further native retry or
+acceptance override was used. AR-404/418/430 remain open, Zcode deferred.
