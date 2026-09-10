@@ -1,0 +1,4 @@
+{
+  "verdict": "satisfied",
+  "reason": "inference.py:371-529 prefixes the shared unit-scope boundary (positive cases, inference authority, typed_recall, preserved independent review) to both recruiter and repair prompts; tests 1560-1614 and 304-350 enforce both prompts and the critic veto; validation JSON: focused 217 passed, 0 failed."
+}

@@ -21,7 +21,7 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/834
 
 ## Builder evidence
 
-The builder supplies sources and does not judge. First isolated pass pending.
+The builder supplies sources and does not judge. All three criteria satisfied on the first isolated pass.
 Native staffing and finalization passed for one exact supplied-code case; no
 all-host reliability, independent worker execution, or sole-cause claim is made.
 The original failed receipts remain immutable. The actual native system prompt
@@ -56,3 +56,6 @@ failures also occur on unchanged main and are deferred explicitly in AR-430.
 
 | Criterion | Verdict | Verifier run | Evidence digest | Observed | Reason |
 |---|---|---|---|---|---|
+| 1 | satisfied | `AR-429.1-20260909-091e5a21` | `636a2237267808827ccc2b626c05e47a5fc693022299a4ca98375435853be0d1` | 2026-09-09 | AR-429-original-request-and-veto json preserves the request, raw critic veto and explicit causal_limit, matching AR-428-observed-native-critic-packet lines 1735, 2195, 1034; selected-scopes json holds all three selected contracts, and eligible-comparison counts 246/83 match the retained packet. |
+| 2 | satisfied | `AR-429.2-20260909-bcce1a9a` | `2a88370ff53f9d854c1c5dfa896b5a477f26eb032a1b561734cb52acd2bb35bc` | 2026-09-09 | inference.py:371-529 prefixes the shared unit-scope boundary (positive cases, inference authority, typed_recall, preserved independent review) to both recruiter and repair prompts; tests 1560-1614 and 304-350 enforce both prompts and the critic veto; validation JSON: focused 217 passed, 0 failed. |
+| 3 | satisfied | `AR-429.3-20260909-bc0261d5` | `d2fb7b4f20ada3c7afac0b15267c13c6bf20f14232cbae997abc24555230bc22` | 2026-09-09 | native-terminal json shows exact-request run 20260909_213316_5f974b completed with authoritative accept, matching response hash and all_five_match headers; native-cards json and api-content file carry all three full card bodies; observer-restoration json: 2 packets, no errors, byte-exact restore. |

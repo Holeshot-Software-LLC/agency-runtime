@@ -1,0 +1,4 @@
+{
+  "verdict": "satisfied",
+  "reason": "native-terminal json shows exact-request run 20260909_213316_5f974b completed with authoritative accept, matching response hash and all_five_match headers; native-cards json and api-content file carry all three full card bodies; observer-restoration json: 2 packets, no errors, byte-exact restore."
+}

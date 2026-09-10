@@ -47,7 +47,7 @@ bounded package are in AR-404's
 |---|---|---|---|---|---|
 | `AR-427` | [Preserve the complete inferred specialist team during hydration](issue-AR-427-preserve-complete-inferred-specialist-team.md) | done | p1 | reliability | [#825](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825) |
 | `AR-430` | [Align staffing-foundation tests with descriptive subject domains](issue-AR-430-align-foundation-tests-with-descriptive-domains.md) | open | p2 | reliability | [#835](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/835) |
-| `AR-429` | [Ground recruiter specialties in the actual work unit](issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | in_progress | p1 | reliability | [#834](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/834) |
+| `AR-429` | [Ground recruiter specialties in the actual work unit](issue-AR-429-ground-recruiter-specialties-in-unit-scope.md) | done | p1 | reliability | [#834](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/834) |
 | `AR-428` | [Avoid test-result analysis units when no results exist](issue-AR-428-avoid-test-results-units-without-test-results.md) | done | p1 | reliability | [#826](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/826) |
 | `AR-426` | [Preserve Hermes specialist context across native hook spilling](issue-AR-426-preserve-hermes-hook-specialist-context.md) | done | p1 | host-integrations | [#823](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/823) |
 | `AR-421` | [Preserve completed-task follow-up context](issue-AR-421-preserve-completed-task-followup-context.md) | done | p1 | host-integrations | [#808](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/808) |

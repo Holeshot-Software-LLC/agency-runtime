@@ -74,7 +74,8 @@ repeat work and risk reintroducing superseded behavior.
 AR-429/#834 sourcef6d58d5a, artifact47241e5e, recipe21 passed one exact-request
 Hermes native turn20260909_213316_5f974b: three cards, five headers and authoritative
 372378a5 final hash in111.388s. Critic approved, observer restored. Isolated
-acceptance is pending; AR-430/#835 records two unchanged-main fixture failures.
+acceptance satisfied all three criteria on the first pass; AR-430/#835 records
+two unchanged-main fixture failures. PR836 merge and exact ledger follow.
 
 Owner priority is OpenClaw, Hermes, Codex, Claude; Zcode changes are deferred.
 OpenClaw's fresh review/follow-up diagnostic passed headers and terminal hashes,

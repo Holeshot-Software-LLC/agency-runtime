@@ -1,6 +1,6 @@
 ---
 title: "AR-429: Ground recruiter specialties in the actual work unit"
-status: in_progress
+status: done
 category: roadmap
 created: 2026-09-09
 updated: 2026-09-09
@@ -34,7 +34,8 @@ a sole cause and is preserved without reinterpretation or manual acceptance.
 
 ## Current state
 
-Package live_demo completed; isolated acceptance pending. Sourcef6d58d5a and
+Package done: first isolated pass satisfied all three criteria
+(091e5a21/bcce1a9a/bc0261d5) against candidate0d89987d. PR836 merge is next. Sourcef6d58d5a and
 artifact47241e5e carry recipe21. Bounded focused217/1skip, production1151/3skip,
 UI224, routing, Ruff788 and frozen conformance188/188 pass. Canonical build,
 strict Twine, artifact verification and installed smoke pass; all616 installed
@@ -71,6 +72,6 @@ parent does not become fresh through a Hermes installation.
 
 ## Acceptance
 
-- [ ] Preserve the exact failed native request, selected contracts, eligible alternatives and critic veto, with causal limits explicit.
-- [ ] Both recruiter paths ground each required specialty in the actual unit while preserving inference authority, positive specialized cases, typed coverage and the independent critic; focused and required fast checks pass.
-- [ ] A fresh instrumented Hermes turn for the exact supplied-code request has accepted staffing, all selected native card bodies, five Store-matching headers and authoritative finalization, with observer restoration verified.
+- [x] Preserve the exact failed native request, selected contracts, eligible alternatives and critic veto, with causal limits explicit.
+- [x] Both recruiter paths ground each required specialty in the actual unit while preserving inference authority, positive specialized cases, typed coverage and the independent critic; focused and required fast checks pass.
+- [x] A fresh instrumented Hermes turn for the exact supplied-code request has accepted staffing, all selected native card bodies, five Store-matching headers and authoritative finalization, with observer restoration verified.

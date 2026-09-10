@@ -1,0 +1,4 @@
+{
+  "verdict": "satisfied",
+  "reason": "AR-429-original-request-and-veto json preserves the request, raw critic veto and explicit causal_limit, matching AR-428-observed-native-critic-packet lines 1735, 2195, 1034; selected-scopes json holds all three selected contracts, and eligible-comparison counts 246/83 match the retained packet."
+}

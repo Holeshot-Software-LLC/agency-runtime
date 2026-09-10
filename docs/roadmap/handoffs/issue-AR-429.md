@@ -14,8 +14,8 @@ superseded_by: null
 type: handoff
 issue_id: AR-429
 branch: codex/ar429-hermes-nomination-relevance-20260909
-evidence_commit: 98cb36c140e750027ed9f59dec7b49e632f930bc
-minimum_ledger_commit: b372ca3b0187055ecda0106a642de5b6c7cd6ab6
+evidence_commit: d35d3bfef248968015f4aaf6cf47e146b573dd3f
+minimum_ledger_commit: 0d89987db3135b72627daf9e9aed9e85eefef036
 hard_checkpoint_percent: 50
 tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/834
 ---
@@ -25,7 +25,8 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/834
 ## Checkpoint
 
 PR836 carries sourcef6d58d5a; canonical47241e5e artifact/recipe21 installed and
-Hermes refreshed. Native exact-request gate passed; first isolated review pending.
+Hermes refreshed. Native exact-request gate and all three first-pass isolated criteria satisfied.
+Candidate0d89987d; verifier091e5a21/bcce1a9a/bc0261d5. PR836 merge/ledger next.
 
 ## Completed evidence
 
@@ -37,7 +38,7 @@ Actual recruiter prefix matches recipe21; critic approved; observer restored.
 
 ## Exact blocker
 
-Isolated acceptance pending. Two optional foundation tests fail identically on
+No acceptance blocker remains for this scope. Two optional foundation tests fail identically on
 main6d76e6a7 and branch; AR-430 defers those fixtures. No native retry or failed
 receipt reopening. AR-418 upstreamPR106490 remains OPEN, checkout7cd91114 clean,
 default adoption and original truncation cap unproven.
@@ -49,9 +50,8 @@ At or below50percent commit the smallest safe state and exact ledger, then conti
 
 ## Next bounded work package
 
-Freeze evidence, run the first isolated per-criterion pass, and resolve only
-findings that invalidate this scope within the two-pass default. Merge with exact
-ledgers; close AR-429 only on all-satisfied verdicts. AR-404 stays open.
+Merge PR836 with exact ledgers and tracker closure. Continue the remaining
+Hermes review/assurance receipt diagnosis under AR-404. AR-418 and AR-430 stay open.
 
 ## Verification
 
