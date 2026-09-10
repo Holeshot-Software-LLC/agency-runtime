@@ -1,0 +1,25 @@
+{
+  "projection_digest": "runtime-sha256-3beeea38a02a7b2130201f1ba2e84a3460d76e3ea565e450846ed3bcdb973518",
+  "manifest_files": 651,
+  "mismatches": [],
+  "source_comparisons": [
+    {
+      "path": "agency_runtime/core/workforce/inference.py",
+      "source_commit": "47241e5e",
+      "exact_match": true,
+      "sha256": "5b2feeedaedcd44b16313397ba106d40f442f7c5c6e1d6c355b58eac25ed8773"
+    },
+    {
+      "path": "agency_runtime/core/workforce/cache.py",
+      "source_commit": "47241e5e",
+      "exact_match": true,
+      "sha256": "8e5110b4e14e8bb065b253c4647ed2411807f61f2a5882a900614f9ccbe64f8a"
+    },
+    {
+      "path": "agency_runtime/adapters/hermes/plugin.py",
+      "source_commit": "47241e5e",
+      "exact_match": true,
+      "sha256": "cdf83c761f27f0b86e9ab121dd73e4b972a2d526cd53352ec6b9fc6298e62898"
+    }
+  ]
+}

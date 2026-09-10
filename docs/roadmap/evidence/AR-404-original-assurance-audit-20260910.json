@@ -1,0 +1,133 @@
+{
+  "scope": "Read-only exact historical trace audit; no reconstructed or fresh inference is historical evidence.",
+  "session_id": "20260909_113727_2e00b0",
+  "trace_id": "20260909_113727_2e00b0:6c87a1d6-a92a-493a-9f11-7c1b27e84a58:e03a9447",
+  "run": {
+    "status": "preflight_failed",
+    "turn_sequence": 1670,
+    "started_at": "2026-09-09T15:37:37.299000+00:00",
+    "ended_at": "2026-09-09T15:39:06.205000+00:00",
+    "preflight_state": "",
+    "preflight_result": "",
+    "terminal_finalization_id": null
+  },
+  "failure": {
+    "id": "8c658236-5e6e-4963-8a9b-c2c594a651c1",
+    "session_id": "20260909_113727_2e00b0",
+    "trace_id": "20260909_113727_2e00b0:6c87a1d6-a92a-493a-9f11-7c1b27e84a58:e03a9447",
+    "host": "hermes",
+    "stage": "routing",
+    "reason_code": "workforce_inference_failed",
+    "invariant_code": "",
+    "exception_category": "runtime_error",
+    "provider_attempts": "[{\"actual_model\":\"task-agency-planner-v2\",\"latency_ms\":10285,\"metadata_version\":1,\"model_group\":\"task-agency-planner-v2\",\"model_receipt_source\":\"response.body.model\",\"ordinal\":1,\"provider_call_attempted\":true,\"provider_chain_index\":0,\"provider_fallback_count\":0,\"provider_name\":\"agency-planner\",\"provider_type\":\"litellm\",\"reason_code\":\"structured_response_applied\",\"requested_model\":\"task-agency-planner-v2\",\"stage\":\"planner\",\"status\":\"applied\",\"timeout_ms\":60000},{\"actual_model\":\"qwen3-embedding:latest\",\"catalog_cache_hit\":false,\"catalog_identity\":\"sha256:32518ad584f064c90286a020e47f64f4472dcce482787b7c4a49267f02f10107\",\"input_count\":295,\"latency_ms\":40434,\"model_group\":\"\",\"model_receipt_source\":\"response.body.model\",\"provider_call_count\":1,\"provider_name\":\"local-workforce-embedding\",\"provider_type\":\"ollama\",\"reason_code\":\"dense_recall_applied\",\"requested_model\":\"qwen3-embedding:latest\",\"stage\":\"recall_embedding\",\"status\":\"applied\"},{\"actual_model\":\"qwen3-14b-abliterated:latest\",\"input_count\":0,\"latency_ms\":19051,\"metadata_version\":1,\"model_group\":\"\",\"model_receipt_source\":\"response.body.model\",\"ordinal\":3,\"provider_call_attempted\":true,\"provider_call_count\":1,\"provider_chain_index\":0,\"provider_fallback_count\":0,\"provider_name\":\"local-workforce-reranker\",\"provider_type\":\"ollama\",\"reason_code\":\"structured_response_applied\",\"requested_model\":\"qwen3-14b-abliterated:latest\",\"stage\":\"recall_reranker\",\"status\":\"applied\",\"timeout_ms\":120000},{\"actual_model\":\"task-agency-recruiter-v2\",\"latency_ms\":10110,\"metadata_version\":1,\"model_group\":\"task-agency-recruiter-v2\",\"model_receipt_source\":\"response.body.model\",\"ordinal\":4,\"provider_call_attempted\":true,\"provider_chain_index\":0,\"provider_fallback_count\":0,\"provider_name\":\"agency-recruiter\",\"provider_type\":\"litellm\",\"reason_code\":\"structured_response_applied\",\"requested_model\":\"task-agency-recruiter-v2\",\"stage\":\"recruiter\",\"status\":\"applied\",\"timeout_ms\":60000},{\"actual_model\":\"task-agency-critic-v2\",\"latency_ms\":7904,\"metadata_version\":1,\"model_group\":\"task-agency-critic-v2\",\"model_receipt_source\":\"response.body.model\",\"ordinal\":5,\"provider_call_attempted\":true,\"provider_chain_index\":0,\"provider_fallback_count\":0,\"provider_name\":\"agency-recruiter-critic\",\"provider_type\":\"litellm\",\"reason_code\":\"structured_response_applied\",\"requested_model\":\"task-agency-critic-v2\",\"stage\":\"critic\",\"status\":\"applied\",\"timeout_ms\":60000}]",
+    "staffing_reason_codes": "[\"staffing_critic_rejected\",\"critic_missing_independent_review_assurance\"]",
+    "hiring_reason_codes": "[]",
+    "eligibility_reason_codes": "[]",
+    "recorded_at": "2026-09-09T15:39:06.205000+00:00"
+  },
+  "retained_row_counts": {
+    "routing_decisions": 0,
+    "routing_intent": 0,
+    "specialists_loaded": 0,
+    "finalization_events": 0,
+    "model_receipts": 0
+  },
+  "run_sha256": "6edbf278875c3feddfb330b3841ea042353adddcfd61f53f134d03d014bc9f8b",
+  "failure_sha256": "71e9b606239582047879549504211b23db49c454b637f2ef3c32f0f64aa03b93",
+  "raw_plan_and_proposal_available": false,
+  "raw_critic_packet_available": false,
+  "critic_correctness_determined": false,
+  "native_message_inventory": [
+    {
+      "id": 535343,
+      "role": "user",
+      "tool_name": null,
+      "content_chars": 403,
+      "api_content_chars": 9340,
+      "contains_exact_trace": false,
+      "contains_critic_packet": false
+    },
+    {
+      "id": 535344,
+      "role": "assistant",
+      "tool_name": null,
+      "content_chars": 0,
+      "api_content_chars": 0,
+      "contains_exact_trace": false,
+      "contains_critic_packet": false
+    },
+    {
+      "id": 535345,
+      "role": "tool",
+      "tool_name": "agency_finalize",
+      "content_chars": 44,
+      "api_content_chars": 0,
+      "contains_exact_trace": false,
+      "contains_critic_packet": false
+    },
+    {
+      "id": 535346,
+      "role": "assistant",
+      "tool_name": null,
+      "content_chars": 750,
+      "api_content_chars": 0,
+      "contains_exact_trace": false,
+      "contains_critic_packet": false
+    },
+    {
+      "id": 535347,
+      "role": "user",
+      "tool_name": null,
+      "content_chars": 9,
+      "api_content_chars": 6509,
+      "contains_exact_trace": false,
+      "contains_critic_packet": false
+    },
+    {
+      "id": 535348,
+      "role": "assistant",
+      "tool_name": null,
+      "content_chars": 0,
+      "api_content_chars": 0,
+      "contains_exact_trace": false,
+      "contains_critic_packet": false
+    },
+    {
+      "id": 535349,
+      "role": "tool",
+      "tool_name": "skill_view",
+      "content_chars": 17377,
+      "api_content_chars": 0,
+      "contains_exact_trace": false,
+      "contains_critic_packet": false
+    },
+    {
+      "id": 535350,
+      "role": "tool",
+      "tool_name": "skill_view",
+      "content_chars": 38411,
+      "api_content_chars": 0,
+      "contains_exact_trace": false,
+      "contains_critic_packet": false
+    },
+    {
+      "id": 535351,
+      "role": "assistant",
+      "tool_name": null,
+      "content_chars": 723,
+      "api_content_chars": 0,
+      "contains_exact_trace": false,
+      "contains_critic_packet": false
+    }
+  ],
+  "native_log_scope": "Exact session matches in retained agent.log and errors.log; no raw planner/recruiter/critic packets found.",
+  "historical_contract_source": "2b19cce6:agency_runtime/core/workforce/inference.py",
+  "historical_contract_statements": [
+    "lifecycle assurance for work the plan does not call for.",
+    "missing-lifecycle-assurance-the-plan-calls-for",
+    "completed-task-evidence",
+    "verified_staffing_hard_checks_passed"
+  ],
+  "judgment": "Indeterminate: the model-origin reason survived, but neither the exact rejected plan nor proposal nor selected-worker contracts nor raw critic packet is retained. Do not label the critic defective or remove the veto."
+}

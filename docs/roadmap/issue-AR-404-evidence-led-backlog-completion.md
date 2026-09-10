@@ -3,9 +3,10 @@ title: "AR-404: Complete the backlog through evidence-led delivery packages"
 status: in_progress
 category: roadmap
 created: 2026-09-05
-updated: 2026-09-09
+updated: 2026-09-10
 tags: [backlog, review, acceptance, delivery]
 related:
+  - docs/worklog/2026-09-10-hermes-assurance-investigation.md
   - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/worklog/2026-09-09-ar429-merged-checkpoint.md
   - docs/roadmap/issue-AR-429-ground-recruiter-specialties-in-unit-scope.md
@@ -72,6 +73,17 @@ behavior later decisions replaced. Treating all of them as new code fixes would
 repeat work and risk reintroducing superseded behavior.
 
 ## Current state
+
+September10 assurance investigation: fresh parent Agency MCP succeeds with
+verified SQLite binding and293 roster entries. The exact ordinary-review
+trace ending e03a9447 retains its critic veto, but has no persisted plan,
+proposal, selected contracts or raw critic packet. Historical critic correctness
+is indeterminate; no product repair is justified by the retained reason alone.
+The original failure remains unchanged. Focused17, production1151/3skip, UI224,
+routing, Ruff788 and docs pass. One private-permission conformance run is
+underway after the documented fixture setup failure; one fresh exact-request
+Hermes diagnostic remains gated on it. This records fast_verification, not
+native acceptance. Details and exact evidence are in the linked worklog.
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,

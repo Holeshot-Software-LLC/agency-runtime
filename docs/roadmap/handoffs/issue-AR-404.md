@@ -6,6 +6,7 @@ created: 2026-09-05
 updated: 2026-09-10
 tags: [handoff, hermes, openclaw, live-evaluation]
 related:
+  - docs/worklog/2026-09-10-hermes-assurance-investigation.md
   - docs/roadmap/issue-AR-431-preserve-keep-going-task-context.md
   - docs/worklog/2026-09-09-ar429-merged-checkpoint.md
   - docs/roadmap/issue-AR-418-preserve-hermes-truncation-terminal-evidence.md
@@ -21,7 +22,7 @@ supersedes: []
 superseded_by: null
 type: handoff
 issue_id: AR-404
-branch: codex/ar431-native-acceptance-20260910
+branch: codex/ar404-hermes-assurance-20260910
 evidence_commit: 2f1e7d8965ce822ce1d1a9d3601405ceaac9a66c
 minimum_ledger_commit: d967e45a49b897eda79c6e57905aac916630e923
 hard_checkpoint_percent: 50
@@ -31,6 +32,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 # AR-404 five-host reliability
 
 ## Checkpoint
+
+September10 fast_verification: exact ordinary-review critic correctness is
+indeterminate because the failed trace retained no plan/proposal/critic packet.
+Fresh parent MCP succeeds. Focused17, production1151/3skip, UI224, routing,
+Ruff788 and docs pass; private conformance and one native diagnostic pending.
+No product repair or historical receipt mutation. See current worklog.
 
 AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
 native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,
@@ -82,8 +89,10 @@ rules unchanged; prior79138e80 projection had651 matching files.
 
 Remaining original Hermes ordinary_review session20260909_113727_2e00b0, trace
 20260909_113727_2e00b0:6c87a1d6-a92a-493a-9f11-7c1b27e84a58:e03a9447 failed with
-staffing_critic_rejected and critic_missing_independent_review_assurance. Inspect
-that exact receipt and its available plan/contracts before assuming a critic bug.
+staffing_critic_rejected and critic_missing_independent_review_assurance. Read-only
+audit found zero routing/intent/selected-card/finalization/model rows, empty
+preflight_result and no raw critic packet. The veto alone cannot establish a
+critic bug. Historical assurance correctness remains indeterminate.
 Source: AR-404-hermes-suite-after-planner-context-20260909.json. The historical
 follow-up and multi-step invalid receipts omitted all five headers and stay failed.
 
@@ -103,10 +112,11 @@ and continue; never reopen a failed receipt or create an empty recovery pair.
 
 ## Next bounded work package
 
-AR-431 native/isolated acceptance is complete. Inspect the exact Hermes ordinary_review failure above against its assurance
-contract. Choose a bounded repair only if that evidence supports one, then run
-focused/fast checks and the affected native gate. Keep AR-418 upstream terminal
-acceptance separate. Preserve all five hosts and the owner's Zcode deferral.
+Complete the current private conformance run, then run one fresh exact-request
+Hermes ordinary-review diagnostic with bounded recruiter/critic packet capture.
+Judge only its own plan/contracts and terminal evidence; do not relabel the old
+veto. AR-418 upstream remains OPEN at30f421ecce and installed native checkout
+clean7cd91114; adoption and original cap remain separate. Preserve owner order.
 
 ## Verification
 
