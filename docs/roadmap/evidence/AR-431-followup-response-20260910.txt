@@ -1,0 +1,39 @@
+Agency/Agencies loaded: agency-steward, codebase-onboarding-engineer, minimal-change-engineer, software-test-engineer, code-reviewer, reality-checker
+Agency/Agencies delegated: none
+Skills loaded: none
+Actual Model selected: workforce inference: task-agency-critic-v2 -> agency-recruiter-critic/task-agency-critic-v2 (wrapper)
+Recruited via: inference
+
+Why: Complete the deferred correction and regression-test proposals.
+How it shaped outcome: Code provided inline, using only the supplied function.
+
+Use true division to preserve fractional means and explicitly reject empty input:
+
+```python
+def average(values):
+    count = len(values)
+    if count == 0:
+        raise ValueError("average requires a nonempty sequence")
+    return sum(values) / count
+```
+
+Three proposed regression tests using `pytest`:
+
+```python
+import pytest
+
+
+def test_average_preserves_fractional_mean():
+    assert average([1, 2]) == 1.5
+
+
+def test_average_handles_negative_floats():
+    assert average((-1.0, -2.0)) == -1.5
+
+
+def test_average_rejects_empty_input():
+    with pytest.raises(ValueError, match="nonempty sequence"):
+        average([])
+```
+
+These cover fractional results, negative float inputs, and the empty-input policy. No files were read or modified, and no tests were executed.

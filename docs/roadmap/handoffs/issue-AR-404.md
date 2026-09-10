@@ -32,10 +32,12 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/672
 
 ## Checkpoint
 
-AR-431/#839 now owns the requested Codex recruitment repair. Source05653bc9 /
-artifactf95e0ab6 preserve keep-going context; PR840 carries the repair. Candidate08689b5b8769
-installed,616 package/651 projection files match. Its8 hooks are modified after
-refresh, so delivery waits for operator /hooks review and fresh native proof.
+AR-431/#839 source05653bc9/artifactf95e0ab6 has current8/8 Codex trust and fresh
+native initial/keep-going receipts01a08b18-1a43/01a08b1a-f50d. Full cards4/5,
+five headers and authoritative hashes40bace52/5c36ceba match. Context correlates
+to the exact completed review with fresh inference and no replay. PR842 carries
+the evidence; isolated acceptance is pending. Reranker-invalid and recruiter-timeout
+degradations remain visible despite successful configured fallback and critic.
 
 Owner order remains OpenClaw, Hermes, Codex, Claude; Zcode changes are deferred,
 with its historical failures still in the five-host scope. AR-429/#834 merged
@@ -120,5 +122,5 @@ No exhaustive or Windows workflow ran; no all-host reliability claim.
 
 Shared staffing and inference-only selection. Preserve independent critic,
 validators, trust, native limits and caller scope. No manual selection, acceptance,
-external messages or unbounded retries. AR-431 Codex hook trust is now pending;
+external messages or unbounded retries. AR-431 Codex hook trust is confirmed8/8;
 Claude tool approval remains complete. Necessary Hermes/OpenClaw refresh and normal maintenance remain authorized.

@@ -23,51 +23,48 @@ tracker_url: https://github.com/Holeshot-Software-LLC/agency-runtime/issues/839
 
 ## Checkpoint
 
-AR-431 source05653bc9/artifactf95e0ab6 merged through PR840/841. The owner
-confirmed trust; fresh inventory proves8/8 trusted candidate08689b5b8769 hooks.
-The fixed initial native review passed on recipe22/classifier7 in78.818s:
-session01a08b18-19fc-76f3-b5ea-4033b22c3291, trace01a08b18-1a43-7cb2-8b48-3d7f75b55d25,
-four full cards, five Store-matching headers and authoritative finalization.
-This proves the fresh-process initial gate, not the keep-going follow-up.
-Delivery is live_demo; the exact same-session follow-up and isolated acceptance
-remain pending. Prior failed receipts and the old parent's closed transport
-remain separate. No all-host reliability claim.
+PR840/841 merged source05653bc9/artifactf95e0ab6. PR842 carries fresh native
+initial/follow-up evidence after user trust. Classifier7/recipe22; isolated
+acceptance is the remaining gate. Native receipts remain authoritative and immutable.
 
 ## Completed evidence
 
-Read-only reconstructed state exactly matches failed trace01a088e1's revision.
-Existing go-ahead retains context; old keep-going loses it. Negative control3
-failed/27 passed; repaired focused163, production1151/3skip, UI224, routing,
-Ruff788, docs/tracker and frozen conformance188/188 passed. Canonical build,
-Twine, artifact and installed smoke pass. All616 wheel files and651 candidate
-projection08689b5b8769 files match.
+Trust8/8 on exact08689b5b8769 hashes. Native session01a08b18-19fc-76f3-b5ea-4033b22c3291:
+initial01a08b18-1a43-7cb2-8b48-3d7f75b55d25 completed78.818s with four full cards;
+follow-up01a08b1a-f50d-76d0-bb24-eb624109f97f completed157.872s with five. All five
+headers and finalhash40bace52/5c36ceba match native bytes. Keep-going has exact
+continuation_of the completed review, context applied, fresh inference, no replay.
+Focused163+critic5, production1151/3skip, UI224, routing, Ruff788, docs/tracker,
+conformance188/188 and canonical artifact/smoke passed;616 wheel/651 projection files match.
 
 ## Exact blocker
 
-Hook trust is satisfied. Exact same-session keep-going evidence and isolated
-acceptance are pending. The old failed recruitment and Transport closed receipts
-remain unchanged; fresh initial finalization succeeded independently.
+Isolated acceptance pending. Follow-up reranker reply was invalid and primary
+recruiter timed out; configured content fallback and critic succeeded. This is
+not a zero-failure or all-host reliability claim. Original failed receipts and
+old parent MCP Transport closed remain separate from the successful native finals.
 
 ## Same-task continuity
 
-Continue in the owned worktree while PR840 is open; after merge create a new one.
-Preserve unrelated scratchpad/Windows work. At or below50percent checkpoint the
-smallest safe substantive/ledger pair then continue. No failed receipt reopening.
+This owned worktree carries PR842. Once merged it is historical; create a new one
+for new implementation. Preserve unrelated scratchpad/Windows work. At or below
+50percent checkpoint the smallest safe substantive/ledger pair and continue.
 
 ## Next bounded work package
 
-After operator hook review, perform one read-only8/8 trust check, then the frozen AR-431-planned-native-manifest-20260910.json in a fresh
-Codex completed task and exact keep-going follow-up. Prove correlated bounded
-subject, fresh critic-approved recruitment, full cards, five Store headers and
-authoritative finalization. Run isolated acceptance only with complete evidence.
+Freeze the complete acceptance packet, run one isolated pass for each criterion,
+then close only if all verdicts satisfy the scope. Merge PR842 and exact ledger.
+Return remaining Hermes/AR-418 gates to AR-404; Zcode changes remain deferred.
 
 ## Verification
 
-AR-431-validation-20260910.json and installed/trust artifacts retain exact checks.
-No exhaustive or Windows workflow, native success or all-host reliability claim.
+AR-431-native-summary-20260910.json retains correlation, fresh inference, native
+card/header/final evidence and degradation limits. Native raw card contexts and
+collector are retained. No exhaustive or Windows workflow or delegation claim.
 
 ## Constraints
 
-Inference-only staffing, independent critic, validators and trust remain enforced.
-No manual acceptance, selection or unbounded retries. Owner order OpenClaw,
-Hermes, Codex, Claude; Zcode remains deferred. Existing Claude approvals unchanged.
+Inference-only staffing, independent critic, validators and trust stay enforced.
+No manual acceptance, failed receipt reopening or unbounded retries. Default two
+isolated review passes applies; none used yet. Owner order OpenClaw, Hermes,
+Codex, Claude; Zcode deferred. Claude exact Allow rules remain saved.

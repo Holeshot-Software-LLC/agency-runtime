@@ -31,15 +31,21 @@ an invalid response, then the independent critic vetoed the repaired team.
 
 ## Current state
 
-AR-431 source05653bc9/artifactf95e0ab6 merged through PR840/841. The owner
-confirmed trust; fresh inventory proves8/8 trusted candidate08689b5b8769 hooks.
-The fixed initial native review passed on recipe22/classifier7 in78.818s:
-session01a08b18-19fc-76f3-b5ea-4033b22c3291, trace01a08b18-1a43-7cb2-8b48-3d7f75b55d25,
-four full cards, five Store-matching headers and authoritative finalization.
-This proves the fresh-process initial gate, not the keep-going follow-up.
-Delivery is live_demo; the exact same-session follow-up and isolated acceptance
-remain pending. Prior failed receipts and the old parent's closed transport
-remain separate. No all-host reliability claim.
+Native session01a08b18-19fc-76f3-b5ea-4033b22c3291 passed the frozen initial
+review in78.818s and exact keep-going follow-up in157.872s. Follow-up trace
+01a08b1a-f50d-76d0-bb24-eb624109f97f is classifier7 continuation of completed
+01a08b18-1a43-7cb2-8b48-3d7f75b55d25. Recipe22 applies bounded context and fresh
+inference, with no cache/assignment replay. Four initial and five follow-up full
+cards, all five Store headers and authoritative response hashes40bace52/5c36ceba
+match exact native bytes. The follow-up retained an invalid reranker reply and
+a primary recruiter timeout; configured content fallback succeeded, then the
+independent critic accepted staffing. No caller retry, manual selection, bypass,
+delegation or executed-test claim. PR842 carries these observations; isolated
+acceptance remains pending. No all-host reliability or historical-receipt repair.
+
+Required source checks passed: focused163, additional critic5, production1151/3skip,
+UI224, routing and conformance188/188; canonical artifact/smoke and exact installed
+file checks passed. User trust is confirmed8/8 on candidate08689b5b8769.
 
 ## Approach
 
