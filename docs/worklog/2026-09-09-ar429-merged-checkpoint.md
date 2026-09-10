@@ -36,6 +36,10 @@ remaining Hermes review/assurance receipt so the next package starts from eviden
 
 ## Challenges encountered
 
+PR837 first merge returned HTTP409/head-modified immediately after push. A fresh
+read showed exact remote/local head4978fd97, base82090e11 and CLEAN state; the
+next exact-head merge succeeded at2e594286. No source or approval bypass.
+
 Two optional foundation failures also reproduce on main and remain deferred in
 AR-430. The long-lived Codex parent remains stale; a reinstall is not a restart.
 
