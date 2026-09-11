@@ -1,0 +1,421 @@
+{
+  "schema": "agency-runtime.evidence.ar439-post-merge-measurement",
+  "issue": "AR-439",
+  "recorded": "2026-09-11",
+  "scope": "One fresh native run per host on the exact ordinary-review wording after the PR #876 reinstall (main ee774ceb, digest 9cb87800ea8a), plus one in-process diagnostic under the openclaw context reproducing the remaining capability-axis rejection. Single samples; codex excluded (activation-required after the reinstall).",
+  "runs": [
+    {
+      "run_id": "33f4c2af-8710-4a50-a3ba-518b15558a35",
+      "host": "claude",
+      "started_at": "2026-09-11T14:08:00.004522+00:00",
+      "status": "completed",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "units": [
+        {
+          "unit_id": "unit-defect-analysis",
+          "proposed_ids": [
+            "code-reviewer"
+          ]
+        },
+        {
+          "unit_id": "unit-defect-review",
+          "proposed_ids": [
+            "code-reviewer"
+          ]
+        }
+      ],
+      "provider_attempts": [
+        {
+          "stage": "planner",
+          "status": "applied",
+          "rows": [
+            {
+              "reason_code": "plan_capability_advisory",
+              "unit_id": "unit-defect-review",
+              "advisory_capability_ids": "verification"
+            }
+          ]
+        },
+        {
+          "stage": null,
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "rows": [
+            {
+              "reason_code": "invalid_candidate",
+              "unit_id": "unit-defect-analysis"
+            },
+            {
+              "reason_code": "invalid_ranking",
+              "unit_id": "unit-defect-review"
+            }
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "rows": [
+            {
+              "reason_code": "review_reviewer_reused",
+              "unit_id": "unit-defect-review"
+            }
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "rows": []
+        }
+      ],
+      "failure_receipts": []
+    },
+    {
+      "run_id": "ae687eef-3a16-46e3-bb93-57ab254c0e10",
+      "host": "hermes",
+      "started_at": "2026-09-11T14:10:45.307000+00:00",
+      "status": "completed",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "units": [
+        {
+          "unit_id": "unit-defect-analysis",
+          "proposed_ids": [
+            "code-reviewer"
+          ]
+        },
+        {
+          "unit_id": "unit-correctness-review",
+          "proposed_ids": [
+            "reality-checker",
+            "test-results-analyzer"
+          ]
+        }
+      ],
+      "provider_attempts": [
+        {
+          "stage": "planner",
+          "status": "applied",
+          "rows": [
+            {
+              "reason_code": "plan_capability_advisory",
+              "unit_id": "unit-defect-analysis",
+              "advisory_capability_ids": "review"
+            },
+            {
+              "reason_code": "plan_capability_advisory",
+              "unit_id": "unit-correctness-review",
+              "advisory_capability_ids": "verification"
+            }
+          ]
+        },
+        {
+          "stage": null,
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "rows": [
+            {
+              "reason_code": "review_reviewer_reused",
+              "unit_id": "unit-correctness-review"
+            }
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "rows": []
+        }
+      ],
+      "failure_receipts": []
+    },
+    {
+      "run_id": "13cb6fe3-05bf-43b7-a75e-47d617ac1997",
+      "host": "zcode",
+      "started_at": "2026-09-11T14:12:29.386443+00:00",
+      "status": "preflight_failed",
+      "preflight_state": "",
+      "planned_units": null,
+      "units": [],
+      "provider_attempts": [],
+      "failure_receipts": [
+        {
+          "stage": "routing",
+          "reason_code": "workforce_inference_failed",
+          "staffing_reason_codes": [
+            "staffing_critic_rejected",
+            "critic_wrong_neighbor_selection"
+          ],
+          "provider_attempts": [
+            {
+              "stage": "planner",
+              "status": "applied",
+              "rows": [
+                {
+                  "reason_code": "plan_capability_advisory",
+                  "unit_id": "unit-independent-review",
+                  "advisory_capability_ids": "verification"
+                }
+              ]
+            },
+            {
+              "stage": "recall_embedding",
+              "status": "applied",
+              "rows": []
+            },
+            {
+              "stage": "recall_reranker",
+              "status": "rejected",
+              "rows": []
+            },
+            {
+              "stage": "recruiter",
+              "status": "rejected",
+              "rows": [
+                {
+                  "reason_code": "review_reviewer_reused",
+                  "unit_id": "unit-independent-review"
+                }
+              ]
+            },
+            {
+              "stage": "recruiter",
+              "status": "applied",
+              "rows": []
+            },
+            {
+              "stage": "critic",
+              "status": "applied",
+              "rows": [
+                {
+                  "reason_code": "critic_wrong_neighbor_selection",
+                  "unit_id": "unit-independent-review",
+                  "neighbor_agent_id": "code-reviewer"
+                },
+                {
+                  "reason_code": "critic_wrong_neighbor_selection",
+                  "unit_id": "unit-independent-review",
+                  "neighbor_agent_id": "code-reviewer"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "run_id": "a7a87884-5227-48f4-ada8-651363f5204d",
+      "host": "openclaw",
+      "started_at": "2026-09-11T14:13:41.510000+00:00",
+      "status": "preflight_failed",
+      "preflight_state": "",
+      "planned_units": null,
+      "units": [],
+      "provider_attempts": [],
+      "failure_receipts": [
+        {
+          "stage": "routing",
+          "reason_code": "workforce_inference_failed",
+          "staffing_reason_codes": [
+            "review_reviewer_reused"
+          ],
+          "provider_attempts": [
+            {
+              "stage": "planner",
+              "status": "applied",
+              "rows": []
+            },
+            {
+              "stage": "recall_embedding",
+              "status": "applied",
+              "rows": []
+            },
+            {
+              "stage": "recall_reranker",
+              "status": "rejected",
+              "rows": []
+            },
+            {
+              "stage": "recruiter",
+              "status": "rejected",
+              "rows": [
+                {
+                  "reason_code": "staff_without_safe_team",
+                  "unit_id": "unit-correction-review",
+                  "requirement_axis": "capability",
+                  "safe_team_shortfall": "retrieved_coverer_not_selected",
+                  "ranked_agent_ids": "code-reviewer~backend-architect"
+                }
+              ]
+            },
+            {
+              "stage": "recruiter",
+              "status": "rejected",
+              "rows": [
+                {
+                  "reason_code": "review_reviewer_reused",
+                  "unit_id": "unit-correction-review"
+                }
+              ]
+            },
+            {
+              "stage": "recruiter",
+              "status": "rejected",
+              "rows": [
+                {
+                  "reason_code": "staff_without_safe_team",
+                  "unit_id": "unit-correction-review",
+                  "requirement_axis": "capability",
+                  "safe_team_shortfall": "retrieved_coverer_not_selected",
+                  "ranked_agent_ids": "code-reviewer"
+                }
+              ]
+            },
+            {
+              "stage": "recruiter",
+              "status": "rejected",
+              "rows": [
+                {
+                  "reason_code": "review_reviewer_reused",
+                  "unit_id": "unit-correction-review"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "diagnostic": {
+    "host": "openclaw",
+    "status": "inference_invalid",
+    "codes": [
+      "inference_invalid",
+      "workforce_inference_failed"
+    ],
+    "calls_used": 7,
+    "plan_units": [
+      {
+        "unit_id": "unit-defect-analysis",
+        "artifact_kind": "analysis",
+        "lifecycle": "discovery",
+        "authority": "advise",
+        "domains": [
+          "software-engineering"
+        ],
+        "required_capabilities": [
+          "analysis"
+        ],
+        "advisory": [],
+        "typed_requirements": [
+          "artifact:analysis",
+          "lifecycle:discovery",
+          "capability:analysis",
+          "authority:advise"
+        ]
+      },
+      {
+        "unit_id": "unit-proposed-tests",
+        "artifact_kind": "test-code",
+        "lifecycle": "testing",
+        "authority": "modify",
+        "domains": [
+          "quality-assurance"
+        ],
+        "required_capabilities": [
+          "testing"
+        ],
+        "advisory": [],
+        "typed_requirements": [
+          "artifact:test-code",
+          "lifecycle:testing",
+          "capability:testing",
+          "authority:modify"
+        ]
+      },
+      {
+        "unit_id": "unit-correctness-review",
+        "artifact_kind": "review-report",
+        "lifecycle": "review",
+        "authority": "review",
+        "domains": [
+          "software-engineering"
+        ],
+        "required_capabilities": [
+          "review",
+          "verification"
+        ],
+        "advisory": [
+          "verification"
+        ],
+        "typed_requirements": [
+          "artifact:review-report",
+          "lifecycle:review",
+          "capability:review",
+          "authority:review"
+        ]
+      },
+      {
+        "unit_id": "unit-risk-review",
+        "artifact_kind": "review-report",
+        "lifecycle": "review",
+        "authority": "review",
+        "domains": [
+          "quality-assurance"
+        ],
+        "required_capabilities": [
+          "review",
+          "risk-analysis"
+        ],
+        "advisory": [],
+        "typed_requirements": [
+          "artifact:review-report",
+          "lifecycle:review",
+          "capability:review",
+          "capability:risk-analysis",
+          "authority:review"
+        ]
+      }
+    ],
+    "recruiter_rejections": [
+      "workforce staffing verification failures: unit-correctness-review=review_reviewer_reused,unit-risk-review=review_reviewer_reused",
+      "workforce nomination failures: unit-proposed-tests=invalid_ranking",
+      "workforce nomination failures: unit-risk-review=staff_without_safe_team:capability~code-reviewer~silent-failure-hunter!1:2:4+retrieved_coverer_not_selected",
+      "workforce staffing verification failures: unit-risk-review=review_reviewer_reused"
+    ],
+    "finding": "The planner named risk-analysis beside review on a review-report unit; risk-analysis was outside the shape vocabulary and stayed mandatory, its rule (plan or review authority plus risk tokens) admitted silent-failure-hunter but not the code-reviewer the recruiter chose, and the unit was rejected staff_without_safe_team on the capability axis in the same shape as the live openclaw run."
+  },
+  "findings": [
+    "claude and hermes staffed with two units each; their applied planner attempts carry advisory rows (verification on the review unit, review on the analysis unit) and no capability-axis rejection occurred.",
+    "zcode was vetoed by the strict critic with two verified wrong-neighbour pointers naming code-reviewer over ai-evaluation-engineer and hallucination-root-cause-investigator on unit-independent-review (a recruiter selection question, not a coverage one).",
+    "openclaw was rejected twice as staff_without_safe_team on the capability axis (unit-correction-review, ranked code-reviewer, required 1) alternating with review_reviewer_reused, with no advisory row on its planner attempt, so the forcing capability was a specialty; the in-process diagnostic reproduced it as risk-analysis."
+  ],
+  "limits": "Single sample per host; the diagnostic ran without the AR-438 unit ceiling (four units) because the ceiling is applied by the pipeline, not by plan_and_staff_workforce."
+}

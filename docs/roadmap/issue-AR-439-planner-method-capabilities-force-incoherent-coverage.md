@@ -6,6 +6,7 @@ created: 2026-09-11
 updated: 2026-09-11
 tags: [workforce, planner, recruiter, staffing-verifier, reliability]
 related:
+  - docs/roadmap/evidence/AR-439-post-merge-measurement-20260911.json
   - docs/decisions/0252-bind-mandatory-capabilities-to-the-unit-shape.md
   - docs/roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md
   - docs/roadmap/issue-AR-394-recruiter-teams-fail-or-mis-select.md
@@ -100,10 +101,16 @@ undeclared specialty still surfacing as a hiring gap, the compiler's older
 drops, the end-to-end attempt detail and receipt rows, malformed wire forms
 and the row's closed keys.
 
-Follow-ups the review named, not changed here: a specialty on a unit whose
-authority no declarer carries (`risk-analysis` on a modify unit, supported by
-none of 95 modify-authority cards) is still mandatory and still starves under
-the ADR-0198 waiver rules; advisory rows are recorded only when a planner
+Post-merge measurement (main `ee774ceb`, digest `9cb87800ea8a`,
+[evidence](evidence/AR-439-post-merge-measurement-20260911.json)): claude and
+hermes staffed with advisory rows recorded; zcode was a named critic veto;
+openclaw was still rejected `staff_without_safe_team` on the capability axis
+with no advisory row, and an in-process diagnostic reproduced it as
+`risk-analysis` named beside `review` on a review-report unit. Its rule
+reads a card's authority and identity tokens, so it is shape-defined; it
+now joins the shape vocabulary and is advisory beside the owned capability.
+
+Follow-ups the review named, not changed here: advisory rows are recorded only when a planner
 call is spent, so a measurement over cached plans undercounts them; the
 preflight-failure receipt's node budget leaves seven fully populated
 rejected attempts of headroom beside a 16-row advisory detail. The recruiter

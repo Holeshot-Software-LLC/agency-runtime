@@ -100,8 +100,10 @@ def _reviewer() -> Any:
 # --- the split -----------------------------------------------------------------
 
 
-def test_the_shape_vocabulary_is_exactly_the_ontology_rules_plus_architecture() -> None:
-    assert frozenset(_CAPABILITY_RULES) | {"architecture"} == _SHAPE_CAPABILITIES
+def test_the_shape_vocabulary_is_exactly_what_the_typed_fields_decide() -> None:
+    # The two readings outside `_CAPABILITY_RULES` that `_supports_planning_capability`
+    # still decides from a card's typed fields and identity tokens.
+    assert frozenset(_CAPABILITY_RULES) | {"architecture", "risk-analysis"} == _SHAPE_CAPABILITIES
     assert _SHAPE_CAPABILITIES <= CORE_CAPABILITY_IDS
     # Every artifact-owned capability is a shape capability, so "owned" is the
     # one exception the split needs.
@@ -139,13 +141,24 @@ def test_the_shape_vocabulary_is_exactly_the_ontology_rules_plus_architecture() 
             ("review", "threat-modeling"),
             (),
         ),
+        # risk-analysis is read from authority and identity tokens, so it is a
+        # shape capability too: a review that names it is not forced onto a
+        # risk specialist (the live openclaw shape of 2026-09-11).
+        (
+            "review-report",
+            "review",
+            "review",
+            ("review", "risk-analysis"),
+            ("review",),
+            ("risk-analysis",),
+        ),
         (
             "implementation-change",
             "implementation",
             "modify",
             ("implementation", "risk-analysis"),
-            ("implementation", "risk-analysis"),
-            (),
+            ("implementation",),
+            ("risk-analysis",),
         ),
         (
             "review-report",
