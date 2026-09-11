@@ -3,9 +3,10 @@ title: "Make a wrong-neighbour veto name its neighbour, and check the name"
 status: accepted
 category: decisions
 created: 2026-09-10
-updated: 2026-09-10
+updated: 2026-09-11
 tags: [workforce, critic, staffing, receipts, inference]
 related:
+  - docs/roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
   - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
   - docs/decisions/0205-show-the-critic-the-eligible-neighbourhood-it-judges-against.md

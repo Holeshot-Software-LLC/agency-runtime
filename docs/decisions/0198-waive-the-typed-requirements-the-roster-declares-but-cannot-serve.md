@@ -6,6 +6,7 @@ created: 2026-09-03
 updated: 2026-09-03
 tags: [staffing, workforce, recruiter, verifier, receipts]
 related:
+  - docs/roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
   - docs/roadmap/issue-AR-383-inferred-subject-context-fails-its-own-projection.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md

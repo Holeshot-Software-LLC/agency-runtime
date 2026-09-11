@@ -113,6 +113,7 @@ from agency_runtime.core.workforce.staffing_verifier import (
     StaffingBudget,
     StaffingContext,
     StaffingDecision,
+    advisory_capabilities,
     build_verified_proposal,
     is_wildcard_coverage,
     typed_staffing_coverage,
@@ -4726,6 +4727,25 @@ def _verify_wrong_neighbor_pointers(
     return tuple(pointers)
 
 
+def _advisory_capability_detail(plan: WorkUnitPlan) -> str:
+    """Write the capabilities the verifier does not force, in the wire form both receipts project.
+
+    AR-439 / ADR-0252: one ``unit=cap~cap`` row per unit that named a method
+    of another shape beside its own; empty when no unit did. The ids come from
+    the closed ontology the planner was shown, so the row is content-free and
+    the demotion is diagnosable after the fact.
+    """
+
+    from agency_runtime.core.selector.receipt_projection import PLAN_ADVISORY_DETAIL_PREFIX
+
+    rows = [
+        f"{unit.unit_id}=" + "~".join(advisory)
+        for unit in plan.units
+        if (advisory := advisory_capabilities(unit))
+    ]
+    return PLAN_ADVISORY_DETAIL_PREFIX + ",".join(rows) if rows else ""
+
+
 def _wrong_neighbor_pointer_detail(pointers: Sequence[WrongNeighborPointer]) -> str:
     """Write the verified pointers in the wire form both durable receipts project."""
 
@@ -5228,6 +5248,17 @@ def plan_and_staff_workforce(
         )
         if isinstance(parsed_plan, WorkUnitPlan):
             workforce_cache_put(planner_cache_identity, parsed_plan)
+            advisory_detail = _advisory_capability_detail(parsed_plan)
+            if advisory_detail and stage_attempts and stage_attempts[-1].status == "applied":
+                # AR-439 / ADR-0252: the capabilities the verifier does not
+                # force ride the applied planner attempt in the wire form both
+                # durable receipts project, so the demotion is diagnosable
+                # after the fact. A cached plan spent no attempt and records
+                # nothing new.
+                stage_attempts = [
+                    *stage_attempts[:-1],
+                    replace(stage_attempts[-1], validation_detail=advisory_detail),
+                ]
     attempts.extend(stage_attempts)
     if parsed_plan is None:
         return _inference_failure(

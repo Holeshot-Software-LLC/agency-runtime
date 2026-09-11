@@ -10,6 +10,7 @@ from functools import lru_cache
 from typing import Any
 
 from agency_runtime.core.host_capabilities import expand_compatible_hosts
+from agency_runtime.core.workforce.capability_ontology import ARTIFACT_CAPABILITY
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
     WorkforceContract,
@@ -299,6 +300,29 @@ def _verification_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bo
     return contract.authority == "review" or "testing" in lifecycle
 
 
+# ADR-0252: the capabilities the ontology defines by shape, through the
+# authority and lifecycle rules below plus the architecture reading. A card
+# earns them from what it is (its authority, lifecycle phases and artifact
+# kinds), so a plan unit that names one beside its own artifact's capability
+# is asking for a card of another shape. Every other capability is a
+# specialty a card declares for itself.
+_SHAPE_CAPABILITIES = frozenset(
+    {
+        "analysis",
+        "architecture",
+        "audit",
+        "coordination",
+        "design",
+        "documentation",
+        "implementation",
+        "investigation",
+        "operations",
+        "planning",
+        "review",
+        "testing",
+        "verification",
+    }
+)
 _CAPABILITY_RULES: dict[str, Callable[[WorkforceContract, set[str], set[str]], bool]] = {
     "analysis": _analysis_rule,
     "audit": _audit_rule,
@@ -321,6 +345,34 @@ def _supports(contract: WorkforceContract, capability: str) -> bool:
         return broad
     required = _tokens(capability)
     return bool(required) and required <= _contract_tokens(contract)
+
+
+def mandatory_capabilities(unit: WorkUnit) -> tuple[str, ...]:
+    """Return the unit's capabilities that are typed coverage requirements (ADR-0252).
+
+    The artifact-owned capability always is. A capability outside the
+    shape-defined vocabulary is a specialty a card declares for itself
+    (`risk-analysis`, `threat-modeling`, a declared novelty) and stays
+    mandatory, so a roster gap on it still reaches hiring. Every other
+    shape-defined capability the planner named beside the owned one is a
+    method of another shape: it stays on the unit as recall evidence and as
+    the eligibility widening the recruiter sees, but no card of another shape
+    is forced onto the team to cover it.
+    """
+
+    owned = ARTIFACT_CAPABILITY.get(unit.artifact_kind, "")
+    return tuple(
+        item
+        for item in unit.required_capabilities
+        if item == owned or item not in _SHAPE_CAPABILITIES
+    )
+
+
+def advisory_capabilities(unit: WorkUnit) -> tuple[str, ...]:
+    """Return the planner-named capabilities the verifier does not force (ADR-0252)."""
+
+    mandatory = set(mandatory_capabilities(unit))
+    return tuple(item for item in unit.required_capabilities if item not in mandatory)
 
 
 def _authority_satisfies(unit: WorkUnit, contract: WorkforceContract) -> bool:
@@ -479,7 +531,7 @@ def _requirements(unit: WorkUnit) -> tuple[str, ...]:
         f"artifact:{unit.artifact_kind}",
         f"lifecycle:{unit.lifecycle_phase}",
         *(f"stack:{item}" for item in unit.languages + unit.frameworks),
-        *(f"capability:{item}" for item in unit.required_capabilities),
+        *(f"capability:{item}" for item in mandatory_capabilities(unit)),
         f"authority:{unit.authority}",
     ]
     return tuple(dict.fromkeys(values))
@@ -1475,8 +1527,10 @@ __all__ = [
     "StaffingContext",
     "StaffingDecision",
     "VerifiedUnitStaffing",
+    "advisory_capabilities",
     "build_deterministic_proposal",
     "build_verified_proposal",
+    "mandatory_capabilities",
     "typed_staffing_coverage",
     "typed_staffing_coverage_gaps",
     "typed_staffing_ineligibility",
