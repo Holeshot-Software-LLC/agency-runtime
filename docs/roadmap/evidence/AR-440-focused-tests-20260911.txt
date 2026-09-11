@@ -1,0 +1,8 @@
+tests/test_stale_hook_runtime.py::test_a_stale_stop_names_both_projections_the_failure_and_the_restart PASSED
+tests/test_stale_hook_runtime.py::test_a_stale_stop_on_zcode_keeps_the_block_shape PASSED
+tests/test_stale_hook_runtime.py::test_a_stop_failure_without_drift_keeps_the_generic_reason PASSED
+tests/test_stale_hook_runtime.py::test_a_stale_prompt_hook_still_publishes_and_names_the_drift PASSED
+tests/test_stale_hook_runtime.py::test_a_drift_read_that_raises_is_treated_as_no_drift PASSED
+tests/test_stale_hook_runtime.py::test_a_drift_import_that_fails_is_treated_as_no_drift_and_still_blocks PASSED
+tests/test_stale_hook_runtime.py::test_the_reason_is_bounded_and_sanitises_the_failure_class PASSED
+============================== 7 passed in 0.22s ===============================

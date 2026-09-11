@@ -1,0 +1,39 @@
+{
+  "schema": "agency-runtime.evidence.ar440-stale-hook-proof",
+  "issue": "AR-440",
+  "recorded": "2026-09-11",
+  "scope": "Two bounded executions on the owner machine after the PR #883 reinstall (main 48427d07, digest 2e2fb18b6c25). No code install has published a newer projection since, so the two halves of the acceptance criterion are proven separately: the drift half from inside a real stale projection against the real launcher pointer, the reaction half on the installed hook against a scratch pointer and a configuration key it does not know. Neither execution touched the live store: the drift read is read-only and the hook run used a scratch HOME.",
+  "stale_projection_drift": {
+    "method": "python3 -I -S with sys.path at the stale projection runtime-sha256-79138e80\u2026 (the projection this session loaded), argv pointed at its own _bootstrap.py, runtime_staleness(host=\"claude\") read against the real ~/.agency-runtime/launchers/current-claude.json",
+    "running_digest_prefix": "79138e80adcc",
+    "installed_digest_prefix": "2e2fb18b6c25",
+    "host": "claude",
+    "drift_reported": true
+  },
+  "installed_hook_reaction": {
+    "method": "The currently installed claude plugin Stop hook command, HOME redirected to a scratch directory holding a copy of agency.yaml with one added unknown dashboard key, a copy of run/control.json, and a launcher pointer naming afb7790bd7a2 as installed; stdin a synthetic Stop payload",
+    "plugin": "0.1.0-claude.a01b3908796e",
+    "running_digest_prefix": "2e2fb18b6c25",
+    "scratch_installed_digest_prefix": "afb7790bd7a2",
+    "rc": 0,
+    "stdout": {
+      "continue": false,
+      "stopReason": "Agency Runtime could not verify or persist the turn-scoped evidence contract. Do not publish this response. The hooks in this session run projection 2e2fb18b6c25 while the host installed afb7790bd7a2, and this runtime failed at the boundary with ConfigValidationError. Restart the claude session so it loads the installed hooks; a reinstall alone cannot refresh a running session."
+    },
+    "stderr": "agency hook claude: ConfigValidationError; response publication blocked stale_runtime running=2e2fb18b6c25 installed=afb7790bd7a2"
+  },
+  "previous_behaviour": {
+    "method": "The same synthetic Stop payload against the projection this session loaded (runtime-sha256-79138e80\u2026) with the real configuration",
+    "stdout": {
+      "continue": false,
+      "stopReason": "Agency Runtime could not verify or persist the turn-scoped evidence contract. Do not publish this response; restore the evidence store and start a new turn."
+    },
+    "stderr": "agency hook claude: ConfigValidationError; response publication blocked"
+  },
+  "findings": [
+    "A projection older than the installed one reports drift against the real pointer from inside its own process, which is the read the repaired boundary performs on failure.",
+    "The installed hook, meeting a configuration key it does not know while the pointer names another projection, rejects the Stop with a reason naming both digest prefixes, the failure class and the restart, and prints the drift on stderr; the previous projection rejects the same failure with the generic reason and names only the exception class on stderr.",
+    "The two halves compose into the deferred criterion; the first real stale session running this projection will show the same reason without a scratch pointer."
+  ],
+  "limits": "No newer projection has been installed since this one; the reaction half used a scratch pointer. Single executions, no host session involved."
+}

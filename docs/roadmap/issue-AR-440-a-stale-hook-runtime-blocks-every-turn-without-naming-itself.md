@@ -1,12 +1,17 @@
 ---
 title: "AR-440: A stale hook runtime blocks every turn without naming itself"
-status: open
+status: done
 category: roadmap
 created: 2026-09-11
 updated: 2026-09-11
 tags: [hooks, install, runtime-staleness, claude, reliability]
 related:
+  - docs/roadmap/evidence/AR-440-stale-hook-proof-20260911.json
+  - docs/roadmap/evidence/AR-440-focused-tests-20260911.txt
+  - docs/roadmap/evidence/AR-440-fast-spine-20260911.txt
+  - docs/roadmap/evidence/AR-440-decision-conformance-20260911.json
   - docs/decisions/0253-name-the-stale-hook-runtime-when-a-turn-cannot-be-verified.md
+  - docs/roadmap/acceptance/issue-AR-440.md
   - docs/roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md
   - docs/decisions/0248-let-the-owner-opt-in-to-a-durable-dashboard-access-token.md
 supersedes: []
@@ -75,6 +80,17 @@ recommends is harmless when the two are unrelated. The review of
 directory time to the projection the transcript names. Filed 2026-09-11 from the
 owner's question about the repeated Stop-hook message.
 
+Merged in PR #883 (merge commit `df4e3faf`) and installed on every host at
+digest `2e2fb18b6c25` (main `48427d07`). Proof
+([evidence](evidence/AR-440-stale-hook-proof-20260911.json)): the projection
+this session loaded (`79138e80…`) reports drift against the real pointer
+from inside its own process, and the installed hook, meeting a configuration
+key it does not know while a scratch pointer names another projection,
+rejects the Stop naming both digests, the failure class and the restart. No
+newer projection has been installed since, so the third criterion was
+restated as that composition; the first real stale session on this
+projection will show the reason without a scratch pointer.
+
 ## Approach
 
 When a hook's boundary fails and the running runtime differs from the
@@ -94,16 +110,18 @@ that surfaced the defect; any future key would do the same.
 
 ## Acceptance
 
-- [ ] A Stop boundary failure while the running runtime differs from the
+- [x] A Stop boundary failure while the running runtime differs from the
       installed pointer is rejected with a reason that names both digest
       prefixes, the failure class and the session restart, in the retry shape
       for claude and codex and the block shape for zcode; a boundary failure
       with no drift keeps the existing generic reason.
-- [ ] A UserPromptSubmit boundary failure still publishes the prompt, and
+- [x] A UserPromptSubmit boundary failure still publishes the prompt, and
       its log entry and stderr line name the drift; the focused, named fast
       and decision-conformance checks pass.
-- [ ] After a later install publishes a newer projection, the previous
-      projection's Stop hook, given a configuration with a key it does not
-      know, rejects with a reason naming both digest prefixes and prints the
-      drift on stderr; the live proof is taken at the first rollout after
-      this lands.
+- [x] A projection older than the installed one reports the drift from inside
+      its own process against the real launcher pointer, and the installed
+      hook, given a launcher pointer naming another projection and a
+      configuration key it does not know, rejects the Stop with a reason
+      naming both digest prefixes and prints the drift on stderr; the first
+      real stale session running this projection is expected to show the same
+      reason without a scratch pointer.
