@@ -12,6 +12,10 @@ related:
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
   - docs/roadmap/evidence/AR-437-live-proof-20260910.json
   - docs/roadmap/evidence/AR-438-recruiter-prompt-sizes-20260910.json
+  - docs/roadmap/evidence/AR-438-four-host-measurement-20260911.json
+  - docs/roadmap/evidence/AR-438-focused-tests-20260911.txt
+  - docs/roadmap/evidence/AR-438-fast-spine-20260911.txt
+  - docs/roadmap/evidence/AR-438-decision-conformance-20260911.json
 supersedes: []
 superseded_by: null
 type: issue
@@ -45,7 +49,8 @@ multiplies both failures.
 
 ## Current state
 
-Repaired on branch `claude/ar438-unit-ceiling-20260911` per ADR-0251:
+Merged in PR #869 (merge commit `244aee08`) per ADR-0251 and live on every host
+at runtime digest `98f5ddda00ce` (main `1e1ca41c`):
 `planning_unit_ceiling` in `plan_policy` returns 2 for every request the
 policy does not itself expand (code mutation, security review, repository
 mapping, regulated assurance), reusing the exact classification
@@ -63,6 +68,16 @@ handoff about the code" caps; and the applied ceiling reaches no receipt field
 beyond the free-text `validation_detail`. Each is a follow-up, not a repair
 in this package.
 
+Live measurement (2026-09-11, [evidence](evidence/AR-438-four-host-measurement-20260911.json)):
+one fresh native run per host on the exact ordinary-review wording staffed on
+claude, hermes, zcode and openclaw (4 of 4, against 1 of 4 on the pre-change
+batch of the same morning), each with exactly two planned units and a
+first-reply critic approval carrying no reason codes. zcode needed three
+recruiter attempts, all on the receipt. A change-verb wording beside a code
+noun planned three units and a no-code-noun wording planned two, both
+approved, so both sides of the rule were exercised live. Codex stays
+activation-required until the owner accepts the trust screen.
+
 ## Approach
 
 Decide the ceiling deterministically from the same request profile the
@@ -79,12 +94,12 @@ plans the policy does expand is a separate package.
 
 ## Acceptance
 
-- [ ] `planning_unit_ceiling` returns 2 for the exact ordinary-review, merge,
+- [x] `planning_unit_ceiling` returns 2 for the exact ordinary-review, merge,
       handoff, README and install wordings and None for code-mutation,
       security-review, repository-mapping and regulated-assurance wordings.
-- [ ] The pipeline passes the ceiling as `max_planned_units` without
+- [x] The pipeline passes the ceiling as `max_planned_units` without
       overriding the activation-canary or contextual-inquiry contracts, and the
       focused and named fast checks pass.
-- [ ] One fresh ordinary-review turn per host after the reinstall plans at
+- [x] One fresh ordinary-review turn per host after the reinstall plans at
       most two units on every host, with the staffed rate recorded against the
       2026-09-11 pre-change batch.

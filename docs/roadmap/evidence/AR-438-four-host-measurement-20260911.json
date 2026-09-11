@@ -1,0 +1,607 @@
+{
+  "schema": "agency-runtime.evidence.ar438-four-host-measurement",
+  "issue": "AR-438",
+  "recorded": "2026-09-11",
+  "scope": "One fresh native run per installed host on the exact ordinary-review wording after the PR #869 reinstall, plus two single-host wordings that exercise both sides of the change-verb rule. Single samples per host; planner and recruiter are stochastic. Codex is excluded: activation-required pending the owner trust screen.",
+  "runtime": {
+    "main_commit": "1e1ca41c8e616240a4e0c9c72217df5c410fc237",
+    "runtime_digest_prefix": "98f5ddda00ce",
+    "hosts_installed": [
+      "claude",
+      "codex",
+      "hermes",
+      "zcode",
+      "openclaw"
+    ],
+    "rollout_log": "~/.agency-runtime/ephemeral/ar433-install-20260910/rollout-1e1ca41c.log"
+  },
+  "harness": {
+    "script": "~/.agency-runtime/ephemeral/ar433-install-20260910/liveness.py",
+    "method": "pass-through observer on the agency-recruiter-critic route; owner config restored byte-exact after each batch; foreground pairs",
+    "batches": {
+      "-4a": [
+        "claude",
+        "hermes"
+      ],
+      "-4b": [
+        "zcode",
+        "openclaw"
+      ],
+      "-4c": [
+        "claude"
+      ],
+      "-4d": [
+        "claude"
+      ]
+    }
+  },
+  "ordinary_review": {
+    "request": "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files.",
+    "request_sha256": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7",
+    "runs": [
+      {
+        "run_id": "12e2d468-b876-401c-bcb2-48a577c2a63f",
+        "host": "claude",
+        "started_at": "2026-09-11T11:43:49.711085+00:00",
+        "status": "completed",
+        "preflight_state": "ready",
+        "planned_units": 2,
+        "selected_ids": [
+          "code-reviewer"
+        ],
+        "staffing_status": "accepted",
+        "units": [
+          {
+            "unit_id": "unit-defect-analysis",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          },
+          {
+            "unit_id": "unit-correction-proposal",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          }
+        ],
+        "provider_attempts": [
+          {
+            "model_group": "task-agency-planner-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "rejected",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-critic-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          }
+        ],
+        "failure_receipts": []
+      },
+      {
+        "run_id": "df976d21-bc60-4e3e-a00b-f65b999f6bdf",
+        "host": "hermes",
+        "started_at": "2026-09-11T11:46:17.549000+00:00",
+        "status": "completed",
+        "preflight_state": "ready",
+        "planned_units": 2,
+        "selected_ids": [
+          "code-reviewer"
+        ],
+        "staffing_status": "accepted",
+        "units": [
+          {
+            "unit_id": "unit-defect-analysis",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          },
+          {
+            "unit_id": "unit-static-review",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          }
+        ],
+        "provider_attempts": [
+          {
+            "model_group": "task-agency-planner-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-critic-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          }
+        ],
+        "failure_receipts": []
+      },
+      {
+        "run_id": "56fe8142-17f7-454b-b028-31074a2ac1e9",
+        "host": "zcode",
+        "started_at": "2026-09-11T11:47:24.829419+00:00",
+        "status": "completed",
+        "preflight_state": "ready",
+        "planned_units": 2,
+        "selected_ids": [
+          "code-reviewer"
+        ],
+        "staffing_status": "accepted",
+        "units": [
+          {
+            "unit_id": "unit-defect-analysis",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          },
+          {
+            "unit_id": "unit-defect-review",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          }
+        ],
+        "provider_attempts": [
+          {
+            "model_group": "task-agency-planner-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "rejected",
+            "validation_failure_codes": [
+              null,
+              null
+            ]
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "rejected",
+            "validation_failure_codes": [
+              null
+            ]
+          },
+          {
+            "model_group": "task-agency-recruiter-v2-content-fallback",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-critic-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          }
+        ],
+        "failure_receipts": []
+      },
+      {
+        "run_id": "bda59c0d-cfa3-4810-ad0d-e118cb9f9d7c",
+        "host": "openclaw",
+        "started_at": "2026-09-11T11:49:13.711000+00:00",
+        "status": "completed",
+        "preflight_state": "ready",
+        "planned_units": 2,
+        "selected_ids": [
+          "code-reviewer"
+        ],
+        "staffing_status": "accepted",
+        "units": [
+          {
+            "unit_id": "unit-defect-analysis",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          },
+          {
+            "unit_id": "unit-correctness-review",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          }
+        ],
+        "provider_attempts": [
+          {
+            "model_group": "task-agency-planner-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-critic-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          }
+        ],
+        "failure_receipts": []
+      }
+    ],
+    "critic_packets": [
+      {
+        "file": "critic-packets-4a/1784800570348431.json",
+        "http_status": 200,
+        "request_sha256": "912f57faa4e4c7840e7cac843da54687126a53180361254e5833bc5aa58aad85",
+        "response_sha256": "ee00b8a1a60ed5210cfc1b57cad1b66b9889f52471debc1a9923f94f0d170fc7",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      },
+      {
+        "file": "critic-packets-4a/1784878623672625.json",
+        "http_status": 200,
+        "request_sha256": "1f6845d3672b3210ee023ed45433c5b385ea2ae9f434d21f406f5ed858d5ce33",
+        "response_sha256": "67bcbb89ba1894535b2a8bf78d399ea424a960a5fe8ad5e20b81fb89525569ab",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      },
+      {
+        "file": "critic-packets-4b/1784981397914183.json",
+        "http_status": 200,
+        "request_sha256": "cb16a81dd6087a387ce2f0f3d9f2cae5cabf269af69bb94d8db11e1657a03c5d",
+        "response_sha256": "2ee3f8f734ad93ceca615ab7e09858ec4b3a550396a7a57615ced0287505033c",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      },
+      {
+        "file": "critic-packets-4b/1785049805932893.json",
+        "http_status": 200,
+        "request_sha256": "a7bc1d1b6f4557a5504cabcfb6c96911f980724ec5c91c74a296f0cf5a28f404",
+        "response_sha256": "87078b4ea1d4710e166df5c96057d4bc19dbd1677706e4e716506de0ab710852",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      }
+    ],
+    "staffed": "4 of 4",
+    "planned_units_max": 2
+  },
+  "rule_sides": {
+    "uncapped_change_verb_beside_code_noun": {
+      "request": "Migrate this Python code to return a float mean and raise ValueError for empty input: def average(values): return sum(values) // len(values). Show the migrated code inline; do not read or modify files.",
+      "expected_ceiling": null,
+      "run": {
+        "run_id": "b718aa94-3bb4-41c8-889e-5cafd6bead40",
+        "host": "claude",
+        "started_at": "2026-09-11T11:51:29.352720+00:00",
+        "status": "completed",
+        "preflight_state": "ready",
+        "planned_units": 3,
+        "selected_ids": [
+          "python-application-engineer",
+          "software-test-engineer",
+          "code-reviewer"
+        ],
+        "staffing_status": "accepted",
+        "units": [
+          {
+            "unit_id": "unit-migrate-average",
+            "proposed_ids": [
+              "python-application-engineer"
+            ]
+          },
+          {
+            "unit_id": "unit-average-tests",
+            "proposed_ids": [
+              "software-test-engineer"
+            ]
+          },
+          {
+            "unit_id": "unit-correctness-review",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          }
+        ],
+        "provider_attempts": [
+          {
+            "model_group": "task-agency-planner-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "rejected",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-critic-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          }
+        ],
+        "failure_receipts": []
+      },
+      "critic_packets": [
+        {
+          "file": "critic-packets-4c/1785175931538648.json",
+          "http_status": 200,
+          "request_sha256": "0f2bf572e4eecbbffef3eff991c73766c651ceafb69239f6dfd52827b3549a46",
+          "response_sha256": "7e86a35e84c863ec70ab188e79f18e095b031422ab4412123ba00a5e82f6f9a1",
+          "verdict": {
+            "approved": true,
+            "reason_codes": []
+          }
+        }
+      ]
+    },
+    "capped_no_code_noun": {
+      "request": "Please modify the parser and write tests for it. Do not read or modify files; describe the change inline.",
+      "expected_ceiling": 2,
+      "run": {
+        "run_id": "2e89ddcb-e67c-4874-bbad-c2e2dd624a7f",
+        "host": "claude",
+        "started_at": "2026-09-11T11:52:24.801054+00:00",
+        "status": "completed",
+        "preflight_state": "ready",
+        "planned_units": 2,
+        "selected_ids": [
+          "minimal-change-engineer",
+          "code-reviewer"
+        ],
+        "staffing_status": "accepted",
+        "units": [
+          {
+            "unit_id": "unit-parser-change-and-tests",
+            "proposed_ids": [
+              "minimal-change-engineer"
+            ]
+          },
+          {
+            "unit_id": "unit-static-correctness-review",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          }
+        ],
+        "provider_attempts": [
+          {
+            "model_group": "task-agency-planner-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-planner-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-critic-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          }
+        ],
+        "failure_receipts": []
+      },
+      "critic_packets": [
+        {
+          "file": "critic-packets-4d/1785254552088954.json",
+          "http_status": 200,
+          "request_sha256": "e36616976f34541685369e546f4ac3b2c2f3f7ea508e98d72af9b8767de99cc5",
+          "response_sha256": "51f5bd1e69b84d73b6b9bb930c18a37ef0fc21a2aa04de4f11b61f9eeddbb3ce",
+          "verdict": {
+            "approved": true,
+            "reason_codes": []
+          }
+        }
+      ],
+      "note": "Staffed two units and approved; the host then ended the turn with a clarifying question because no parser exists in the ephemeral working directory, loading only the steward card for delivery."
+    }
+  },
+  "baseline": {
+    "label": "2026-09-11 pre-change batch on main cd0e9c4e (AR-437 live proof, same wording)",
+    "runs": [
+      {
+        "run_id": "142f3193-0b8b-4594-88a5-727a7f09e713",
+        "host": "claude",
+        "started_at": "2026-09-11T01:25:16.555118+00:00",
+        "status": "preflight_failed",
+        "preflight_state": "",
+        "planned_units": null,
+        "selected_ids": null,
+        "staffing_status": null,
+        "units": [],
+        "provider_attempts": [],
+        "failure_receipts": [
+          {
+            "stage": "routing",
+            "reason_code": "workforce_inference_failed",
+            "staffing_reason_codes": [
+              "review_reviewer_reused"
+            ]
+          }
+        ]
+      },
+      {
+        "run_id": "57369e64-5311-4cae-82f5-77d0e7aaa044",
+        "host": "hermes",
+        "started_at": "2026-09-11T01:27:45.419000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": "",
+        "planned_units": null,
+        "selected_ids": null,
+        "staffing_status": null,
+        "units": [],
+        "provider_attempts": [],
+        "failure_receipts": [
+          {
+            "stage": "routing",
+            "reason_code": "workforce_inference_failed",
+            "staffing_reason_codes": [
+              "staffing_critic_rejected",
+              "critic_wrong_neighbor_selection"
+            ]
+          }
+        ]
+      },
+      {
+        "run_id": "01a570c3-5173-49b3-a380-0a632ab0cc37",
+        "host": "zcode",
+        "started_at": "2026-09-11T01:29:54.424868+00:00",
+        "status": "completed",
+        "preflight_state": "ready",
+        "planned_units": 2,
+        "selected_ids": [
+          "code-reviewer"
+        ],
+        "staffing_status": "accepted",
+        "units": [
+          {
+            "unit_id": "unit-defect-analysis",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          },
+          {
+            "unit_id": "unit-correction-proposal",
+            "proposed_ids": [
+              "code-reviewer"
+            ]
+          }
+        ],
+        "provider_attempts": [
+          {
+            "model_group": "task-agency-planner-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          },
+          {
+            "model_group": "task-agency-critic-v2",
+            "status": "applied",
+            "validation_failure_codes": []
+          }
+        ],
+        "failure_receipts": []
+      },
+      {
+        "run_id": "ffb1398c-d918-4f91-b20d-a63f825e5822",
+        "host": "openclaw",
+        "started_at": "2026-09-11T01:31:06.029000+00:00",
+        "status": "preflight_failed",
+        "preflight_state": "",
+        "planned_units": null,
+        "selected_ids": null,
+        "staffing_status": null,
+        "units": [],
+        "provider_attempts": [],
+        "failure_receipts": [
+          {
+            "stage": "routing",
+            "reason_code": "workforce_inference_failed",
+            "staffing_reason_codes": [
+              "inference_invalid"
+            ]
+          }
+        ]
+      }
+    ],
+    "staffed": "1 of 4"
+  },
+  "findings": [
+    "All four hosts staffed the ordinary review with exactly two planned units (analysis, then review), one code-reviewer per unit, and a first-reply critic approval with no reason codes.",
+    "zcode reached its accepted team after two recruiter rejections (invalid_ranking, then review_reviewer_reused) and a third recruiter attempt served under the gateway model group task-agency-recruiter-v2-content-fallback; every attempt is on the receipt.",
+    "The change-verb wording planned three units (engineer, tester, reviewer) and was approved; the no-code-noun wording planned two and was approved, matching the ADR-0251 rule on both sides.",
+    "The applied ceiling itself still reaches no receipt field (AR-438 residual); the two-unit plans are the observable."
+  ],
+  "limits": "Single sample per host per wording; no controlled A/B against the pre-change planner; the gateway may serve cached planner replies within a wording (the four ordinary-review runs produced four distinct second-unit ids, so those were not replays)."
+}

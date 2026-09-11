@@ -3,7 +3,7 @@ title: "AR-434: Plan policy reads a handoff request as a code mutation"
 status: open
 category: roadmap
 created: 2026-09-10
-updated: 2026-09-10
+updated: 2026-09-11
 tags: [workforce, planner, plan-policy, reliability]
 related:
   - docs/decisions/0250-read-a-prose-artefact-request-as-documentation-work.md
@@ -44,8 +44,9 @@ request text alone.
 
 ## Current state
 
-Repaired on branch `claude/ar434-handoff-is-documentation-20260910` per
-ADR-0250: `prose_artifact_request` in `plan_policy` reads a request that names
+Merged in PR #866 (merge commit `5a1e6b3a`) per ADR-0250 and live on every
+host at runtime digest `98f5ddda00ce`; the fresh diagnostic on the exact
+handoff wording is still owed: `prose_artifact_request` in `plan_policy` reads a request that names
 a prose artefact as the object of every change verb, whose only code nouns
 are locative and which carries no strong code verb, as documentation work;
 the policy and the deterministic planner call the predicate on the same text,
