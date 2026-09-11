@@ -1,12 +1,15 @@
 """AR-439 / ADR-0252: a unit's mandatory capabilities are bound to its own shape.
 
-Every terminal ``staff_without_safe_team`` since 2026-09-08 was on the
-capability axis: the compiler made each planner-named capability a mandatory
-typed requirement, and when the capability belonged to another unit shape
-(``implementation`` on a read-only review, ``analysis`` on a test-code unit,
-``coordination`` on a merge) the only coverers were the wrong specialists,
-which the recruiter rightly left out. These tests pin the shape rule, what
-the compiler keeps and drops, the demotion the applied planner attempt
+Every recruiter rejection recorded as ``staff_without_safe_team`` since
+2026-09-08 was on the capability axis: the verifier made each planner-named
+capability a mandatory typed requirement, and when the capability belonged to
+another unit shape (``implementation`` on a read-only review, ``analysis`` on
+a test-code unit, ``coordination`` on a merge) the only coverers were the
+wrong specialists, which the recruiter rightly left out. The unit keeps
+every planner-named capability for recall and eligibility; only the
+artifact-owned capability, a specialty outside the shape vocabulary and a
+declared novelty are typed coverage. These tests pin that split, the
+requirements the verifier derives, the detail the applied planner attempt
 records, and the closed row both durable receipts project from it.
 """
 
@@ -19,19 +22,31 @@ import pytest
 
 from agency_runtime.core.preflight_failure import project_preflight_provider_attempts
 from agency_runtime.core.selector.receipt_projection import (
-    PLAN_DEMOTION_DETAIL_PREFIX,
+    PLAN_ADVISORY_DETAIL_PREFIX,
     normalize_durable_routing_receipt,
     project_durable_routing_receipt,
     project_nomination_failures,
 )
 from agency_runtime.core.workforce.cache import clear_workforce_caches
+from agency_runtime.core.workforce.capability_ontology import (
+    ARTIFACT_CAPABILITY,
+    CORE_CAPABILITY_IDS,
+)
 from agency_runtime.core.workforce.inference import (
-    _capability_demotion_detail,
+    _advisory_capability_detail,
     plan_and_staff_workforce,
 )
-from agency_runtime.core.workforce.intent import COMPACT_INTENT_SYSTEM, compile_intent_plan
+from agency_runtime.core.workforce.intent import COMPACT_INTENT_SYSTEM
+from agency_runtime.core.workforce.planning_contracts import WorkUnit
 from agency_runtime.core.workforce.routing_projection import _provider_attempts
-from agency_runtime.core.workforce.staffing_verifier import planning_capability_coherent
+from agency_runtime.core.workforce.staffing_verifier import (
+    _CAPABILITY_RULES,
+    _SHAPE_CAPABILITIES,
+    advisory_capabilities,
+    mandatory_capabilities,
+    typed_staffing_coverage_gaps,
+    typed_staffing_requirements,
+)
 from tests.test_strict_critic_doctrine import (
     _NOMINATION,
     _PLAN,
@@ -46,258 +61,220 @@ from tests.test_strict_critic_doctrine import (
 )
 from tests.test_workforce_intent import _compile, _intent
 
-_KNOWN_CAPABILITIES = (
-    "analysis",
-    "architecture",
-    "audit",
-    "coordination",
-    "design",
-    "documentation",
-    "implementation",
-    "investigation",
-    "operations",
-    "planning",
-    "review",
-    "simulation",
-    "testing",
-    "threat-modeling",
-    "verification",
-)
 
-
-def _compile_known(value: dict[str, object], *, request: str):
-    return compile_intent_plan(
-        value,
-        request=request,
-        context=_context(),
-        known_domains=("operations", "security", "software-engineering", "quality-assurance"),
-        known_stacks=("python",),
-        known_capability_ids=_KNOWN_CAPABILITIES,
+def _unit(artifact: str, lifecycle: str, authority: str, *capabilities: str) -> WorkUnit:
+    return WorkUnit(
+        unit_id="unit-shape",
+        outcome="Shape probe",
+        artifact_kind=artifact,
+        lifecycle_phase=lifecycle,
+        domains=("software-engineering",),
+        languages=(),
+        frameworks=(),
+        required_capabilities=tuple(capabilities),
+        authority=authority,
+        mutation_scope="read_only",
+        risks=(),
+        trust_boundaries=("repository",),
+        claims=(),
+        depends_on=(),
+        resources=("request",),
+        required_tools=("repository-read",),
+        platforms=("linux",),
+        acceptance_evidence=("evidence",),
+        parallelization="unspecified",
     )
 
 
-# --- the shape rule ----------------------------------------------------------
+def _reviewer() -> Any:
+    return _contract(
+        "code-reviewer",
+        authority="review",
+        artifact="review-report",
+        lifecycle="review",
+        domains=("software-engineering",),
+        capabilities=("review",),
+    )
+
+
+# --- the split -----------------------------------------------------------------
+
+
+def test_the_shape_vocabulary_is_exactly_the_ontology_rules_plus_architecture() -> None:
+    assert frozenset(_CAPABILITY_RULES) | {"architecture"} == _SHAPE_CAPABILITIES
+    assert _SHAPE_CAPABILITIES <= CORE_CAPABILITY_IDS
+    # Every artifact-owned capability is a shape capability, so "owned" is the
+    # one exception the split needs.
+    assert set(ARTIFACT_CAPABILITY.values()) <= _SHAPE_CAPABILITIES
 
 
 @pytest.mark.parametrize(
-    ("capability", "artifact", "lifecycle", "authority", "coherent"),
+    ("artifact", "lifecycle", "authority", "named", "mandatory", "advisory"),
     [
-        # The four observed shapes: a method that belongs to another unit.
-        ("implementation", "review-report", "review", "review", False),
-        ("analysis", "test-code", "testing", "modify", False),
-        ("coordination", "implementation-change", "implementation", "modify", False),
-        ("planning", "analysis", "discovery", "advise", False),
-        # Methods a card of the unit's own shape carries under the rules.
-        ("verification", "review-report", "review", "review", True),
-        ("audit", "review-report", "review", "review", True),
-        ("investigation", "analysis", "discovery", "advise", True),
-        ("testing", "test-evidence", "testing", "review", True),
-        ("review", "test-evidence", "testing", "review", True),
-        ("architecture", "architecture-record", "design", "plan", True),
-        ("design", "plan", "planning", "plan", True),
-        # A specialty outside the shape vocabulary is coherent on any shape,
-        # including one whose heuristic reading is authority-keyed.
-        ("threat-modeling", "review-report", "review", "review", True),
-        ("simulation", "plan", "planning", "plan", True),
-        ("risk-analysis", "implementation-change", "implementation", "modify", True),
-        # Audit, review and verification belong to the review and test-evidence
-        # shapes; an analysis unit keeps analysis and investigation.
-        ("audit", "analysis", "discovery", "advise", False),
-        ("review", "analysis", "discovery", "advise", False),
-        ("verification", "analysis", "discovery", "advise", False),
-        ("analysis", "review-report", "review", "review", True),
-        # Documentation is owned by the documentation shape alone.
-        ("documentation", "review-report", "review", "review", False),
-        ("documentation", "documentation", "documentation", "modify", True),
+        # The four observed shapes: a method of another shape is advisory.
+        (
+            "review-report",
+            "review",
+            "review",
+            ("review", "implementation"),
+            ("review",),
+            ("implementation",),
+        ),
+        ("test-code", "testing", "modify", ("testing", "analysis"), ("testing",), ("analysis",)),
+        (
+            "implementation-change",
+            "implementation",
+            "modify",
+            ("implementation", "coordination"),
+            ("implementation",),
+            ("coordination",),
+        ),
+        ("analysis", "discovery", "advise", ("analysis", "planning"), ("analysis",), ("planning",)),
+        # A specialty and a declared novelty stay mandatory beside the owned one.
+        (
+            "review-report",
+            "review",
+            "review",
+            ("review", "threat-modeling"),
+            ("review", "threat-modeling"),
+            (),
+        ),
+        (
+            "implementation-change",
+            "implementation",
+            "modify",
+            ("implementation", "risk-analysis"),
+            ("implementation", "risk-analysis"),
+            (),
+        ),
+        (
+            "review-report",
+            "review",
+            "review",
+            ("review", "quantum-key-audit"),
+            ("review", "quantum-key-audit"),
+            (),
+        ),
+        # Even a second method the shape could carry is advisory: the shape
+        # requirements already prove it.
+        (
+            "review-report",
+            "review",
+            "review",
+            ("review", "verification", "audit"),
+            ("review",),
+            ("verification", "audit"),
+        ),
+        (
+            "analysis",
+            "discovery",
+            "advise",
+            ("analysis", "investigation"),
+            ("analysis",),
+            ("investigation",),
+        ),
+        (
+            "plan",
+            "planning",
+            "plan",
+            ("planning", "operations", "simulation"),
+            ("planning", "simulation"),
+            ("operations",),
+        ),
     ],
 )
-def test_the_rule_reads_the_unit_shape_the_verifier_reads(
-    capability: str, artifact: str, lifecycle: str, authority: str, coherent: bool
+def test_only_the_owned_capability_specialties_and_novelties_are_mandatory(
+    artifact: str,
+    lifecycle: str,
+    authority: str,
+    named: tuple[str, ...],
+    mandatory: tuple[str, ...],
+    advisory: tuple[str, ...],
 ) -> None:
-    assert (
-        planning_capability_coherent(
-            capability, artifact_kind=artifact, lifecycle_phase=lifecycle, authority=authority
-        )
-        is coherent
+    unit = _unit(artifact, lifecycle, authority, *named)
+    assert mandatory_capabilities(unit) == mandatory
+    assert advisory_capabilities(unit) == advisory
+    # The unit itself is untouched: every planner-named capability stays on it.
+    assert unit.required_capabilities == named
+
+
+def test_the_verifier_requires_only_the_mandatory_capabilities() -> None:
+    unit = _unit("review-report", "review", "review", "review", "implementation", "threat-modeling")
+    assert typed_staffing_requirements(unit) == (
+        "artifact:review-report",
+        "lifecycle:review",
+        "capability:review",
+        "capability:threat-modeling",
+        "authority:review",
     )
 
 
-def test_a_domain_can_make_operations_coherent_on_a_check() -> None:
-    kwargs = {"artifact_kind": "test-evidence", "lifecycle_phase": "testing", "authority": "review"}
-    assert not planning_capability_coherent("operations", **kwargs)
-    assert planning_capability_coherent("operations", domains=("operations",), **kwargs)
+def test_a_lone_reviewer_now_covers_a_review_that_named_implementation() -> None:
+    # The live shape: the recruiter ranked code-reviewer alone for a review
+    # unit whose plan also named implementation, and the gate rejected it.
+    unit = _unit("review-report", "review", "review", "review", "implementation")
+    gaps = typed_staffing_coverage_gaps(unit, [_reviewer()], _context())
+    assert gaps.uncovered == ()
 
 
-def test_an_empty_capability_is_never_coherent() -> None:
-    assert not planning_capability_coherent(
-        "", artifact_kind="plan", lifecycle_phase="planning", authority="plan"
-    )
+def test_a_specialty_nobody_declares_is_still_a_gap_for_hiring() -> None:
+    unit = _unit("review-report", "review", "review", "review", "quantum-key-audit")
+    gaps = typed_staffing_coverage_gaps(unit, [_reviewer()], _context())
+    assert gaps.uncovered == ("capability:quantum-key-audit",)
+    assert gaps.unknown == ("capability:quantum-key-audit",)
 
 
-# --- what the compiler keeps and drops ------------------------------------------
+# --- the compiler is untouched -------------------------------------------------------
 
 
-def test_the_compiler_drops_a_method_of_another_shape_from_each_observed_unit() -> None:
-    review = _compile_known(
-        _intent(
-            artifact="review-report",
-            domains=["software-engineering"],
-            stacks=[],
-            capabilities=["review", "implementation"],
-        ),
+def test_the_compiler_keeps_every_planner_named_capability_on_the_unit() -> None:
+    plan = _compile(
+        _intent(artifact="review-report", capabilities=["review", "implementation"]),
         request="Review this function and propose how to correct it.",
     )
-    assert review.units[0].required_capabilities == ("review",)
-
-    tests = _compile_known(
-        _intent(
-            artifact="test-code",
-            domains=["quality-assurance"],
-            stacks=[],
-            capabilities=["testing", "analysis"],
-        ),
-        request="Write the tests for the average function.",
-    )
-    assert tests.units[0].required_capabilities == ("testing",)
-
-    merge = _compile_known(
-        _intent(
-            artifact="implementation-change",
-            domains=["operations"],
-            stacks=[],
-            capabilities=["implementation", "coordination"],
-        ),
-        request="Merge every local branch into main and push.",
-    )
-    assert merge.units[0].required_capabilities == ("implementation",)
-
-    analysis = _compile_known(
-        _intent(
-            artifact="analysis",
-            domains=["software-engineering"],
-            stacks=[],
-            capabilities=["analysis", "planning"],
-        ),
-        request="Map the relevant code paths and say what to do next.",
-    )
-    assert analysis.units[0].required_capabilities == ("analysis",)
-
-
-def test_the_compiler_keeps_a_coherent_method_a_specialty_and_a_declared_novelty() -> None:
-    review = _compile_known(
-        _intent(
-            artifact="review-report",
-            domains=["security"],
-            stacks=[],
-            capabilities=["review", "verification", "threat-modeling"],
-        ),
-        request="Review the authentication service for security defects.",
-    )
-    assert review.units[0].required_capabilities == ("review", "verification", "threat-modeling")
-
-    incident = _compile_known(
-        _intent(
-            artifact="analysis",
-            domains=["security"],
-            stacks=[],
-            capabilities=["analysis", "investigation"],
-        ),
-        request="Investigate the incident and reconstruct the breach timeline.",
-    )
-    assert incident.units[0].required_capabilities == ("analysis", "investigation")
-
-    novel = _compile_known(
-        _intent(
-            artifact="review-report",
-            domains=["security"],
-            stacks=[],
-            capabilities=["review"],
-            novel="quantum-key-audit",
-        ),
-        request="Audit the quantum key exchange.",
-    )
-    assert novel.units[0].required_capabilities == ("review", "quantum-key-audit")
+    assert plan.units[0].required_capabilities == ("review", "implementation")
+    assert advisory_capabilities(plan.units[0]) == ("implementation",)
 
 
 def test_the_older_per_token_drops_still_hold() -> None:
-    # The shape rule sits beside the existing compiler drops, not instead of them.
-    assert _compile(_intent(capabilities=["implementation", "design"])).units[
-        0
-    ].required_capabilities == ("implementation",)
-    assert _compile(_intent(artifact="analysis", capabilities=["analysis", "data-analysis"])).units[
-        0
-    ].required_capabilities == ("analysis",)
+    generic = _compile(_intent(capabilities=["implementation", "design"]))
+    assert generic.units[0].required_capabilities == ("implementation",)
+    analysis = _compile(_intent(artifact="analysis", capabilities=["analysis", "data-analysis"]))
+    assert analysis.units[0].required_capabilities == ("analysis",)
 
 
-# --- the demotion the compiler records --------------------------------------------
+# --- the detail the applied planner attempt records ------------------------------
 
 
-def test_the_sink_names_every_known_capability_the_compiler_dropped() -> None:
-    sink: list[tuple[str, tuple[str, ...]]] = [("stale", ("stale",))]
-    compile_intent_plan(
-        _intent(
-            artifact="review-report",
-            domains=["software-engineering"],
-            stacks=[],
-            capabilities=["review", "implementation", "coordination"],
-        ),
-        request="Review this function and propose how to correct it.",
-        context=_context(),
-        known_domains=("software-engineering",),
-        known_stacks=(),
-        known_capability_ids=_KNOWN_CAPABILITIES,
-        demotion_sink=sink,
-    )
-    assert sink == [("unit-primary", ("implementation", "coordination"))]
-
-
-def test_the_sink_is_emptied_when_nothing_is_dropped_and_ignores_misplaced_labels() -> None:
-    sink: list[tuple[str, tuple[str, ...]]] = [("stale", ("stale",))]
-    compile_intent_plan(
-        _intent(
-            artifact="review-report",
-            domains=["security"],
-            stacks=[],
-            capabilities=["review", "security"],
-        ),
-        request="Review the service for security defects.",
-        context=_context(),
-        known_domains=("security",),
-        known_stacks=(),
-        known_capability_ids=_KNOWN_CAPABILITIES,
-        demotion_sink=sink,
-    )
-    # ``security`` was a domain misplaced on the capability axis, never a capability.
-    assert sink == []
-
-
-def test_the_demotion_rides_the_applied_planner_attempt_into_both_receipts() -> None:
+def _staff(plan: dict[str, Any]) -> Any:
     clear_workforce_caches()
-    plan = json.loads(json.dumps(_PLAN))
-    plan["units"][0]["capability_ids"] = ["planning", "implementation"]
     replies = iter(
         (_result(plan), _result(_NOMINATION), _result({"approved": True, "reason_codes": []}))
     )
-
-    def invoke(*args, **_kwargs):
-        return next(replies)
-
-    outcome = plan_and_staff_workforce(
+    return plan_and_staff_workforce(
         "Put this editor on my machine.",
         _snapshot(_contract("operations-manager"), _desktop_engineer()),
         config=_config(),
         context=_context(),
-        invoker=invoke,
+        invoker=lambda *args, **kwargs: next(replies),
     )
+
+
+def test_the_advisory_rows_ride_the_applied_planner_attempt_into_both_receipts() -> None:
+    plan = json.loads(json.dumps(_PLAN))
+    plan["units"][0]["capability_ids"] = ["planning", "implementation"]
+    outcome = _staff(plan)
     assert outcome.accepted
     planner = outcome.attempts[0]
     assert (planner.stage, planner.status) == ("planner", "applied")
-    assert planner.validation_detail == PLAN_DEMOTION_DETAIL_PREFIX + f"{_UNIT}=implementation"
-    assert outcome.plan.units[0].required_capabilities == ("planning",)
+    assert planner.validation_detail == PLAN_ADVISORY_DETAIL_PREFIX + f"{_UNIT}=implementation"
+    # The unit keeps the capability; the requirement set does not force it.
+    assert outcome.plan.units[0].required_capabilities == ("planning", "implementation")
+    assert "capability:implementation" not in typed_staffing_requirements(outcome.plan.units[0])
     row = {
         "unit_id": _UNIT,
-        "reason_code": "plan_capability_demoted",
-        "demoted_capability_ids": "implementation",
+        "reason_code": "plan_capability_advisory",
+        "advisory_capability_ids": "implementation",
     }
     # Both durable receipts read the same attempt projection ...
     attempts = _provider_attempts(outcome)
@@ -314,44 +291,40 @@ def test_the_demotion_rides_the_applied_planner_attempt_into_both_receipts() -> 
     assert projected[0]["validation_failures"] == [row]
 
 
-def test_a_plan_without_a_drop_records_no_detail() -> None:
-    clear_workforce_caches()
-    replies = iter(
-        (_result(_PLAN), _result(_NOMINATION), _result({"approved": True, "reason_codes": []}))
-    )
-    outcome = plan_and_staff_workforce(
-        "Put this editor on my machine.",
-        _snapshot(_contract("operations-manager"), _desktop_engineer()),
-        config=_config(),
-        context=_context(),
-        invoker=lambda *args, **kwargs: next(replies),
-    )
+def test_the_fixture_plan_records_its_own_advisory_operations() -> None:
+    # The strict-critic fixture names planning, operations and simulation on
+    # a plan unit: planning is owned, simulation a specialty, operations advisory.
+    outcome = _staff(_PLAN)
     assert outcome.accepted
     assert outcome.attempts[0].stage == "planner"
-    assert outcome.attempts[0].validation_detail == ""
+    assert outcome.attempts[0].validation_detail == (
+        PLAN_ADVISORY_DETAIL_PREFIX + f"{_UNIT}=operations"
+    )
+
+
+def test_a_plan_with_no_advisory_capability_records_no_detail() -> None:
+    plan = _compile(_intent(capabilities=["implementation"]))
+    assert _advisory_capability_detail(plan) == ""
 
 
 # --- the closed row ----------------------------------------------------------------
 
 
 def test_the_wire_form_projects_one_row_per_unit() -> None:
-    detail = _capability_demotion_detail(
-        [("unit-review", ("implementation",)), ("unit-merge", ("coordination", "operations"))]
-    )
-    assert detail == (
-        PLAN_DEMOTION_DETAIL_PREFIX
+    detail = (
+        PLAN_ADVISORY_DETAIL_PREFIX
         + "unit-review=implementation,unit-merge=coordination~operations"
     )
     assert project_nomination_failures(detail) == [
         {
             "unit_id": "unit-review",
-            "reason_code": "plan_capability_demoted",
-            "demoted_capability_ids": "implementation",
+            "reason_code": "plan_capability_advisory",
+            "advisory_capability_ids": "implementation",
         },
         {
             "unit_id": "unit-merge",
-            "reason_code": "plan_capability_demoted",
-            "demoted_capability_ids": "coordination~operations",
+            "reason_code": "plan_capability_advisory",
+            "advisory_capability_ids": "coordination~operations",
         },
     ]
 
@@ -359,26 +332,38 @@ def test_the_wire_form_projects_one_row_per_unit() -> None:
 @pytest.mark.parametrize(
     "detail",
     [
-        PLAN_DEMOTION_DETAIL_PREFIX,
-        PLAN_DEMOTION_DETAIL_PREFIX + "unit-review",
-        PLAN_DEMOTION_DETAIL_PREFIX + "review=implementation",
-        PLAN_DEMOTION_DETAIL_PREFIX + "unit-review=",
-        PLAN_DEMOTION_DETAIL_PREFIX + "unit-review=implementation~implementation",
-        PLAN_DEMOTION_DETAIL_PREFIX + "unit-review=a~b~c~d",
-        PLAN_DEMOTION_DETAIL_PREFIX + "unit-review=Implementation Change",
-        PLAN_DEMOTION_DETAIL_PREFIX + "unit-review=implementation,unit-review=coordination",
-        PLAN_DEMOTION_DETAIL_PREFIX + ",".join(f"unit-{i}=implementation" for i in range(17)),
+        PLAN_ADVISORY_DETAIL_PREFIX,
+        PLAN_ADVISORY_DETAIL_PREFIX + "unit-review",
+        PLAN_ADVISORY_DETAIL_PREFIX + "review=implementation",
+        PLAN_ADVISORY_DETAIL_PREFIX + "unit-review=",
+        PLAN_ADVISORY_DETAIL_PREFIX + "unit-review=implementation~implementation",
+        PLAN_ADVISORY_DETAIL_PREFIX + "unit-review=a~b~c~d",
+        PLAN_ADVISORY_DETAIL_PREFIX + "unit-review=Implementation Change",
+        PLAN_ADVISORY_DETAIL_PREFIX + "unit-review=" + "a" * 129,
+        PLAN_ADVISORY_DETAIL_PREFIX + "unit-review=implementation,unit-review=coordination",
+        PLAN_ADVISORY_DETAIL_PREFIX + ",".join(f"unit-{i}=implementation" for i in range(17)),
     ],
 )
 def test_a_malformed_wire_form_projects_the_whole_attempt_blank(detail: str) -> None:
     assert project_nomination_failures(detail) == []
 
 
+def test_an_ontology_length_identifier_is_admitted() -> None:
+    long_id = "a" * 128
+    assert project_nomination_failures(PLAN_ADVISORY_DETAIL_PREFIX + f"unit-review={long_id}") == [
+        {
+            "unit_id": "unit-review",
+            "reason_code": "plan_capability_advisory",
+            "advisory_capability_ids": long_id,
+        }
+    ]
+
+
 def test_the_row_is_exactly_its_three_keys_with_the_closed_code() -> None:
     row: dict[str, Any] = {
         "unit_id": "unit-review",
-        "reason_code": "plan_capability_demoted",
-        "demoted_capability_ids": "implementation",
+        "reason_code": "plan_capability_advisory",
+        "advisory_capability_ids": "implementation",
     }
     assert project_nomination_failures([row]) == [row]
     # The ids are admitted on no other row, and the code needs its ids.
@@ -386,12 +371,12 @@ def test_the_row_is_exactly_its_three_keys_with_the_closed_code() -> None:
     assert project_nomination_failures([{**row, "requirement_axis": "capability"}]) == []
     assert (
         project_nomination_failures(
-            [{"unit_id": "unit-review", "reason_code": "plan_capability_demoted"}]
+            [{"unit_id": "unit-review", "reason_code": "plan_capability_advisory"}]
         )
         == []
     )
 
 
-def test_the_planner_is_told_which_methods_a_shape_carries() -> None:
+def test_the_planner_is_told_which_methods_are_mandatory() -> None:
+    assert "a preference the recruiter weighs" in COMPACT_INTENT_SYSTEM
     assert "a read-only review-report cannot carry implementation" in COMPACT_INTENT_SYSTEM
-    assert "dropped from the unit and recorded" in COMPACT_INTENT_SYSTEM

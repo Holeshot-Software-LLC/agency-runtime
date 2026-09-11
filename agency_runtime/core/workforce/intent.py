@@ -29,7 +29,6 @@ from agency_runtime.core.workforce.planning_contracts import (
 )
 from agency_runtime.core.workforce.staffing_verifier import (
     StaffingContext,
-    planning_capability_coherent,
     typed_staffing_ineligibility,
 )
 
@@ -347,10 +346,11 @@ COMPACT_INTENT_SYSTEM = (
     "supply, so unless you are declaring genuinely new work the plan is rejected: choose the "
     "closest known domain instead of inventing a narrower synonym for work it already covers. "
     "Use the exact known stack and capability identifiers when they fit. "
-    "capability_ids name methods a specialist of that unit's own kind carries: a "
-    "read-only review-report cannot carry implementation and a test-code unit cannot "
-    "carry analysis. A method that belongs to another unit's shape is dropped from the "
-    "unit and recorded, so put it on the unit that owns it or leave it out. "
+    "Beside the artifact's own method, a capability_id is a preference the recruiter "
+    "weighs, not a second specialist the team must include: a read-only review-report "
+    "cannot carry implementation and a test-code unit cannot carry analysis, so put a "
+    "method on the unit that owns it. Only a specialty such as risk-analysis or "
+    "threat-modeling, or a declared novel_capability, is mandatory coverage. "
     "Set novel_capability only for a genuine capability gap, not for a narrower "
     "synonym such as python-cli or json-storage.\n"
     "planning_taxonomy.domains_by_artifact_kind lists, for each artifact_kind, the known "
@@ -715,23 +715,6 @@ def _unit_document(
         artifact=artifact,
     )
     lifecycle, authority, mutation = _ARTIFACT_FACTS[artifact]
-    # AR-439 / ADR-0252: a planner-named method that no card of this unit's own
-    # shape could support belongs to another unit; as a mandatory typed
-    # requirement it could only be covered by the wrong specialist, which the
-    # recruiter rightly leaves out. Drop it here; the compiler records it.
-    owned = artifact_capability(artifact)
-    capabilities = [
-        item
-        for item in capabilities
-        if item == owned
-        or planning_capability_coherent(
-            item,
-            artifact_kind=artifact,
-            lifecycle_phase=lifecycle,
-            authority=authority,
-            domains=domains,
-        )
-    ]
     novel = _declared_novel_capability(raw["novel_capability"])
     if novel and novel in known_capability_ids:
         raise ValueError("novel_capability already exists in the workforce ontology")
@@ -782,33 +765,6 @@ def _bounded_compact_units(value: object, *, maximum: int) -> Sequence[object]:
     return value
 
 
-def _capability_demotions(
-    unit: Mapping[str, Any],
-    document: Mapping[str, Any],
-    *,
-    known_capability_ids: frozenset[str],
-) -> tuple[tuple[str, tuple[str, ...]], ...]:
-    """Name the planner's known capabilities the compiler dropped from one unit.
-
-    AR-439 / ADR-0252. The shape rule and the older per-token drops both end
-    here, so the row is the whole difference between what the planner named
-    and what the unit keeps; a label that was never a capability (a domain
-    misplaced on that axis, a declared novelty) is not a demotion.
-    """
-
-    planned = [
-        normalize_capability_id(item)
-        for item in _identifiers(
-            unit["capability_ids"], label="capability_ids", maximum=3, required=True
-        )
-    ]
-    kept = set(document["required_capabilities"])
-    dropped = tuple(
-        dict.fromkeys(item for item in planned if item in known_capability_ids and item not in kept)
-    )
-    return ((str(document["unit_id"]), dropped),) if dropped else ()
-
-
 def compile_intent_plan(
     value: Mapping[str, Any],
     *,
@@ -818,15 +774,8 @@ def compile_intent_plan(
     known_stacks: Sequence[str],
     known_capability_ids: Sequence[str],
     max_work_units: int = MAX_PRIMARY_UNITS,
-    demotion_sink: list[tuple[str, tuple[str, ...]]] | None = None,
 ) -> WorkUnitPlan:
-    """Validate compact inferred intent and compile a complete typed primary plan.
-
-    ``demotion_sink``, when given, is replaced with one ``(unit_id, ids)`` row
-    per unit whose planner-named known capabilities the compiler dropped
-    (AR-439 / ADR-0252), so the caller can record the demotion on the applied
-    planner attempt without the plan itself carrying it.
-    """
+    """Validate compact inferred intent and compile a complete typed primary plan."""
 
     request_tokens = _domain_tokens(request)
     raw = _mapping(
@@ -839,7 +788,6 @@ def compile_intent_plan(
     stacks = frozenset(str(item).casefold() for item in known_stacks)
     capabilities = frozenset(str(item).casefold() for item in known_capability_ids)
     units = []
-    demotions: list[tuple[str, tuple[str, ...]]] = []
     # A domain is a staffing requirement, so an unknown one must be deliberate.
     # A unit that declares novel_capability is claiming genuinely new work and
     # may name the domain it lives in — that is how an open-ended pool reaches
@@ -971,10 +919,7 @@ def compile_intent_plan(
                 document["domains"] = ["workforce-governance"]
         if _declared_novel_capability(unit["novel_capability"]):
             allowed_domains.update(document["domains"])
-        demotions.extend(_capability_demotions(unit, document, known_capability_ids=capabilities))
         units.append(document)
-    if demotion_sink is not None:
-        demotion_sink[:] = demotions
     return parse_work_unit_plan(
         {
             "schema_version": 2,

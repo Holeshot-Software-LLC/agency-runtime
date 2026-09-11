@@ -29,65 +29,78 @@ describes, and a plan must not describe a pool that contradicts itself.
 
 ## Context
 
-Every terminal `staff_without_safe_team` since 2026-09-08 (17 unit rows) is
-on the capability axis. The compact intent planner names up to three
-`capability_ids` per unit and the compiler turns each into a mandatory
-`capability:<id>` typed requirement. The verifier proves coverage through
-`_CAPABILITY_RULES`, which read a card's authority and lifecycle:
-`implementation` is modify authority or an implementation lifecycle,
-`analysis` is advise, plan or review authority, `planning` is plan authority
-or a planning lifecycle, `coordination` is a lifecycle phase no card
-declares. So a method the planner names from another shape, `implementation`
+Every recruiter rejection recorded as `staff_without_safe_team` since
+2026-09-08 (17 unit rows: 3 on turns that later staffed, 14 on failed turns,
+of which 4 on the one turn that died of that code and the rest on turns the
+critic, confidence or reviewer-independence gates then ended) is on the
+capability axis. The compact intent planner names up to three
+`capability_ids` per unit and the verifier turned each into a mandatory
+`capability:<id>` typed requirement. Coverage of a shape-defined capability
+is proven by `_CAPABILITY_RULES`, which read what a card is: `implementation`
+is modify authority or an implementation lifecycle, `analysis` is advise,
+plan or review authority, `planning` is plan authority or a planning
+lifecycle. So a method the planner names from another shape, `implementation`
 on a read-only review-report or `analysis` on a modify-authority test-code
-unit, can only be covered by a specialist of the wrong kind. The recruiter
+unit, forces a specialist of that other shape onto the team. The recruiter
 leaves that card out, as it should, and the deterministic gate rejects a
 correct team as `retrieved_coverer_not_selected`. The compiler already holds
 six ad-hoc drops for individual tokens, each added after one such failure.
 Neither receipt names the requirement that forced the team, and nothing
-records what the compiler dropped.
+records which capabilities were never forced.
+
+A first draft dropped such capabilities in the compiler by probing whether a
+card of exactly the unit's shape could support them. The adversarial review
+falsified the premise against the live roster: 45 artifact-and-capability
+pairs have same-shape cards that declare the capability (four plan-shaped
+orchestrators declare `coordination`), and dropping a token also narrows the
+eligible pool through `_covers_required_capability`, which "nothing else
+moves" denied. The decision below keeps the token and changes only what it
+mandates.
 
 ## Decision
 
-1. **Shape coherence decides what is mandatory.** A planner-named capability
-   is kept on a unit only when the ontology's own support rule can be met by a
-   card whose typed shape is exactly the unit's: its artifact kind, its
-   lifecycle phase, its authority and its domains. The compiler evaluates
-   `_supports_planning_capability` against that shape probe. The
-   artifact-owned capability is always coherent by construction. So an
-   analysis unit keeps `analysis` and `investigation`; `audit`, `review` and
-   `verification` belong to the review-report and test-evidence shapes,
-   `planning` and `design` to the plan shape, `implementation` to the
-   implementation-change shape, and `operations` to a unit whose domain is
-   operations.
-2. **Specialist and novel capabilities stay mandatory.** A capability outside
-   the shape-defined vocabulary (`risk-analysis`, `threat-modeling`,
-   `simulation`, `translation` and the like) is proven by a card's own
-   declaration, which any shape may carry through `capability_ids`, and a
-   declared `novel_capability` names work the roster lacks; both keep their
-   typed requirement so the coverage-gap and hiring path is unchanged.
-3. **A drop is recorded, not silent.** The applied planner attempt carries
-   every dropped id in the wire form
-   `workforce plan capability demotions: unit=cap~cap`, projected on both
-   durable receipts as a closed row `{unit_id, reason_code:
-   plan_capability_demoted, demoted_capability_ids}`; a malformed row
+1. **The unit keeps every planner-named capability.** The compiler does not
+   drop a capability for its shape; `required_capabilities` still feeds
+   recall, the recruiter prompt, the strict critic and the eligibility
+   widening exactly as before, so no card loses eligibility and no query term
+   disappears.
+2. **Only three kinds of capability are typed coverage.**
+   `mandatory_capabilities` returns the artifact-owned capability, every
+   capability outside the shape-defined vocabulary (`risk-analysis`,
+   `threat-modeling`, `simulation` and the like, which a card declares for
+   itself), and a declared `novel_capability`, which names work the roster
+   lacks and still reaches hiring as a gap. `_requirements` derives its
+   `capability:` tokens from that set. A shape-defined capability named
+   beside the owned one (`advisory_capabilities`) is a preference the
+   recruiter weighs and the critic judges; the verifier never forces a card
+   of another shape onto the team to cover it.
+3. **An advisory capability is recorded, not silent.** The applied planner
+   attempt carries every unit's advisory ids in the wire form
+   `workforce plan advisory capabilities: unit=cap~cap`, projected on both
+   durable receipts as the closed row `{unit_id, reason_code:
+   plan_capability_advisory, advisory_capability_ids}`; a malformed row
    projects the attempt blank rather than partially, as ADR-0246 does for
-   critic pointers.
+   critic pointers. A cached plan spends no attempt and records nothing new.
 4. **Nothing else moves.** The existing per-token compiler drops stay as
-   explicit pins. The recruiter prompt, the verifier's coverage and
-   eligibility, the critic and the validators are unchanged; the recruiter
-   still sees only the capabilities the unit keeps.
+   explicit pins. Artifact, lifecycle, stack and authority coverage, the
+   waiver of what the roster cannot serve (ADR-0198), eligibility, the
+   recruiter prompt, the critic and the validators are unchanged. The planner
+   prompt says which capabilities are mandatory coverage.
 
 ## Consequences
 
 - The typed gate can no longer demand a modify-authority card on a read-only
-  unit or a planner on a discovery unit, which removes the observed cause of
-  every capability-axis rejection without weakening any coverage a card of
-  the unit's own shape could provide.
-- Recall loses the dropped tokens as query terms; a unit that needed the
-  specialist those tokens retrieved should have named the specialty (a
-  rule-less capability) or its domain instead, and the planner prompt says
-  so.
-- A planner that keeps naming incoherent methods costs nothing at staffing
-  time but leaves demotion rows, so the habit is measurable per host.
+  unit or a planner on a discovery unit; the pool a unit staffs from is the
+  pool of its own shape, and the specialist within it is inference's choice,
+  which the strict critic still judges and can veto with a named pointer.
+- A plan unit that names `coordination` no longer forces one of the four
+  orchestrators; they stay eligible and retrievable, and a recruiter that
+  passes them over answers to the critic rather than to the gate.
+- A specialty on a unit whose authority no declarer carries (`risk-analysis`
+  on a modify unit: none of 95 modify-authority cards support it) is still
+  mandatory and still starves; that is the pre-existing ADR-0198 waiver
+  question, recorded as a follow-up, not changed here.
+- The advisory rows are recorded only on turns that spend a planner call, so
+  a measurement over cached plans undercounts them.
 - The 17 historical rows stay unexplained on the capability id; the new rows
   answer that question for every turn after this lands.

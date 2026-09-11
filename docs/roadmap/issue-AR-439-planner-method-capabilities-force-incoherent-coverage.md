@@ -27,79 +27,95 @@ blocks: []
 
 ## Problem
 
-After AR-438 the recruiter's remaining terminal failure on ordinary asks is
+After AR-438 the recruiter's remaining rejection on ordinary asks is
 `staff_without_safe_team` on the capability axis. Every one of the 17 unit
-rows recorded since 2026-09-08 (3 on preflight results, 14 on failure
-receipts) names `requirement_axis: capability`; 13 carry the shortfall
-`retrieved_coverer_not_selected` and 4 `no_eligible_coverer_in_roster`. The
-recruiter ranked the faithful specialists for the unit (a lone
-`code-reviewer` for a review unit, `software-test-engineer` first for a test
-unit, `codebase-onboarding-engineer` first for a repository analysis) and
-the verifier refused the team because one planner-named capability was left
-uncovered, although a card covering it had been shown.
+rows recorded since 2026-09-08 names `requirement_axis: capability`; 13
+carry the shortfall `retrieved_coverer_not_selected` and 4
+`no_eligible_coverer_in_roster`. Three sit on turns that staffed after the
+rejection spent a repair; 14 sit on seven failed turns, four of them on the
+one turn that died of `no_safe_sufficient_team` and the rest on turns the
+critic, the confidence gate or the reviewer-independence rule ended after
+the rejections had consumed the budget. In each the recruiter ranked the
+faithful specialists for the unit (a lone `code-reviewer` for a review unit,
+`software-test-engineer` first for a test unit, `codebase-onboarding-engineer`
+first for a repository analysis) and the verifier refused the team because
+one planner-named capability was left uncovered, although a card covering it
+had been shown.
 
-The cause is the compiler, not the recruiter. The compact intent planner may
-name up to three `capability_ids` per unit; `compile_intent_plan` prepends
-the artifact-owned capability and `_requirements` turns every remaining id
+The cause is the requirement, not the recruiter. The compact intent planner
+may name up to three `capability_ids` per unit; `compile_intent_plan`
+prepends the artifact-owned capability and `_requirements` turns every id
 into a mandatory `capability:<id>` typed requirement, proven by the
 `_CAPABILITY_RULES` reading of a card's authority and lifecycle. Those rules
-bind capabilities to shapes: `implementation` needs modify authority or an
-implementation lifecycle, `analysis` needs advise, plan or review authority,
-`planning` needs plan authority or a planning lifecycle, `coordination` needs
-a `coordination` lifecycle no card in the roster declares. When the planner
-names a method that belongs to another shape, such as `implementation` on a
+bind capabilities to what a card is: `implementation` is modify authority or
+an implementation lifecycle, `analysis` is advise, plan or review authority,
+`planning` is plan authority or a planning lifecycle. When the planner names
+a method that belongs to another shape, such as `implementation` on a
 read-only review-report or `analysis` on a modify-authority test-code unit,
-the only cards that can cover it are the wrong specialists for the unit, the
-recruiter rightly leaves them out, and the deterministic gate rejects a
-correct team. The captured plans of 2026-09-10 show the pattern on every
-unit: `coordination` beside `implementation` on a merge, `operations` beside
+the requirement forces a specialist of that other shape onto the team, the
+recruiter rightly leaves it out, and the deterministic gate rejects a correct
+team. The captured plans of 2026-09-10 show the pattern on every unit:
+`coordination` beside `implementation` on a merge, `operations` beside
 `testing` on a push check, `verification` on every review.
 
 Roster support makes the forcing sharp. Of 293 enabled contracts,
-`coordination` is supported by 4, `threat-modeling` by 4, `operations` by 14,
-`documentation` by 15, while `analysis` is supported by 248 and
-`investigation` by 285. The compiler already carries six ad-hoc drops for
-this (generic capabilities on implementation-change, `documentation` on a
-plan, `data-analysis` on an analysis, ungrounded `automation`,
+`coordination` is supported by 4 (all by declaration; no card carries that
+lifecycle today, though a resident manager would), `threat-modeling` by 4,
+`operations` by 14, `documentation` by 15, while `analysis` is supported by
+248 and `investigation` by 285. The compiler already carries six ad-hoc drops
+for this (generic capabilities on implementation-change, `documentation` on
+a plan, `data-analysis` on an analysis, ungrounded `automation`,
 `communication` and `investigation`), each added after one observed failure.
 
 Two records are missing beside the rule. The failure row names the axis and
 the shortfall but never the requirement id left uncovered, so the 17 live
 rows cannot say which capability forced the team. And no receipt names the
-capabilities the compiler dropped, so a demotion is invisible after the fact.
+capabilities the runtime chose not to force, so that choice is invisible
+after the fact.
 
 ## Current state
 
-Repaired on branch `claude/ar439-capability-coherence-20260911` per ADR-0252:
-`planning_capability_coherent` in `staffing_verifier` evaluates the ontology's
-own support rule against a probe of exactly the unit's shape; the compact
-intent compiler drops a shape-defined capability the probe cannot support,
-keeps specialties and declared novelties, and reports every dropped known id
-through a demotion sink; the planner stage writes those rows on the applied
-planner attempt as `workforce plan capability demotions: unit=cap~cap`, and
+Repaired on branch `claude/ar439-capability-coherence-20260911` per ADR-0252.
+The first draft dropped such capabilities in the compiler behind a probe of
+the unit's own shape; the adversarial review falsified the probe's premise
+against the live roster (45 artifact-and-capability pairs have same-shape
+cards declaring the capability) and showed the drop narrowed the eligible
+pool, so the repair moved to the verifier. `mandatory_capabilities` in
+`staffing_verifier` keeps the artifact-owned capability, every specialty
+outside the shape-defined vocabulary and a declared novelty as typed
+coverage; `_requirements` derives its `capability:` tokens from that set and
+`advisory_capabilities` names the rest. The unit itself, recall, eligibility,
+the recruiter prompt and the critic are unchanged. The planner stage writes
+each unit's advisory ids on the applied planner attempt as
+`workforce plan advisory capabilities: unit=cap~cap`, and
 `receipt_projection` projects them as the closed row
-`{unit_id, reason_code: plan_capability_demoted, demoted_capability_ids}` on
-both durable receipts, refusing a malformed detail whole. The planner prompt
-now says which methods a shape carries. Regressions cover the rule on every
-artifact shape, the four observed drops, kept specialties and novelties, the
-older compiler drops, the sink, the end-to-end attempt detail and receipt
-rows, malformed wire forms, and the row's closed keys. One prior expectation
-moved: an accessibility audit planned as an analysis unit now keeps
-`analysis` alone, because `audit` is the review shape's capability.
+`{unit_id, reason_code: plan_capability_advisory, advisory_capability_ids}`
+on both durable receipts, refusing a malformed detail whole; the id charset
+admits the ontology's 128-character identifiers. The planner prompt says
+which capabilities are mandatory coverage. Regressions cover the split on
+the observed shapes, specialties and novelties, the verifier's requirement
+set, a lone reviewer now covering a review that named `implementation`, an
+undeclared specialty still surfacing as a hiring gap, the compiler's older
+drops, the end-to-end attempt detail and receipt rows, malformed wire forms
+and the row's closed keys.
+
+Follow-ups the review named, not changed here: a specialty on a unit whose
+authority no declarer carries (`risk-analysis` on a modify unit, supported by
+none of 95 modify-authority cards) is still mandatory and still starves under
+the ADR-0198 waiver rules; advisory rows are recorded only when a planner
+call is spent, so a measurement over cached plans undercounts them; the
+preflight-failure receipt's node budget leaves seven fully populated
+rejected attempts of headroom beside a 16-row advisory detail.
 
 ## Approach
 
-Bind a unit's mandatory capabilities to its own artifact shape (ADR-0252).
-In the compiler, keep a planner-named capability only when the ontology's
-support rule can be satisfied by a card whose typed shape is exactly the
-unit's own: its artifact kind, lifecycle phase, authority and domains. A
-specialty outside the shape-defined vocabulary (`risk-analysis`,
-`threat-modeling`, `simulation`) and a declared novel capability stay
-mandatory, so the roster-gap and hiring path is unchanged.
-Drop the rest at compile time and record every dropped id on the applied
-planner attempt as a closed receipt row in both durable receipts. Leave the
-recruiter, the verifier, eligibility, the critic and the validators as they
-are; no fallback and no advisory tier.
+Bind a unit's mandatory capabilities to its own artifact shape (ADR-0252)
+in the verifier, not the compiler: keep every planner-named capability on
+the unit for recall and eligibility, make only the artifact-owned capability,
+specialties outside the shape vocabulary and declared novelties typed
+coverage, and record the advisory ids on the applied planner attempt as a
+closed receipt row. Leave the recruiter, eligibility, the critic and the
+validators as they are; no fallback and no drop.
 
 ## Dependencies
 
@@ -123,4 +139,4 @@ only with the wrong specialist.
       checks pass.
 - [ ] One fresh native run per host on the ordinary-review wording after the
       reinstall staffs with no `staff_without_safe_team` row on the capability
-      axis, with the demotion rows recorded against the 17-row population.
+      axis, with the advisory rows recorded against the 17-row population.

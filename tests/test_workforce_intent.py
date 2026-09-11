@@ -535,9 +535,7 @@ def test_stringified_absence_does_not_create_a_novel_capability_gap(sentinel: st
         request="Audit the dashboard for WCAG accessibility barriers.",
     )
 
-    # ADR-0252: `audit` is the review shape's capability; an analysis unit keeps
-    # its own method and the accessibility domain names the specialist.
-    assert plan.units[0].required_capabilities == ("analysis",)
+    assert plan.units[0].required_capabilities == ("analysis", "audit")
 
     with pytest.raises(ValueError, match="known workforce vocabulary"):
         _compile(

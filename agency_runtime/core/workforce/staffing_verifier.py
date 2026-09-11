@@ -301,8 +301,11 @@ def _verification_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bo
 
 
 # ADR-0252: the capabilities the ontology defines by shape, through the
-# authority and lifecycle rules below plus the architecture reading. Every
-# other capability is a specialty a card declares for itself.
+# authority and lifecycle rules below plus the architecture reading. A card
+# earns them from what it is (its authority, lifecycle phases and artifact
+# kinds), so a plan unit that names one beside its own artifact's capability
+# is asking for a card of another shape. Every other capability is a
+# specialty a card declares for itself.
 _SHAPE_CAPABILITIES = frozenset(
     {
         "analysis",
@@ -344,67 +347,32 @@ def _supports(contract: WorkforceContract, capability: str) -> bool:
     return bool(required) and required <= _contract_tokens(contract)
 
 
-@dataclass(frozen=True, slots=True)
-class _ShapeProbe:
-    """The typed fields of a card whose shape is exactly one plan unit's (ADR-0252).
+def mandatory_capabilities(unit: WorkUnit) -> tuple[str, ...]:
+    """Return the unit's capabilities that are typed coverage requirements (ADR-0252).
 
-    It carries what `_CAPABILITY_RULES` and `_contract_tokens` read, and
-    nothing a real card would add: no identity, no outcomes, no stacks. So a
-    rule that holds for the probe holds for any card of the unit's shape, and
-    a rule that fails for the probe can only be met by a card of another shape.
+    The artifact-owned capability always is. A capability outside the
+    shape-defined vocabulary is a specialty a card declares for itself
+    (`risk-analysis`, `threat-modeling`, a declared novelty) and stays
+    mandatory, so a roster gap on it still reaches hiring. Every other
+    shape-defined capability the planner named beside the owned one is a
+    method of another shape: it stays on the unit as recall evidence and as
+    the eligibility widening the recruiter sees, but no card of another shape
+    is forced onto the team to cover it.
     """
 
-    authority: str
-    artifact_kinds: tuple[str, ...]
-    lifecycle_phases: tuple[str, ...]
-    domains: tuple[str, ...]
-    capability_ids: tuple[str, ...]
-    agent_id: str = ""
-    display_name: str = ""
-    archetype: str = ""
-    outcomes: tuple[str, ...] = ()
-    stacks: tuple[str, ...] = ()
-    scope_qualifiers: tuple[str, ...] = ()
-
-
-def planning_capability_coherent(
-    capability: str,
-    *,
-    artifact_kind: str,
-    lifecycle_phase: str,
-    authority: str,
-    domains: Sequence[str] = (),
-) -> bool:
-    """Return whether a card of exactly the unit's own shape could support the capability.
-
-    AR-439 / ADR-0252. The planner names methods; the verifier proves them
-    through rules that read a card's authority and lifecycle. When a card
-    whose artifact kind, lifecycle phase, authority and domains are the unit's
-    own cannot meet the rule, the capability belongs to another shape, and a
-    mandatory requirement for it could only be covered by a specialist of that
-    other shape. A specialty outside the shape-defined vocabulary is proven
-    by a card's own declaration, which any shape may carry, so it is coherent
-    by default and keeps its requirement.
-    """
-
-    normalized = str(capability or "").strip().casefold()
-    if not normalized:
-        return False
-    if normalized not in _SHAPE_CAPABILITIES:
-        # A specialty (`risk-analysis`, `threat-modeling`, `simulation`, a
-        # declared novelty) is proven by a card's own declaration, which any
-        # shape may carry; only the shape-defined capabilities can contradict
-        # the unit.
-        return True
-    probe = _ShapeProbe(
-        authority=authority,
-        artifact_kinds=(artifact_kind,),
-        lifecycle_phases=(lifecycle_phase,),
-        domains=tuple(domains),
-        capability_ids=(ARTIFACT_CAPABILITY.get(artifact_kind, ""),),
+    owned = ARTIFACT_CAPABILITY.get(unit.artifact_kind, "")
+    return tuple(
+        item
+        for item in unit.required_capabilities
+        if item == owned or item not in _SHAPE_CAPABILITIES
     )
-    verdict = _supports_planning_capability(probe, normalized)  # type: ignore[arg-type]
-    return verdict is None or verdict
+
+
+def advisory_capabilities(unit: WorkUnit) -> tuple[str, ...]:
+    """Return the planner-named capabilities the verifier does not force (ADR-0252)."""
+
+    mandatory = set(mandatory_capabilities(unit))
+    return tuple(item for item in unit.required_capabilities if item not in mandatory)
 
 
 def _authority_satisfies(unit: WorkUnit, contract: WorkforceContract) -> bool:
@@ -563,7 +531,7 @@ def _requirements(unit: WorkUnit) -> tuple[str, ...]:
         f"artifact:{unit.artifact_kind}",
         f"lifecycle:{unit.lifecycle_phase}",
         *(f"stack:{item}" for item in unit.languages + unit.frameworks),
-        *(f"capability:{item}" for item in unit.required_capabilities),
+        *(f"capability:{item}" for item in mandatory_capabilities(unit)),
         f"authority:{unit.authority}",
     ]
     return tuple(dict.fromkeys(values))
@@ -1559,9 +1527,10 @@ __all__ = [
     "StaffingContext",
     "StaffingDecision",
     "VerifiedUnitStaffing",
+    "advisory_capabilities",
     "build_deterministic_proposal",
     "build_verified_proposal",
-    "planning_capability_coherent",
+    "mandatory_capabilities",
     "typed_staffing_coverage",
     "typed_staffing_coverage_gaps",
     "typed_staffing_ineligibility",
