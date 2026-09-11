@@ -1,0 +1,16 @@
+tests/test_handoff_is_documentation.py::test_the_observed_handoff_wording_is_documentation_work PASSED
+tests/test_handoff_is_documentation.py::test_a_strong_code_verb_keeps_the_request_a_code_mutation PASSED
+tests/test_handoff_is_documentation.py::test_a_non_locative_code_object_keeps_the_request_a_code_mutation PASSED
+tests/test_handoff_is_documentation.py::test_existing_documentation_and_code_classification_is_unchanged PASSED
+tests/test_handoff_is_documentation.py::test_negated_scope_still_applies_before_the_prose_rule PASSED
+tests/test_handoff_is_documentation.py::test_the_rule_is_narrow_and_stated_to_the_planner PASSED
+tests/test_handoff_is_documentation.py::test_a_change_verb_that_takes_the_code_keeps_the_code_shape PASSED
+tests/test_handoff_is_documentation.py::test_the_policy_and_the_deterministic_planner_agree_on_every_wording PASSED
+tests/test_handoff_is_documentation.py::test_a_prose_noun_used_as_a_modifier_is_not_the_verbs_object PASSED
+tests/test_ordinary_ask_unit_ceiling.py::test_ordinary_asks_are_capped_at_two_units PASSED
+tests/test_ordinary_ask_unit_ceiling.py::test_requests_the_policy_expands_keep_their_shape PASSED
+tests/test_ordinary_ask_unit_ceiling.py::test_negated_scope_is_honoured_before_the_ceiling PASSED
+tests/test_ordinary_ask_unit_ceiling.py::test_a_change_verb_beside_a_code_noun_leaves_the_planner_free PASSED
+tests/test_ordinary_ask_unit_ceiling.py::test_planning_options_apply_the_ceiling_only_to_ordinary_asks PASSED
+tests/test_ordinary_ask_unit_ceiling.py::test_the_route_passes_the_request_text_to_the_planning_options PASSED
+============================== 15 passed in 0.41s ==============================
