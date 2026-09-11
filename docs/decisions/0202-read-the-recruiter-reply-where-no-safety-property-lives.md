@@ -3,9 +3,10 @@ title: "Read the recruiter's reply where no safety property lives, and never lea
 status: accepted
 category: decisions
 created: 2026-09-03
-updated: 2026-09-03
+updated: 2026-09-11
 tags: [workforce, recruiter, receipts, inference, staffing]
 related:
+  - docs/roadmap/issue-AR-441-the-recruiter-answers-a-whole-expanded-plan-in-one-call.md
   - docs/roadmap/issue-AR-373-recruiter-evidence-vocabulary.md
   - docs/roadmap/issue-AR-385-structured-reply-budget-truncates-nominations-silently.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md

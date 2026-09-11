@@ -2366,6 +2366,9 @@ def test_planner_repair_receives_exact_assurance_graph_and_remains_inference_own
     )
 
     assert outcome.accepted
+    # AR-441 / ADR-0254: the fast budget of four leaves two calls after the
+    # planner's repair, which cannot afford a batch and its repair, so the
+    # recruiter is asked once as before.
     assert outcome.calls_used == 3
     assert [attempt.status for attempt in outcome.attempts] == [
         "rejected",

@@ -1,0 +1,306 @@
+{
+  "schema": "agency-runtime.evidence.ar441-recruiter-prompt-baseline",
+  "issue": "AR-441",
+  "recorded": "2026-09-11",
+  "scope": "Two in-process strict staffing runs of one five-unit code-mutation wording under the claude host context on main 891943af (digest 2e2fb18b6c25), read from a copy of the live store; every stage call measured from the invoker. Single samples; the planner and recruiter are stochastic; the in-process harness applies no AR-438 unit ceiling, which does not bind a code mutation anyway.",
+  "harness": "~/.agency-runtime/ephemeral/ar439-diag-20260911/diag.py claude <tag> with DIAG_ASK",
+  "samples": [
+    {
+      "tag": "code-a",
+      "host": "claude",
+      "request": "Fix the off-by-one bug in the tokenizer of our Python parser, add tests that cover the boundary, and run them.",
+      "status": "accepted",
+      "accepted": true,
+      "calls_used": 6,
+      "elapsed_seconds": 129.9,
+      "plan_units": [
+        {
+          "unit_id": "unit-discovery-tokenizer",
+          "artifact_kind": "analysis",
+          "required_capabilities": [
+            "analysis",
+            "investigation"
+          ]
+        },
+        {
+          "unit_id": "unit-impl-tokenizer-fix",
+          "artifact_kind": "implementation-change",
+          "required_capabilities": [
+            "implementation"
+          ]
+        },
+        {
+          "unit_id": "unit-test-tokenizer-boundary",
+          "artifact_kind": "test-code",
+          "required_capabilities": [
+            "testing",
+            "implementation"
+          ]
+        },
+        {
+          "unit_id": "unit-review-tokenizer-fix",
+          "artifact_kind": "review-report",
+          "required_capabilities": [
+            "review",
+            "verification"
+          ]
+        },
+        {
+          "unit_id": "unit-evidence-tokenizer-tests",
+          "artifact_kind": "test-evidence",
+          "required_capabilities": [
+            "testing",
+            "verification"
+          ]
+        }
+      ],
+      "calls": [
+        {
+          "provider": "agency-planner",
+          "prompt_bytes": 5636,
+          "finish_reason": "stop",
+          "elapsed_ms": 12798,
+          "prompt_key_bytes": null,
+          "detail_card_count": null,
+          "value_units": 5
+        },
+        {
+          "provider": "local-workforce-reranker",
+          "prompt_bytes": 23031,
+          "finish_reason": "stop",
+          "elapsed_ms": 37293,
+          "prompt_key_bytes": null,
+          "detail_card_count": null,
+          "value_units": 4
+        },
+        {
+          "provider": "agency-recruiter",
+          "prompt_bytes": 94611,
+          "finish_reason": "",
+          "elapsed_ms": 14853,
+          "prompt_key_bytes": null,
+          "detail_card_count": null,
+          "value_units": 0
+        },
+        {
+          "provider": "agency-recruiter",
+          "prompt_bytes": 94889,
+          "finish_reason": "stop",
+          "elapsed_ms": 17755,
+          "prompt_key_bytes": null,
+          "detail_card_count": null,
+          "value_units": 5
+        },
+        {
+          "provider": "agency-recruiter-critic",
+          "prompt_bytes": 40775,
+          "finish_reason": "stop",
+          "elapsed_ms": 4980,
+          "prompt_key_bytes": null,
+          "detail_card_count": null,
+          "value_units": 0
+        }
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "failed",
+          "reason_code": "provider_model_text_not_json",
+          "validation_detail": ""
+        },
+        {
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_detail": ""
+        }
+      ]
+    },
+    {
+      "tag": "code-b",
+      "host": "claude",
+      "request": "Fix the off-by-one bug in the tokenizer of our Python parser, add tests that cover the boundary, and run them.",
+      "status": "accepted",
+      "accepted": true,
+      "calls_used": 6,
+      "elapsed_seconds": 94.5,
+      "plan_units": [
+        {
+          "unit_id": "unit-discovery-tokenizer",
+          "artifact_kind": "analysis",
+          "required_capabilities": [
+            "analysis",
+            "investigation"
+          ]
+        },
+        {
+          "unit_id": "unit-impl-tokenizer-fix",
+          "artifact_kind": "implementation-change",
+          "required_capabilities": [
+            "implementation"
+          ]
+        },
+        {
+          "unit_id": "unit-test-tokenizer-boundary",
+          "artifact_kind": "test-code",
+          "required_capabilities": [
+            "testing",
+            "implementation"
+          ]
+        },
+        {
+          "unit_id": "unit-review-tokenizer-fix",
+          "artifact_kind": "review-report",
+          "required_capabilities": [
+            "review",
+            "verification"
+          ]
+        },
+        {
+          "unit_id": "unit-evidence-tokenizer-tests",
+          "artifact_kind": "test-evidence",
+          "required_capabilities": [
+            "testing",
+            "verification"
+          ]
+        }
+      ],
+      "calls": [
+        {
+          "provider": "agency-planner",
+          "prompt_bytes": 5636,
+          "finish_reason": "stop",
+          "elapsed_ms": 23,
+          "prompt_key_bytes": {
+            "constraints": 1648,
+            "host_context": 39,
+            "planning_taxonomy": 4092,
+            "request": 112
+          },
+          "detail_card_count": 0,
+          "value_units": 5
+        },
+        {
+          "provider": "local-workforce-reranker",
+          "prompt_bytes": 23031,
+          "finish_reason": "stop",
+          "elapsed_ms": 26523,
+          "prompt_key_bytes": {
+            "plan_hash": 73,
+            "projection_version": 3,
+            "recall_policy": 37,
+            "units": 23931
+          },
+          "detail_card_count": 0,
+          "value_units": 4
+        },
+        {
+          "provider": "agency-recruiter",
+          "prompt_bytes": 76591,
+          "finish_reason": "stop",
+          "elapsed_ms": 12618,
+          "prompt_key_bytes": {
+            "authoritative_bindings": 232,
+            "detail_cards": 34488,
+            "host_context": 306,
+            "plan": 4230,
+            "request": 112,
+            "response_contract": 1205,
+            "typed_recall": 39126
+          },
+          "detail_card_count": 70,
+          "value_units": 10
+        },
+        {
+          "provider": "agency-recruiter",
+          "prompt_bytes": 77492,
+          "finish_reason": "stop",
+          "elapsed_ms": 8874,
+          "prompt_key_bytes": {
+            "authoritative_bindings": 232,
+            "detail_cards": 34488,
+            "host_context": 306,
+            "plan": 4230,
+            "request": 112,
+            "response_contract": 1205,
+            "typed_recall": 39126
+          },
+          "detail_card_count": 70,
+          "value_units": 5
+        },
+        {
+          "provider": "agency-recruiter-critic",
+          "prompt_bytes": 41977,
+          "finish_reason": "stop",
+          "elapsed_ms": 4912,
+          "prompt_key_bytes": {
+            "critic_contract": 1320,
+            "eligible_neighbourhood": 23461,
+            "plan": 4230,
+            "proposal": 5453,
+            "request": 112,
+            "selected_worker_contracts": 7884,
+            "verified_staffing": 1450
+          },
+          "detail_card_count": 0,
+          "value_units": 0
+        }
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_detail": "workforce nomination failures: unit-discovery-tokenizer=missing_work_unit,unit-impl-tokenizer-fix=missing_work_unit,unit-test-tokenizer-boundary=missing_work_unit,unit-review-tokenizer-fix=missing_work_unit,unit-evidence-tokenizer-tests=missing_work_unit"
+        },
+        {
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_detail": ""
+        }
+      ]
+    }
+  ],
+  "population": {
+    "since": "2026-09-08",
+    "turns_with_attempts": 211,
+    "missing_work_unit_rows": 59,
+    "turns": 13,
+    "hosts": {
+      "codex": 7,
+      "claude": 3,
+      "openclaw": 2,
+      "zcode": 1
+    },
+    "recruiter_rejection_codes": {
+      "missing_work_unit": 59,
+      "staff_without_safe_team": 19,
+      "invalid_candidate": 13,
+      "invalid_ranking": 9,
+      "review_reviewer_reused": 9,
+      "selection_confidence_too_low": 5
+    },
+    "since_ar438_install": {
+      "since": "2026-09-11T11:40",
+      "turns_with_attempts": 22,
+      "missing_work_unit_rows": 2,
+      "turns": 1,
+      "hosts": {
+        "zcode": 1
+      }
+    },
+    "method": "read-only scan of runs.preflight_result and preflight_failure_receipts provider attempts, rows deduplicated per attempt",
+    "turn_outcomes": {
+      "completed_after_repair": 8,
+      "preflight_failed": 5,
+      "of_the_failed_last_recorded_stage": {
+        "recruiter": 4,
+        "critic": 1
+      }
+    },
+    "correction": "The first record said every one of the 13 turns ended at the recruiter; the review measured 8 of them completed after the bounded repair, and this record was corrected on 2026-09-11."
+  },
+  "findings": [
+    "A five-unit code-mutation plan produced recruiter prompts of 94,611 and 76,591 bytes; in the second sample typed_recall was 39,126 bytes and 70 detail cards 34,488 bytes against a 4,230-byte plan.",
+    "Both samples needed two recruiter calls: the first reply failed in transport after 14.9 s in one sample and arrived as an unusable shape (all five units missing_work_unit) in the other; the repair answered every row and the critic approved.",
+    "Each sample spent 6 of the 8 strict budget calls (planner, reranker not counted, two recruiter calls, critic)."
+  ],
+  "limits": "Single samples; no controlled comparison across batch sizes yet; the store population counts rows per attempt, not per unit history."
+}
