@@ -2452,6 +2452,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e042ac4f` | 2026-09-11 | docs(roadmap): file AR-442 a host model reads the response contract as an injection | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 | `65f0e8b3` | 2026-09-11 | docs(roadmap): merge PR889 AR-442 filing | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 | `0670570f` | 2026-09-11 | Merge remote-tracking branch 'origin/main' into claude/ar441-recruiter-batching-20260911 | [AR-441](../roadmap/issue-AR-441-the-recruiter-answers-a-whole-expanded-plan-in-one-call.md) | null |
+| `a30c30f6` | 2026-09-11 | fix(recruiter): ask each batch for its own units, afford a repair per batch, repair across batches | [AR-441](../roadmap/issue-AR-441-the-recruiter-answers-a-whole-expanded-plan-in-one-call.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
