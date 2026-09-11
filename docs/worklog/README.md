@@ -2446,6 +2446,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `df4e3faf` | 2026-09-11 | fix(hooks): merge PR883 stale hook runtime named | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
 | `13d567d1` | 2026-09-11 | docs(roadmap): record the AR-440 stale-hook proof on the installed projection | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
 | `bebeae20` | 2026-09-11 | docs(roadmap): close AR-440 with its acceptance verification record | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
+| `bdb47930` | 2026-09-11 | docs(roadmap): merge PR885 AR-440 proof and close-out | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
