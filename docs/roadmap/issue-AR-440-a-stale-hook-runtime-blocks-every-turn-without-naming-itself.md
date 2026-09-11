@@ -55,8 +55,17 @@ the comparison.
 
 ## Current state
 
-Filed 2026-09-11 from the owner's question about the repeated Stop-hook
-message. Not repaired.
+Repaired on branch `claude/ar440-stale-hooks-20260911` per ADR-0253. In
+`adapters/hooks.py` a boundary failure reads `runtime_staleness(host)` once;
+with drift the Stop rejection names both digest prefixes, the exception
+class and the restart (retry shape for claude and codex, block shape for
+zcode), and without drift the generic reason is unchanged. The prompt-hook
+boundary still publishes and its log entry and the stderr line carry the
+same drift. The reason carries digest prefixes, the host name and a
+sanitised class name, never the exception message. Regressions cover both
+shapes, the no-drift path, the fail-open prompt path with its log fields, a
+pointer read that raises, and the bounded reason. Filed 2026-09-11 from the
+owner's question about the repeated Stop-hook message.
 
 ## Approach
 
