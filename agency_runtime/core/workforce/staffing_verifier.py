@@ -148,6 +148,7 @@ STAFFING_VERIFIER_REASON_CODES: frozenset[str] = frozenset(
         "recruiter_abstained",
         "redundant_substitution_group",
         "required_agents_missing",
+        "review_reviewer_reused",
         "roster_count_mismatch",
         "roster_coverage_gap",
         "roster_fingerprint_mismatch",
@@ -1082,6 +1083,68 @@ def _assurance(
             _reason(reasons, "independent_assurance_missing", unit_id=unit.unit_id)
 
 
+def _reviewer_reuse(
+    plan: WorkUnitPlan,
+    proposal: RecruiterProposal,
+    roster: dict[str, WorkforceContract],
+    context: StaffingContext,
+    executable_by_unit: dict[str, tuple[str, ...]],
+    budget: StaffingBudget,
+    reasons: list[AbstentionReason],
+) -> None:
+    """AR-437 / ADR-0249: a required review must not be staffed by the worker it reviews.
+
+    Live on 2026-09-10 the recruiter staffed the same reviewer on an analysis
+    unit and on the review-report unit that depends on it, while eligible
+    alternatives were ranked; the strict critic then vetoed that shape on two
+    host runs and approved it on two others. The plan's review unit calls for
+    independence, so the verifier now owns it: when an independent team can be
+    derived from the recruiter's own executable ranking without any worker
+    selected on a reviewed unit, the reuse is a repairable failure naming the
+    reused worker and the unit it reviews. When no such team exists the
+    verifier adds nothing: the team stays staffable and no receipt code changes
+    meaning (staff-first doctrine).
+    """
+
+    units = {unit.unit_id: unit for unit in plan.units}
+    rows = {row.unit_id: row for row in proposal.units}
+    for row in proposal.units:
+        unit = units[row.unit_id]
+        if (
+            not row.selected
+            or row.timing != "after_artifact"
+            or unit.authority != "review"
+            or unit.artifact_kind not in _ASSURANCE_ARTIFACTS
+            or unit.lifecycle_phase not in _ASSURANCE_PHASES
+        ):
+            continue
+        reviewed_by_agent: dict[str, str] = {}
+        for name in sorted(_ancestors(plan, row.unit_id)):
+            for agent_id in rows[name].selected:
+                reviewed_by_agent.setdefault(agent_id, name)
+        shared = [agent_id for agent_id in row.selected if agent_id in reviewed_by_agent]
+        if not shared:
+            continue
+        # The executable ranking already excludes ineligible and recruiter-
+        # forbidden candidates; an alternative is a whole covering team drawn
+        # from it, never a lone eligible worker that cannot cover the unit.
+        candidates = tuple(
+            agent_id
+            for agent_id in executable_by_unit.get(row.unit_id, ())
+            if agent_id not in reviewed_by_agent
+        )
+        waived = frozenset(_roster_coverage_gaps(unit, roster.values(), context).waived)
+        independent = _minimum_team(
+            unit, candidates, roster, budget.max_selected_per_unit, waived=waived
+        )
+        if not independent:
+            continue
+        uid = row.unit_id
+        for agent in shared:
+            source = reviewed_by_agent[agent]
+            _reason(reasons, "review_reviewer_reused", unit_id=uid, agent_id=agent, detail=source)
+
+
 def _budgets(
     plan: WorkUnitPlan,
     proposal: RecruiterProposal,
@@ -1124,8 +1187,10 @@ def verify_staffing(
     if proposal.plan_hash != plan.plan_hash:
         _reason(reasons, "plan_hash_mismatch")
     roster = _snapshot(proposal, contracts, context, reasons)
+    executable_by_unit: dict[str, tuple[str, ...]] = {}
     for unit, row in zip(plan.units, proposal.units, strict=True):
         executable = _ranking(unit, row, roster, context, reasons)
+        executable_by_unit[row.unit_id] = executable
         selected = _selection(unit, row, roster, executable, context, active_budget, reasons)
         _shadows(unit, row, roster, context, selected, reasons)
         if not row.selected:
@@ -1134,6 +1199,7 @@ def verify_staffing(
     _composition(plan, proposal, roster, context, reasons)
     if not (explicit_indivisible_unit and len(plan.units) == 1):
         _assurance(plan, proposal, roster, reasons)
+        _reviewer_reuse(plan, proposal, roster, context, executable_by_unit, active_budget, reasons)
     _budgets(plan, proposal, active_budget, reasons)
     # Staff-first doctrine: advisory findings annotate an accepted decision
     # instead of vetoing it. Missing independent assurance is a composition

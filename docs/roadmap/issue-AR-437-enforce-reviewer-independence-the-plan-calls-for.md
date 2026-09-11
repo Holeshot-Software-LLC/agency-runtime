@@ -6,6 +6,7 @@ created: 2026-09-10
 updated: 2026-09-10
 tags: [workforce, staffing, verifier, critic, reliability]
 related:
+  - docs/decisions/0249-enforce-the-reviewer-independence-the-plan-calls-for.md
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
   - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
   - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
@@ -27,9 +28,9 @@ blocks: []
 ## Problem
 
 On the same ordinary-review request, observed on the critic route during the
-2026-09-10 liveness runs, the strict critic vetoed claude twice and openclaw
-once with `missing-lifecycle-assurance-the-plan-calls-for` and approved hermes
-and zcode. All five captured packets share one shape: an `analysis` unit in the
+2026-09-10 liveness runs, the strict critic vetoed the same team shape on some
+host runs with `missing-lifecycle-assurance-the-plan-calls-for` and approved it
+on others (the evidence file records packets by capture time, not by host). All five captured packets share one shape: an `analysis` unit in the
 discovery phase plus a `review-report` unit in the review phase whose outcome
 says "independently review" that analysis, and the recruiter staffed
 `code-reviewer` on both units. The reviewer reviews its own work. The plan
@@ -49,8 +50,17 @@ and eligible on the review unit.
 
 ## Current state
 
-Filed from the AR-433 install evidence; no repair yet. Evidence: the critic
-packets summarised in
+Repaired on branch `claude/ar437-reviewer-independence-20260910` per ADR-0249:
+the verifier's `_reviewer_reuse` refuses a review-report unit staffed by a
+worker selected on a unit it reviews as the repairable failure
+`review_reviewer_reused` when an independent covering team can be derived
+from the recruiter's own executable ranking, with repair feedback naming the
+reused worker and the reviewed unit; when no such team exists the verifier
+adds nothing. One adversarial review pass withdrew the first draft's
+per-worker eligibility test and its widened advisory. Regressions reproduce
+the captured shape, the finding's identity, the no-team case, an eligible but
+insufficient candidate, a forbidden candidate, the timing predicate and an
+independent team. Evidence: the critic packets summarised in
 [AR-433-install-liveness-20260910.json](evidence/AR-433-install-liveness-20260910.json)
 and their raw captures beside the install directory.
 
@@ -75,9 +85,9 @@ the verifier already owns for modify-authority units.
 ## Acceptance
 
 - [ ] A regression reproduces the captured shape (analysis plus dependent
-      independent review, same worker on both, an eligible alternative
-      ranked) as a repairable verifier failure, and a shape with no eligible
-      alternative stays advisory and staffable.
+      independent review, same worker on both, an independent covering team
+      in the ranking) as a repairable verifier failure, and a shape with no
+      such team stays staffable with no new finding.
 - [ ] Focused staffing suites, the named fast checks and conformance pass with
       no change to inference-only selection, the critic contract or the
       receipts.

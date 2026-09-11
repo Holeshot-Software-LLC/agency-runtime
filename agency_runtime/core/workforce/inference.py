@@ -1048,6 +1048,14 @@ def _staffing_violation_feedback_row(
     correction = _STAFFING_VIOLATION_REPAIR_REQUIREMENTS.get(failure.code)
     if correction:
         row["required_correction"] = correction
+    reuse = (
+        error.reuse_details.get(failure.unit_id, ())
+        if failure.code == "review_reviewer_reused"
+        else ()
+    )
+    if reuse:
+        row["reused_workers"] = sorted({agent_id for agent_id, _unit in reuse if agent_id})
+        row["reviewed_units"] = sorted({unit for _agent, unit in reuse if unit})
     derived = error.derived_rows.get(failure.unit_id)
     if derived is not None:
         row["derived_team"] = derived.as_prompt_dict()
@@ -1186,6 +1194,16 @@ _STAFFING_VIOLATION_REPAIR_REQUIREMENTS: Final[Mapping[str, str]] = {
         "The derived teams together exceed maximum_selected_total; reduce required candidates "
         "across units."
     ),
+    # AR-437 / ADR-0249: the plan's review unit calls for an independent
+    # reviewer and the recruiter ranked an eligible one it did not select.
+    "review_reviewer_reused": (
+        "This review unit independently reviews an earlier unit, and a worker selected on "
+        "that reviewed unit is also selected here, so the review is not independent. An "
+        "independent team exists in your own ranking: rank as required for this review unit "
+        "eligible ranked workers that are not selected on any unit it reviews (reused_workers "
+        "names the reuse, reviewed_units the units it reviews) so the derived team covers the "
+        "unit without them, or restaff the reviewed unit instead."
+    ),
 }
 
 
@@ -1206,6 +1224,18 @@ class _StaffingVerificationError(ValueError):
                 for reason in staffing.abstention_reasons
             )
         )
+        # AR-437: the reviewer-reuse finding names identities the verifier
+        # itself validated (a selected worker and a planned unit), so the
+        # repair can name them too. Bounded, identifiers only, no prose.
+        self.reuse_details: dict[str, tuple[tuple[str, str], ...]] = {}
+        for reason in staffing.abstention_reasons:
+            if reason.code == "review_reviewer_reused" and reason.unit_id:
+                pairs = self.reuse_details.get(reason.unit_id, ())
+                if len(pairs) < 8 and (reason.agent_id, reason.detail) not in pairs:
+                    self.reuse_details[reason.unit_id] = (
+                        *pairs,
+                        (str(reason.agent_id), str(reason.detail)),
+                    )
         if not failures or len(failures) > 32:
             raise ValueError("staffing verification error requires bounded failures")
         if any(

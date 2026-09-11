@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-10
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md
   - docs/roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md
   - docs/roadmap/issue-AR-435-install-into-the-openclaw-version-the-host-runs.md
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
@@ -83,6 +84,12 @@ Faithful commit history and reasoning-rich implementation notes remain in the
 changes rather than duplicating every commit.
 
 ## Unreleased
+
+- Refuse a review-report unit staffed by a worker selected on the unit it
+  reviews when an independent covering team exists in the recruiter's own
+  ranking, as the repairable verifier finding `review_reviewer_reused` with
+  repair feedback naming the reused worker and the reviewed unit; when no such
+  team exists the verifier adds nothing (AR-437, ADR-0249).
 
 - Add an owner opt-in for durable dashboard access: `dashboard.durable_access`
   (or `agency dashboard service install --durable-access`) keeps one

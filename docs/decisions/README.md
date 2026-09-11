@@ -153,6 +153,7 @@ Status meanings:
 | [ADR-0246](0246-make-a-wrong-neighbour-veto-name-its-neighbour.md) | Make a wrong-neighbour veto name its neighbour, and check the name | Accepted |
 | [ADR-0247](0247-accept-any-stable-openclaw-at-or-above-the-audited-minimum.md) | Accept any stable OpenClaw at or above the audited minimum | Accepted |
 | [ADR-0248](0248-let-the-owner-opt-in-to-a-durable-dashboard-access-token.md) | Let the owner opt in to a durable dashboard access token | Accepted |
+| [ADR-0249](0249-enforce-the-reviewer-independence-the-plan-calls-for.md) | Enforce the reviewer independence the plan calls for at the verifier | Accepted |
 
 ## Evidence and observability
 
