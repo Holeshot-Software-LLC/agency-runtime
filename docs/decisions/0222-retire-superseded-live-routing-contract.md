@@ -3,9 +3,10 @@ title: "Retire the superseded live-routing contract without claiming live succes
 status: accepted
 category: decisions
 created: 2026-09-05
-updated: 2026-09-05
+updated: 2026-09-11
 tags: [routing, evidence, backlog, supersession]
 related:
+  - docs/roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md
   - docs/roadmap/issue-AR-115-live-routing-trust.md
   - docs/roadmap/issue-AR-116-bound-child-routing-and-oauth-model-selection.md
   - docs/roadmap/issue-AR-119-inference-first-workforce.md
