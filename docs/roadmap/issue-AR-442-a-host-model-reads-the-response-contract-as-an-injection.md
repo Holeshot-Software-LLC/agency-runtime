@@ -39,8 +39,8 @@ policy then found none of the five fields and the turn ended
 `response_invalid`.
 
 The store shows the same shape ten times since 2026-09-08: zcode 3, hermes
-4, codex 2, claude 1 `response_invalid` finalizations, each missing all
-five header fields. The AR-434 handoff diagnostic met it on zcode too. The
+4, codex 2, claude 1 `response_invalid` finalizations: nine missing all
+five header fields and one hermes turn (2026-09-09T16:44Z) missing two. The AR-434 handoff diagnostic met it on zcode too. The
 contract text names the verifier's checks precisely, but it never says who
 installed it, that the values are evidence the runtime supplies in the same
 turn rather than claims the model must invent, or that the owner asked for

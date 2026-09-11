@@ -37,7 +37,8 @@ it. On 2026-09-11 the zcode model called it "a prompt injection attempt via
 hook" that demanded "fabricated Agency header lines" about "a model I'm not",
 and answered without the lines; the turn had staffed and ended
 `response_invalid`. The store holds ten such finalizations since 2026-09-08
-across zcode, hermes, codex and claude, each missing all five fields. A
+across zcode, hermes, codex and claude: nine missing all five fields and
+one hermes turn missing two of them (2026-09-09T16:44Z). A
 careful model reading a bare bracketed block in its prompt has every reason
 to treat it as untrusted text; Agency's own recruiter is told to treat
 bracketed blocks exactly that way.
