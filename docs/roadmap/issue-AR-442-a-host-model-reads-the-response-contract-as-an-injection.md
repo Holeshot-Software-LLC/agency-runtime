@@ -53,7 +53,26 @@ prompts tell its recruiter to do with bracketed blocks.
 
 ## Current state
 
-Repaired on branch `claude/ar442-header-repair-20260911` per ADR-0255:
+Merged in PR #892 (merge commit `c8cad54b`) and live on every host at
+runtime `50aae778c053` (main `5c4e4787`, reinstalled 2026-09-11). Measured
+the same day through the liveness harness on the ordinary-review wording
+(`docs/roadmap/evidence/AR-442-per-host-measurement-20260911.json`):
+claude and hermes each ended `completed` with the five lines on their
+second fresh turn (the first of each fell to a critic wrong-neighbour veto),
+openclaw on its first; zcode, the host that refused the block on
+2026-09-11, wrote all five lines on each of three fresh turns, every one of
+which ended `preflight_failed` at the critic, so no zcode turn reached
+`completed`; codex answered without an Agency run because the reinstall
+left it at `activation-required` (trust screen owed). No host added a
+`response_invalid` finalization; the ten since 2026-09-08 stand at zcode 3,
+hermes 4, codex 2, claude 1. Hermes' first turn carried no header because
+the bridge returns an empty text for every non-accept finalization, which
+drops the failed-preflight diagnostic header the finalizer builds; that is
+pre-existing and listed below. Acceptance criterion 2 is therefore met on
+claude, hermes and openclaw, unmet on zcode by the critic rather than the
+header, and unmeasured on codex.
+
+Repaired per ADR-0255:
 `RESPONSE_CONTRACT_PROVENANCE` in `core/header/response_contract.py` opens
 the block by naming Agency Runtime as the owner-installed hook that delivers
 it, calling it host configuration rather than part of the user's message,
@@ -66,7 +85,11 @@ the hash pin moved to the new text and a test pins the provenance
 sentences' order and content. Filed 2026-09-11 from the owner's relayed
 zcode response.
 
-Residuals the 2026-09-11 review named, none introduced here: the claude
+Residuals, none introduced here: the hermes bridge's `_finalize` returns
+`text: ""` for every non-accept result, so a failed-preflight turn's
+diagnostic header never reaches the hermes model; the critic's
+wrong-neighbour veto took three of three zcode turns and one each of the
+first claude and hermes turns on the ordinary-review wording; the claude
 hook's silent swap to routing context alone when the combined context
 exceeds `MAX_CONTEXT_CHARS` (`adapters/hooks.py`) drops the contract and
 the snapshot without a receipt, and the turn then ends `response_invalid`;
