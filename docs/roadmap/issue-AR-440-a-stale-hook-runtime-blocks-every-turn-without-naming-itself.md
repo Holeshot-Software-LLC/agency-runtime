@@ -1,6 +1,6 @@
 ---
 title: "AR-440: A stale hook runtime blocks every turn without naming itself"
-status: open
+status: done
 category: roadmap
 created: 2026-09-11
 updated: 2026-09-11
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/evidence/AR-440-fast-spine-20260911.txt
   - docs/roadmap/evidence/AR-440-decision-conformance-20260911.json
   - docs/decisions/0253-name-the-stale-hook-runtime-when-a-turn-cannot-be-verified.md
+  - docs/roadmap/acceptance/issue-AR-440.md
   - docs/roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md
   - docs/decisions/0248-let-the-owner-opt-in-to-a-durable-dashboard-access-token.md
 supersedes: []
