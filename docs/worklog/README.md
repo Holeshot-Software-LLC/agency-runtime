@@ -2414,6 +2414,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `7bbf1a79` | 2026-09-11 | fix(planner): cap ordinary asks at two planned units | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 | `3546e701` | 2026-09-11 | fix(planner): lift the ceiling beside a change verb and pin it at the route | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 | `164d80b3` | 2026-09-11 | fix(planner): keep the ceiling on documentation asks and pin the route wiring | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
+| `5dbcd98b` | 2026-09-11 | test(planner): pin the two-unit ceiling on the ordinary canary-text route | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes

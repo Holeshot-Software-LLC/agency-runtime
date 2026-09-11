@@ -486,7 +486,7 @@ not stable internal identifiers.
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
 | [AR-427](issue-AR-427-preserve-complete-inferred-specialist-team.md) | `176adc19`, `b265f715`, `23ae46bf` | [ADR-0245](../decisions/0245-preserve-complete-inferred-teams-during-delivery.md) |
-| [AR-438](issue-AR-438-cap-ordinary-asks-at-two-units.md) | `7bbf1a79`, `3546e701`, `164d80b3` | [ADR-0251](../decisions/0251-cap-ordinary-asks-at-two-planned-units.md) |
+| [AR-438](issue-AR-438-cap-ordinary-asks-at-two-units.md) | `7bbf1a79`, `3546e701`, `164d80b3`, `5dbcd98b` | [ADR-0251](../decisions/0251-cap-ordinary-asks-at-two-planned-units.md) |
 | [AR-437](issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | `ad167dc3`, `55d44a54`, `277ef23d`, `fa11e544` | [ADR-0249](../decisions/0249-enforce-the-reviewer-independence-the-plan-calls-for.md), [ADR-0213](../decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md) |
 | [AR-436](issue-AR-436-durable-dashboard-access-without-a-terminal.md) | `45c5f758`, `ec1a98e1` | [ADR-0248](../decisions/0248-let-the-owner-opt-in-to-a-durable-dashboard-access-token.md) |
 | [AR-435](issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | `73df2907`, `439b9fc8` | [ADR-0247](../decisions/0247-accept-any-stable-openclaw-at-or-above-the-audited-minimum.md) |
