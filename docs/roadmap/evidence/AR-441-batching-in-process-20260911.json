@@ -284,6 +284,97 @@
         "unit-correctness-review",
         "unit-run-tests"
       ]
+    },
+    {
+      "tag": "batch-e",
+      "form": "batched, batch-aware system prompt",
+      "status": "accepted",
+      "accepted": true,
+      "codes": [],
+      "calls_used": 8,
+      "recruiter_calls": 4,
+      "recruiter_prompt_bytes": [
+        37109,
+        41141,
+        24554,
+        24988
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "rejected",
+          "reason_codes": [],
+          "detail": "workforce nomination failures: unit-evidence-tests=invalid_ranking"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        }
+      ],
+      "first_reply_failures": 1,
+      "plan_units": [
+        "unit-discover-tokenizer",
+        "unit-fix-tokenizer",
+        "unit-test-boundary",
+        "unit-review-correctness",
+        "unit-evidence-tests"
+      ]
+    },
+    {
+      "tag": "batch-f",
+      "form": "batched, batch-aware system prompt",
+      "status": "accepted",
+      "accepted": true,
+      "codes": [],
+      "calls_used": 8,
+      "recruiter_calls": 4,
+      "recruiter_prompt_bytes": [
+        37109,
+        41141,
+        24554,
+        24988
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "rejected",
+          "reason_codes": [],
+          "detail": "workforce nomination failures: unit-evidence-tests=invalid_ranking"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        }
+      ],
+      "first_reply_failures": 1,
+      "plan_units": [
+        "unit-discover-tokenizer",
+        "unit-fix-tokenizer",
+        "unit-test-boundary",
+        "unit-review-correctness",
+        "unit-evidence-tests"
+      ],
+      "note": "Byte-identical prompts and replies to batch-e: the gateway replayed the planner and recruiter answers, so this is not an independent sample."
     }
   ],
   "tally": {
@@ -296,7 +387,7 @@
       "first_reply_failed": 2,
       "accepted": 2
     },
-    "batched": {
+    "batched_first_draft": {
       "turns": 4,
       "recruiter_calls": [
         5,
@@ -307,14 +398,32 @@
       "batch_calls": 12,
       "batch_first_reply_failed": 7,
       "accepted": 2,
-      "critic_vetoes": 2
+      "critic_vetoes": 2,
+      "note": "Batches asked with the unchanged recruiter system prompt, whose sentence \"return one row for every planned unit; never omit a unit\" contradicted the batch response contract (review finding S4)."
+    },
+    "batched_batch_aware_prompt": {
+      "turns": 1,
+      "replayed_turns": 1,
+      "recruiter_calls": [
+        4
+      ],
+      "batch_calls": 3,
+      "batch_first_reply_failed": 1,
+      "accepted": 1,
+      "critic_vetoes": 0,
+      "prompt_bytes": [
+        37109,
+        41141,
+        24554
+      ]
     }
   },
   "findings": [
-    "Batching cut the recruiter prompt from 77-95 KB to 53 KB, 47 KB and 25 KB for the three batches of a five-unit plan (typed recall 20, 15 and 7 KB; 49, 53 and 24 detail cards).",
-    "It did not lower the per-call failure rate: 7 of 12 batch calls were rejected on their first reply (candidate row shape, negative-evidence shape, units object shape, invalid ranking, omitted units) against 2 of 2 single calls, so a batched turn spent 3 to 6 recruiter calls where the single call spent 2.",
-    "Every rejected batch reply was repaired within its batch and the whole team assembled and verified once; two of the four batched turns were then vetoed by the strict critic (wrong-neighbour pointers on the discovery unit), which the single-call turns did not meet in two samples.",
-    "The reply failures are reply-shape failures of the serving deployment, not omissions under prompt size; the smallest batch (25 KB) failed its first reply in two of four samples."
+    "Batching cut the recruiter prompt from 77-95 KB to 53-70 KB, 47-51 KB and 25-33 KB for the three batches of a five-unit plan under the first draft, and to 37, 41 and 25 KB under the corrected slice (largest first batch 69,736 bytes with 82 cards in the first draft; the corrected slice shows only the batch rows' candidate cards).",
+    "Under the first draft (system prompt still asking for every planned unit) 7 of 12 batch calls were rejected on their first reply against 2 of 2 single calls; with n=2 the single-call rate is unmeasurable, and the batched turns spent 3 to 6 recruiter calls where the single call spent 2.",
+    "Under the batch-aware system prompt, one independent turn (its twin was a gateway replay) was accepted with 1 rejection in 3 batch calls (invalid_ranking on the last batch) and 4 recruiter calls, no critic veto.",
+    "Every rejected batch reply was repaired within its batch; two of the four first-draft batched turns were then vetoed by the strict critic with wrong-neighbour pointers on the discovery unit.",
+    "The baseline first replies were content failures too (provider_model_text_not_json and an unusable units object), not transport failures; the deployment rejects on shape at every size measured, and the batch-aware prompt is the one variable that moved the rate in the one sample taken."
   ],
-  "limits": "Small samples; no controlled A/B beyond the same wording on the same day; the critic vetoes are single judgements on stochastic teams."
+  "limits": "Small samples; the batch-aware prompt was measured once (its twin was a replay); the single-call form has two samples; no controlled A/B beyond the same wording on the same day; batched documents carry a hybrid_recall block that the second baseline sample lacked because its reranker attempt was rejected."
 }

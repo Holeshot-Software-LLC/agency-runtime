@@ -158,7 +158,7 @@ Status meanings:
 | [ADR-0251](0251-cap-ordinary-asks-at-two-planned-units.md) | Cap ordinary asks at two planned units | Accepted |
 | [ADR-0252](0252-bind-mandatory-capabilities-to-the-unit-shape.md) | Bind a unit's mandatory capabilities to its own artifact shape | Accepted |
 | [ADR-0253](0253-name-the-stale-hook-runtime-when-a-turn-cannot-be-verified.md) | Name the stale hook runtime when a turn cannot be verified | Accepted |
-| [ADR-0254](0254-batch-the-recruiter-call-at-two-units.md) | Batch the recruiter call at two units | Accepted |
+| [ADR-0254](0254-batch-the-recruiter-call-at-two-units.md) | Batch the recruiter call at two units | Proposed |
 
 ## Evidence and observability
 

@@ -29,8 +29,11 @@ blocks: []
 
 The recruiter receives one prompt for every unit of the plan and must
 answer one row per unit. Since 2026-09-08 its most frequent rejection is
-`missing_work_unit`: 59 unit rows on 13 turns, seven of them on codex, and
-every one of those 13 turns ended at the recruiter. AR-438 removed the
+`missing_work_unit`: 59 unit rows on 13 turns, seven of them on codex. Eight
+of those turns completed after the bounded repair rescued the omitted rows;
+five failed, four of them at the recruiter and one at the critic (the first
+record of this issue said all 13 ended at the recruiter; the review
+measured it and the record was corrected). AR-438 removed the
 ordinary-ask exposure by capping such plans at two units; since that
 reinstall only one turn in 22 drew the code. The plans the policy still
 expands keep their shape, and a code mutation is five units: discovery,
@@ -42,10 +45,10 @@ what the recruiter is asked to hold. The prompt was 94,611 and 76,591 bytes;
 in the second, `typed_recall` for the five units was 39,126 bytes and the 70
 detail cards 34,488 bytes, against a 4,230-byte plan and a 1,205-byte
 response contract. Both samples needed a second recruiter call before every
-row arrived: the first reply failed in transport after 14.9 s in one, and
-in the other arrived as a shape the row reader could not use, so all five
-units were recorded `missing_work_unit` and the bounded repair asked for
-them again. Each of those calls spends one unit of the strict call budget
+row arrived: the first reply was not JSON in one (`provider_model_text_not_json`
+after 14.9 s) and arrived as a shape the row reader could not use in the
+other, so all five units were recorded `missing_work_unit` and the bounded
+repair asked for them again. Each of those calls spends one unit of the strict call budget
 (8 on the owner machine, default 5) that the critic and any repair also
 need; the turns that died at the recruiter since 2026-09-08 spent it on
 the same omissions.
@@ -60,25 +63,37 @@ serves the recruiter route drops or malforms rows under that load.
 
 Repaired on branch `claude/ar441-recruiter-batching-20260911` per ADR-0254:
 `_recruiter_batches` splits a plan of more than two units into batches of
-at most two in plan order, widened evenly when the remaining budget cannot
-afford one call per pair; `_recruiter_batch_document` slices the recruiter
-document to a batch's typed recall rows, the cards those rows, their sole
-eligible coverers and the hybrid additions reference, and the earlier
-batches' validated rows; `_NominationAccumulator` gains a batch scope, and
-the whole team is assembled and verified by the last batch's parse, with a
-verifier finding re-asking only the failed units through the existing
-repair contract. A one- or two-unit plan is recruited exactly as before. One
+at most two in plan order, widened evenly when the remaining budget less the
+critic's reserve cannot afford one call plus one repair per batch (the
+shipped default strict budget of five leaves the single call main makes);
+`_recruiter_batch_document` slices the recruiter document to a batch's
+typed recall rows, the cards those rows' candidates, sole eligible coverers
+and hybrid additions reference, and the earlier batches' validated rows; a
+batch is asked with a batch-aware system prompt that names its listed units
+only; `_NominationAccumulator` gains a batch scope; after the last batch the
+whole team is assembled and verified once, and a finding re-asks only the
+failed units in one scoped call whose document carries those units' recall
+rows and cards, with the reply the verifier refused recorded rejected. A
+one- or two-unit plan is recruited exactly as before. One
 decision-conformance anchor moved to name the single-call site uniquely.
 
-Measured in process before any merge
-([evidence](evidence/AR-441-batching-in-process-20260911.json)): on the
-five-unit wording the batch prompts are 53, 47 and 25 KB against 77 to 95
-KB, but 7 of 12 batch calls were rejected on their first reply (reply-shape
-failures of the serving deployment) against 2 of 2 single calls, so a
-batched turn spent 3 to 6 recruiter calls where the single call spent 2,
-and two of four batched turns then met a strict-critic veto. Smaller
-prompts did not lower the per-call failure rate. The merge is the owner's
-call on that evidence; the branch is complete, reviewed and not merged.
+The first draft asked each batch with the unchanged recruiter system prompt,
+whose "return one row for every planned unit, never omit a unit" contradicted
+the batch contract, sized batches without repair headroom (a default-budget
+host would have abstained on budget), and could not repair a finding on an
+earlier batch's unit; the adversarial review found all three and they are
+fixed in the second commit.
+
+Measured in process
+([evidence](evidence/AR-441-batching-in-process-20260911.json)): the
+five-unit wording's batch prompts are 37, 41 and 25 KB against 77 to 95 KB.
+Under the first draft 7 of 12 batch calls were rejected on their first reply
+(reply-shape failures) against 2 of 2 single calls, so batched turns spent 3
+to 6 recruiter calls where the single call spent 2, and two of four were
+then vetoed by the critic. Under the corrected prompt one independent turn
+(its twin was a gateway replay) was accepted with 1 rejection in 3 batch
+calls and 4 recruiter calls. Too few samples to claim a rate either way; the
+records state the trade and the merge is the owner's call.
 
 ## Approach
 
@@ -113,8 +128,9 @@ AR-385 bounds each reply.
       re-asks only its failed units; the attempts, calls and cache identity
       account for every batch; the focused, named fast and
       decision-conformance checks pass.
-- [ ] One fresh in-process run of the five-unit code-mutation wording after
-      the reinstall shows recruiter prompts of at most half the single-call
-      size, no `missing_work_unit` row, and an accepted team, and one fresh
-      native run per host on that wording is recorded against the two
-      baseline samples.
+- [ ] Fresh in-process runs of the five-unit code-mutation wording after the
+      reinstall record the batch prompt sizes against the single-call size,
+      the first-reply rejection count per batch call, the recruiter calls per
+      turn and the outcome, beside the two baseline samples, and one fresh
+      native run per host on that wording is recorded; the record states the
+      measured trade whatever it is.

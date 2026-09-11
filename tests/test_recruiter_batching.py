@@ -244,16 +244,23 @@ def test_the_split_is_two_units_in_plan_order_and_widens_to_the_budget() -> None
         ("unit-3", "unit-4"),
         ("unit-5",),
     )
-    # Two remaining calls after the reserve: widened evenly to two batches.
+    # Every batch must afford one repair beside the critic's reserve: five
+    # remaining calls less the reserve afford two batches, widened evenly.
     budget = _CallBudget(8)
-    for _ in range(5):
+    for _ in range(3):
         budget.consume()
     assert _recruiter_batches(plan, budget, 1) == (
         ("unit-1", "unit-2", "unit-3"),
         ("unit-4", "unit-5"),
     )
+    # The shipped default strict budget (5) leaves the single call main made.
+    default = _CallBudget(5)
+    default.consume()
+    assert _recruiter_batches(plan, default, 1) == (
+        ("unit-1", "unit-2", "unit-3", "unit-4", "unit-5"),
+    )
     # Nothing affordable still asks once; the stage refuses on budget as before.
-    for _ in range(3):
+    for _ in range(5):
         budget.consume()
     assert _recruiter_batches(plan, budget, 1) == (
         ("unit-1", "unit-2", "unit-3", "unit-4", "unit-5"),
@@ -450,22 +457,109 @@ def test_a_verifier_finding_after_the_last_batch_re_asks_only_its_units() -> Non
         "workforce staffing verification failures: unit-review=review_reviewer_reused"
     )
     feedback = _feedback(prompts[4])
-    assert feedback["failed_units"] == ["unit-review"]
+    assert feedback["failed_units"] == [
+        {"unit_id": "unit-review", "codes": ["review_reviewer_reused"]}
+    ]
     assert "listed failed unit only" in feedback["required_action"]
-    assert _document(prompts[4])["recruiter_batch"]["unit_ids"] == ["unit-review"]
+    repair_document = _document(prompts[4])
+    assert repair_document["recruiter_batch"]["unit_ids"] == ["unit-review"]
+    assert repair_document["recruiter_batch"]["repair_after_whole_team_verification"] is True
+    # The repair shows the failed unit's own recall row and cards.
+    assert [row["unit_id"] for row in repair_document["typed_recall"]] == ["unit-review"]
+    assert {card["agent_id"] for card in repair_document["detail_cards"]} >= {
+        "code-reviewer",
+        "silent-failure-hunter",
+    }
     assert [unit.unit_id for unit in outcome.proposal.units] == [u[0] for u in review_last]
     assert outcome.proposal.units[-1].selected == ("silent-failure-hunter",)
 
 
+def test_a_verifier_finding_on_an_earlier_batch_is_repaired_with_that_units_cards() -> None:
+    # The review unit sits in the second batch and the evidence unit last;
+    # code-reviewer also covers discovery, so reusing it on the review is the
+    # AR-437 finding the whole-team verification raises after batch three.
+    roster = _snapshot(
+        *[c for c in _roster().contracts if c.agent_id != "code-reviewer"],
+        replace(
+            _specialist(
+                "code-reviewer",
+                artifact="review-report",
+                lifecycle="review",
+                domain="software-engineering",
+                capability="review",
+                authority="review",
+            ),
+            artifact_kinds=("analysis", "review-report"),
+            lifecycle_phases=("discovery", "review"),
+            capability_ids=("analysis", "review"),
+        ),
+    )
+    selected = {**_SELECTED, "unit-discovery": "code-reviewer"}
+    outcome, prompts = _run(
+        [
+            _rows(["unit-discovery", "unit-implementation"], selected),
+            {
+                "units": [
+                    _rows(["unit-tests"])["units"][0],
+                    {
+                        "unit_id": "unit-review",
+                        "decision": "staff",
+                        "ranked_semantic": [
+                            _nominee("code-reviewer", 0.99),
+                            _nominee("silent-failure-hunter", 0.9, "acceptable"),
+                        ],
+                    },
+                ]
+            },
+            _rows(["unit-evidence"]),
+            {
+                "units": [
+                    {
+                        "unit_id": "unit-review",
+                        "decision": "staff",
+                        "ranked_semantic": [
+                            _nominee("silent-failure-hunter", 0.99),
+                            _nominee("code-reviewer", 0.9, "acceptable"),
+                        ],
+                    }
+                ]
+            },
+        ],
+        roster=roster,
+    )
+    assert outcome.accepted, outcome.abstention_codes
+    assert outcome.calls_used == 5
+    statuses = [attempt.status for attempt in outcome.attempts if attempt.stage == "recruiter"]
+    # The last batch's reply completed a team the verifier refused: recorded
+    # rejected with the verifier's row, then one scoped repair.
+    assert statuses == ["applied", "applied", "rejected", "applied"]
+    rejected = next(a for a in outcome.attempts if a.status == "rejected")
+    assert rejected.validation_detail == (
+        "workforce staffing verification failures: unit-review=review_reviewer_reused"
+    )
+    repair_document = _document(prompts[4])
+    assert repair_document["recruiter_batch"]["unit_ids"] == ["unit-review"]
+    assert [row["unit_id"] for row in repair_document["typed_recall"]] == ["unit-review"]
+    assert "silent-failure-hunter" in {c["agent_id"] for c in repair_document["detail_cards"]}
+    assert [row["unit_id"] for row in repair_document["recruiter_batch"]["earlier_batches"]] == [
+        "unit-discovery",
+        "unit-implementation",
+        "unit-tests",
+        "unit-evidence",
+    ]
+    assert outcome.proposal.units[3].selected == ("silent-failure-hunter",)
+
+
 def test_the_budget_widens_the_batches_instead_of_failing_them() -> None:
-    # Budget 3: the planner spends one, two calls remain, so two batches of
-    # three and two units instead of three batches.
+    # Budget 5: the planner spends one, four calls remain, which afford two
+    # batches with a repair each, so three and two units instead of three
+    # batches.
     outcome, prompts = _run(
         [
             _rows(["unit-discovery", "unit-implementation", "unit-tests"]),
             _rows(["unit-review", "unit-evidence"]),
         ],
-        budget=3,
+        budget=5,
     )
     assert outcome.accepted
     assert outcome.calls_used == 3

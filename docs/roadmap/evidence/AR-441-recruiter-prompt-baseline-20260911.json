@@ -269,7 +269,6 @@
       "openclaw": 2,
       "zcode": 1
     },
-    "turns_ended_at_recruiter": 13,
     "recruiter_rejection_codes": {
       "missing_work_unit": 59,
       "staff_without_safe_team": 19,
@@ -287,7 +286,16 @@
         "zcode": 1
       }
     },
-    "method": "read-only scan of runs.preflight_result and preflight_failure_receipts provider attempts, rows deduplicated per attempt"
+    "method": "read-only scan of runs.preflight_result and preflight_failure_receipts provider attempts, rows deduplicated per attempt",
+    "turn_outcomes": {
+      "completed_after_repair": 8,
+      "preflight_failed": 5,
+      "of_the_failed_last_recorded_stage": {
+        "recruiter": 4,
+        "critic": 1
+      }
+    },
+    "correction": "The first record said every one of the 13 turns ended at the recruiter; the review measured 8 of them completed after the bounded repair, and this record was corrected on 2026-09-11."
   },
   "findings": [
     "A five-unit code-mutation plan produced recruiter prompts of 94,611 and 76,591 bytes; in the second sample typed_recall was 39,126 bytes and 70 detail cards 34,488 bytes against a 4,230-byte plan.",
