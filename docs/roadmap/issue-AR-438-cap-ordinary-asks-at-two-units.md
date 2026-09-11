@@ -1,12 +1,13 @@
 ---
 title: "AR-438: Cap ordinary asks at two planned units"
-status: open
+status: done
 category: roadmap
 created: 2026-09-11
 updated: 2026-09-11
 tags: [workforce, planner, plan-policy, reliability]
 related:
   - docs/decisions/0251-cap-ordinary-asks-at-two-planned-units.md
+  - docs/roadmap/acceptance/issue-AR-438.md
   - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
   - docs/roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md

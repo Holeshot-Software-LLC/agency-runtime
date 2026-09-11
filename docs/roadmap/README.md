@@ -46,7 +46,7 @@ bounded package are in AR-404's
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
 | `AR-427` | [Preserve the complete inferred specialist team during hydration](issue-AR-427-preserve-complete-inferred-specialist-team.md) | done | p1 | reliability | [#825](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825) |
-| `AR-438` | [Cap ordinary asks at two planned units](issue-AR-438-cap-ordinary-asks-at-two-units.md) | open | p1 | reliability | [#867](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/867) |
+| `AR-438` | [Cap ordinary asks at two planned units](issue-AR-438-cap-ordinary-asks-at-two-units.md) | done | p1 | reliability | [#867](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/867) |
 | `AR-437` | [Enforce the reviewer independence the plan calls for](issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | open | p1 | reliability | [#859](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/859) |
 | `AR-436` | [Durable dashboard access without a terminal](issue-AR-436-durable-dashboard-access-without-a-terminal.md) | open | p2 | reliability | [#856](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/856) |
 | `AR-435` | [Install into the OpenClaw version the host runs](issue-AR-435-install-into-the-openclaw-version-the-host-runs.md) | open | p1 | reliability | [#851](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/851) |
