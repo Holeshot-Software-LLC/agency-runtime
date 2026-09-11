@@ -300,12 +300,14 @@ def _verification_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bo
     return contract.authority == "review" or "testing" in lifecycle
 
 
-# ADR-0252: the capabilities the ontology defines by shape, through the
-# authority and lifecycle rules below plus the architecture reading. A card
-# earns them from what it is (its authority, lifecycle phases and artifact
-# kinds), so a plan unit that names one beside its own artifact's capability
-# is asking for a card of another shape. Every other capability is a
-# specialty a card declares for itself.
+# ADR-0252: the capabilities the ontology defines by shape: every one that
+# `_supports_planning_capability` decides from a card's typed fields, through
+# the authority and lifecycle rules below plus the architecture and
+# risk-analysis readings. A card earns them from what it is (its authority,
+# lifecycle phases, artifact kinds and identity tokens), so a plan unit that
+# names one beside its own artifact's capability is asking for a card of
+# another shape. Every other capability is a specialty a card declares for
+# itself.
 _SHAPE_CAPABILITIES = frozenset(
     {
         "analysis",
@@ -319,6 +321,7 @@ _SHAPE_CAPABILITIES = frozenset(
         "operations",
         "planning",
         "review",
+        "risk-analysis",
         "testing",
         "verification",
     }
