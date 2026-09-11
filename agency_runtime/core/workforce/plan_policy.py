@@ -111,26 +111,35 @@ _STRONG_CODE_VERBS = frozenset(
 # planner reach the same verdict on the same wording (the planner's own set
 # adds three the policy never used as mutation objects).
 CODE_NOUN_TOKENS = _CODE | frozenset({"async", "codebase", "patch"})
-_OBJECT_FILLERS = frozenset(
-    {
-        "a",
-        "an",
-        "the",
-        "some",
-        "new",
-        "brief",
-        "short",
-        "quick",
-        "detailed",
-        "this",
-        "that",
-        "my",
-        "our",
-        "another",
-        "fresh",
-    }
-)
 _MAX_OBJECT_DISTANCE = 3
+_OBJECT_FILLERS = (
+    "a|an|the|some|new|brief|short|quick|detailed|this|that|my|our|another|fresh|full|final"
+)
+# What may follow the prose noun for it to be the verb's whole object: a
+# boundary, or a preposition, conjunction or participle that opens the
+# artefact's description. "add a summary field to the code" fails because a
+# head noun follows the prose noun; "create a handoff, ill let ..." passes.
+_OBJECT_TAILS = (
+    "for|to|of|about|on|in|with|and|or|that|which|so|then|before|after|where|what|how|why|"
+    "if|when|covering|describing|including|explaining|summarizing|summarising|noting|"
+    "listing|saying|telling|documenting|capturing|recording|outlining|detailing|"
+    "stating|showing|please|now|first|here"
+)
+_PROSE_NOUNS = "|".join(sorted(PROSE_ARTIFACT_TOKENS))
+
+
+def _prose_object_pattern() -> re.Pattern[str]:
+    return re.compile(
+        rf"\b(?P<verb>{'|'.join(sorted(_MUTATION))})\b"
+        rf"(?P<object>(?:\s+(?:{_OBJECT_FILLERS})\b){{0,{_MAX_OBJECT_DISTANCE}}}"
+        rf"\s+(?:{_PROSE_NOUNS})\b(?=\s*(?:[,.;:!?)\]]|$|\s+(?:{_OBJECT_TAILS})\b)))?",
+        # MULTILINE: a handoff ask is often several lines or a bullet list,
+        # and the prose noun may end its line rather than the request.
+        re.IGNORECASE | re.MULTILINE,
+    )
+
+
+_PROSE_OBJECT = _prose_object_pattern()
 
 
 def prose_artifact_request(request: str) -> bool:
@@ -146,30 +155,13 @@ def prose_artifact_request(request: str) -> bool:
     """
 
     actionable = _NEGATED_SCOPE.sub(" ", _NEGATED_REQUEST_SCOPE.sub(" ", request))
-    ordered = _TOKENS.findall(actionable.casefold())
-    hits = frozenset(ordered)
+    hits = frozenset(_TOKENS.findall(actionable.casefold()))
     if not hits & _MUTATION or not hits & PROSE_ARTIFACT_TOKENS or hits & _STRONG_CODE_VERBS:
         return False
     if not (hits & CODE_NOUN_TOKENS) <= LOCATIVE_CODE_TOKENS:
         return False
-    for index, token in enumerate(ordered):
-        if token not in _MUTATION:
-            continue
-        if not _takes_prose_object(ordered, index):
-            return False
-    return True
-
-
-def _takes_prose_object(ordered: Sequence[str], index: int) -> bool:
-    """Return whether the mutation verb at ``index`` is followed by a prose artefact."""
-
-    skipped = 0
-    for item in ordered[index + 1 :]:
-        if item in _OBJECT_FILLERS and skipped < _MAX_OBJECT_DISTANCE:
-            skipped += 1
-            continue
-        return item in PROSE_ARTIFACT_TOKENS
-    return False
+    # Every mutation verb must take a prose artefact as its whole object.
+    return all(match.group("object") for match in _PROSE_OBJECT.finditer(actionable))
 
 
 _SECURITY = frozenset(

@@ -319,7 +319,7 @@ def deterministic_work_plan(
     # from the same request text, so the offline oracle and the policy agree
     # that a handoff is documentation and that "update the code and add a
     # note" is not.
-    prose_artifact = prose_artifact_request(actionable_request)
+    prose_artifact = prose_artifact_request(request)
     docs = (
         _contains_any(tokens, _DOCS - {"document", "write", "writing"})
         or document_mutation

@@ -55,7 +55,13 @@ policy; a change verb whose object is the code, a strong code verb, a
 non-locative code object and the mixed "update the code and the docs" case
 keep the code shape; the negated-scope handling still runs first. One
 adversarial review pass withdrew the first draft's bag-of-tokens form, which
-had turned "update the auth code and add a note" into documentation work. The defect was in the deterministic request classification, not
+had turned "update the auth code and add a note" into documentation work;
+a second pass aligned the negation order for both readers and bound the prose
+noun to its phrase; a third pass made the rule read multi-line and bulleted
+asks. Follow-up recorded, not repaired here: a code change phrased with a verb
+outside the policy's vocabulary beside a prose ask ("create a handoff and
+harden the credential code") reads as documentation; widening the strong
+code verbs is a vocabulary decision for its own amendment. The defect was in the deterministic request classification, not
 in the planner, recruiter or critic.
 
 ## Approach

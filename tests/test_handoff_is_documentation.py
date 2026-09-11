@@ -129,14 +129,47 @@ def test_a_change_verb_that_takes_the_code_keeps_the_code_shape() -> None:
 
 
 def test_the_policy_and_the_deterministic_planner_agree_on_every_wording() -> None:
-    # AR-331 invariant extended to the prose-artefact region and to the code
-    # nouns only the planner used to know (patch, async, a language).
+    # AR-331 invariant extended to the prose-artefact region, to the code
+    # nouns only the planner used to know (patch, async, a language), and to
+    # the AR-415 disclaimer corner where the two negation strippers must run
+    # in the same order for both readers (review of the second draft).
     for request in (
         _OBSERVED,
         "create a handoff for the python code",
         "create a handoff for the patch",
         "make the async code path faster and write a summary",
+        "this is not a request to update the code without tests, create a handoff",
+        "I am not asking you to change the code without a review, create a handoff",
         *_CHANGE_VERB_WITH_A_NOTE,
+        *_PROSE_NOUN_AS_MODIFIER,
     ):
         plan = _plan(request)
         assert plan_policy_violations(request, plan) == (), request
+
+
+_PROSE_NOUN_AS_MODIFIER = (
+    "add a summary field to the code",
+    "update the notes column in the repo",
+    "create a memo parser in the repo",
+    "add a handoff endpoint to the code",
+    "update the summary code and the tests",
+)
+
+
+def test_a_prose_noun_used_as_a_modifier_is_not_the_verbs_object() -> None:
+    # Review of the second draft: "add a summary field" adds a field, not a
+    # summary; the prose noun must end its phrase to count as the object.
+    for request in _PROSE_NOUN_AS_MODIFIER:
+        assert not prose_artifact_request(request), request
+        assert "implementation-change" in _kinds(_plan(request)), request
+    assert prose_artifact_request("create a handoff, then ping me")
+    # The same ask across lines or as a bullet list (review of the third
+    # draft): the prose noun may end its line rather than the request.
+    multi_line = "can you create a handoff\nill let another agent crank on this\nwhere the code is\nwhat branch"
+    bulleted = "create a handoff\n- where we left off\n- where the code is\n- what branch"
+    for request in (multi_line, bulleted):
+        assert prose_artifact_request(request), request
+        assert _kinds(_plan(request)) == ["documentation", "review-report"], request
+        assert plan_policy_violations(request, _plan(request)) == (), request
+    assert prose_artifact_request("create a summary covering where the code is")
+    assert prose_artifact_request("add a note about the new flow to the repo")
