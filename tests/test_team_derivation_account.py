@@ -14,6 +14,11 @@ the confidence. These cases pin the account: the contract carries the
 derivation facts with the verifier's own numbers, both prompts state them,
 the scorer and the contract share one step, and a whole-team rejection shows
 the derived team beside the correction the recruiter can make.
+
+ADR-0252 later made ``risk-analysis`` a shape capability that is advisory
+beside the owned one, so the captured motif can no longer arise on it; the
+fixtures pin the same account on ``threat-modeling``, a declared specialty
+that is still typed coverage.
 """
 
 from __future__ import annotations
@@ -54,7 +59,7 @@ _PLAN = {
             "artifact_kind": "review-report",
             "domains": ["quality-assurance"],
             "stacks": [],
-            "capability_ids": ["review", "risk-analysis"],
+            "capability_ids": ["review", "threat-modeling"],
             "novel_capability": "",
             "depends_on": [_PLAN_UNIT],
         },
@@ -75,13 +80,13 @@ def _reviewer(agent_id: str, *capabilities: str) -> WorkforceContract:
 
 def _roster() -> Any:
     # One planner for the plan unit; four reviewers for the review unit, of
-    # which only the analyzer covers risk-analysis: the captured shape.
+    # which only the analyzer covers threat-modeling: the captured shape.
     return _snapshot(
         _contract("operations-manager"),
         _reviewer("release-verifier"),
         _reviewer("code-reviewer"),
         _reviewer("reality-checker"),
-        _reviewer("test-results-analyzer", "risk-analysis"),
+        _reviewer("test-results-analyzer", "threat-modeling"),
     )
 
 
@@ -170,9 +175,9 @@ def test_each_recall_row_names_the_requirements_only_one_eligible_card_covers() 
     _outcome, prompts, _raw = _run(_nomination(_OWNER_THEN_COVERER))
 
     rows = {row["unit_id"]: row for row in prompts[1]["typed_recall"]}
-    # Four reviewers cover the review unit; risk-analysis is the analyzer's alone.
+    # Four reviewers cover the review unit; threat-modeling is the analyzer's alone.
     assert rows[_REVIEW_UNIT]["sole_eligible_coverers"] == {
-        "capability:risk-analysis": "test-results-analyzer"
+        "capability:threat-modeling": "test-results-analyzer"
     }
     assert "test-results-analyzer" in rows[_REVIEW_UNIT]["eligible_candidate_ids"]
     # One planner covers the plan unit, so every requirement there is its alone.

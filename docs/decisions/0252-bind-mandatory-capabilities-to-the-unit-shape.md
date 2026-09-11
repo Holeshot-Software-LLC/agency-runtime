@@ -66,10 +66,17 @@ mandates.
    disappears.
 2. **Only three kinds of capability are typed coverage.**
    `mandatory_capabilities` returns the artifact-owned capability, every
-   capability outside the shape-defined vocabulary (`risk-analysis`,
-   `threat-modeling`, `simulation` and the like, which a card declares for
-   itself), and a declared `novel_capability`, which names work the roster
-   lacks and still reaches hiring as a gap. `_requirements` derives its
+   capability outside the shape-defined vocabulary (`threat-modeling`,
+   `simulation` and the like, proven from a card's own declaration or a
+   token match over its audited vocabulary), and a declared
+   `novel_capability`, which names work the roster lacks and still reaches
+   hiring as a gap. The shape vocabulary is exactly
+   what `_supports_planning_capability` decides from a card's typed fields:
+   the twelve authority-and-lifecycle rules plus the `architecture` and
+   `risk-analysis` readings. The first live measurement after the merge
+   showed why `risk-analysis` belongs there: a review unit that named it was
+   rejected on the capability axis because its authority-and-token rule
+   admitted a risk specialist but not the reviewer the recruiter chose. `_requirements` derives its
    `capability:` tokens from that set. A shape-defined capability named
    beside the owned one (`advisory_capabilities`) is a preference the
    recruiter weighs and the critic judges; the verifier never forces a card
@@ -99,10 +106,10 @@ mandates.
 - A plan unit that names `coordination` no longer forces one of the four
   orchestrators; they stay eligible and retrievable, and a recruiter that
   passes them over answers to the critic rather than to the gate.
-- A specialty on a unit whose authority no declarer carries (`risk-analysis`
-  on a modify unit: none of 95 modify-authority cards support it) is still
-  mandatory and still starves; that is the pre-existing ADR-0198 waiver
-  question, recorded as a follow-up, not changed here.
+- `risk-analysis` was first left outside the shape vocabulary as a
+  specialty; the review noted that no modify-authority card supports it and
+  the post-merge measurement caught it forcing a review unit, so it is now a
+  shape capability and advisory beside the owned one.
 - The advisory rows are recorded only on turns that spend a planner call, so
   a measurement over cached plans undercounts them.
 - The 17 historical rows stay unexplained on the capability id; the new rows
