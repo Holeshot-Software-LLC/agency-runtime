@@ -2425,6 +2425,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `0c47a382` | 2026-09-11 | docs(roadmap): close AR-438 with its acceptance verification record | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 | `2416bb38` | 2026-09-11 | docs(roadmap): merge PR871 AR-438 measurement and close-out | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 | `f31ad2a8` | 2026-09-11 | docs(roadmap): record the AR-434 fresh handoff diagnostic on five hosts | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
+| `c5e7fbd8` | 2026-09-11 | docs(roadmap): close AR-434 with its acceptance verification record | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
