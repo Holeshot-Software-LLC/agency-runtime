@@ -1,0 +1,426 @@
+{
+  "schema": "agency-runtime.evidence.ar439-live-measurement",
+  "issue": "AR-439",
+  "recorded": "2026-09-11",
+  "scope": "One fresh native run per host on the exact ordinary-review wording after the PR #879 reinstall (main f900ee3e, digest afb7790bd7a2). Single samples; codex excluded (activation-required after the reinstall).",
+  "runtime": {
+    "main_commit": "f900ee3ee165d25ca8d3f7b5ba96d6957b931d7f",
+    "runtime_digest_prefix": "afb7790bd7a2"
+  },
+  "request": "Review this Python function: def average(values): return sum(values) // len(values). Requirements: return the arithmetic mean for nonempty numeric sequences, including fractional results, and raise ValueError for empty input. Identify the defects using [1.0, 2.0] and []. Propose how to correct them, but do not write the corrected function yet. Use only this supplied code; do not read or modify files.",
+  "request_sha256": "e8b8358f45490640da93220f7f48f13f47c52675089e4b6abfe526007af987b7",
+  "runs": [
+    {
+      "run_id": "3e22a8f2-f607-4753-8103-e1c1a9d8cc51",
+      "host": "claude",
+      "started_at": "2026-09-11T14:53:18.271618+00:00",
+      "status": "preflight_failed",
+      "preflight_state": "",
+      "planned_units": null,
+      "units": [],
+      "staffing_status": null,
+      "provider_attempts": [
+        {
+          "stage": "planner",
+          "status": "applied",
+          "rows": [
+            {
+              "reason_code": "plan_capability_advisory",
+              "unit_id": "unit-correctness-review",
+              "advisory_capability_ids": "verification"
+            }
+          ]
+        },
+        {
+          "stage": "recall_embedding",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "rejected",
+          "rows": []
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "rows": []
+        }
+      ],
+      "failure_receipts": [
+        {
+          "reason_code": "workforce_inference_failed",
+          "staffing_reason_codes": [
+            "staffing_critic_rejected",
+            "critic_missing_lifecycle_assurance_the_plan_calls_for"
+          ],
+          "provider_attempts": [
+            {
+              "stage": "planner",
+              "status": "applied",
+              "rows": [
+                {
+                  "reason_code": "plan_capability_advisory",
+                  "unit_id": "unit-correctness-review",
+                  "advisory_capability_ids": "verification"
+                }
+              ]
+            },
+            {
+              "stage": "recall_embedding",
+              "status": "applied",
+              "rows": []
+            },
+            {
+              "stage": "recall_reranker",
+              "status": "rejected",
+              "rows": []
+            },
+            {
+              "stage": "recruiter",
+              "status": "applied",
+              "rows": []
+            },
+            {
+              "stage": "critic",
+              "status": "applied",
+              "rows": []
+            }
+          ]
+        }
+      ],
+      "advisory_rows": [
+        {
+          "reason_code": "plan_capability_advisory",
+          "unit_id": "unit-correctness-review",
+          "advisory_capability_ids": "verification"
+        }
+      ],
+      "capability_axis_rejections": 0
+    },
+    {
+      "run_id": "18304f85-9579-4b30-80f7-e06563733a87",
+      "host": "hermes",
+      "started_at": "2026-09-11T14:54:36.779000+00:00",
+      "status": "completed",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "units": [
+        {
+          "unit_id": "unit-defect-analysis",
+          "proposed_ids": [
+            "code-reviewer"
+          ]
+        },
+        {
+          "unit_id": "unit-correctness-review",
+          "proposed_ids": [
+            "code-reviewer"
+          ]
+        }
+      ],
+      "staffing_status": "accepted",
+      "provider_attempts": [
+        {
+          "stage": "planner",
+          "status": "applied",
+          "rows": [
+            {
+              "reason_code": "plan_capability_advisory",
+              "unit_id": "unit-defect-analysis",
+              "advisory_capability_ids": "review"
+            },
+            {
+              "reason_code": "plan_capability_advisory",
+              "unit_id": "unit-correctness-review",
+              "advisory_capability_ids": "verification"
+            }
+          ]
+        },
+        {
+          "stage": null,
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recruiter",
+          "status": "failed",
+          "rows": []
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "rows": [
+            {
+              "reason_code": "review_reviewer_reused",
+              "unit_id": "unit-correctness-review"
+            }
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "rows": [
+            {
+              "reason_code": "invalid_candidate",
+              "unit_id": "unit-defect-analysis"
+            },
+            {
+              "reason_code": "invalid_candidate",
+              "unit_id": "unit-correctness-review"
+            }
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "rows": []
+        }
+      ],
+      "failure_receipts": [],
+      "advisory_rows": [
+        {
+          "reason_code": "plan_capability_advisory",
+          "unit_id": "unit-defect-analysis",
+          "advisory_capability_ids": "review"
+        },
+        {
+          "reason_code": "plan_capability_advisory",
+          "unit_id": "unit-correctness-review",
+          "advisory_capability_ids": "verification"
+        }
+      ],
+      "capability_axis_rejections": 0
+    },
+    {
+      "run_id": "265da61b-221e-4472-a626-52599c0cfd9a",
+      "host": "zcode",
+      "started_at": "2026-09-11T14:56:14.700491+00:00",
+      "status": "completed",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "units": [
+        {
+          "unit_id": "unit-defect-analysis",
+          "proposed_ids": [
+            "code-reviewer"
+          ]
+        },
+        {
+          "unit_id": "unit-correction-review",
+          "proposed_ids": [
+            "code-reviewer"
+          ]
+        }
+      ],
+      "staffing_status": "accepted",
+      "provider_attempts": [
+        {
+          "stage": "planner",
+          "status": "applied",
+          "rows": [
+            {
+              "reason_code": "plan_capability_advisory",
+              "unit_id": "unit-defect-analysis",
+              "advisory_capability_ids": "investigation"
+            },
+            {
+              "reason_code": "plan_capability_advisory",
+              "unit_id": "unit-correction-review",
+              "advisory_capability_ids": "verification"
+            }
+          ]
+        },
+        {
+          "stage": null,
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "rows": [
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-defect-analysis"
+            },
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-correction-review"
+            }
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "rows": [
+            {
+              "reason_code": "review_reviewer_reused",
+              "unit_id": "unit-correction-review"
+            }
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "rows": []
+        }
+      ],
+      "failure_receipts": [],
+      "advisory_rows": [
+        {
+          "reason_code": "plan_capability_advisory",
+          "unit_id": "unit-defect-analysis",
+          "advisory_capability_ids": "investigation"
+        },
+        {
+          "reason_code": "plan_capability_advisory",
+          "unit_id": "unit-correction-review",
+          "advisory_capability_ids": "verification"
+        }
+      ],
+      "capability_axis_rejections": 0
+    },
+    {
+      "run_id": "fc2c6d19-e3bb-4581-b715-b051a5852031",
+      "host": "openclaw",
+      "started_at": "2026-09-11T14:58:05.317000+00:00",
+      "status": "completed",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "units": [
+        {
+          "unit_id": "unit-analysis-supplied-code",
+          "proposed_ids": [
+            "code-reviewer"
+          ]
+        },
+        {
+          "unit_id": "unit-review-proposal",
+          "proposed_ids": [
+            "code-reviewer"
+          ]
+        }
+      ],
+      "staffing_status": "accepted",
+      "provider_attempts": [
+        {
+          "stage": "planner",
+          "status": "applied",
+          "rows": [
+            {
+              "reason_code": "plan_capability_advisory",
+              "unit_id": "unit-review-proposal",
+              "advisory_capability_ids": "verification"
+            }
+          ]
+        },
+        {
+          "stage": null,
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recall_reranker",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "rows": []
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "rows": []
+        }
+      ],
+      "failure_receipts": [],
+      "advisory_rows": [
+        {
+          "reason_code": "plan_capability_advisory",
+          "unit_id": "unit-review-proposal",
+          "advisory_capability_ids": "verification"
+        }
+      ],
+      "capability_axis_rejections": 0
+    }
+  ],
+  "critic_packets": [
+    {
+      "file": "critic-packets-7a/1796099228331983.json",
+      "http_status": 200,
+      "request_sha256": "57a8b403b504d9d1f86447c8cde9dbbca390ad5900ca6af15ca84a081b71f15b",
+      "verdict": {
+        "approved": false,
+        "reason_codes": [
+          "missing-lifecycle-assurance-the-plan-calls-for"
+        ]
+      }
+    },
+    {
+      "file": "critic-packets-7a/1796208481806240.json",
+      "http_status": 200,
+      "request_sha256": "496eae0c2f13ee19d0b41081138a7dc862bc6518545ec89f45649b3725f962f7",
+      "verdict": {
+        "approved": true,
+        "reason_codes": []
+      }
+    },
+    {
+      "file": "critic-packets-7b/1796301535465008.json",
+      "http_status": 200,
+      "request_sha256": "52267c5613eee7ba2cfa851e19ac10699fca443fea4ba2be5f6bccec19c79a21",
+      "verdict": {
+        "approved": true,
+        "reason_codes": []
+      }
+    },
+    {
+      "file": "critic-packets-7b/1796394992377407.json",
+      "http_status": 200,
+      "request_sha256": "e1f21107c68908712e874f141366e0df5a9594e71798d2e1150c9853265c6c36",
+      "verdict": {
+        "approved": true,
+        "reason_codes": [],
+        "wrong_neighbors": []
+      }
+    }
+  ],
+  "store_rows_with_staff_without_safe_team_since_install": 0,
+  "baseline": {
+    "reference": "17 staff_without_safe_team unit rows on the capability axis between 2026-09-08 and 2026-09-11 (issue Problem); on the previous digest 9cb87800ea8a openclaw drew two more (docs/roadmap/evidence/AR-439-post-merge-measurement-20260911.json)"
+  },
+  "findings": [
+    "No staff_without_safe_team row was written on any host since the install; every one of the four planner attempts carries plan_capability_advisory rows (verification on each review unit; review or investigation on an analysis unit), so the capabilities that forced teams before are now recorded and not forced.",
+    "hermes, zcode and openclaw staffed two units each with code-reviewer and a first-reply critic approval; hermes and zcode passed through review_reviewer_reused and invalid_candidate or missing_work_unit recruiter rejections first, all on the receipt.",
+    "claude planned two units and the strict critic vetoed the team on its first reply with missing-lifecycle-assurance-the-plan-calls-for and no wrong-neighbour pointer; that veto class is outside this issue and is recorded for the critic-doctrine follow-up."
+  ],
+  "limits": "Single sample per host; codex not measured; the planner may replay a cached plan across hosts within a wording, in which case a cached plan spends no planner call and records no advisory row (none of the four runs was a cache hit: each has an applied planner attempt)."
+}
