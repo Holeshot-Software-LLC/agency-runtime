@@ -596,9 +596,9 @@ def test_ordinary_exact_text_without_restricted_environment_uses_workforce_plann
     result = _route(monkeypatch, set_canary_env=False)
 
     assert calls == [_task()]
-    # Without the canary environment the canary's contract does not apply,
-    # and the wording ("complete ... code-review work unit") leaves the planner
-    # free under AR-438 too, so the route passes no planner constraint.
-    assert "max_planned_units" not in planner_options[0]
+    # Without the canary environment the canary's one-unit review-report
+    # contract does not apply; the wording is an ordinary ask, so the route
+    # passes exactly the two-unit ceiling (AR-438) and no artifact contract.
+    assert planner_options[0]["max_planned_units"] == 2
     assert "required_planned_artifact_kind" not in planner_options[0]
     assert result["source"] == "workforce_inference"
