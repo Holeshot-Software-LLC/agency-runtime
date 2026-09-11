@@ -1,6 +1,6 @@
 ---
 title: "AR-434: Plan policy reads a handoff request as a code mutation"
-status: open
+status: done
 category: roadmap
 created: 2026-09-10
 updated: 2026-09-11
@@ -11,6 +11,7 @@ related:
   - docs/roadmap/evidence/AR-434-fast-spine-20260911.txt
   - docs/roadmap/evidence/AR-434-decision-conformance-20260911.json
   - docs/decisions/0250-read-a-prose-artefact-request-as-documentation-work.md
+  - docs/roadmap/acceptance/issue-AR-434.md
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
