@@ -10,6 +10,7 @@ from functools import lru_cache
 from typing import Any
 
 from agency_runtime.core.host_capabilities import expand_compatible_hosts
+from agency_runtime.core.workforce.capability_ontology import ARTIFACT_CAPABILITY
 from agency_runtime.core.workforce.contract import (
     WORKFORCE_CONTRACT_SCHEMA_VERSION,
     WorkforceContract,
@@ -299,6 +300,26 @@ def _verification_rule(contract: WorkforceContract, lifecycle, _artifacts) -> bo
     return contract.authority == "review" or "testing" in lifecycle
 
 
+# ADR-0252: the capabilities the ontology defines by shape, through the
+# authority and lifecycle rules below plus the architecture reading. Every
+# other capability is a specialty a card declares for itself.
+_SHAPE_CAPABILITIES = frozenset(
+    {
+        "analysis",
+        "architecture",
+        "audit",
+        "coordination",
+        "design",
+        "documentation",
+        "implementation",
+        "investigation",
+        "operations",
+        "planning",
+        "review",
+        "testing",
+        "verification",
+    }
+)
 _CAPABILITY_RULES: dict[str, Callable[[WorkforceContract, set[str], set[str]], bool]] = {
     "analysis": _analysis_rule,
     "audit": _audit_rule,
@@ -321,6 +342,69 @@ def _supports(contract: WorkforceContract, capability: str) -> bool:
         return broad
     required = _tokens(capability)
     return bool(required) and required <= _contract_tokens(contract)
+
+
+@dataclass(frozen=True, slots=True)
+class _ShapeProbe:
+    """The typed fields of a card whose shape is exactly one plan unit's (ADR-0252).
+
+    It carries what `_CAPABILITY_RULES` and `_contract_tokens` read, and
+    nothing a real card would add: no identity, no outcomes, no stacks. So a
+    rule that holds for the probe holds for any card of the unit's shape, and
+    a rule that fails for the probe can only be met by a card of another shape.
+    """
+
+    authority: str
+    artifact_kinds: tuple[str, ...]
+    lifecycle_phases: tuple[str, ...]
+    domains: tuple[str, ...]
+    capability_ids: tuple[str, ...]
+    agent_id: str = ""
+    display_name: str = ""
+    archetype: str = ""
+    outcomes: tuple[str, ...] = ()
+    stacks: tuple[str, ...] = ()
+    scope_qualifiers: tuple[str, ...] = ()
+
+
+def planning_capability_coherent(
+    capability: str,
+    *,
+    artifact_kind: str,
+    lifecycle_phase: str,
+    authority: str,
+    domains: Sequence[str] = (),
+) -> bool:
+    """Return whether a card of exactly the unit's own shape could support the capability.
+
+    AR-439 / ADR-0252. The planner names methods; the verifier proves them
+    through rules that read a card's authority and lifecycle. When a card
+    whose artifact kind, lifecycle phase, authority and domains are the unit's
+    own cannot meet the rule, the capability belongs to another shape, and a
+    mandatory requirement for it could only be covered by a specialist of that
+    other shape. A specialty outside the shape-defined vocabulary is proven
+    by a card's own declaration, which any shape may carry, so it is coherent
+    by default and keeps its requirement.
+    """
+
+    normalized = str(capability or "").strip().casefold()
+    if not normalized:
+        return False
+    if normalized not in _SHAPE_CAPABILITIES:
+        # A specialty (`risk-analysis`, `threat-modeling`, `simulation`, a
+        # declared novelty) is proven by a card's own declaration, which any
+        # shape may carry; only the shape-defined capabilities can contradict
+        # the unit.
+        return True
+    probe = _ShapeProbe(
+        authority=authority,
+        artifact_kinds=(artifact_kind,),
+        lifecycle_phases=(lifecycle_phase,),
+        domains=tuple(domains),
+        capability_ids=(ARTIFACT_CAPABILITY.get(artifact_kind, ""),),
+    )
+    verdict = _supports_planning_capability(probe, normalized)  # type: ignore[arg-type]
+    return verdict is None or verdict
 
 
 def _authority_satisfies(unit: WorkUnit, contract: WorkforceContract) -> bool:
@@ -1477,6 +1561,7 @@ __all__ = [
     "VerifiedUnitStaffing",
     "build_deterministic_proposal",
     "build_verified_proposal",
+    "planning_capability_coherent",
     "typed_staffing_coverage",
     "typed_staffing_coverage_gaps",
     "typed_staffing_ineligibility",

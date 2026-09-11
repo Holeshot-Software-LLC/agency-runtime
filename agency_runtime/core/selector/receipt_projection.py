@@ -95,6 +95,17 @@ _CRITIC_POINTER_KEYS = frozenset(
     {"unit_id", "reason_code", "selected_agent_id", "neighbor_agent_id"}
 )
 _MAX_CRITIC_POINTERS = 8
+# AR-439 / ADR-0252: the compiler drops a planner-named capability that no
+# card of the unit's own shape could support. The applied planner attempt
+# records each dropped id so the demotion is diagnosable; the ids come from
+# the closed capability ontology the planner was shown, never from model
+# prose. Wire form: ``unit=cap~cap`` rows, one per unit.
+PLAN_DEMOTION_DETAIL_PREFIX = "workforce plan capability demotions: "
+_PLAN_DEMOTION_CODE = "plan_capability_demoted"
+_PLAN_DEMOTION_KEYS = frozenset({"unit_id", "reason_code", "demoted_capability_ids"})
+_MAX_PLAN_DEMOTION_ROWS = 16
+_MAX_DEMOTED_CAPABILITIES = 3
+_CAPABILITY_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 _GLOBAL_UNIT = "global"
 # A waived typed requirement (ADR-0198) is, by construction, an identifier some
 # audited contract declares: roster vocabulary, never model prose. The closed
@@ -320,6 +331,8 @@ def project_nomination_failures(value: object) -> list[dict[str, Any]]:
             return _staffing_verification_failures(value)
         if value.startswith(CRITIC_POINTER_DETAIL_PREFIX):
             return _critic_pointer_failures(value)
+        if value.startswith(PLAN_DEMOTION_DETAIL_PREFIX):
+            return _plan_demotion_failures(value)
         if not value.startswith(_NOMINATION_FAILURE_PREFIX):
             return []
         raw = _parse_nomination_detail(value)
@@ -349,10 +362,17 @@ def _nomination_failure_row(item: object) -> dict[str, Any] | None:
         "maximum_selected_per_unit",
         "selected_agent_id",
         "neighbor_agent_id",
+        "demoted_capability_ids",
     }:
         return None
     unit_id = str(item.get("unit_id") or "").strip().casefold()
     reason_code = _code(item.get("reason_code"))
+    # AR-439 / ADR-0252: a demotion row is exactly its three keys with the
+    # compiler's closed code; the capability ids are admitted on no other row.
+    if set(item) == _PLAN_DEMOTION_KEYS and reason_code == _PLAN_DEMOTION_CODE:
+        return _plan_demotion_row(unit_id, item.get("demoted_capability_ids"))
+    if "demoted_capability_ids" in item:
+        return None
     # AR-433 / ADR-0246: a critic pointer row must survive the re-projection
     # every reader applies. It is exactly its four keys with the critic's
     # closed code; the pointer identities are admitted on no other row.
@@ -460,6 +480,55 @@ def _critic_pointer_failures(value: str) -> list[dict[str, Any]]:
             return []
         failure = _critic_pointer_row(unit_id.strip().casefold(), selected_id, neighbor_id)
         if failure is None or failure in failures:
+            return []
+        failures.append(failure)
+    return failures
+
+
+def _plan_demotion_row(unit_id: str, ids: object) -> dict[str, Any] | None:
+    """Project one compiler demotion row, or None when a field is malformed."""
+
+    if isinstance(ids, str):
+        raw = ids.split("~")
+    elif isinstance(ids, (list, tuple)):
+        raw = [str(item) for item in ids]
+    else:
+        return None
+    capabilities = [item.strip().casefold() for item in raw]
+    if (
+        _NOMINATION_UNIT_ID.fullmatch(unit_id) is None
+        or not 1 <= len(capabilities) <= _MAX_DEMOTED_CAPABILITIES
+        or len(set(capabilities)) != len(capabilities)
+        or any(_CAPABILITY_ID.fullmatch(item) is None for item in capabilities)
+    ):
+        return None
+    return {
+        "unit_id": unit_id,
+        "reason_code": _PLAN_DEMOTION_CODE,
+        # Flat, like ranked_agent_ids: a nested list would push the preflight
+        # failure receipt past its bounded JSON depth.
+        "demoted_capability_ids": "~".join(capabilities),
+    }
+
+
+def _plan_demotion_failures(value: str) -> list[dict[str, Any]]:
+    """Project the compiler's ``unit=cap~cap`` rows, bounded and closed.
+
+    The runtime wrote the rows from the ontology ids it validated, so a
+    malformed row is a corrupted detail, not a model claim, and the whole
+    attempt projects blank rather than partially (AR-439).
+    """
+
+    rows = value.removeprefix(PLAN_DEMOTION_DETAIL_PREFIX).split(",")
+    if not 1 <= len(rows) <= _MAX_PLAN_DEMOTION_ROWS:
+        return []
+    failures: list[dict[str, Any]] = []
+    for item in rows:
+        unit_id, separator, ids = item.partition("=")
+        if not separator:
+            return []
+        failure = _plan_demotion_row(unit_id.strip().casefold(), ids)
+        if failure is None or any(row["unit_id"] == failure["unit_id"] for row in failures):
             return []
         failures.append(failure)
     return failures
@@ -1080,6 +1149,7 @@ def normalize_durable_routing_receipt(value: object) -> dict[str, Any] | None:
 
 __all__ = [
     "CRITIC_POINTER_DETAIL_PREFIX",
+    "PLAN_DEMOTION_DETAIL_PREFIX",
     "RECEIPT_DESCRIPTION_BYTES",
     "ROUTING_RECEIPT_VERSION",
     "bounded_receipt_text",

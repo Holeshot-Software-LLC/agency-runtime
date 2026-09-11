@@ -50,14 +50,19 @@ records what the compiler dropped.
 
 1. **Shape coherence decides what is mandatory.** A planner-named capability
    is kept on a unit only when the ontology's own support rule can be met by a
-   card whose typed shape is the unit's: its artifact kind, its lifecycle
-   phase, an authority that satisfies the unit's authority under the
-   verifier's compatibility table, and its domains. The compiler evaluates
+   card whose typed shape is exactly the unit's: its artifact kind, its
+   lifecycle phase, its authority and its domains. The compiler evaluates
    `_supports_planning_capability` against that shape probe. The
-   artifact-owned capability is always coherent by construction.
-2. **Specialist and novel capabilities stay mandatory.** A capability with no
-   broad rule (`threat-modeling`, `simulation`, `translation` and the like)
-   names a specialty any shape may carry through `capability_ids`, and a
+   artifact-owned capability is always coherent by construction. So an
+   analysis unit keeps `analysis` and `investigation`; `audit`, `review` and
+   `verification` belong to the review-report and test-evidence shapes,
+   `planning` and `design` to the plan shape, `implementation` to the
+   implementation-change shape, and `operations` to a unit whose domain is
+   operations.
+2. **Specialist and novel capabilities stay mandatory.** A capability outside
+   the shape-defined vocabulary (`risk-analysis`, `threat-modeling`,
+   `simulation`, `translation` and the like) is proven by a card's own
+   declaration, which any shape may carry through `capability_ids`, and a
    declared `novel_capability` names work the roster lacks; both keep their
    typed requirement so the coverage-gap and hiring path is unchanged.
 3. **A drop is recorded, not silent.** The applied planner attempt carries

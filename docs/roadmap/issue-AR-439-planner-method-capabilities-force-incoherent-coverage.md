@@ -70,17 +70,32 @@ capabilities the compiler dropped, so a demotion is invisible after the fact.
 
 ## Current state
 
-Filed from the AR-438 measurement of 2026-09-11. Not repaired.
+Repaired on branch `claude/ar439-capability-coherence-20260911` per ADR-0252:
+`planning_capability_coherent` in `staffing_verifier` evaluates the ontology's
+own support rule against a probe of exactly the unit's shape; the compact
+intent compiler drops a shape-defined capability the probe cannot support,
+keeps specialties and declared novelties, and reports every dropped known id
+through a demotion sink; the planner stage writes those rows on the applied
+planner attempt as `workforce plan capability demotions: unit=cap~cap`, and
+`receipt_projection` projects them as the closed row
+`{unit_id, reason_code: plan_capability_demoted, demoted_capability_ids}` on
+both durable receipts, refusing a malformed detail whole. The planner prompt
+now says which methods a shape carries. Regressions cover the rule on every
+artifact shape, the four observed drops, kept specialties and novelties, the
+older compiler drops, the sink, the end-to-end attempt detail and receipt
+rows, malformed wire forms, and the row's closed keys. One prior expectation
+moved: an accessibility audit planned as an analysis unit now keeps
+`analysis` alone, because `audit` is the review shape's capability.
 
 ## Approach
 
 Bind a unit's mandatory capabilities to its own artifact shape (ADR-0252).
 In the compiler, keep a planner-named capability only when the ontology's
-support rule can be satisfied by a card whose typed shape is the unit's own:
-its artifact kind, lifecycle phase, an authority that satisfies the unit's
-authority, and its domains. A capability with no broad rule (a specialist
-skill such as `threat-modeling` or `simulation`) and a declared novel
-capability stay mandatory, so the roster-gap and hiring path is unchanged.
+support rule can be satisfied by a card whose typed shape is exactly the
+unit's own: its artifact kind, lifecycle phase, authority and domains. A
+specialty outside the shape-defined vocabulary (`risk-analysis`,
+`threat-modeling`, `simulation`) and a declared novel capability stay
+mandatory, so the roster-gap and hiring path is unchanged.
 Drop the rest at compile time and record every dropped id on the applied
 planner attempt as a closed receipt row in both durable receipts. Leave the
 recruiter, the verifier, eligibility, the critic and the validators as they
@@ -97,8 +112,8 @@ only with the wrong specialist.
 
 - [ ] A planner-named capability whose support rule cannot be met by a card of
       the unit's own shape is dropped by the compiler, and one whose rule can
-      be met, one without a broad rule, and a declared novel capability are
-      kept; the observed shapes (`implementation` on a review-report,
+      be met, a specialty outside the shape vocabulary, and a declared novel
+      capability are kept; the observed shapes (`implementation` on a review-report,
       `analysis` on a test-code unit, `coordination` on an implementation
       change, `planning` on an analysis) are pinned, and the existing
       compiler drops still hold.

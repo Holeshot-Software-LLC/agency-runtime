@@ -2226,6 +2226,7 @@ def _parse_compact_plan(
     max_work_units: int,
     required_artifact_kind: str | None = None,
     explicit_indivisible_unit: bool = False,
+    demotion_sink: list[tuple[str, tuple[str, ...]]] | None = None,
 ) -> WorkUnitPlan:
     domains, stacks, capabilities = _known_intent_vocabulary(snapshot)
     primary = compile_intent_plan(
@@ -2236,6 +2237,7 @@ def _parse_compact_plan(
         known_stacks=stacks,
         known_capability_ids=capabilities,
         max_work_units=max_work_units,
+        demotion_sink=demotion_sink,
     )
     if required_artifact_kind is not None and any(
         unit.artifact_kind != required_artifact_kind for unit in primary.units
@@ -4726,6 +4728,21 @@ def _verify_wrong_neighbor_pointers(
     return tuple(pointers)
 
 
+def _capability_demotion_detail(demotions: Sequence[tuple[str, Sequence[str]]]) -> str:
+    """Write the compiler's dropped capabilities in the wire form both receipts project.
+
+    AR-439 / ADR-0252: one ``unit=cap~cap`` row per unit, ids from the closed
+    ontology the planner was shown, so the demotion is diagnosable after the
+    fact without the plan carrying it.
+    """
+
+    from agency_runtime.core.selector.receipt_projection import PLAN_DEMOTION_DETAIL_PREFIX
+
+    return PLAN_DEMOTION_DETAIL_PREFIX + ",".join(
+        f"{unit_id}=" + "~".join(ids) for unit_id, ids in demotions
+    )
+
+
 def _wrong_neighbor_pointer_detail(pointers: Sequence[WrongNeighborPointer]) -> str:
     """Write the verified pointers in the wire form both durable receipts project."""
 
@@ -5199,6 +5216,7 @@ def plan_and_staff_workforce(
         },
     )
     cached_plan = workforce_cache_get(planner_cache_identity)
+    plan_demotions: list[tuple[str, tuple[str, ...]]] = []
     if isinstance(cached_plan, WorkUnitPlan):
         parsed_plan = cached_plan
         stage_attempts: list[WorkforceInferenceAttempt] = []
@@ -5224,10 +5242,23 @@ def plan_and_staff_workforce(
                 max_work_units=planning_unit_limit,
                 required_artifact_kind=required_planned_artifact_kind,
                 explicit_indivisible_unit=explicit_indivisible_unit,
+                demotion_sink=plan_demotions,
             ),
         )
         if isinstance(parsed_plan, WorkUnitPlan):
             workforce_cache_put(planner_cache_identity, parsed_plan)
+            if plan_demotions and stage_attempts and stage_attempts[-1].status == "applied":
+                # AR-439 / ADR-0252: the capabilities the compiler dropped ride
+                # the applied planner attempt in the wire form both durable
+                # receipts project, so a demotion is diagnosable after the
+                # fact. A cached plan spent no attempt and records nothing new.
+                stage_attempts = [
+                    *stage_attempts[:-1],
+                    replace(
+                        stage_attempts[-1],
+                        validation_detail=_capability_demotion_detail(plan_demotions),
+                    ),
+                ]
     attempts.extend(stage_attempts)
     if parsed_plan is None:
         return _inference_failure(
