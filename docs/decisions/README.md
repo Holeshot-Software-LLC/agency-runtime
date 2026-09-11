@@ -158,6 +158,7 @@ Status meanings:
 | [ADR-0251](0251-cap-ordinary-asks-at-two-planned-units.md) | Cap ordinary asks at two planned units | Accepted |
 | [ADR-0252](0252-bind-mandatory-capabilities-to-the-unit-shape.md) | Bind a unit's mandatory capabilities to its own artifact shape | Accepted |
 | [ADR-0253](0253-name-the-stale-hook-runtime-when-a-turn-cannot-be-verified.md) | Name the stale hook runtime when a turn cannot be verified | Accepted |
+| [ADR-0255](0255-say-who-delivers-the-response-contract.md) | Say who delivers the response contract and whose facts the header reports | Accepted |
 
 ## Evidence and observability
 

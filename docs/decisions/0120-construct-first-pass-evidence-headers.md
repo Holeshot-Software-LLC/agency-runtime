@@ -3,9 +3,10 @@ title: "Construct evidence headers before first publication"
 status: accepted
 category: decisions
 created: 2026-07-30
-updated: 2026-08-22
+updated: 2026-09-11
 tags: [evidence, finalization, headers, native-hosts, openclaw, hermes]
 related:
+  - docs/roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md
   - docs/roadmap/issue-AR-424-preserve-last-card-whitespace.md
   - docs/roadmap/issue-AR-127-zcode-stop-rejection-shape.md
   - docs/decisions/0223-retire-superseded-zcode-stop-checklist.md

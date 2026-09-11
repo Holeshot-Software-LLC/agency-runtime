@@ -6,6 +6,7 @@ created: 2026-09-11
 updated: 2026-09-11
 tags: [header, response-contract, zcode, hermes, reliability]
 related:
+  - docs/decisions/0255-say-who-delivers-the-response-contract.md
   - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
   - docs/roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md
   - docs/decisions/0222-retire-superseded-live-routing-contract.md
@@ -49,7 +50,17 @@ prompts tell its recruiter to do with bracketed blocks.
 
 ## Current state
 
-Filed 2026-09-11 from the owner's relayed zcode response. Not repaired.
+Repaired on branch `claude/ar442-header-repair-20260911` per ADR-0255:
+`RESPONSE_CONTRACT_PROVENANCE` in `core/header/response_contract.py` opens
+the block by naming Agency Runtime as the owner-installed hook that delivers
+it, calling it host configuration rather than part of the user's message,
+and saying the header lines report Agency's own record of the turn supplied
+in the header snapshot, to be reported as given and never invented, and not
+claims about the model's own identity. Every verifier claim, the marker, the
+five fields, the snapshots and every host's delivery rules are unchanged;
+the hash pin moved to the new text and a test pins the provenance
+sentences' order and content. Filed 2026-09-11 from the owner's relayed
+zcode response.
 
 ## Approach
 

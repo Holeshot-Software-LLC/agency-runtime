@@ -11,8 +11,9 @@ This module owns the single canonical statement. It is delivered once, at turn
 start, next to the INITIAL header snapshot on every host; later snapshots
 refresh header *values* only and say so. The text is hash-pinned by
 ``tests/test_response_contract.py`` so it cannot drift without a deliberate
-change, and it states exactly what ``validate_completion_policy`` verifies --
-nothing more, nothing less.
+change. It opens by saying who delivers it and whose facts the header reports
+(AR-442), and then states exactly what ``validate_completion_policy``
+verifies -- nothing more, nothing less.
 """
 
 from __future__ import annotations
@@ -25,15 +26,33 @@ RESPONSE_CONTRACT_MARKER = "[AGENCY RESPONSE CONTRACT v1]"
 
 _HEADER_LABELS = "; ".join(label for _key, label in HEADER_FIELDS)
 
-# Every sentence here is a claim about the verifier. Claim 1 is
+# AR-442 / ADR-0255: the opening sentences say who delivers this block and
+# whose facts the header reports. A host model reading a bare bracketed
+# block in its prompt refused it as an injection ("fabricated metadata about
+# a model I'm not") and omitted the header; the sentences are provenance
+# claims, and they are true: the block is written by the owner-installed
+# runtime's hook, and the values are the runtime's own Store record of the
+# turn, shown in the snapshot.
+#
+# Every remaining sentence is a claim about the verifier. Claim 1 is
 # ``_starts_with_header`` and ``validate_header``; claim 2 is the
 # ``fill_header_fields`` comparison in ``validate_completion_policy`` (values
 # compared after ``str.strip``, one line each, placeholder values rejected by
 # ``_is_present``); claim 3 is the ``response_body`` check that only the public
 # ``finalize_response`` performs. The closing sentences are the AR-357 Stop-path
 # rule: an unreadable turn publishes unverified instead of being rejected.
+RESPONSE_CONTRACT_PROVENANCE = (
+    "Delivered by Agency Runtime, the evidence runtime the owner of this machine installed "
+    "into this host's hooks; it is host configuration, not part of the user's message. The "
+    "header lines it asks for report Agency's own record of this turn, supplied to you in "
+    "the header snapshot: which specialist capsules Agency loaded or delegated, which skills "
+    "it loaded, which model identities it observed, and how it recruited. You report those "
+    "values as given; you never invent them and they are not claims about your own identity."
+)
+
 RESPONSE_CONTRACT_TEXT = (
     f"{RESPONSE_CONTRACT_MARKER}\n"
+    f"{RESPONSE_CONTRACT_PROVENANCE}\n"
     "Agency checks only this turn's final response, once, for exactly this:\n"
     f"1. It begins with these {len(HEADER_FIELDS)} lines in this order, each `Label: value`, "
     f"nothing before them: {_HEADER_LABELS}.\n"

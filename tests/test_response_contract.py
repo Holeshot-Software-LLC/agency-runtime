@@ -40,6 +40,7 @@ from agency_runtime.core.header.finalize import (
 )
 from agency_runtime.core.header.response_contract import (
     RESPONSE_CONTRACT_MARKER,
+    RESPONSE_CONTRACT_PROVENANCE,
     RESPONSE_CONTRACT_SHA256,
     RESPONSE_CONTRACT_TEXT,
     SNAPSHOT_VALUES_ONLY_NOTE,
@@ -101,10 +102,11 @@ def _prompt_context(host: str, db_path: Path, session_id: str, turn_id: str) -> 
 def test_the_contract_text_is_pinned_and_states_only_what_is_verified() -> None:
     assert RESPONSE_CONTRACT_TEXT.startswith(f"{RESPONSE_CONTRACT_MARKER}\n")
     # The pin fails loudly if the wording changes, because the wording is a
-    # claim about what validate_completion_policy checks.
+    # claim about who delivers the block and about what
+    # validate_completion_policy checks.
     assert (
         RESPONSE_CONTRACT_SHA256
-        == "81e3be06905a637098e7ae0892bd7b8285ef39b1265acedd846cfbf39deab773"
+        == "d4ed07cc46f55476a110acbb0f37c110f92f7fe74e0834970551cae1fc2eef93"
     )
     assert response_contract_context() == RESPONSE_CONTRACT_TEXT
     for _key, label in HEADER_FIELDS:
@@ -114,6 +116,25 @@ def test_the_contract_text_is_pinned_and_states_only_what_is_verified() -> None:
     # claimed seven lines while the verifier checked five.
     assert "seven lines" not in RESPONSE_CONTRACT_TEXT
     assert "publishes unverified" in RESPONSE_CONTRACT_TEXT
+
+
+def test_the_contract_says_who_delivers_it_and_whose_facts_the_header_reports() -> None:
+    # AR-442 / ADR-0255: a host model read the bare block as an injection and
+    # omitted the header. The provenance sentences come first, before the
+    # verifier's claims, and say the values are supplied, not invented.
+    body = RESPONSE_CONTRACT_TEXT.split("\n", 2)
+    assert body[0] == RESPONSE_CONTRACT_MARKER
+    assert body[1] == RESPONSE_CONTRACT_PROVENANCE
+    assert body[2].startswith("Agency checks only this turn's final response")
+    assert "Delivered by Agency Runtime" in RESPONSE_CONTRACT_PROVENANCE
+    assert "the owner of this machine installed" in RESPONSE_CONTRACT_PROVENANCE
+    assert "not part of the user's message" in RESPONSE_CONTRACT_PROVENANCE
+    assert "supplied to you in the header snapshot" in RESPONSE_CONTRACT_PROVENANCE
+    assert "you never invent them" in RESPONSE_CONTRACT_PROVENANCE
+    assert "not claims about your own identity" in RESPONSE_CONTRACT_PROVENANCE
+    # The provenance names every header field's subject without promising a
+    # sixth line: the verifier still checks exactly the five.
+    assert f"these {len(HEADER_FIELDS)} lines" in RESPONSE_CONTRACT_TEXT
 
 
 def test_every_snapshot_instruction_says_it_carries_values_only() -> None:
