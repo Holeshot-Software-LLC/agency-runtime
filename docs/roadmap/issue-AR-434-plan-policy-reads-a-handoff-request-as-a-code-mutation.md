@@ -1,12 +1,17 @@
 ---
 title: "AR-434: Plan policy reads a handoff request as a code mutation"
-status: open
+status: done
 category: roadmap
 created: 2026-09-10
 updated: 2026-09-11
 tags: [workforce, planner, plan-policy, reliability]
 related:
+  - docs/roadmap/evidence/AR-434-handoff-diagnostic-20260911.json
+  - docs/roadmap/evidence/AR-434-focused-tests-20260911.txt
+  - docs/roadmap/evidence/AR-434-fast-spine-20260911.txt
+  - docs/roadmap/evidence/AR-434-decision-conformance-20260911.json
   - docs/decisions/0250-read-a-prose-artefact-request-as-documentation-work.md
+  - docs/roadmap/acceptance/issue-AR-434.md
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
   - docs/roadmap/issue-AR-415-respect-negated-change-requests.md
   - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
@@ -45,8 +50,7 @@ request text alone.
 ## Current state
 
 Merged in PR #866 (merge commit `5a1e6b3a`) per ADR-0250 and live on every
-host at runtime digest `98f5ddda00ce`; the fresh diagnostic on the exact
-handoff wording is still owed: `prose_artifact_request` in `plan_policy` reads a request that names
+host at runtime digest `98f5ddda00ce`: `prose_artifact_request` in `plan_policy` reads a request that names
 a prose artefact as the object of every change verb, whose only code nouns
 are locative and which carries no strong code verb, as documentation work;
 the policy and the deterministic planner call the predicate on the same text,
@@ -64,6 +68,15 @@ outside the policy's vocabulary beside a prose ask ("create a handoff and
 harden the credential code") reads as documentation; widening the strong
 code verbs is a vocabulary decision for its own amendment. The defect was in the deterministic request classification, not
 in the planner, recruiter or critic.
+
+Live diagnostic (2026-09-11, [evidence](evidence/AR-434-handoff-diagnostic-20260911.json)):
+one fresh native run per host on the exact wording, claude, hermes, zcode,
+openclaw and codex, each planned documentation plus review-report, staffed a
+documentation specialist beside a codebase-orientation card, and reached the
+critic with no lifecycle repair code on any planner attempt and no failure
+receipt; every captured critic packet was a first-reply approval. zcode's
+turn then ended `response_invalid` on the finalization header check, a
+delivery matter outside this issue.
 
 ## Approach
 
@@ -83,11 +96,11 @@ handling the same function applies.
 
 ## Acceptance
 
-- [ ] The exact observed handoff wording is not classified as a code mutation
+- [x] The exact observed handoff wording is not classified as a code mutation
       and a genuine code-mutation request with the same verbs still is.
-- [ ] Focused plan-policy regressions and the named fast checks pass with no
+- [x] Focused plan-policy regressions and the named fast checks pass with no
       change to inference-owned planning, staffing, critic or validator
       boundaries.
-- [ ] One bounded fresh diagnostic on the exact wording reaches staffing
+- [x] One bounded fresh diagnostic on the exact wording reaches staffing
       without the three lifecycle repair codes, with tracker and worklog
       parity.

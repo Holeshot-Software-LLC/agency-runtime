@@ -1,0 +1,562 @@
+{
+  "schema": "agency-runtime.evidence.ar434-handoff-diagnostic",
+  "issue": "AR-434",
+  "recorded": "2026-09-11",
+  "scope": "One fresh native run per installed host (claude, hermes, zcode, openclaw, codex) on the exact observed handoff wording after the PR #866 reinstall, with a pass-through observer on the critic route. Single samples; planner and recruiter are stochastic. Codex ran with its command hooks trusted by the owner earlier the same day.",
+  "runtime": {
+    "main_commit": "1e1ca41c8e616240a4e0c9c72217df5c410fc237",
+    "runtime_digest_prefix": "98f5ddda00ce"
+  },
+  "request": "can you create a handoff, ill let another agent crank on this for a bit, include that observation, and where we left off and whats next to do, and where the code is and what branch and anything it needs to start working on this fresh",
+  "request_sha256": "e584a5573bf05db2c8ae2855f5cca12bdbb92ae0e45fb05b515a3c930e7f0ae2",
+  "store_request_fingerprint": "e584a5573bf05db2c8ae2855f5cca12bdbb92ae0e45fb05b515a3c930e7f0ae2",
+  "lifecycle_repair_codes": [
+    "plan_missing_implementation",
+    "plan_missing_test_implementation",
+    "plan_missing_test_evidence_review"
+  ],
+  "harness": {
+    "script": "~/.agency-runtime/ephemeral/ar433-install-20260910/liveness.py",
+    "batches": {
+      "-5a": [
+        "claude",
+        "hermes"
+      ],
+      "-5b": [
+        "zcode",
+        "openclaw (killed by the batch timeout after staffing; rerun as -5c)"
+      ],
+      "-5c": [
+        "openclaw"
+      ],
+      "-5d": [
+        "codex"
+      ]
+    }
+  },
+  "runs": [
+    {
+      "run_id": "8d2e0f27-97bf-479e-b177-351b2f7d9e38",
+      "host": "claude",
+      "started_at": "2026-09-11T12:07:27.751425+00:00",
+      "status": "completed",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "selected_ids": [
+        "project-delivery-response-documentation-specialist",
+        "codebase-archaeologist"
+      ],
+      "staffing_status": "accepted",
+      "units": [
+        {
+          "unit_id": "unit-1700da32be",
+          "artifact_kind": "documentation",
+          "mutation_scope": "workspace_write",
+          "selected": [
+            "project-delivery-response-documentation-specialist"
+          ]
+        },
+        {
+          "unit_id": "unit-984d3ab8c5",
+          "artifact_kind": "review-report",
+          "mutation_scope": "read_only",
+          "selected": [
+            "codebase-archaeologist"
+          ]
+        }
+      ],
+      "provider_attempts": [
+        {
+          "model_group": "task-agency-planner-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-recruiter-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-critic-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        }
+      ],
+      "failure_receipts": [],
+      "lifecycle_repair_codes_seen": [],
+      "critic_codes_seen": [],
+      "batch": "-5a"
+    },
+    {
+      "run_id": "ae8e38a1-696c-4bf1-8837-7b61bd6d7361",
+      "host": "hermes",
+      "started_at": "2026-09-11T12:14:06.093000+00:00",
+      "status": "completed",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "selected_ids": [
+        "technical-writer",
+        "codebase-onboarding-engineer"
+      ],
+      "staffing_status": "accepted",
+      "units": [
+        {
+          "unit_id": "unit-1700da32be",
+          "artifact_kind": "documentation",
+          "mutation_scope": "workspace_write",
+          "selected": [
+            "technical-writer"
+          ]
+        },
+        {
+          "unit_id": "unit-984d3ab8c5",
+          "artifact_kind": "review-report",
+          "mutation_scope": "read_only",
+          "selected": [
+            "codebase-onboarding-engineer"
+          ]
+        }
+      ],
+      "provider_attempts": [
+        {
+          "model_group": "task-agency-planner-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-recruiter-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-critic-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        }
+      ],
+      "failure_receipts": [],
+      "lifecycle_repair_codes_seen": [],
+      "critic_codes_seen": [],
+      "batch": "-5a"
+    },
+    {
+      "run_id": "c99d7141-5b4e-4022-a719-bec1f69074e1",
+      "host": "zcode",
+      "started_at": "2026-09-11T12:17:58.452688+00:00",
+      "status": "response_invalid",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "selected_ids": [
+        "project-delivery-response-documentation-specialist",
+        "codebase-onboarding-engineer"
+      ],
+      "staffing_status": "accepted",
+      "units": [
+        {
+          "unit_id": "unit-1700da32be",
+          "artifact_kind": "documentation",
+          "mutation_scope": "workspace_write",
+          "selected": [
+            "project-delivery-response-documentation-specialist"
+          ]
+        },
+        {
+          "unit_id": "unit-984d3ab8c5",
+          "artifact_kind": "review-report",
+          "mutation_scope": "read_only",
+          "selected": [
+            "codebase-onboarding-engineer"
+          ]
+        }
+      ],
+      "provider_attempts": [
+        {
+          "model_group": "task-agency-planner-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-recruiter-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-critic-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        }
+      ],
+      "failure_receipts": [],
+      "lifecycle_repair_codes_seen": [],
+      "critic_codes_seen": [],
+      "batch": "-5b"
+    },
+    {
+      "run_id": "d7331245-1a3e-4256-b1ad-4f1299afdd1c",
+      "host": "openclaw",
+      "started_at": "2026-09-11T12:28:27.208000+00:00",
+      "status": "completed",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "selected_ids": [
+        "project-delivery-response-documentation-specialist",
+        "codebase-onboarding-engineer"
+      ],
+      "staffing_status": "accepted",
+      "units": [
+        {
+          "unit_id": "unit-1700da32be",
+          "artifact_kind": "documentation",
+          "mutation_scope": "workspace_write",
+          "selected": [
+            "project-delivery-response-documentation-specialist"
+          ]
+        },
+        {
+          "unit_id": "unit-984d3ab8c5",
+          "artifact_kind": "review-report",
+          "mutation_scope": "read_only",
+          "selected": [
+            "codebase-onboarding-engineer"
+          ]
+        }
+      ],
+      "provider_attempts": [
+        {
+          "model_group": "task-agency-planner-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-recruiter-v2",
+          "status": "failed",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-recruiter-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-critic-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        }
+      ],
+      "failure_receipts": [],
+      "lifecycle_repair_codes_seen": [],
+      "critic_codes_seen": [],
+      "batch": "-5c"
+    },
+    {
+      "run_id": "5020d5af-dd5d-496f-8eb6-d475895a8ba2",
+      "host": "codex",
+      "started_at": "2026-09-11T12:30:11.996589+00:00",
+      "status": "completed",
+      "preflight_state": "ready",
+      "planned_units": 2,
+      "selected_ids": [
+        "project-delivery-response-documentation-specialist",
+        "codebase-onboarding-engineer"
+      ],
+      "staffing_status": "accepted",
+      "units": [
+        {
+          "unit_id": "unit-1700da32be",
+          "artifact_kind": "documentation",
+          "mutation_scope": "workspace_write",
+          "selected": [
+            "project-delivery-response-documentation-specialist"
+          ]
+        },
+        {
+          "unit_id": "unit-984d3ab8c5",
+          "artifact_kind": "review-report",
+          "mutation_scope": "read_only",
+          "selected": [
+            "codebase-onboarding-engineer"
+          ]
+        }
+      ],
+      "provider_attempts": [
+        {
+          "model_group": "task-agency-planner-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-recruiter-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        },
+        {
+          "model_group": "task-agency-critic-v2",
+          "status": "applied",
+          "validation_failure_codes": [],
+          "validation_detail": ""
+        }
+      ],
+      "failure_receipts": [],
+      "lifecycle_repair_codes_seen": [],
+      "critic_codes_seen": [],
+      "batch": "-5d"
+    }
+  ],
+  "critic_packets": {
+    "-5a": [
+      {
+        "file": "critic-packets-5a/1786130955303598.json",
+        "http_status": 200,
+        "request_sha256": "eac20cc9b4490b490544ad7564dc39e1d6647fd09637c63f312981af06c264d9",
+        "response_sha256": "ac0848fb761ac6ad7df05607d0270f239fe3b96f3044f922aa459d88064b0567",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      },
+      {
+        "file": "critic-packets-5a/1786529665593610.json",
+        "http_status": 200,
+        "request_sha256": "44985833963f6eddee79e4e3f750191f1eb0b9554043fcf16d590102658ed902",
+        "response_sha256": "ef5e469e083d432655f01ca309b27f9f64935c71b723d07c23f57f8cc1b26f58",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      }
+    ],
+    "-5b": [
+      {
+        "file": "critic-packets-5b/1786760342175992.json",
+        "http_status": 200,
+        "request_sha256": "403449a49f4738f9f2c3c101d61b4bed29ac20c98c56daa476fa659b0ddedd0b",
+        "response_sha256": "a36080b8b75f401840a1ce106ef4f0df5820f0b9dfc3495817054f1ae157efbf",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      },
+      {
+        "file": "critic-packets-5b/1787167956136319.json",
+        "http_status": 200,
+        "request_sha256": "243f66917210dcd5449ea3b3b5269aeacedc79dfbda9502bb2caa6f0227a404f",
+        "response_sha256": "f2c0a355638480c484b321b7efe133b17439b4ec6a2b75e98b06abae48be1690",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      }
+    ],
+    "-5c": [
+      {
+        "file": "critic-packets-5c/1787370269619346.json",
+        "http_status": 200,
+        "request_sha256": "243f66917210dcd5449ea3b3b5269aeacedc79dfbda9502bb2caa6f0227a404f",
+        "response_sha256": "cba38e23e82984fe7cb9411ea78526a3d789e875e4b6e8bc436ff77fd6dd3d6e",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      }
+    ],
+    "-5d": [
+      {
+        "file": "critic-packets-5d/1787493359225127.json",
+        "http_status": 200,
+        "request_sha256": "127ed457988e80e75cbc6adc53a33d45ffe7eea333fa755cf86c11f030f44804",
+        "response_sha256": "711bb7758c63fa78c0c2cbb0a8238d71049f52519b54ef164e2d22c838aaa005",
+        "verdict": {
+          "approved": true,
+          "reason_codes": []
+        }
+      }
+    ]
+  },
+  "discarded": {
+    "note": "The -5b batch timeout killed the openclaw session after its staffing had been accepted; the run stays active in the store and is not counted. openclaw was rerun alone as -5c.",
+    "runs": [
+      {
+        "run_id": "cc8117ee-1e1c-4f22-ac8a-73b429d12f59",
+        "host": "openclaw",
+        "started_at": "2026-09-11T12:24:41.117000+00:00",
+        "status": "completed",
+        "preflight_state": "ready",
+        "planned_units": 2,
+        "selected_ids": [
+          "project-delivery-response-documentation-specialist",
+          "codebase-onboarding-engineer"
+        ],
+        "staffing_status": "accepted",
+        "units": [
+          {
+            "unit_id": "unit-1700da32be",
+            "artifact_kind": "documentation",
+            "mutation_scope": "workspace_write",
+            "selected": [
+              "project-delivery-response-documentation-specialist"
+            ]
+          },
+          {
+            "unit_id": "unit-984d3ab8c5",
+            "artifact_kind": "review-report",
+            "mutation_scope": "read_only",
+            "selected": [
+              "codebase-onboarding-engineer"
+            ]
+          }
+        ],
+        "provider_attempts": [
+          {
+            "model_group": "task-agency-planner-v2",
+            "status": "applied",
+            "validation_failure_codes": [],
+            "validation_detail": ""
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": [],
+            "validation_detail": ""
+          },
+          {
+            "model_group": "",
+            "status": "applied",
+            "validation_failure_codes": [],
+            "validation_detail": ""
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "failed",
+            "validation_failure_codes": [],
+            "validation_detail": ""
+          },
+          {
+            "model_group": "task-agency-recruiter-v2",
+            "status": "applied",
+            "validation_failure_codes": [],
+            "validation_detail": ""
+          },
+          {
+            "model_group": "task-agency-critic-v2",
+            "status": "applied",
+            "validation_failure_codes": [],
+            "validation_detail": ""
+          }
+        ],
+        "failure_receipts": [],
+        "lifecycle_repair_codes_seen": [],
+        "critic_codes_seen": []
+      }
+    ]
+  },
+  "unrelated_openclaw_runs": {
+    "note": "Two openclaw runs with other request fingerprints appeared while the gateway recovered from the killed session; they are not this wording and are excluded.",
+    "runs": [
+      {
+        "run_id": "c011e97f-ab1b-4557-a28a-895013cf076b",
+        "host": "openclaw",
+        "started_at": "2026-09-11T12:30:01.028000+00:00",
+        "status": "active",
+        "planned_units": 1,
+        "selected_ids": [
+          "network-diagnostic-explanation-specialist"
+        ]
+      },
+      {
+        "run_id": "841fb70c-0395-4eb2-a00f-d54703468603",
+        "host": "openclaw",
+        "started_at": "2026-09-11T12:31:11.798000+00:00",
+        "status": "active",
+        "planned_units": null,
+        "selected_ids": null
+      }
+    ]
+  },
+  "baseline": {
+    "reference": "docs/roadmap/evidence/AR-433-live-diagnostic-20260910.json",
+    "finding": "On 2026-09-10, in both diagnostic modes, the planner first reply for this wording was rejected with the three lifecycle repair codes and the accepted plan carried implementation and test units; the original Codex turn was vetoed on missing-lifecycle-assurance-the-plan-calls-for."
+  },
+  "findings": [
+    "All five hosts planned the handoff as two units, documentation then review-report, staffed a documentation specialist and a codebase-orientation card, and reached the critic with no lifecycle repair code on any planner attempt and no failure receipt.",
+    "All six captured critic packets (five counted runs plus the killed openclaw run) are first-reply approvals with empty reason codes; no missing-lifecycle-assurance veto.",
+    "openclaw needed two recruiter attempts on both of its runs (one failed, then applied); both are on the receipt.",
+    "zcode staffing was accepted but its turn ended response_invalid: the finalization policy found none of the five header lines in the native final output, which is a delivery matter outside this issue.",
+    "hermes wrote its handoff file under its own workspace state directory; claude reported it could not write in non-interactive print mode; codex answered inline under a read-only sandbox."
+  ],
+  "limits": "Single sample per host; the gateway may serve cached planner replies within a wording; no controlled comparison against the pre-fix runtime beyond the 2026-09-10 diagnostic."
+}
