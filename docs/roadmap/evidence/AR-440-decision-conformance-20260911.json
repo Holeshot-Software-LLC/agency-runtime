@@ -1,0 +1,14 @@
+{
+  "schema": "agency-runtime.decision-conformance",
+  "version": 1,
+  "status": "passed",
+  "counts": {
+    "invalid": 0,
+    "killed": 188,
+    "mutations": 188,
+    "survived": 0
+  },
+  "source_unchanged": true,
+  "evidence_boundary": "Curated decision sensitivity only; no coverage, superiority, or exhaustive mutation claim.",
+  "repository": "/tmp/agency-ar440-stale-hooks-20260911"
+}
