@@ -157,6 +157,7 @@ Status meanings:
 | [ADR-0250](0250-read-a-prose-artefact-request-as-documentation-work.md) | Read a prose-artefact request that only locates the code as documentation work | Accepted |
 | [ADR-0251](0251-cap-ordinary-asks-at-two-planned-units.md) | Cap ordinary asks at two planned units | Accepted |
 | [ADR-0252](0252-bind-mandatory-capabilities-to-the-unit-shape.md) | Bind a unit's mandatory capabilities to its own artifact shape | Accepted |
+| [ADR-0253](0253-name-the-stale-hook-runtime-when-a-turn-cannot-be-verified.md) | Name the stale hook runtime when a turn cannot be verified | Accepted |
 
 ## Evidence and observability
 

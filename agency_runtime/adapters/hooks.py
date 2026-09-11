@@ -129,6 +129,52 @@ _VERIFICATION_UNAVAILABLE = (
     "Agency Runtime could not verify or persist the turn-scoped evidence contract. "
     "Do not publish this response; restore the evidence store and start a new turn."
 )
+
+
+def _stale_runtime_drift(host: str) -> Any:
+    """Return the advisory drift between this hook's runtime and the installed one, else None.
+
+    AR-440 / ADR-0253: read only after a boundary failure, so the ordinary
+    path pays nothing; the pointer is advisory and never chooses code.
+    """
+
+    try:
+        from agency_runtime.core.runtime_staleness import runtime_staleness
+
+        return runtime_staleness(host=host)
+    except Exception:
+        # A failing import or read is no drift: the boundary must stay
+        # fail-closed on Stop rather than escape as an unhandled error.
+        return None
+
+
+def _stale_runtime_reason(host: str, failure_kind: str, drift: Any) -> str:
+    """Name the stale runtime in the Stop rejection instead of the generic reason.
+
+    The text carries digest prefixes, the host name and an exception class
+    name: the same content-free facts the SessionStart notice carries, and
+    never the exception message or a path.
+    """
+
+    kind = re.sub(r"[^A-Za-z0-9_]", "", str(failure_kind or ""))[:64] or "failure"
+    agent = str(host or "").strip().casefold() or "host"
+    return (
+        "Agency Runtime could not verify or persist the turn-scoped evidence contract. "
+        "Do not publish this response. The hooks in this session run projection "
+        f"{drift.running_digest[:12]} while the host installed {drift.installed_digest[:12]}, "
+        f"and this runtime failed at the boundary with {kind}. Restart the {agent} session "
+        "so it loads the installed hooks; a reinstall alone cannot refresh a running session."
+    )
+
+
+def _stale_runtime_stderr(drift: Any) -> str:
+    return (
+        f" stale_runtime running={drift.running_digest[:12]} installed={drift.installed_digest[:12]}"
+        if drift is not None
+        else ""
+    )
+
+
 _STOP_EVENT_DISCRIMINATOR = re.compile(
     rb'"hook_event_name"\s*:\s*"Stop"',
 )
@@ -264,6 +310,8 @@ def _boundary_failure_result(
     expected_event: str = "",
     host: str = "",
     reason: str = "",
+    failure_kind: str = "",
+    drift: Any = None,
 ) -> dict[str, Any]:
     """Block Agency-owned malformed Stop events; never block a turn Agency cannot check."""
 
@@ -294,6 +342,9 @@ def _boundary_failure_result(
                 "host": host,
                 "cause": " ".join(str(reason or "").split())[:180],
                 "event": "UserPromptSubmit",
+                # AR-440 / ADR-0253: a session whose hooks predate the last
+                # install says so beside the cause.
+                "stale_runtime": _stale_runtime_stderr(drift).strip(),
             },
         )
         return {}
@@ -328,8 +379,13 @@ def _boundary_failure_result(
     # bypassable by sending a malformed payload. Deliberate open question, not an
     # oversight -- see the handoff.
     retry = host != "zcode"
+    # AR-440 / ADR-0253: when this hook's runtime is not the one the host
+    # installed, the block names both projections and the restart that fixes
+    # it; the generic reason stays for every other boundary failure.
     return _completion_rejection(
-        _VERIFICATION_UNAVAILABLE,
+        _stale_runtime_reason(host, failure_kind, drift)
+        if drift is not None
+        else _VERIFICATION_UNAVAILABLE,
         retry=retry,
     )
 
@@ -3691,6 +3747,7 @@ def _run_hook_stdio(
         RuntimeError,
     ) as exc:
         _emit_codex_hook_event_diagnostic(errors, diagnostic_event, "failed")
+        drift = _stale_runtime_drift(host)
         result = _boundary_failure_result(
             payload,
             raw_bytes=raw_bytes,
@@ -3698,22 +3755,8 @@ def _run_hook_stdio(
             expected_event=expected_event,
             host=host,
             reason=str(exc),
-        )
-        outcome = "response publication blocked" if result else "host operation continues"
-        mark_current_observation(
-            "denied" if result else "degraded",
-            "boundary_failure",
-        )
-        print(f"agency hook {host}: {type(exc).__name__}; {outcome}", file=errors)
-    except Exception as exc:  # Defensive boundary around adapters and storage.
-        _emit_codex_hook_event_diagnostic(errors, diagnostic_event, "failed")
-        result = _boundary_failure_result(
-            payload,
-            raw_bytes=raw_bytes,
-            oversized=oversized,
-            expected_event=expected_event,
-            host=host,
-            reason=str(exc),
+            failure_kind=type(exc).__name__,
+            drift=drift,
         )
         outcome = "response publication blocked" if result else "host operation continues"
         mark_current_observation(
@@ -3721,7 +3764,29 @@ def _run_hook_stdio(
             "boundary_failure",
         )
         print(
-            f"agency hook {host}: {type(exc).__name__}; {outcome}",
+            f"agency hook {host}: {type(exc).__name__}; {outcome}{_stale_runtime_stderr(drift)}",
+            file=errors,
+        )
+    except Exception as exc:  # Defensive boundary around adapters and storage.
+        _emit_codex_hook_event_diagnostic(errors, diagnostic_event, "failed")
+        drift = _stale_runtime_drift(host)
+        result = _boundary_failure_result(
+            payload,
+            raw_bytes=raw_bytes,
+            oversized=oversized,
+            expected_event=expected_event,
+            host=host,
+            reason=str(exc),
+            failure_kind=type(exc).__name__,
+            drift=drift,
+        )
+        outcome = "response publication blocked" if result else "host operation continues"
+        mark_current_observation(
+            "denied" if result else "degraded",
+            "boundary_failure",
+        )
+        print(
+            f"agency hook {host}: {type(exc).__name__}; {outcome}{_stale_runtime_stderr(drift)}",
             file=errors,
         )
 
