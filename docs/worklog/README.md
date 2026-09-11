@@ -2447,6 +2447,8 @@ This registry connects repository history to the roadmap and to optional detail 
 | `13d567d1` | 2026-09-11 | docs(roadmap): record the AR-440 stale-hook proof on the installed projection | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
 | `bebeae20` | 2026-09-11 | docs(roadmap): close AR-440 with its acceptance verification record | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
 | `bdb47930` | 2026-09-11 | docs(roadmap): merge PR885 AR-440 proof and close-out | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
+| `e042ac4f` | 2026-09-11 | docs(roadmap): file AR-442 a host model reads the response contract as an injection | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
+| `65f0e8b3` | 2026-09-11 | docs(roadmap): merge PR889 AR-442 filing | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 | `6ef52b51` | 2026-09-11 | docs(roadmap): file AR-441 the recruiter answers a whole expanded plan in one call | [AR-441](../roadmap/issue-AR-441-the-recruiter-answers-a-whole-expanded-plan-in-one-call.md) | null |
 | `0507da73` | 2026-09-11 | feat(recruiter): ask the recruiter for at most two units per call | [AR-441](../roadmap/issue-AR-441-the-recruiter-answers-a-whole-expanded-plan-in-one-call.md) | null |
 <!-- worklog:end -->
