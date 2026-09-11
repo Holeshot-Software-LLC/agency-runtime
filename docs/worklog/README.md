@@ -2410,6 +2410,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `fa11e544` | 2026-09-10 | docs: record AR-437 live proof and the first live AR-433 pointer | [AR-437](../roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | null |
 | `943221b5` | 2026-09-10 | docs: merge PR864 AR-437 live proof | [AR-437](../roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | null |
 | `a65f3fb8` | 2026-09-11 | fix(planner): read a prose-artefact request that only locates the code as documentation | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
+| `eaf2c97f` | 2026-09-11 | fix(planner): bind the prose-artefact rule to the verb's object and share its code vocabulary | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
