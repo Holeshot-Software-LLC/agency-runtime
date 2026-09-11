@@ -6,6 +6,10 @@ created: 2026-09-11
 updated: 2026-09-11
 tags: [workforce, planner, recruiter, staffing-verifier, reliability]
 related:
+  - docs/roadmap/evidence/AR-439-live-measurement-20260911.json
+  - docs/roadmap/evidence/AR-439-focused-tests-20260911.txt
+  - docs/roadmap/evidence/AR-439-fast-spine-20260911.txt
+  - docs/roadmap/evidence/AR-439-decision-conformance-20260911.json
   - docs/roadmap/evidence/AR-439-post-merge-measurement-20260911.json
   - docs/decisions/0252-bind-mandatory-capabilities-to-the-unit-shape.md
   - docs/roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md
@@ -110,6 +114,14 @@ with no advisory row, and an in-process diagnostic reproduced it as
 reads a card's authority and identity tokens, so it is shape-defined; it
 now joins the shape vocabulary and is advisory beside the owned capability.
 
+Live measurement after the follow-up (main `f900ee3e`, digest
+`afb7790bd7a2`, [evidence](evidence/AR-439-live-measurement-20260911.json)):
+hermes, zcode and openclaw staffed two units each with first-reply critic
+approvals, claude was vetoed by the critic on
+`missing-lifecycle-assurance-the-plan-calls-for`, and no
+`staff_without_safe_team` row was written on any host; all four planner
+attempts carry advisory rows.
+
 Follow-ups the review named, not changed here: advisory rows are recorded only when a planner
 call is spent, so a measurement over cached plans undercounts them; the
 preflight-failure receipt's node budget leaves seven fully populated
@@ -137,7 +149,7 @@ only with the wrong specialist.
 
 ## Acceptance
 
-- [ ] A shape-defined capability the planner names beside the artifact-owned
+- [x] A shape-defined capability the planner names beside the artifact-owned
       one is no typed coverage requirement, while the owned capability, a
       specialty outside the shape vocabulary and a declared novel capability
       are; the unit keeps every planner-named capability; the observed shapes
@@ -146,10 +158,10 @@ only with the wrong specialist.
       are pinned, a lone reviewer covers a review that named
       `implementation`, an undeclared specialty still surfaces as a hiring
       gap, and the existing compiler drops still hold.
-- [ ] Every advisory capability reaches both durable receipts as a closed row
+- [x] Every advisory capability reaches both durable receipts as a closed row
       on the applied planner attempt, and a malformed row projects blank
       rather than partially; the focused, named fast and decision-conformance
       checks pass.
-- [ ] One fresh native run per host on the ordinary-review wording after the
+- [x] One fresh native run per host on the ordinary-review wording after the
       reinstall staffs with no `staff_without_safe_team` row on the capability
       axis, with the advisory rows recorded against the 17-row population.
