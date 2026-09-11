@@ -66,4 +66,9 @@ receives SessionStart again.
   the host, on the first blocked turn.
 - A session whose runtime predates this decision cannot say so; the first
   session that can is one running this runtime when a later install lands.
-- The drift read costs one bounded pointer read per failed event.
+- The drift read costs one bounded pointer read per failed event, plus the
+  first import of the staleness module in that process (about 7 ms); the
+  ordinary path pays nothing. Every event's stderr line names the drift on
+  a boundary failure; host-visible results change only for Stop.
+- The reason states the drift beside the failure class; it does not assert
+  that the drift caused the failure.

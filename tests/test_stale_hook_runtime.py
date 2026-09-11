@@ -15,6 +15,8 @@ from __future__ import annotations
 import io
 import json
 import logging
+import sys
+import types
 from typing import Any
 
 import pytest
@@ -134,6 +136,41 @@ def test_a_drift_read_that_raises_is_treated_as_no_drift(monkeypatch: pytest.Mon
 
     monkeypatch.setattr("agency_runtime.core.runtime_staleness.runtime_staleness", explode)
     assert hooks._stale_runtime_drift("claude") is None
+
+
+def test_a_drift_import_that_fails_is_treated_as_no_drift_and_still_blocks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A partially staged projection can lack the staleness module; the Stop
+    # boundary must still fail closed with the generic reason, never escape.
+    monkeypatch.setitem(
+        sys.modules, "agency_runtime.core.runtime_staleness", types.ModuleType("stub")
+    )
+    assert hooks._stale_runtime_drift("claude") is None
+
+    def store_factory(*args: Any, **kwargs: Any) -> Any:
+        raise ConfigValidationError("dashboard: contains unsupported fields")
+
+    monkeypatch.setattr(hooks, "Store", store_factory)
+    monkeypatch.setattr(
+        "agency_runtime.core.runtime_control.read_bound_enforcement_runtime_control",
+        lambda path: ({"enabled": True}, "test"),
+    )
+    output = io.BytesIO()
+    payload = json.dumps({"hook_event_name": "Stop", "session_id": "session-stale"}).encode()
+    assert (
+        hooks._run_hook_stdio(
+            "claude",
+            config_path="/nonexistent/agency.yaml",
+            runtime_control_path="/nonexistent/control.json",
+            expected_event="Stop",
+            input_stream=io.BytesIO(payload),
+            output_stream=output,
+            error_stream=io.StringIO(),
+        )
+        == 0
+    )
+    assert json.loads(output.getvalue().decode()) == {"continue": False, "stopReason": _GENERIC}
 
 
 def test_the_reason_is_bounded_and_sanitises_the_failure_class() -> None:

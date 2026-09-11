@@ -28,7 +28,9 @@ A Claude session loads the Agency plugin once at start and every hook event
 in that session runs the launcher of the digest it loaded; that pin is what
 stops a mutable tree from redirecting hook code (see `runtime_staleness`).
 The owner's working session began on 2026-09-10 at 18:39Z on plugin
-`0.1.0-claude.c817245bb431` (runtime `37c1bf7d…`). Later that evening the
+`0.1.0-claude.9c63b87d75cd` (runtime `79138e80…`; every one of the 816 hook
+commands its transcript records names that projection, and its 48 Stop
+summaries all carry the generic reason). Later that evening the
 AR-436 rollout wrote `dashboard.durable_access: true` into `agency.yaml`, a
 key that runtime's configuration schema does not know. From the next turn
 on, every Stop hook in that session raised `ConfigValidationError:
@@ -64,7 +66,13 @@ boundary still publishes and its log entry and the stderr line carry the
 same drift. The reason carries digest prefixes, the host name and a
 sanitised class name, never the exception message. Regressions cover both
 shapes, the no-drift path, the fail-open prompt path with its log fields, a
-pointer read that raises, and the bounded reason. Filed 2026-09-11 from the
+pointer read that raises, a staleness import that fails (the Stop boundary
+still blocks with the generic reason), and the bounded reason. The reason
+states the drift beside the failure rather than as its cause: any Stop
+boundary failure in a stale session names the drift, and the restart it
+recommends is harmless when the two are unrelated. The review of
+2026-09-11 corrected the plugin identity above from an earlier guess by
+directory time to the projection the transcript names. Filed 2026-09-11 from the
 owner's question about the repeated Stop-hook message.
 
 ## Approach

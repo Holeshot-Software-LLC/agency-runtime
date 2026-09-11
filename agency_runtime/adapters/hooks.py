@@ -138,11 +138,13 @@ def _stale_runtime_drift(host: str) -> Any:
     path pays nothing; the pointer is advisory and never chooses code.
     """
 
-    from agency_runtime.core.runtime_staleness import runtime_staleness
-
     try:
+        from agency_runtime.core.runtime_staleness import runtime_staleness
+
         return runtime_staleness(host=host)
     except Exception:
+        # A failing import or read is no drift: the boundary must stay
+        # fail-closed on Stop rather than escape as an unhandled error.
         return None
 
 
