@@ -2448,6 +2448,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `bebeae20` | 2026-09-11 | docs(roadmap): close AR-440 with its acceptance verification record | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
 | `bdb47930` | 2026-09-11 | docs(roadmap): merge PR885 AR-440 proof and close-out | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
 | `e042ac4f` | 2026-09-11 | docs(roadmap): file AR-442 a host model reads the response contract as an injection | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
+| `65f0e8b3` | 2026-09-11 | docs(roadmap): merge PR889 AR-442 filing | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
