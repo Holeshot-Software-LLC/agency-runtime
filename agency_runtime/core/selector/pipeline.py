@@ -1180,8 +1180,14 @@ def _workforce_planning_options(
     classification: TurnClassification,
     *,
     activation_canary: bool,
+    request_text: str = "",
 ) -> dict[str, object]:
-    """Return bounded planner constraints for special turn contracts."""
+    """Return bounded planner constraints for special turn contracts.
+
+    AR-438 / ADR-0251: an ordinary ask, one the plan policy does not itself
+    expand, is capped at two units so the recruiter is not asked to staff a
+    multi-unit plan for a review or a question.
+    """
 
     if activation_canary:
         return {
@@ -1197,7 +1203,10 @@ def _workforce_planning_options(
             "max_planned_units": 1,
             "required_planned_artifact_kind": "analysis",
         }
-    return {}
+    from agency_runtime.core.workforce.plan_policy import planning_unit_ceiling
+
+    ceiling = planning_unit_ceiling(request_text) if request_text else None
+    return {"max_planned_units": ceiling} if ceiling is not None else {}
 
 
 def _conflict_provider(config: Any) -> Any:
@@ -2175,6 +2184,7 @@ def route(
         planning_options = _workforce_planning_options(
             classification,
             activation_canary=activation_canary,
+            request_text=request.user_message,
         )
         # ADR-0197: the zero-signal trigger. `retrieval_has_signal` is the same
         # predicate the CLI diagnostic prints, so the two cannot drift on what

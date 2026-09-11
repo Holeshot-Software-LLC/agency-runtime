@@ -6,6 +6,7 @@ created: 2026-07-10
 updated: 2026-09-10
 tags: [release, changelog]
 related:
+  - docs/roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md
   - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
   - docs/roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md
   - docs/roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md
@@ -85,6 +86,11 @@ Faithful commit history and reasoning-rich implementation notes remain in the
 changes rather than duplicating every commit.
 
 ## Unreleased
+
+- Cap ordinary asks at two planned units, decided from the same request
+  classification the plan policy applies, so reviews, questions, merges,
+  documentation and installs are staffed as one- or two-unit plans while the
+  shapes the policy expands keep their size (AR-438, ADR-0251).
 
 - Read a request that names a prose artefact (handoff, note, capsule, memo,
   summary, writeup) and only locates the code as documentation work in both

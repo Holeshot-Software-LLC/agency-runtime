@@ -691,16 +691,33 @@ def _has_codebase_discovery(inventory: _PlanInventory) -> bool:
     )
 
 
-def plan_policy_violations(
-    request: str,
-    plan: WorkUnitPlan,
-    *,
-    explicit_indivisible_unit: bool = False,
-    available_tools: Collection[str] | None = None,
-    served_domains: Mapping[str, Collection[str]] | None = None,
-    known_domains: Collection[str] | None = None,
-) -> tuple[str, ...]:
-    """Reject incomplete plans while preserving an explicit one-unit topology."""
+@dataclass(frozen=True, slots=True)
+class RequestProfile:
+    """The deterministic reading of a request the plan policy and the unit ceiling share."""
+
+    tokens: frozenset[str]
+    docs_mutation: bool
+    code_mutation: bool
+    security_code_review: bool
+    repository_security_review: bool
+    code_path_map_requested: bool
+    assurance_requirements: tuple[str, ...]
+
+    @property
+    def shape_expanding(self) -> bool:
+        """True when the policy itself demands more than a two-unit plan."""
+
+        return bool(
+            self.code_mutation
+            or self.security_code_review
+            or self.repository_security_review
+            or self.code_path_map_requested
+            or self.assurance_requirements
+        )
+
+
+def request_profile(request: str) -> RequestProfile:
+    """Classify a request exactly as ``plan_policy_violations`` does."""
 
     actionable_request = _NEGATED_SCOPE.sub(" ", _NEGATED_REQUEST_SCOPE.sub(" ", request))
     tokens = frozenset(_TOKENS.findall(actionable_request.casefold()))
@@ -713,17 +730,62 @@ def plan_policy_violations(
         )
     )
     code_mutation = bool(tokens & _MUTATION and tokens & _CODE and not docs_mutation)
-    inventory = _PlanInventory.from_plan(plan)
-    codes: list[str] = []
     security_code_review = bool(
         tokens & _SECURITY and tokens & _CODE and (code_mutation or tokens & {"audit", "review"})
     )
-    repository_security_review = bool(
-        security_code_review and tokens & {"codebase", "repo", "repository"}
+    return RequestProfile(
+        tokens=tokens,
+        docs_mutation=docs_mutation,
+        code_mutation=code_mutation,
+        security_code_review=security_code_review,
+        repository_security_review=bool(
+            security_code_review and tokens & {"codebase", "repo", "repository"}
+        ),
+        code_path_map_requested=bool(
+            "map" in tokens and tokens & {"codebase", "path", "paths", "repo", "repository"}
+        ),
+        assurance_requirements=tuple(regulated_assurance_requirements(request)),
     )
-    code_path_map_requested = bool(
-        "map" in tokens and tokens & {"codebase", "path", "paths", "repo", "repository"}
-    )
+
+
+# AR-438 / ADR-0251: an ordinary ask is one or two units. Measured on the
+# 2026-09-08..11 population, 33 of 88 completed plans carried three to ten
+# units, and every recruiter omission and coverage-forcing failure concentrated
+# there; the review request that started the investigation drew two to four
+# units per host. The ceiling applies to every request the policy does not
+# itself expand (a code mutation needs four kinds of unit, a security review
+# two distinct reviews, a repository mapping a discovery unit); documentation
+# work fits in two (the document and its review), and so does an install with
+# its verification.
+ORDINARY_UNIT_CEILING = 2
+
+
+def planning_unit_ceiling(request: str) -> int | None:
+    """Return the unit ceiling for an ordinary ask, or None when the policy expands it."""
+
+    return None if request_profile(request).shape_expanding else ORDINARY_UNIT_CEILING
+
+
+def plan_policy_violations(
+    request: str,
+    plan: WorkUnitPlan,
+    *,
+    explicit_indivisible_unit: bool = False,
+    available_tools: Collection[str] | None = None,
+    served_domains: Mapping[str, Collection[str]] | None = None,
+    known_domains: Collection[str] | None = None,
+) -> tuple[str, ...]:
+    """Reject incomplete plans while preserving an explicit one-unit topology."""
+
+    profile = request_profile(request)
+    tokens = profile.tokens
+    docs_mutation = profile.docs_mutation
+    code_mutation = profile.code_mutation
+    inventory = _PlanInventory.from_plan(plan)
+    codes: list[str] = []
+    security_code_review = profile.security_code_review
+    repository_security_review = profile.repository_security_review
+    code_path_map_requested = profile.code_path_map_requested
     if not explicit_indivisible_unit:
         if code_mutation:
             codes.extend(_code_mutation_violations(tokens, plan, inventory))
@@ -738,7 +800,7 @@ def plan_policy_violations(
             inventory
         ):
             codes.append("plan_missing_codebase_discovery")
-        assurance_requirements = regulated_assurance_requirements(request)
+        assurance_requirements = profile.assurance_requirements
         if assurance_requirements:
             if not inventory.reviews:
                 codes.append("plan_missing_regulated_assurance_review")
@@ -777,14 +839,18 @@ def plan_policy_violations(
 __all__ = [
     "CODE_NOUN_TOKENS",
     "LOCATIVE_CODE_TOKENS",
+    "ORDINARY_UNIT_CEILING",
     "PLAN_POLICY_VIOLATION_CODES",
     "PLAN_RESPONSE_SEMANTIC_INVALID",
     "PLAN_VALIDATION_REASON_CODES",
     "PROSE_ARTIFACT_TOKENS",
+    "RequestProfile",
     "plan_policy_repair_guidance",
     "plan_policy_violations",
     "plan_semantic_validation_reason_codes",
     "planner_acceptance_contract",
+    "planning_unit_ceiling",
     "prose_artifact_request",
     "regulated_assurance_requirements",
+    "request_profile",
 ]

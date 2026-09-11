@@ -596,6 +596,8 @@ def test_ordinary_exact_text_without_restricted_environment_uses_workforce_plann
     result = _route(monkeypatch, set_canary_env=False)
 
     assert calls == [_task()]
-    assert "max_planned_units" not in planner_options[0]
+    # Without the canary environment the canary's one-unit review-report
+    # contract does not apply; the ordinary two-unit ceiling (AR-438) may.
+    assert planner_options[0].get("max_planned_units") != 1
     assert "required_planned_artifact_kind" not in planner_options[0]
     assert result["source"] == "workforce_inference"

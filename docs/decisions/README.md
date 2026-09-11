@@ -155,6 +155,7 @@ Status meanings:
 | [ADR-0248](0248-let-the-owner-opt-in-to-a-durable-dashboard-access-token.md) | Let the owner opt in to a durable dashboard access token | Accepted |
 | [ADR-0249](0249-enforce-the-reviewer-independence-the-plan-calls-for.md) | Enforce the reviewer independence the plan calls for at the verifier | Accepted |
 | [ADR-0250](0250-read-a-prose-artefact-request-as-documentation-work.md) | Read a prose-artefact request that only locates the code as documentation work | Accepted |
+| [ADR-0251](0251-cap-ordinary-asks-at-two-planned-units.md) | Cap ordinary asks at two planned units | Accepted |
 
 ## Evidence and observability
 
