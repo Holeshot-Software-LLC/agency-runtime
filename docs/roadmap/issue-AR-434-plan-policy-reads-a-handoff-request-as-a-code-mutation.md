@@ -46,13 +46,16 @@ request text alone.
 
 Repaired on branch `claude/ar434-handoff-is-documentation-20260910` per
 ADR-0250: `prose_artifact_request` in `plan_policy` reads a request that names
-a prose artefact, whose only code tokens are locative and which carries no
-strong code verb, as documentation work; the policy and the deterministic
-planner share the predicate, and the planner's acceptance contract lists the
-artefacts. The exact observed wording now plans as documentation plus review
-and passes the policy; a strong code verb, a non-locative code object, the
-mixed "update the code and the docs" case and the negated-scope handling are
-unchanged. The defect was in the deterministic request classification, not
+a prose artefact as the object of every change verb, whose only code nouns
+are locative and which carries no strong code verb, as documentation work;
+the policy and the deterministic planner call the predicate on the same text,
+and the planner's acceptance contract lists the artefacts with the guard. The
+exact observed wording now plans as documentation plus review and passes the
+policy; a change verb whose object is the code, a strong code verb, a
+non-locative code object and the mixed "update the code and the docs" case
+keep the code shape; the negated-scope handling still runs first. One
+adversarial review pass withdrew the first draft's bag-of-tokens form, which
+had turned "update the auth code and add a note" into documentation work. The defect was in the deterministic request classification, not
 in the planner, recruiter or critic.
 
 ## Approach

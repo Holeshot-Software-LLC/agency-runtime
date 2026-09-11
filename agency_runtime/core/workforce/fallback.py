@@ -315,12 +315,11 @@ def deterministic_work_plan(
     frameworks = tuple(_detected_values(tokens, _FRAMEWORKS))
     document_mutation = _document_mutation_requested(actionable_request)
     mutating = _contains_any(tokens, _MUTATION) or document_mutation
-    # AR-434 / ADR-0250: the same prose-artefact rule the policy applies, so
-    # the offline oracle and the policy agree that a handoff is documentation.
-    prose_artifact = prose_artifact_request(
-        tokens,
-        (tokens & _CODE) | (frozenset({"language"}) if languages or frameworks else frozenset()),
-    )
+    # AR-434 / ADR-0250: the same prose-artefact rule the policy applies, read
+    # from the same request text, so the offline oracle and the policy agree
+    # that a handoff is documentation and that "update the code and add a
+    # note" is not.
+    prose_artifact = prose_artifact_request(actionable_request)
     docs = (
         _contains_any(tokens, _DOCS - {"document", "write", "writing"})
         or document_mutation

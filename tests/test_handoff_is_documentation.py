@@ -5,14 +5,15 @@ Live on 2026-09-10 the request below read as a code mutation (``create`` plus
 and test units, the repaired plan carried them, and the strict critic vetoed
 the team for lacking the lifecycle assurance those units implied. The policy
 and the deterministic planner now agree that a request naming a prose
-artefact, whose only code tokens are locative and which carries no strong
-code verb, is documentation work.
+artefact as the object of every change verb, whose only code nouns are
+locative and which carries no strong code verb, is documentation work.
 """
 
 from __future__ import annotations
 
 from agency_runtime.core.workforce.fallback import deterministic_work_plan
 from agency_runtime.core.workforce.plan_policy import (
+    CODE_NOUN_TOKENS,
     LOCATIVE_CODE_TOKENS,
     PROSE_ARTIFACT_TOKENS,
     plan_policy_violations,
@@ -85,14 +86,57 @@ def test_negated_scope_still_applies_before_the_prose_rule() -> None:
 
 
 def test_the_rule_is_narrow_and_stated_to_the_planner() -> None:
-    assert prose_artifact_request({"create", "handoff", "code"}, {"code"})
-    assert prose_artifact_request({"update", "notes", "repository"}, {"repository"})
-    assert not prose_artifact_request({"create", "handoff", "api"}, {"api"})
-    assert not prose_artifact_request({"fix", "handoff", "code"}, {"code"})
-    assert not prose_artifact_request({"create", "code"}, {"code"})
-    assert not prose_artifact_request({"handoff", "code"}, {"code"})
-    assert LOCATIVE_CODE_TOKENS == {"code", "codebase", "repo", "repository"}
+    assert prose_artifact_request("create a handoff and say where the code is")
+    assert prose_artifact_request("update the notes for this repository")
+    assert prose_artifact_request("create a handoff for the python code")
+    assert not prose_artifact_request("create a handoff for the api")
+    assert not prose_artifact_request("create a handoff for the patch")
+    assert not prose_artifact_request("fix the code and write a handoff")
+    assert not prose_artifact_request("create the code")
+    assert not prose_artifact_request("the handoff mentions the code")
+    assert {"code", "codebase", "repo", "repository"} == LOCATIVE_CODE_TOKENS
+    assert {"async", "codebase", "patch"} <= CODE_NOUN_TOKENS
     assert "handoff" in PROSE_ARTIFACT_TOKENS and "plan" not in PROSE_ARTIFACT_TOKENS
     contract = planner_acceptance_contract()["documentation_mutation"]
     assert contract["prose_artifacts_are_documentation"] == sorted(PROSE_ARTIFACT_TOKENS)
+    assert "object" in contract["prose_artifacts_are_documentation_only_when"]
     assert isinstance(_context(), StaffingContext)
+
+
+_CHANGE_VERB_WITH_A_NOTE = (
+    "update the auth code and add a note about the new flow",
+    "update the credential handling in the code and add a note",
+    "update the code and ship it, then write a handoff note",
+    "update the code and write a handoff and add tests",
+    "edit the code and leave a note",
+    "update the python code and write a handoff note for the next agent",
+)
+
+
+def test_a_change_verb_that_takes_the_code_keeps_the_code_shape() -> None:
+    # Review of the first draft: weak verbs beside the word "note" must not
+    # turn an auth or credential change into documentation work. Every one of
+    # these keeps its implementation, tests and reviews.
+    for request in _CHANGE_VERB_WITH_A_NOTE:
+        assert not prose_artifact_request(request), request
+        plan = _plan(request)
+        assert "implementation-change" in _kinds(plan), request
+        assert plan_policy_violations(request, plan) == (), request
+        assert "plan_missing_implementation" in plan_policy_violations(request, _plan(_OBSERVED))
+    assert "review-report" in _kinds(
+        _plan("update the auth code and add a note about the new flow")
+    )
+
+
+def test_the_policy_and_the_deterministic_planner_agree_on_every_wording() -> None:
+    # AR-331 invariant extended to the prose-artefact region and to the code
+    # nouns only the planner used to know (patch, async, a language).
+    for request in (
+        _OBSERVED,
+        "create a handoff for the python code",
+        "create a handoff for the patch",
+        "make the async code path faster and write a summary",
+        *_CHANGE_VERB_WITH_A_NOTE,
+    ):
+        plan = _plan(request)
+        assert plan_policy_violations(request, plan) == (), request

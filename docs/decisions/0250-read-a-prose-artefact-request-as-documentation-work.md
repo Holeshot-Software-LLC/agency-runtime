@@ -39,36 +39,42 @@ asked for a document that says where the code lives.
 
 ## Decision
 
-1. **One narrow predicate, shared.** `prose_artifact_request(tokens,
-   code_tokens)` in `plan_policy` is true when a mutation verb appears, a
-   prose artefact is named (handoff, capsule, note, memo, summary, writeup,
-   and their plurals), every code token the caller found is locative
-   (`code`, `codebase`, `repo`, `repository`), and no strong code verb
-   (`build`, `debug`, `fix`, `implement`, `optimize`, `refactor`, `repair`,
-   `rewrite`, `remove`) appears. The policy passes its own code hits; the
-   deterministic planner passes its hits plus a language or framework
-   detection, so both read the same request the same way.
+1. **One narrow predicate, shared.** `prose_artifact_request(request)` in
+   `plan_policy` reads the negated-scope-stripped request in token order and
+   is true only when every mutation verb takes a prose artefact (handoff,
+   capsule, note, memo, summary, writeup, and their plurals) as its object
+   within a few filler tokens, every code noun in the shared vocabulary
+   (`CODE_NOUN_TOKENS`, the policy's nouns plus the planner's `async`,
+   `codebase`, `patch`) is locative (`code`, `codebase`, `repo`,
+   `repository`), and no strong code verb (`build`, `debug`, `fix`,
+   `implement`, `optimize`, `refactor`, `repair`, `rewrite`, `remove`)
+   appears. The policy and the deterministic planner call it on the same
+   text, so both read the same request the same way.
 2. **Such a request is documentation work.** The policy requires the
    documentation unit and its review, never implementation or tests; the
    deterministic planner emits the documentation plan. The planner's
    acceptance contract lists the prose artefacts under
    `documentation_mutation` so an inference planner is told the rule too.
-3. **Everything else is unchanged.** A strong code verb, a non-locative code
-   object (`api`, `service`, a language), or no prose artefact keeps the
-   existing classification, including the mixed "update the code and the
-   docs" case, the README rewrite, and the negated-scope handling (AR-415)
-   which still runs first.
+3. **Every request that changes code keeps the code shape.** A change verb
+   whose object is the code ("update the auth code and add a note", "edit
+   the code and leave a note"), a strong code verb, a non-locative code
+   object (`api`, `patch`), or no prose artefact keeps the existing
+   classification, including the mixed "update the code and the docs" case
+   and the README rewrite. The negated-scope handling (AR-415) still runs
+   first; "create a handoff; do not modify the code" now plans as
+   documentation where the offline oracle used to call it ambiguous.
 
 ## Consequences
 
 - The observed wording now plans as documentation plus review on both the
   inference path and the offline oracle, and the policy no longer forces
   lifecycle units the critic must then judge.
-- The exemption is token-level and deliberately narrow; "edit the code and
-  leave a note" still reads as a code mutation because `edit` is not a strong
-  verb only when the code token is locative and a prose artefact is named,
-  and here the artefact is named, so it reads as documentation. That
-  ambiguity is accepted: the request names the artefact it wants.
+- The exemption is token-level and deliberately narrow: a first draft that
+  keyed on bag-of-tokens co-occurrence turned "update the auth code and add
+  a note" into documentation work and dropped its security review; the
+  object-bound form adopted in review keeps every such request a code
+  mutation. The planner's acceptance contract states the guard beside the
+  artefact list.
 - New prose artefacts join `PROSE_ARTIFACT_TOKENS` by decision, not by
   inference.
 

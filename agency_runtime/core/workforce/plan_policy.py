@@ -107,23 +107,69 @@ LOCATIVE_CODE_TOKENS = frozenset({"code", "codebase", "repo", "repository"})
 _STRONG_CODE_VERBS = frozenset(
     {"build", "debug", "fix", "implement", "optimize", "refactor", "repair", "rewrite", "remove"}
 )
+# The code nouns both readers know, so the policy and the deterministic
+# planner reach the same verdict on the same wording (the planner's own set
+# adds three the policy never used as mutation objects).
+CODE_NOUN_TOKENS = _CODE | frozenset({"async", "codebase", "patch"})
+_OBJECT_FILLERS = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "some",
+        "new",
+        "brief",
+        "short",
+        "quick",
+        "detailed",
+        "this",
+        "that",
+        "my",
+        "our",
+        "another",
+        "fresh",
+    }
+)
+_MAX_OBJECT_DISTANCE = 3
 
 
-def prose_artifact_request(tokens: Collection[str], code_tokens: Collection[str]) -> bool:
-    """Return whether the request asks for a prose artefact that only locates the code.
+def prose_artifact_request(request: str) -> bool:
+    """Return whether every change the request asks for is a prose artefact that only locates the code.
 
-    ``code_tokens`` is the caller's own code vocabulary hits so the policy and
-    the deterministic planner, whose code sets differ slightly, agree on one
-    rule: every code hit must be locative and no strong code verb may appear.
+    Read on the negated-scope-stripped request in token order: every mutation
+    verb must take a prose artefact as its object (within a few filler tokens),
+    no strong code verb may appear, and every code noun must be locative
+    (``code``, ``codebase``, ``repo``, ``repository``). "create a handoff ...
+    where the code is" qualifies; "update the auth code and add a note" does
+    not, because ``update`` takes the code as its object; "edit the code and
+    leave a note" does not either.
     """
 
-    hits = frozenset(tokens)
-    return bool(
-        hits & _MUTATION
-        and hits & PROSE_ARTIFACT_TOKENS
-        and not hits & _STRONG_CODE_VERBS
-        and frozenset(code_tokens) <= LOCATIVE_CODE_TOKENS
-    )
+    actionable = _NEGATED_SCOPE.sub(" ", _NEGATED_REQUEST_SCOPE.sub(" ", request))
+    ordered = _TOKENS.findall(actionable.casefold())
+    hits = frozenset(ordered)
+    if not hits & _MUTATION or not hits & PROSE_ARTIFACT_TOKENS or hits & _STRONG_CODE_VERBS:
+        return False
+    if not (hits & CODE_NOUN_TOKENS) <= LOCATIVE_CODE_TOKENS:
+        return False
+    for index, token in enumerate(ordered):
+        if token not in _MUTATION:
+            continue
+        if not _takes_prose_object(ordered, index):
+            return False
+    return True
+
+
+def _takes_prose_object(ordered: Sequence[str], index: int) -> bool:
+    """Return whether the mutation verb at ``index`` is followed by a prose artefact."""
+
+    skipped = 0
+    for item in ordered[index + 1 :]:
+        if item in _OBJECT_FILLERS and skipped < _MAX_OBJECT_DISTANCE:
+            skipped += 1
+            continue
+        return item in PROSE_ARTIFACT_TOKENS
+    return False
 
 
 _SECURITY = frozenset(
@@ -374,6 +420,12 @@ def planner_acceptance_contract() -> dict[str, object]:
             # AR-434 / ADR-0250: naming one of these artefacts while only
             # locating the code is documentation work, not a code mutation.
             "prose_artifacts_are_documentation": sorted(PROSE_ARTIFACT_TOKENS),
+            "prose_artifacts_are_documentation_only_when": (
+                "every change verb takes the prose artefact as its object, every code "
+                "noun is locative (code, codebase, repo, repository) and no strong code "
+                "verb (build, debug, fix, implement, optimize, refactor, repair, rewrite, "
+                "remove) appears; a request that also changes code keeps the code shape"
+            ),
         },
         "install_deploy_or_release": {
             "required_downstream_artifact": (
@@ -652,7 +704,7 @@ def plan_policy_violations(
 
     actionable_request = _NEGATED_SCOPE.sub(" ", _NEGATED_REQUEST_SCOPE.sub(" ", request))
     tokens = frozenset(_TOKENS.findall(actionable_request.casefold()))
-    prose_artifact = prose_artifact_request(tokens, tokens & _CODE)
+    prose_artifact = prose_artifact_request(request)
     docs_mutation = bool(
         tokens & _MUTATION
         and (
@@ -723,6 +775,7 @@ def plan_policy_violations(
 
 
 __all__ = [
+    "CODE_NOUN_TOKENS",
     "LOCATIVE_CODE_TOKENS",
     "PLAN_POLICY_VIOLATION_CODES",
     "PLAN_RESPONSE_SEMANTIC_INVALID",
