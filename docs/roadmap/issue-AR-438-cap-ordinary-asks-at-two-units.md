@@ -55,6 +55,13 @@ still take precedence. Regressions cover ordinary, documentation, merge,
 install and question wordings, the expanding shapes, negated scope, and the
 planning-options precedence, and the route-level option dict. One adversarial
 review pass added the route-level pin and the change-verb guard.
+The verification pass left three fail-open coverage residuals, none a
+safety cost: `patch` sits in both the change-verb and code-noun vocabularies,
+so "review the patch" lifts the ceiling; `write` is a change verb but not a
+`_MUTATION` token, so "write a handoff about the code" lifts while "create a
+handoff about the code" caps; and the applied ceiling reaches no receipt field
+beyond the free-text `validation_detail`. Each is a follow-up, not a repair
+in this package.
 
 ## Approach
 
