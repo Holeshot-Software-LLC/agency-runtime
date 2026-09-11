@@ -201,6 +201,7 @@ Status meanings:
 | [ADR-0188](0188-separate-codex-hook-parent-and-child-identities.md) | Separate Codex hook parent and child identities | Accepted |
 | [ADR-0189](0189-admit-only-accepted-terminal-codex-parents-for-post-return-collection.md) | Admit only accepted terminal Codex parents for post-return collection | Accepted |
 | [ADR-0190](0190-bind-codex-receipt-replay-to-an-exact-append-only-prefix.md) | Bind Codex receipt replay to an exact append-only prefix | Accepted |
+| [ADR-0255](0255-say-who-delivers-the-response-contract.md) | Say who delivers the response contract and whose facts the header reports | Accepted |
 
 ## State and roster governance
 
