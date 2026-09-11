@@ -80,6 +80,90 @@ _CODE = frozenset(
 _DOCS = frozenset(
     {"comment", "comments", "documentation", "docs", "guide", "markdown", "prose", "readme"}
 )
+# AR-434 / ADR-0250: a request to produce a prose artefact (a handoff, a note,
+# a capsule, a summary) that merely says where the code lives is documentation
+# work. Live on 2026-09-10 "create a handoff ... where the code is" read as a
+# code mutation, the planner was forced to add implementation and test units,
+# and the strict critic then vetoed the team for lacking the lifecycle
+# assurance those units implied. The exemption is narrow: a prose artefact is
+# named, the only code tokens are locative, and no strong code verb appears.
+PROSE_ARTIFACT_TOKENS = frozenset(
+    {
+        "capsule",
+        "capsules",
+        "handoff",
+        "handoffs",
+        "memo",
+        "memos",
+        "note",
+        "notes",
+        "summaries",
+        "summary",
+        "writeup",
+        "writeups",
+    }
+)
+LOCATIVE_CODE_TOKENS = frozenset({"code", "codebase", "repo", "repository"})
+_STRONG_CODE_VERBS = frozenset(
+    {"build", "debug", "fix", "implement", "optimize", "refactor", "repair", "rewrite", "remove"}
+)
+# The code nouns both readers know, so the policy and the deterministic
+# planner reach the same verdict on the same wording (the planner's own set
+# adds three the policy never used as mutation objects).
+CODE_NOUN_TOKENS = _CODE | frozenset({"async", "codebase", "patch"})
+_MAX_OBJECT_DISTANCE = 3
+_OBJECT_FILLERS = (
+    "a|an|the|some|new|brief|short|quick|detailed|this|that|my|our|another|fresh|full|final"
+)
+# What may follow the prose noun for it to be the verb's whole object: a
+# boundary, or a preposition, conjunction or participle that opens the
+# artefact's description. "add a summary field to the code" fails because a
+# head noun follows the prose noun; "create a handoff, ill let ..." passes.
+_OBJECT_TAILS = (
+    "for|to|of|about|on|in|with|and|or|that|which|so|then|before|after|where|what|how|why|"
+    "if|when|covering|describing|including|explaining|summarizing|summarising|noting|"
+    "listing|saying|telling|documenting|capturing|recording|outlining|detailing|"
+    "stating|showing|please|now|first|here"
+)
+_PROSE_NOUNS = "|".join(sorted(PROSE_ARTIFACT_TOKENS))
+
+
+def _prose_object_pattern() -> re.Pattern[str]:
+    return re.compile(
+        rf"\b(?P<verb>{'|'.join(sorted(_MUTATION))})\b"
+        rf"(?P<object>(?:\s+(?:{_OBJECT_FILLERS})\b){{0,{_MAX_OBJECT_DISTANCE}}}"
+        rf"\s+(?:{_PROSE_NOUNS})\b(?=\s*(?:[,.;:!?)\]]|$|\s+(?:{_OBJECT_TAILS})\b)))?",
+        # MULTILINE: a handoff ask is often several lines or a bullet list,
+        # and the prose noun may end its line rather than the request.
+        re.IGNORECASE | re.MULTILINE,
+    )
+
+
+_PROSE_OBJECT = _prose_object_pattern()
+
+
+def prose_artifact_request(request: str) -> bool:
+    """Return whether every change the request asks for is a prose artefact that only locates the code.
+
+    Read on the negated-scope-stripped request in token order: every mutation
+    verb must take a prose artefact as its object (within a few filler tokens),
+    no strong code verb may appear, and every code noun must be locative
+    (``code``, ``codebase``, ``repo``, ``repository``). "create a handoff ...
+    where the code is" qualifies; "update the auth code and add a note" does
+    not, because ``update`` takes the code as its object; "edit the code and
+    leave a note" does not either.
+    """
+
+    actionable = _NEGATED_SCOPE.sub(" ", _NEGATED_REQUEST_SCOPE.sub(" ", request))
+    hits = frozenset(_TOKENS.findall(actionable.casefold()))
+    if not hits & _MUTATION or not hits & PROSE_ARTIFACT_TOKENS or hits & _STRONG_CODE_VERBS:
+        return False
+    if not (hits & CODE_NOUN_TOKENS) <= LOCATIVE_CODE_TOKENS:
+        return False
+    # Every mutation verb must take a prose artefact as its whole object.
+    return all(match.group("object") for match in _PROSE_OBJECT.finditer(actionable))
+
+
 _SECURITY = frozenset(
     {
         "auth",
@@ -323,7 +407,18 @@ def planner_acceptance_contract() -> dict[str, object]:
         "repository_security_or_code_path_mapping": {
             "required_predecessor": "software-engineering analysis that maps repository code paths"
         },
-        "documentation_mutation": {"required_artifact_kinds": ["documentation", "review-report"]},
+        "documentation_mutation": {
+            "required_artifact_kinds": ["documentation", "review-report"],
+            # AR-434 / ADR-0250: naming one of these artefacts while only
+            # locating the code is documentation work, not a code mutation.
+            "prose_artifacts_are_documentation": sorted(PROSE_ARTIFACT_TOKENS),
+            "prose_artifacts_are_documentation_only_when": (
+                "every change verb takes the prose artefact as its object, every code "
+                "noun is locative (code, codebase, repo, repository) and no strong code "
+                "verb (build, debug, fix, implement, optimize, refactor, repair, rewrite, "
+                "remove) appears; a request that also changes code keeps the code shape"
+            ),
+        },
         "install_deploy_or_release": {
             "required_downstream_artifact": (
                 "test-evidence whose outcome names the install/deploy/release operation in "
@@ -601,10 +696,13 @@ def plan_policy_violations(
 
     actionable_request = _NEGATED_SCOPE.sub(" ", _NEGATED_REQUEST_SCOPE.sub(" ", request))
     tokens = frozenset(_TOKENS.findall(actionable_request.casefold()))
+    prose_artifact = prose_artifact_request(request)
     docs_mutation = bool(
         tokens & _MUTATION
-        and tokens & _DOCS
-        and not tokens & _CODE.difference({"repo", "repository"})
+        and (
+            (tokens & _DOCS and not tokens & _CODE.difference({"repo", "repository"}))
+            or prose_artifact
+        )
     )
     code_mutation = bool(tokens & _MUTATION and tokens & _CODE and not docs_mutation)
     inventory = _PlanInventory.from_plan(plan)
@@ -669,12 +767,16 @@ def plan_policy_violations(
 
 
 __all__ = [
+    "CODE_NOUN_TOKENS",
+    "LOCATIVE_CODE_TOKENS",
     "PLAN_POLICY_VIOLATION_CODES",
     "PLAN_RESPONSE_SEMANTIC_INVALID",
     "PLAN_VALIDATION_REASON_CODES",
+    "PROSE_ARTIFACT_TOKENS",
     "plan_policy_repair_guidance",
     "plan_policy_violations",
     "plan_semantic_validation_reason_codes",
     "planner_acceptance_contract",
+    "prose_artifact_request",
     "regulated_assurance_requirements",
 ]

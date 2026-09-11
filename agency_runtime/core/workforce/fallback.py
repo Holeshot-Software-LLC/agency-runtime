@@ -14,7 +14,10 @@ from agency_runtime.core.config import AgencyConfig
 from agency_runtime.core.workforce.capability_ontology import artifact_capability
 from agency_runtime.core.workforce.contract import WorkforceContract
 from agency_runtime.core.workforce.lifecycle_roles import role_anchors
-from agency_runtime.core.workforce.plan_policy import RELEASE_OPERATION_TOKENS
+from agency_runtime.core.workforce.plan_policy import (
+    RELEASE_OPERATION_TOKENS,
+    prose_artifact_request,
+)
 from agency_runtime.core.workforce.planning_contracts import (
     WorkUnit,
     WorkUnitPlan,
@@ -312,9 +315,20 @@ def deterministic_work_plan(
     frameworks = tuple(_detected_values(tokens, _FRAMEWORKS))
     document_mutation = _document_mutation_requested(actionable_request)
     mutating = _contains_any(tokens, _MUTATION) or document_mutation
-    docs = _contains_any(tokens, _DOCS - {"document", "write", "writing"}) or document_mutation
+    # AR-434 / ADR-0250: the same prose-artefact rule the policy applies, read
+    # from the same request text, so the offline oracle and the policy agree
+    # that a handoff is documentation and that "update the code and add a
+    # note" is not.
+    prose_artifact = prose_artifact_request(request)
+    docs = (
+        _contains_any(tokens, _DOCS - {"document", "write", "writing"})
+        or document_mutation
+        or prose_artifact
+    )
     code_terms = _CODE.difference({"repo", "repository"}) if docs else _CODE
-    code = _contains_any(tokens, code_terms) or bool(languages or frameworks)
+    code = not prose_artifact and (
+        _contains_any(tokens, code_terms) or bool(languages or frameworks)
+    )
     tests = _contains_any(tokens, _TEST)
     review = _contains_any(tokens, _REVIEW)
     security = _contains_any(tokens, _SECURITY)
