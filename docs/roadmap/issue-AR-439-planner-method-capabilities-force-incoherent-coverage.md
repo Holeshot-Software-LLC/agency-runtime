@@ -1,6 +1,6 @@
 ---
 title: "AR-439: Planner method capabilities force incoherent team coverage"
-status: open
+status: done
 category: roadmap
 created: 2026-09-11
 updated: 2026-09-11
@@ -12,6 +12,7 @@ related:
   - docs/roadmap/evidence/AR-439-decision-conformance-20260911.json
   - docs/roadmap/evidence/AR-439-post-merge-measurement-20260911.json
   - docs/decisions/0252-bind-mandatory-capabilities-to-the-unit-shape.md
+  - docs/roadmap/acceptance/issue-AR-439.md
   - docs/roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md
   - docs/roadmap/issue-AR-394-recruiter-teams-fail-or-mis-select.md
   - docs/roadmap/issue-AR-384-staff-decisions-die-on-uncoverable-typed-requirements.md
