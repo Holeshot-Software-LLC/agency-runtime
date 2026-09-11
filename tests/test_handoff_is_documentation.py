@@ -163,5 +163,13 @@ def test_a_prose_noun_used_as_a_modifier_is_not_the_verbs_object() -> None:
         assert not prose_artifact_request(request), request
         assert "implementation-change" in _kinds(_plan(request)), request
     assert prose_artifact_request("create a handoff, then ping me")
+    # The same ask across lines or as a bullet list (review of the third
+    # draft): the prose noun may end its line rather than the request.
+    multi_line = "can you create a handoff\nill let another agent crank on this\nwhere the code is\nwhat branch"
+    bulleted = "create a handoff\n- where we left off\n- where the code is\n- what branch"
+    for request in (multi_line, bulleted):
+        assert prose_artifact_request(request), request
+        assert _kinds(_plan(request)) == ["documentation", "review-report"], request
+        assert plan_policy_violations(request, _plan(request)) == (), request
     assert prose_artifact_request("create a summary covering where the code is")
     assert prose_artifact_request("add a note about the new flow to the repo")

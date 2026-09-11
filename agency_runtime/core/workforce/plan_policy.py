@@ -133,7 +133,9 @@ def _prose_object_pattern() -> re.Pattern[str]:
         rf"\b(?P<verb>{'|'.join(sorted(_MUTATION))})\b"
         rf"(?P<object>(?:\s+(?:{_OBJECT_FILLERS})\b){{0,{_MAX_OBJECT_DISTANCE}}}"
         rf"\s+(?:{_PROSE_NOUNS})\b(?=\s*(?:[,.;:!?)\]]|$|\s+(?:{_OBJECT_TAILS})\b)))?",
-        re.IGNORECASE,
+        # MULTILINE: a handoff ask is often several lines or a bullet list,
+        # and the prose noun may end its line rather than the request.
+        re.IGNORECASE | re.MULTILINE,
     )
 
 
