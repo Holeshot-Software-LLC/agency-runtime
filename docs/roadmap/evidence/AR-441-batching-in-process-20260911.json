@@ -1,0 +1,320 @@
+{
+  "schema": "agency-runtime.evidence.ar441-batching-in-process",
+  "issue": "AR-441",
+  "recorded": "2026-09-11",
+  "scope": "Six in-process strict staffing runs of one five-unit code-mutation wording under the claude host context against a copy of the live store: two on main 891943af (single recruiter call), four on the AR-441 branch (batches of two units). Stochastic planner and recruiter; the same gateway deployment served every call.",
+  "harness": "~/.agency-runtime/ephemeral/ar439-diag-20260911/diag.py claude <tag> with DIAG_ASK and PYTHONPATH at the branch",
+  "samples": [
+    {
+      "tag": "code-a",
+      "form": "single-call",
+      "status": "accepted",
+      "accepted": true,
+      "codes": [],
+      "calls_used": 6,
+      "recruiter_calls": 2,
+      "recruiter_prompt_bytes": [
+        94611,
+        94889
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "failed",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        }
+      ],
+      "first_reply_failures": 1,
+      "plan_units": [
+        "unit-discovery-tokenizer",
+        "unit-impl-tokenizer-fix",
+        "unit-test-tokenizer-boundary",
+        "unit-review-tokenizer-fix",
+        "unit-evidence-tokenizer-tests"
+      ]
+    },
+    {
+      "tag": "code-b",
+      "form": "single-call",
+      "status": "accepted",
+      "accepted": true,
+      "codes": [],
+      "calls_used": 6,
+      "recruiter_calls": 2,
+      "recruiter_prompt_bytes": [
+        76591,
+        77492
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "rejected",
+          "reason_codes": [],
+          "detail": "workforce nomination failures: unit-discovery-tokenizer=missing_work_unit,unit-impl-tokenizer-fix=missing_work_unit,unit-test-tokenizer-boundary=missing_work_unit,unit-review-tokenizer-fix=missing_wor"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        }
+      ],
+      "first_reply_failures": 1,
+      "plan_units": [
+        "unit-discovery-tokenizer",
+        "unit-impl-tokenizer-fix",
+        "unit-test-tokenizer-boundary",
+        "unit-review-tokenizer-fix",
+        "unit-evidence-tokenizer-tests"
+      ]
+    },
+    {
+      "tag": "batch-a",
+      "form": "batched",
+      "status": "inference_invalid",
+      "accepted": false,
+      "codes": [
+        "inference_invalid",
+        "staffing_critic_rejected",
+        "wrong-neighbor-selection"
+      ],
+      "calls_used": 9,
+      "recruiter_calls": 5,
+      "recruiter_prompt_bytes": [
+        69736,
+        51114,
+        51985,
+        32726,
+        33407
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "rejected",
+          "reason_codes": [
+            "recruiter_candidate_row_shape_invalid"
+          ],
+          "detail": "workforce nomination failures: unit-boundary-tests=invalid_candidate,unit-correctness-review=invalid_candidate"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "rejected",
+          "reason_codes": [
+            "recruiter_response_shape_invalid"
+          ],
+          "detail": "workforce nomination failures: unit-run-tests=missing_work_unit"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        }
+      ],
+      "first_reply_failures": 2,
+      "plan_units": [
+        "unit-discovery-tokenizer",
+        "unit-fix-tokenizer",
+        "unit-boundary-tests",
+        "unit-correctness-review",
+        "unit-run-tests"
+      ]
+    },
+    {
+      "tag": "batch-b",
+      "form": "batched",
+      "status": "accepted",
+      "accepted": true,
+      "codes": [],
+      "calls_used": 10,
+      "recruiter_calls": 6,
+      "recruiter_prompt_bytes": [
+        53214,
+        54045,
+        47417,
+        47922,
+        24784,
+        25213
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "rejected",
+          "reason_codes": [
+            "recruiter_candidate_negative_evidence_invalid"
+          ],
+          "detail": "workforce nomination failures: unit-discovery-tokenizer=invalid_candidate,unit-fix-tokenizer=invalid_candidate"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "rejected",
+          "reason_codes": [],
+          "detail": "workforce nomination failures: unit-boundary-tests=missing_work_unit,unit-correctness-review=missing_work_unit"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "rejected",
+          "reason_codes": [],
+          "detail": "workforce nomination failures: unit-run-tests=invalid_ranking"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        }
+      ],
+      "first_reply_failures": 3,
+      "plan_units": [
+        "unit-discovery-tokenizer",
+        "unit-fix-tokenizer",
+        "unit-boundary-tests",
+        "unit-correctness-review",
+        "unit-run-tests"
+      ]
+    },
+    {
+      "tag": "batch-c",
+      "form": "batched",
+      "status": "inference_invalid",
+      "accepted": false,
+      "codes": [
+        "inference_invalid",
+        "staffing_critic_rejected",
+        "wrong-neighbor-selection"
+      ],
+      "calls_used": 7,
+      "recruiter_calls": 3,
+      "recruiter_prompt_bytes": [
+        54476,
+        47403,
+        24706
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        }
+      ],
+      "first_reply_failures": 0,
+      "plan_units": [
+        "unit-discovery-tokenizer",
+        "unit-fix-tokenizer",
+        "unit-boundary-tests",
+        "unit-correctness-review",
+        "unit-run-tests"
+      ]
+    },
+    {
+      "tag": "batch-d",
+      "form": "batched",
+      "status": "accepted",
+      "accepted": true,
+      "codes": [],
+      "calls_used": 9,
+      "recruiter_calls": 5,
+      "recruiter_prompt_bytes": [
+        53685,
+        46722,
+        47841,
+        24702,
+        25131
+      ],
+      "recruiter_attempts": [
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "rejected",
+          "reason_codes": [
+            "recruiter_response_shape_invalid"
+          ],
+          "detail": "workforce nomination failures: unit-boundary-tests=missing_work_unit,unit-correctness-review=missing_work_unit"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        },
+        {
+          "status": "rejected",
+          "reason_codes": [],
+          "detail": "workforce nomination failures: unit-run-tests=invalid_ranking"
+        },
+        {
+          "status": "applied",
+          "reason_codes": [],
+          "detail": ""
+        }
+      ],
+      "first_reply_failures": 2,
+      "plan_units": [
+        "unit-discovery-tokenizer",
+        "unit-fix-tokenizer",
+        "unit-boundary-tests",
+        "unit-correctness-review",
+        "unit-run-tests"
+      ]
+    }
+  ],
+  "tally": {
+    "single_call": {
+      "turns": 2,
+      "recruiter_calls": [
+        2,
+        2
+      ],
+      "first_reply_failed": 2,
+      "accepted": 2
+    },
+    "batched": {
+      "turns": 4,
+      "recruiter_calls": [
+        5,
+        6,
+        3,
+        5
+      ],
+      "batch_calls": 12,
+      "batch_first_reply_failed": 7,
+      "accepted": 2,
+      "critic_vetoes": 2
+    }
+  },
+  "findings": [
+    "Batching cut the recruiter prompt from 77-95 KB to 53 KB, 47 KB and 25 KB for the three batches of a five-unit plan (typed recall 20, 15 and 7 KB; 49, 53 and 24 detail cards).",
+    "It did not lower the per-call failure rate: 7 of 12 batch calls were rejected on their first reply (candidate row shape, negative-evidence shape, units object shape, invalid ranking, omitted units) against 2 of 2 single calls, so a batched turn spent 3 to 6 recruiter calls where the single call spent 2.",
+    "Every rejected batch reply was repaired within its batch and the whole team assembled and verified once; two of the four batched turns were then vetoed by the strict critic (wrong-neighbour pointers on the discovery unit), which the single-call turns did not meet in two samples.",
+    "The reply failures are reply-shape failures of the serving deployment, not omissions under prompt size; the smallest batch (25 KB) failed its first reply in two of four samples."
+  ],
+  "limits": "Small samples; no controlled A/B beyond the same wording on the same day; the critic vetoes are single judgements on stochastic teams."
+}

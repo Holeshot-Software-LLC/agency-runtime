@@ -313,8 +313,13 @@ class _NominationSemantics:""",
             "requests only failed planned units."
         ),
         source_path="agency_runtime/core/workforce/inference.py",
-        before="        repair_system_prompt=_RECRUITER_REPAIR_SYSTEM,",
-        after="        repair_system_prompt=_RECRUITER_SYSTEM,",
+        # AR-441: the single-call path and the batched path both pass the
+        # repair contract; the anchor names the single-call site by its
+        # neighbouring line so it stays unique.
+        before="""            before_provider=nomination_parser.reset,
+            repair_system_prompt=_RECRUITER_REPAIR_SYSTEM,""",
+        after="""            before_provider=nomination_parser.reset,
+            repair_system_prompt=_RECRUITER_SYSTEM,""",
         test_node=(
             "tests/test_workforce_inference.py::"
             "test_balanced_recruiter_repairs_only_missing_work_unit_rows"

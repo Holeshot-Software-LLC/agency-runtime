@@ -2366,9 +2366,12 @@ def test_planner_repair_receives_exact_assurance_graph_and_remains_inference_own
     )
 
     assert outcome.accepted
-    assert outcome.calls_used == 3
+    # AR-441 / ADR-0254: five units are recruited in batches; the fast budget
+    # of four leaves two calls after the planner's repair, so two batches.
+    assert outcome.calls_used == 4
     assert [attempt.status for attempt in outcome.attempts] == [
         "rejected",
+        "applied",
         "applied",
         "applied",
     ]

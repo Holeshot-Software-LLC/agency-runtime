@@ -129,6 +129,10 @@ if TYPE_CHECKING:
 MAX_REQUEST_BYTES = 64 * 1024
 MAX_TYPED_RECALL_CANDIDATES_PER_UNIT = 24
 MAX_HYBRID_DETAIL_CARD_BYTES = 256 * 1024
+# AR-441 / ADR-0254: the recruiter is asked for at most this many units per
+# call. A five-unit plan produced 77-95 KB prompts whose first reply did not
+# carry every row; two units is where the recruiter succeeds today.
+RECRUITER_UNITS_PER_CALL = 2
 _PLANNING_CAPABILITIES = tuple(sorted(CORE_CAPABILITY_IDS))
 _WORKFORCE_ROUTING_POLICY_VERSION = "1"
 _REQUIRED_DELIVERIES = frozenset({"delegate", "load"})
@@ -1249,6 +1253,8 @@ class _StaffingVerificationError(ValueError):
         ):
             raise ValueError("staffing verification failure is not allowlisted")
         self.failures = failures
+        # AR-441: in batched recruitment the repair re-asks only these units.
+        self.repair_unit_ids: tuple[str, ...] = ()
         self.staffing = staffing
         failed_unit_ids = {failure.unit_id for failure in failures if failure.unit_id}
         self.derived_rows: dict[str, _DerivedTeamRow] = {
@@ -1739,14 +1745,26 @@ def _semantic_retry_prompts(
         }
     elif isinstance(error, _StaffingVerificationError):
         next_system_prompt = system_prompt
+        repair_unit_ids = tuple(getattr(error, "repair_unit_ids", ()) or ())
         feedback = {
             "prior_response_status": "rejected",
             "required_action": (
-                "Return one complete replacement recruiter response for "
-                "every planned unit. Preserve inference ownership while "
-                "satisfying the complete staffing budget, composition, "
-                "assurance, coverage, and execution contract."
+                (
+                    "Return corrected rows for every listed failed unit only, in listed "
+                    "order. Omit every other planned unit because the runtime retains its "
+                    "validated row and re-verifies the whole team. Preserve inference "
+                    "ownership while satisfying the complete staffing budget, "
+                    "composition, assurance, coverage, and execution contract."
+                )
+                if repair_unit_ids
+                else (
+                    "Return one complete replacement recruiter response for "
+                    "every planned unit. Preserve inference ownership while "
+                    "satisfying the complete staffing budget, composition, "
+                    "assurance, coverage, and execution contract."
+                )
             ),
+            **({"failed_units": list(repair_unit_ids)} if repair_unit_ids else {}),
             "staffing_violations": [
                 _staffing_violation_feedback_row(error, failure) for failure in error.failures
             ],
@@ -3916,14 +3934,53 @@ class _NominationAccumulator:
         self._allowed_candidate_ids = allowed_candidate_ids
         self._rows: dict[str, Mapping[str, Any]] = {}
         self._repair_unit_ids: tuple[str, ...] = ()
+        # AR-441 / ADR-0254: the units one recruiter call is asked for, and the
+        # cards that call was shown. Empty means the whole plan in one call.
+        self._batch_ids: tuple[str, ...] = ()
+        self._batch_candidate_ids: frozenset[str] | None = None
 
-    def reset(self) -> None:
-        self._rows.clear()
+    def begin_batch(self, unit_ids: Sequence[str], candidate_ids: frozenset[str] | None) -> None:
+        """Scope the next parse to one batch of units and the cards it was shown."""
+
+        self._batch_ids = tuple(unit_ids)
+        self._batch_candidate_ids = candidate_ids
         self._repair_unit_ids = ()
 
-    def parse(self, value: Mapping[str, Any]) -> RecruiterProposal:
-        expected = frozenset(unit.unit_id for unit in self._plan.units)
+    @property
+    def batched(self) -> bool:
+        return bool(self._batch_ids)
+
+    def mark_repair(self, unit_ids: Sequence[str]) -> None:
+        """Name the units the next reply must answer for after a whole-team finding."""
+
+        self._repair_unit_ids = tuple(unit_ids)
+
+    def validated_rows(self) -> dict[str, Mapping[str, Any]]:
+        """Return the rows validated so far, in plan order."""
+
+        return {
+            unit.unit_id: self._rows[unit.unit_id]
+            for unit in self._plan.units
+            if unit.unit_id in self._rows
+        }
+
+    def reset(self) -> None:
+        if self._batch_ids:
+            # A different provider answers the same batch afresh; the earlier
+            # batches' rows were validated by their own calls and stay.
+            for unit_id in self._batch_ids:
+                self._rows.pop(unit_id, None)
+        else:
+            self._rows.clear()
+        self._repair_unit_ids = ()
+
+    def parse(self, value: Mapping[str, Any]) -> RecruiterProposal | dict[str, Mapping[str, Any]]:
         repairing = frozenset(self._repair_unit_ids)
+        expected = (
+            frozenset(self._batch_ids) | repairing
+            if self._batch_ids
+            else frozenset(unit.unit_id for unit in self._plan.units)
+        )
         rows = _nomination_rows(value, maximum=4 * len(self._plan.units))
         if rows is None:
             # ADR-0202: a reply that is not a units object at all (an empty
@@ -3935,7 +3992,8 @@ class _NominationAccumulator:
             failed = tuple(
                 unit.unit_id
                 for unit in self._plan.units
-                if not repairing or unit.unit_id in repairing
+                if (not repairing or unit.unit_id in repairing)
+                and (not self._batch_ids or unit.unit_id in expected)
             )
             self._repair_unit_ids = failed
             raise _NominationValidationError(
@@ -3957,8 +4015,14 @@ class _NominationAccumulator:
         # unit leaves it missing the same way; one that answers for a unit
         # outside the failed set still breaks the repair contract.
         unreadable: set[str] = set()
+        plan_ids = frozenset(unit.unit_id for unit in self._plan.units)
         for row in rows:
-            unit_id = _row_unit_id(row, expected)
+            # AR-441: a row is first read against the whole plan, so a row for
+            # a unit outside this batch is skipped rather than reconciled onto
+            # a batch unit whose id it merely resembles.
+            unit_id = _row_unit_id(row, plan_ids)
+            if unit_id not in expected:
+                continue
             if not unit_id or unit_id in response_ids:
                 continue
             if set(row) != {"unit_id", "decision", "ranked_semantic"}:
@@ -3981,13 +4045,28 @@ class _NominationAccumulator:
             response_rows.append((unit_id, row))
         for unit_id, row in response_rows:
             self._rows[unit_id] = row
+        # AR-441: a batch is judged over its own units (plus any unit a repair
+        # re-asked) against the cards that call was shown; the whole plan is
+        # judged once the last batch has answered.
+        scope_plan = (
+            replace(
+                self._plan,
+                units=tuple(unit for unit in self._plan.units if unit.unit_id in expected),
+            )
+            if self._batch_ids
+            else self._plan
+        )
         semantics = _collect_nomination_semantics(
-            self._rows,
-            self._plan,
+            {unit_id: row for unit_id, row in self._rows.items() if unit_id in expected}
+            if self._batch_ids
+            else self._rows,
+            scope_plan,
             self._snapshot,
             config=self._config,
             context=self._context,
-            allowed_candidate_ids=self._allowed_candidate_ids,
+            allowed_candidate_ids=(
+                self._batch_candidate_ids if self._batch_ids else self._allowed_candidate_ids
+            ),
         )
         if semantics.failures:
             failures = tuple(
@@ -4001,6 +4080,11 @@ class _NominationAccumulator:
                     self._rows.pop(failure.unit_id, None)
             self._repair_unit_ids = tuple(failure.unit_id for failure in failures)
             raise _NominationValidationError(failures)
+        if self._batch_ids and any(unit.unit_id not in self._rows for unit in self._plan.units):
+            # Not the last batch: hand the validated rows back and let the
+            # next batch be asked.
+            self._repair_unit_ids = ()
+            return self.validated_rows()
         merged = {"units": [self._rows[unit.unit_id] for unit in self._plan.units]}
         try:
             proposal = _proposal_from_nominations(
@@ -4130,6 +4214,180 @@ def _verified_recruiter_proposal(
         minimum_confidence=budget.min_confidence,
         minimum_margin=budget.min_margin,
     )
+
+
+def _recruiter_batches(
+    plan: WorkUnitPlan, budget: _CallBudget, reserve: int
+) -> tuple[tuple[str, ...], ...]:
+    """Split the plan into the unit batches one recruiter call each is asked for.
+
+    AR-441 / ADR-0254: at most ``RECRUITER_UNITS_PER_CALL`` units per call,
+    in plan order (dependency order). When the remaining budget, less the
+    reserve, cannot afford one call per batch, the batches are widened
+    evenly to the calls it can afford; the budget decides the batch count,
+    never the outcome.
+    """
+
+    unit_ids = tuple(unit.unit_id for unit in plan.units)
+    if len(unit_ids) <= RECRUITER_UNITS_PER_CALL:
+        return (unit_ids,)
+    wanted = -(-len(unit_ids) // RECRUITER_UNITS_PER_CALL)
+    affordable = max(1, budget.remaining - max(reserve, 0))
+    count = min(wanted, affordable)
+    size, extra = divmod(len(unit_ids), count)
+    batches: list[tuple[str, ...]] = []
+    start = 0
+    for index in range(count):
+        end = start + size + (1 if index < extra else 0)
+        batches.append(unit_ids[start:end])
+        start = end
+    return tuple(batches)
+
+
+def _recruiter_batch_document(
+    document: Mapping[str, Any],
+    *,
+    batch_ids: Sequence[str],
+    ordinal: int,
+    count: int,
+    earlier_rows: Mapping[str, Mapping[str, Any]],
+) -> tuple[dict[str, Any], frozenset[str]]:
+    """Slice the recruiter document to one batch and return it with the cards it shows.
+
+    The whole plan, the host context, the bindings and the response contract
+    stay; the typed recall rows, the detail cards and the hybrid evidence are
+    those of the batch's units; the response contract names only the batch;
+    the validated rows of the earlier batches ride along so the recruiter can
+    keep a reviewer independent of the implementers it already chose.
+    """
+
+    wanted = frozenset(batch_ids)
+    typed_recall = [
+        dict(row) for row in document.get("typed_recall", ()) if str(row.get("unit_id")) in wanted
+    ]
+    # The batch shows the bounded recall sample for its units (the candidate
+    # rows, every sole eligible coverer and the hybrid additions), not every
+    # union card its units could staff: an analysis unit is eligible for most
+    # of the roster, and showing all of it is the single-call prompt again.
+    card_ids: set[str] = set()
+    for row in typed_recall:
+        card_ids.update(str(candidate.get("agent_id")) for candidate in row.get("candidates", ()))
+        coverers = row.get("sole_eligible_coverers")
+        if isinstance(coverers, Mapping):
+            card_ids.update(str(item) for item in coverers.values())
+    hybrid = document.get("hybrid_recall")
+    hybrid_units: list[Any] = []
+    if isinstance(hybrid, Mapping):
+        hybrid_units = [
+            unit for unit in hybrid.get("units", ()) if str(unit.get("unit_id")) in wanted
+        ]
+        for unit in hybrid_units:
+            card_ids.update(
+                str(candidate.get("agent_id")) for candidate in unit.get("candidates", ())
+            )
+    detail_cards = [
+        card for card in document.get("detail_cards", ()) if str(card.get("agent_id")) in card_ids
+    ]
+    shown = frozenset(str(card.get("agent_id")) for card in detail_cards)
+    for row in typed_recall:
+        # ADR-0203: the eligible list is the complete set of cards the runtime
+        # can staff on the unit; here that set is the batch's cards, and the
+        # eligible workers no longer carded are counted, not hidden.
+        eligible = [str(item) for item in row.get("eligible_candidate_ids", ())]
+        row["eligible_candidate_ids"] = [item for item in eligible if item in shown]
+        row["eligible_candidates_without_card"] = int(
+            row.get("eligible_candidates_without_card") or 0
+        ) + sum(1 for item in eligible if item not in shown)
+    sliced: dict[str, Any] = dict(document)
+    sliced["typed_recall"] = typed_recall
+    sliced["detail_cards"] = detail_cards
+    sliced["response_contract"] = {
+        **dict(document["response_contract"]),
+        "exact_unit_ids_in_order": list(batch_ids),
+    }
+    if isinstance(hybrid, Mapping):
+        sliced["hybrid_recall"] = {
+            **dict(hybrid),
+            "offered_candidate_count": len(shown),
+            "offered_candidate_ids_digest": _document_hash(tuple(sorted(shown))),
+            "units": hybrid_units,
+        }
+
+    def _classified(row: Mapping[str, Any], classification: str) -> list[str]:
+        return sorted(
+            str(item.get("agent_id"))
+            for item in row.get("ranked_semantic", ())
+            if isinstance(item, Mapping)
+            and str(item.get("classification") or "").casefold() == classification
+        )
+
+    sliced["recruiter_batch"] = {
+        "ordinal": ordinal,
+        "count": count,
+        "unit_ids": list(batch_ids),
+        "units_per_call": RECRUITER_UNITS_PER_CALL,
+        "answer_only_these_units": True,
+        "earlier_batches": [
+            {
+                "unit_id": unit_id,
+                "decision": str(row.get("decision") or ""),
+                "required": _classified(row, "required"),
+                "acceptable": _classified(row, "acceptable"),
+            }
+            for unit_id, row in earlier_rows.items()
+        ],
+    }
+    return sliced, shown
+
+
+def _recruit_in_batches(
+    document: Mapping[str, Any],
+    batches: Sequence[Sequence[str]],
+    accumulator: _NominationAccumulator,
+    *,
+    providers: Sequence[ProviderEntry],
+    budget: _CallBudget,
+    invoker: StructuredInvoker,
+    parser: Callable[[Mapping[str, Any]], Any],
+    reserve: int,
+) -> tuple[RecruiterProposal | None, list[WorkforceInferenceAttempt], str]:
+    """Ask one recruiter call per batch, in plan order (AR-441 / ADR-0254).
+
+    The whole team is assembled and verified by the last batch's parse; a
+    batch that cannot be answered ends the stage with that batch's failure.
+    """
+
+    attempts: list[WorkforceInferenceAttempt] = []
+    proposal: Any = None
+    failure = ""
+    for ordinal, batch_ids in enumerate(batches, start=1):
+        batch_document, shown = _recruiter_batch_document(
+            document,
+            batch_ids=batch_ids,
+            ordinal=ordinal,
+            count=len(batches),
+            earlier_rows=accumulator.validated_rows(),
+        )
+        accumulator.begin_batch(batch_ids, shown)
+        proposal, batch_attempts, failure = _invoke_stage(
+            stage="recruiter",
+            providers=providers,
+            prompt=_recruiter_prompt(batch_document),
+            schema=NOMINATION_RESPONSE_SCHEMA,
+            system_prompt=_RECRUITER_SYSTEM,
+            budget=budget,
+            invoker=invoker,
+            parser=parser,
+            before_provider=accumulator.reset,
+            repair_system_prompt=_RECRUITER_REPAIR_SYSTEM,
+            reserve=reserve,
+        )
+        attempts.extend(batch_attempts)
+        if proposal is None:
+            break
+    if not isinstance(proposal, RecruiterProposal):
+        return None, attempts, failure or "workforce_inference_failed"
+    return proposal, attempts, failure
 
 
 def _recruit_ambiguous_plan(
@@ -4295,13 +4553,19 @@ def _recruit_ambiguous_plan(
         context=context,
         allowed_candidate_ids=allowed_candidate_ids,
     )
-
     rejected_staffing: StaffingDecision | None = None
+    reserve = int(config.workforce.mode == "strict")
+    batches = _recruiter_batches(plan, budget, reserve)
 
-    def parse_verified_proposal(value: Mapping[str, Any]) -> RecruiterProposal:
+    def parse_verified_proposal(
+        value: Mapping[str, Any],
+    ) -> RecruiterProposal | dict[str, Mapping[str, Any]]:
         nonlocal rejected_staffing
         rejected_staffing = None
         proposal = nomination_parser.parse(value)
+        if not isinstance(proposal, RecruiterProposal):
+            # AR-441: a batch that is not the last hands back its validated rows.
+            return proposal
         try:
             _verified_recruiter_proposal(
                 plan,
@@ -4312,27 +4576,51 @@ def _recruit_ambiguous_plan(
                 explicit_indivisible_unit=explicit_indivisible_unit,
             )
         except _StaffingVerificationError as exc:
-            # A whole-team rejection requires a complete replacement. Do not
-            # merge repaired rows with the verifier-rejected proposal.
             rejected_staffing = exc.staffing
-            nomination_parser.reset()
+            if nomination_parser.batched:
+                # AR-441 / ADR-0254: every row was validated by its own call
+                # and the merged team is re-verified after the repair, so the
+                # repair re-asks only the units the verifier named; a finding
+                # that names no unit re-asks the whole plan.
+                failed = tuple(dict.fromkeys(f.unit_id for f in exc.failures if f.unit_id))
+                if not failed or any(not f.unit_id for f in exc.failures):
+                    failed = tuple(unit.unit_id for unit in plan.units)
+                nomination_parser.mark_repair(failed)
+                exc.repair_unit_ids = failed
+            else:
+                # A whole-team rejection requires a complete replacement. Do
+                # not merge repaired rows with the verifier-rejected proposal.
+                nomination_parser.reset()
             raise
         return proposal
 
-    proposal, recruiter_attempts, failure = _invoke_stage(
-        stage="recruiter",
-        providers=providers,
-        prompt=recruiter_prompt,
-        schema=NOMINATION_RESPONSE_SCHEMA,
-        system_prompt=_RECRUITER_SYSTEM,
-        budget=budget,
-        invoker=invoker,
-        parser=parse_verified_proposal,
-        before_provider=nomination_parser.reset,
-        repair_system_prompt=_RECRUITER_REPAIR_SYSTEM,
-        reserve=int(config.workforce.mode == "strict"),
-    )
-    attempts = [*hybrid_attempts, *recruiter_attempts]
+    if len(batches) == 1:
+        proposal, recruiter_attempts, failure = _invoke_stage(
+            stage="recruiter",
+            providers=providers,
+            prompt=recruiter_prompt,
+            schema=NOMINATION_RESPONSE_SCHEMA,
+            system_prompt=_RECRUITER_SYSTEM,
+            budget=budget,
+            invoker=invoker,
+            parser=parse_verified_proposal,
+            before_provider=nomination_parser.reset,
+            repair_system_prompt=_RECRUITER_REPAIR_SYSTEM,
+            reserve=int(config.workforce.mode == "strict"),
+        )
+        attempts = [*hybrid_attempts, *recruiter_attempts]
+    else:
+        proposal, recruiter_attempts, failure = _recruit_in_batches(
+            recruiter_document,
+            batches,
+            nomination_parser,
+            providers=providers,
+            budget=budget,
+            invoker=invoker,
+            parser=parse_verified_proposal,
+            reserve=reserve,
+        )
+        attempts = [*hybrid_attempts, *recruiter_attempts]
     if isinstance(proposal, RecruiterProposal):
         workforce_cache_put(cache_identity, proposal)
     terminal_rejected_staffing = (

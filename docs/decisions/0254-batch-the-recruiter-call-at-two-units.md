@@ -72,9 +72,16 @@ shape and their prompt.
 
 ## Consequences
 
-- A five-unit plan costs three recruiter calls of roughly a third of the
-  size instead of one call that has needed two; the budget spends the same
-  or fewer calls when the single call would have been repaired.
+- A five-unit plan is asked in three calls of 53, 47 and 25 KB instead of
+  one call of 77 to 95 KB, and a batch repair re-asks at most two units.
+- The measured trade (four batched turns against two single-call turns of
+  the same wording, same day, same deployment): first replies were
+  rejected on 7 of 12 batch calls and on 2 of 2 single calls, all for
+  reply-shape reasons, so the batched turns spent 3 to 6 recruiter calls
+  where the single call spent 2, and two of the four batched turns were
+  then vetoed by the strict critic. Prompt size was not what made the
+  deployment's replies invalid; batching does not buy back calls on that
+  deployment, and the decision to keep it is the owner's on that evidence.
 - The recruiter no longer sees every unit's candidates at once; a
   cross-unit judgement it made from the whole team now relies on the
   earlier batches' rows it is shown, and the verifier and critic still judge

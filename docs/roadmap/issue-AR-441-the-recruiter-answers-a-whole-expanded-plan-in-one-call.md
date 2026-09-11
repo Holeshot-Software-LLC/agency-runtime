@@ -58,7 +58,27 @@ serves the recruiter route drops or malforms rows under that load.
 
 ## Current state
 
-Filed 2026-09-11 from the AR-438 measurement plan. Not repaired.
+Repaired on branch `claude/ar441-recruiter-batching-20260911` per ADR-0254:
+`_recruiter_batches` splits a plan of more than two units into batches of
+at most two in plan order, widened evenly when the remaining budget cannot
+afford one call per pair; `_recruiter_batch_document` slices the recruiter
+document to a batch's typed recall rows, the cards those rows, their sole
+eligible coverers and the hybrid additions reference, and the earlier
+batches' validated rows; `_NominationAccumulator` gains a batch scope, and
+the whole team is assembled and verified by the last batch's parse, with a
+verifier finding re-asking only the failed units through the existing
+repair contract. A one- or two-unit plan is recruited exactly as before. One
+decision-conformance anchor moved to name the single-call site uniquely.
+
+Measured in process before any merge
+([evidence](evidence/AR-441-batching-in-process-20260911.json)): on the
+five-unit wording the batch prompts are 53, 47 and 25 KB against 77 to 95
+KB, but 7 of 12 batch calls were rejected on their first reply (reply-shape
+failures of the serving deployment) against 2 of 2 single calls, so a
+batched turn spent 3 to 6 recruiter calls where the single call spent 2,
+and two of four batched turns then met a strict-critic veto. Smaller
+prompts did not lower the per-call failure rate. The merge is the owner's
+call on that evidence; the branch is complete, reviewed and not merged.
 
 ## Approach
 
