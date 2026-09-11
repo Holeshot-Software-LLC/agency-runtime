@@ -2408,6 +2408,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `55d44a54` | 2026-09-10 | fix(workforce): decide reviewer reuse on an independent team and name it in the repair | [AR-437](../roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | null |
 | `277ef23d` | 2026-09-10 | fix(workforce): merge PR862 reviewer independence | [AR-437](../roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | null |
 | `fa11e544` | 2026-09-10 | docs: record AR-437 live proof and the first live AR-433 pointer | [AR-437](../roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | null |
+| `943221b5` | 2026-09-10 | docs: merge PR864 AR-437 live proof | [AR-437](../roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
