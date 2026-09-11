@@ -28,9 +28,9 @@ A Claude session loads the Agency plugin once at start and every hook event
 in that session runs the launcher of the digest it loaded; that pin is what
 stops a mutable tree from redirecting hook code (see `runtime_staleness`).
 The owner's working session began on 2026-09-10 at 18:39Z on plugin
-`0.1.0-claude.9c63b87d75cd` (runtime `79138e80…`; every one of the 816 hook
-commands its transcript records names that projection, and its 48 Stop
-summaries all carry the generic reason). Later that evening the
+`0.1.0-claude.9c63b87d75cd` (runtime `79138e80…`; every hook command its
+transcript records names that projection, and every Stop summary from
+2026-09-10T21:35:44Z onward carries the generic reason). Later that evening the
 AR-436 rollout wrote `dashboard.durable_access: true` into `agency.yaml`, a
 key that runtime's configuration schema does not know. From the next turn
 on, every Stop hook in that session raised `ConfigValidationError:
