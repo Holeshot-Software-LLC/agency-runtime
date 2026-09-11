@@ -2432,6 +2432,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a9e2aaa7` | 2026-09-11 | fix(verifier): make a method of another shape advisory instead of dropping it | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 | `e3b67679` | 2026-09-11 | docs(roadmap): state the AR-439 acceptance in the shipped advisory form | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 | `e734495d` | 2026-09-11 | fix(verifier): merge PR876 advisory shape capabilities | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
+| `85ade968` | 2026-09-11 | fix(verifier): read risk-analysis as a shape capability, advisory beside the owned one | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
