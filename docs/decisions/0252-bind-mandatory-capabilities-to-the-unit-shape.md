@@ -67,9 +67,10 @@ mandates.
 2. **Only three kinds of capability are typed coverage.**
    `mandatory_capabilities` returns the artifact-owned capability, every
    capability outside the shape-defined vocabulary (`threat-modeling`,
-   `simulation`, `governance` and the like, which a card declares for
-   itself), and a declared `novel_capability`, which names work the roster
-   lacks and still reaches hiring as a gap. The shape vocabulary is exactly
+   `simulation` and the like, proven from a card's own declaration or a
+   token match over its audited vocabulary), and a declared
+   `novel_capability`, which names work the roster lacks and still reaches
+   hiring as a gap. The shape vocabulary is exactly
    what `_supports_planning_capability` decides from a card's typed fields:
    the twelve authority-and-lifecycle rules plus the `architecture` and
    `risk-analysis` readings. The first live measurement after the merge

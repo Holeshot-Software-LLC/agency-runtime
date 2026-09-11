@@ -393,3 +393,7 @@ def test_the_row_is_exactly_its_three_keys_with_the_closed_code() -> None:
 def test_the_planner_is_told_which_methods_are_mandatory() -> None:
     assert "a preference the recruiter weighs" in COMPACT_INTENT_SYSTEM
     assert "a read-only review-report cannot carry implementation" in COMPACT_INTENT_SYSTEM
+    # risk-analysis is a shape capability, so the prompt must not cite it as
+    # a mandatory specialty.
+    assert "such as threat-modeling or simulation" in COMPACT_INTENT_SYSTEM
+    assert "specialty such as risk-analysis" not in COMPACT_INTENT_SYSTEM
