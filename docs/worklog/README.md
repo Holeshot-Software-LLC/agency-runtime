@@ -2437,6 +2437,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `a4b3e255` | 2026-09-11 | fix(verifier): merge PR879 risk-analysis shape capability | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 | `003d31e6` | 2026-09-11 | docs(roadmap): record the AR-439 live measurement on the follow-up digest | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 | `76d1683b` | 2026-09-11 | docs(roadmap): close AR-439 with its acceptance verification record | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
+| `7641eaa6` | 2026-09-11 | docs(roadmap): merge PR881 AR-439 live measurement and close-out | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
