@@ -597,7 +597,7 @@ def test_ordinary_exact_text_without_restricted_environment_uses_workforce_plann
 
     assert calls == [_task()]
     # Without the canary environment the canary's one-unit review-report
-    # contract does not apply; the ordinary two-unit ceiling (AR-438) may.
-    assert planner_options[0].get("max_planned_units") != 1
-    assert "required_planned_artifact_kind" not in planner_options[0]
+    # contract does not apply; the canary wording is an ordinary ask, so the
+    # route applies exactly the two-unit ceiling (AR-438) and nothing else.
+    assert planner_options[0] == {"max_planned_units": 2}
     assert result["source"] == "workforce_inference"

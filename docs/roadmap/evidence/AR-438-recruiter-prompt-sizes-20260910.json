@@ -1,0 +1,94 @@
+{
+  "issue": "AR-438",
+  "scope": "Recruiter prompt sizes recorded by the AR-433 in-process diagnostic on 2026-09-10 (live gateway, live roster copy, one run per request per mode); bytes are the UTF-8 length of the recruiter's user prompt as sent. Local raw captures under ~/.agency-runtime/ephemeral/ar433-wrong-neighbor-20260910/.",
+  "recruiter_calls": [
+    {
+      "capture": "candidate-attempt1-unproven-receipt/create-handoff.json",
+      "plan_units": 6,
+      "recruiter_prompt_bytes": 90127,
+      "completion_tokens": 120,
+      "finish_reason": "stop",
+      "elapsed_ms": 892
+    },
+    {
+      "capture": "candidate-attempt1-unproven-receipt/merge-and-pause.json",
+      "plan_units": 3,
+      "recruiter_prompt_bytes": 60510,
+      "completion_tokens": 166,
+      "finish_reason": "stop",
+      "elapsed_ms": 2724
+    },
+    {
+      "capture": "candidate/create-handoff.json",
+      "plan_units": 6,
+      "recruiter_prompt_bytes": 91410,
+      "completion_tokens": 1012,
+      "finish_reason": "stop",
+      "elapsed_ms": 19829
+    },
+    {
+      "capture": "candidate/merge-and-pause.json",
+      "plan_units": 2,
+      "recruiter_prompt_bytes": 55945,
+      "completion_tokens": 521,
+      "finish_reason": "stop",
+      "elapsed_ms": 2451
+    },
+    {
+      "capture": "control-attempt1-unproven-receipt/create-handoff.json",
+      "plan_units": 6,
+      "recruiter_prompt_bytes": 90127,
+      "completion_tokens": 120,
+      "finish_reason": "stop",
+      "elapsed_ms": 15
+    },
+    {
+      "capture": "control-attempt1-unproven-receipt/merge-and-pause.json",
+      "plan_units": 3,
+      "recruiter_prompt_bytes": 60510,
+      "completion_tokens": 166,
+      "finish_reason": "stop",
+      "elapsed_ms": 20
+    },
+    {
+      "capture": "control/create-handoff.json",
+      "plan_units": 6,
+      "recruiter_prompt_bytes": 91410,
+      "completion_tokens": 3397,
+      "finish_reason": "stop",
+      "elapsed_ms": 14572
+    },
+    {
+      "capture": "control/create-handoff.json",
+      "plan_units": 6,
+      "recruiter_prompt_bytes": 93020,
+      "completion_tokens": 816,
+      "finish_reason": "stop",
+      "elapsed_ms": 4289
+    },
+    {
+      "capture": "control/create-handoff.json",
+      "plan_units": 6,
+      "recruiter_prompt_bytes": 91410,
+      "completion_tokens": null,
+      "finish_reason": "",
+      "elapsed_ms": 19547
+    },
+    {
+      "capture": "control/create-handoff.json",
+      "plan_units": 6,
+      "recruiter_prompt_bytes": 91688,
+      "completion_tokens": 422,
+      "finish_reason": "stop",
+      "elapsed_ms": 8684
+    },
+    {
+      "capture": "control/merge-and-pause.json",
+      "plan_units": 2,
+      "recruiter_prompt_bytes": 40169,
+      "completion_tokens": 393,
+      "finish_reason": "stop",
+      "elapsed_ms": 14112
+    }
+  ]
+}

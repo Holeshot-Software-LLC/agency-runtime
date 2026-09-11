@@ -758,12 +758,46 @@ def request_profile(request: str) -> RequestProfile:
 # work fits in two (the document and its review), and so does an install with
 # its verification.
 ORDINARY_UNIT_CEILING = 2
+# Change verbs the policy's mutation vocabulary does not know. They decide
+# nothing about required units; they only keep the ceiling off a request that
+# names a code noun beside one of them, so a wording the policy under-reads
+# leaves the planner free rather than losing units it may need (review of the
+# first draft: "migrate the service", "patch the vulnerability in the auth
+# service" were capped while plainly changing code).
+_BROAD_CHANGE_VERBS = _MUTATION | frozenset(
+    {
+        "complete",
+        "continue",
+        "convert",
+        "delete",
+        "extend",
+        "finish",
+        "handle",
+        "introduce",
+        "migrate",
+        "modify",
+        "patch",
+        "port",
+        "resolve",
+        "upgrade",
+        "write",
+    }
+)
 
 
 def planning_unit_ceiling(request: str) -> int | None:
-    """Return the unit ceiling for an ordinary ask, or None when the policy expands it."""
+    """Return the unit ceiling for an ordinary ask, or None when the planner must stay free.
 
-    return None if request_profile(request).shape_expanding else ORDINARY_UNIT_CEILING
+    None when the policy itself expands the shape, and None when a change verb
+    the policy may not know stands beside a code noun; two otherwise.
+    """
+
+    profile = request_profile(request)
+    if profile.shape_expanding:
+        return None
+    if profile.tokens & _BROAD_CHANGE_VERBS and profile.tokens & CODE_NOUN_TOKENS:
+        return None
+    return ORDINARY_UNIT_CEILING
 
 
 def plan_policy_violations(

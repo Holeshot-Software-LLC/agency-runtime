@@ -42,9 +42,10 @@ a larger shape, because it is the policy that demands those units.
 1. **The policy decides the ceiling.** `request_profile` exposes the exact
    classification `plan_policy_violations` applies; `planning_unit_ceiling`
    returns two units unless the profile is shape-expanding (a code mutation,
-   a security code review, a repository mapping, or regulated assurance), in
-   which case the existing limits apply. Documentation work, installs with
-   verification, merges, questions and reviews fit in two.
+   a security code review, a repository mapping, or regulated assurance) or
+   a change verb stands beside a code noun, in which cases the existing
+   limits apply. Documentation work, installs with verification, merges,
+   questions and reviews fit in two.
 2. **The pipeline passes it to the planner** as `max_planned_units`, after
    the activation-canary and contextual-inquiry contracts, which keep
    precedence. Explicit indivisible requests still plan one unit.
@@ -59,8 +60,13 @@ a larger shape, because it is the policy that demands those units.
 - A request that genuinely needs more units keeps its shape; the recruiter's
   omissions on those plans are the next package (batching the recruiter call
   by unit), not this one.
-- The ceiling is a token-level judgement of the request; a wording the policy
-  misreads keeps the larger shape rather than losing units it needs.
+- The ceiling is a token-level judgement of the request. A wording the policy
+  reads as shape-expanding keeps the larger shape. A wording it under-reads
+  keeps the planner free only when a change verb (the policy's own or a
+  broader list it does not enforce) stands beside a code noun; an under-read
+  wording with neither is capped, and a review of the first draft accepted
+  that trade because the policy demands nothing of such a plan and the
+  planner still chooses its two units.
 
 ## Alternatives
 

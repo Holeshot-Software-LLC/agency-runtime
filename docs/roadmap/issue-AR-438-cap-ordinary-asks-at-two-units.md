@@ -11,6 +11,7 @@ related:
   - docs/roadmap/issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
   - docs/roadmap/evidence/AR-437-live-proof-20260910.json
+  - docs/roadmap/evidence/AR-438-recruiter-prompt-sizes-20260910.json
 supersedes: []
 superseded_by: null
 type: issue
@@ -28,13 +29,19 @@ blocks: []
 
 Under strict staffing the turns that die do so at the recruiter, and they die
 on plan size. Since 2026-09-08 the most frequent recruiter rejection is
-`missing_work_unit` (57 rows across recovered and failed turns, none of them
-reply truncation): the recruiter answers a 56 KB prompt for a two-unit plan
-and a 91 KB prompt for a six-unit plan and drops units under that load. The
-second cause, `staff_without_safe_team` (14 rows), is coverage forcing on
-units the request never needed. Of 88 completed plans, 33 carried three to
-ten units; the one-paragraph review request that started this investigation
-drew two to four units per host. Every extra unit multiplies both failures.
+`missing_work_unit` (57 rows across recovered and failed turns, deduplicated
+over receipts, preflight results and routing decisions; none of them reply
+truncation): the recruiter answers a 56 KB prompt for a two-unit plan and a
+91 KB prompt for a six-unit plan (measured in the AR-433 in-process
+diagnostic,
+[AR-438-recruiter-prompt-sizes-20260910.json](evidence/AR-438-recruiter-prompt-sizes-20260910.json))
+and drops units under that load. The second cause, `staff_without_safe_team`
+(17 rows by the same count), is coverage forcing on units the request never
+needed. Of 88 completed plans, 33 carried three to ten units; roughly half
+of those are code-mutation shapes that keep their size, the rest review
+shapes the ceiling targets. The one-paragraph review request that started
+this investigation drew two to four units per host. Every extra unit
+multiplies both failures.
 
 ## Current state
 
@@ -46,7 +53,8 @@ mapping, regulated assurance), reusing the exact classification
 `max_planned_units`. The activation canary and contextual-inquiry contracts
 still take precedence. Regressions cover ordinary, documentation, merge,
 install and question wordings, the expanding shapes, negated scope, and the
-planning-options precedence.
+planning-options precedence, and the route-level option dict. One adversarial
+review pass added the route-level pin and the change-verb guard.
 
 ## Approach
 

@@ -54,6 +54,22 @@ def test_negated_scope_is_honoured_before_the_ceiling() -> None:
     assert planning_unit_ceiling("Explain the parser. Do not fix the code.") == 2
 
 
+def test_a_change_verb_beside_a_code_noun_leaves_the_planner_free() -> None:
+    # Review of the first draft: the policy's verb vocabulary is thin, so a
+    # wording it under-reads must not lose units. Any change verb beside a
+    # code noun lifts the ceiling; the policy still demands nothing.
+    for request in (
+        "Migrate the service to async and keep the tests green.",
+        "Delete the dead code in the parser and keep the tests green.",
+        "Patch the vulnerability in the auth service.",
+        "Modify the api handler and write tests for it.",
+    ):
+        assert not request_profile(request).shape_expanding, request
+        assert planning_unit_ceiling(request) is None, request
+    # Without a code noun the ask stays ordinary and fits in two units.
+    assert planning_unit_ceiling("Please modify the parser and write tests for it.") == 2
+
+
 def test_planning_options_apply_the_ceiling_only_to_ordinary_asks() -> None:
     decision = SimpleNamespace(execution_decision_required=True)
     inquiry = SimpleNamespace(execution_decision_required=False)
