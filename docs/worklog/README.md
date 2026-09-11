@@ -2429,6 +2429,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `ff2a093c` | 2026-09-11 | docs(roadmap): merge PR873 AR-434 handoff diagnostic and close-out | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
 | `5c02ea89` | 2026-09-11 | docs(roadmap): file AR-439 planner method capabilities force incoherent coverage | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 | `f0266afc` | 2026-09-11 | fix(planner): bind a unit's mandatory capabilities to its own artifact shape | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
+| `a9e2aaa7` | 2026-09-11 | fix(verifier): make a method of another shape advisory instead of dropping it | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
