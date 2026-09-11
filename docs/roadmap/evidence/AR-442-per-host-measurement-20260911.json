@@ -1,0 +1,220 @@
+{
+ "issue": "AR-442",
+ "decision": "ADR-0255",
+ "measured_at": "2026-09-11T19:14:56Z to 2026-09-11T19:29Z",
+ "runtime_digest": "50aae778c053",
+ "installed_main": "5c4e4787ff2a5bbae468be3e967cd7fc04acb723",
+ "fix_merge_commit": "c8cad54b",
+ "harness": "~/.agency-runtime/ephemeral/ar433-install-20260910/liveness.py, one host per call, default ordinary-review ask (manifest case 0), observer on the critic route",
+ "contract_sha256_live": "8b2fcafb072e92cfbde4184cd099b31c07cd2669e8956e67a85fc5eb3fe03fba",
+ "runs": [
+  {
+   "host": "claude",
+   "harness_tag": "-ar442-claude",
+   "native_session_id": "54811fa6-c978-4ff2-a4c3-d8b494ca2f7a",
+   "elapsed_seconds": 153.884,
+   "header_lines_present": 5,
+   "header_present": true,
+   "response_head": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: none observed\nRecruited via: failed; workforce",
+   "store_run": {
+    "run_id": "c8d50302-3c4b-4df8-b008-a3bb57048b61",
+    "trace_id": "0b0257cb-0c28-4aec-b1d1-e22766bbdf21",
+    "started_at": "2026-09-11T19:14:57.518213+00:00",
+    "status": "preflight_failed",
+    "finalization": [],
+    "staffing_reason_codes": [
+     "staffing_critic_rejected",
+     "critic_wrong_neighbor_selection"
+    ]
+   }
+  },
+  {
+   "host": "hermes",
+   "harness_tag": "-ar442-hermes",
+   "native_session_id": "20260911_151738_64c6f9",
+   "elapsed_seconds": 83.09,
+   "header_lines_present": 0,
+   "header_present": false,
+   "response_head": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\nDefects:\n- `[1.0, 2.0]` returns `1.0`, not `1.5`, because `//` is floor division. It disc",
+   "store_run": {
+    "run_id": "151e0749-f48f-4ac6-a138-078992a9c0a7",
+    "trace_id": "20260911_151738_64c6f9:65aa72ce-d688-4f55-b678-316f2475ed16:40408996",
+    "started_at": "2026-09-11T19:17:50.524000+00:00",
+    "status": "preflight_failed",
+    "finalization": [],
+    "staffing_reason_codes": [
+     "staffing_critic_rejected",
+     "critic_wrong_neighbor_selection"
+    ]
+   }
+  },
+  {
+   "host": "zcode",
+   "harness_tag": "-ar442-zcode",
+   "native_session_id": null,
+   "elapsed_seconds": 57.056,
+   "header_lines_present": 5,
+   "header_present": true,
+   "response_head": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: none observed\nRecruited via: failed; workforce",
+   "store_run": {
+    "run_id": "62c40804-03bf-4485-aa58-29c537d739ac",
+    "trace_id": "f421e8db-75a0-45ee-9322-df36887fa1fe",
+    "started_at": "2026-09-11T19:19:10.459689+00:00",
+    "status": "preflight_failed",
+    "finalization": [],
+    "staffing_reason_codes": [
+     "staffing_critic_rejected",
+     "critic_wrong_neighbor_selection"
+    ]
+   }
+  },
+  {
+   "host": "openclaw",
+   "harness_tag": "-ar442-openclaw",
+   "native_session_id": "agent:openclaw:ar433-liveness-ar442-openclaw",
+   "elapsed_seconds": 76.373,
+   "header_lines_present": 5,
+   "header_present": true,
+   "response_head": "Agency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforce inference: task-agenc",
+   "store_run": {
+    "run_id": "52d44ba3-760f-4465-8764-3e8c27b88d9e",
+    "trace_id": "5b66a7a1-90ac-4f31-8be0-76b2fd28d268",
+    "started_at": "2026-09-11T19:20:14.565000+00:00",
+    "status": "completed",
+    "finalization": [
+     {
+      "action": "accept",
+      "missing": null,
+      "terminal_status": "completed"
+     }
+    ],
+    "staffing_reason_codes": []
+   }
+  },
+  {
+   "host": "codex",
+   "harness_tag": "-ar442-codex",
+   "native_session_id": "01a091eb-0ae8-7860-bbd7-487503874aa1",
+   "elapsed_seconds": 9.644,
+   "header_lines_present": 0,
+   "header_present": false,
+   "response_head": "The function has two defects:\n\n- With `[1.0, 2.0]`, `//` performs floor division, returning `1.0` instead of the arithmetic mean, `1.5`. Use `/` to preserve fra",
+   "store_run": null
+  },
+  {
+   "host": "claude",
+   "harness_tag": "-ar442-claude-2",
+   "native_session_id": "eb9dafa1-d644-493d-ac17-83f4462fc379",
+   "elapsed_seconds": 80.279,
+   "header_lines_present": 5,
+   "header_present": true,
+   "response_head": "Agency/Agencies loaded: agency-steward, code-reviewer, silent-failure-hunter\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: workforc",
+   "store_run": {
+    "run_id": "10a99ea8-43be-4566-94b4-ef20f8a80415",
+    "trace_id": "645220fa-9c7b-4fdc-a0a3-e84f92e122ba",
+    "started_at": "2026-09-11T19:22:56.061828+00:00",
+    "status": "completed",
+    "finalization": [
+     {
+      "action": "accept",
+      "missing": null,
+      "terminal_status": "completed"
+     }
+    ],
+    "staffing_reason_codes": []
+   }
+  },
+  {
+   "host": "zcode",
+   "harness_tag": "-ar442-zcode-2",
+   "native_session_id": null,
+   "elapsed_seconds": 55.524,
+   "header_lines_present": 5,
+   "header_present": true,
+   "response_head": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: none observed\nRecruited via: failed; workforce",
+   "store_run": {
+    "run_id": "4089d055-5b84-46da-9ebc-ec3a199a7ac3",
+    "trace_id": "cae4c448-a648-4182-b298-fd6a399abe7e",
+    "started_at": "2026-09-11T19:24:17.028393+00:00",
+    "status": "preflight_failed",
+    "finalization": [],
+    "staffing_reason_codes": [
+     "staffing_critic_rejected",
+     "critic_wrong_neighbor_selection"
+    ]
+   }
+  },
+  {
+   "host": "hermes",
+   "harness_tag": "-ar442-hermes-2",
+   "native_session_id": "20260911_152511_a6e45f",
+   "elapsed_seconds": 90.112,
+   "header_lines_present": 5,
+   "header_present": true,
+   "response_head": "Warning: Unknown toolsets: agency-runtime, async-delegation, messaging\nAgency/Agencies loaded: agency-steward, code-reviewer\nAgency/Agencies delegated: none\nSki",
+   "store_run": {
+    "run_id": "0fe487bb-fc8e-4f5f-8a9c-c86269eb660f",
+    "trace_id": "20260911_152511_a6e45f:105ff9ce-25c2-4e31-a89e-c57294e7e3b0:8e7025e4",
+    "started_at": "2026-09-11T19:25:22.463000+00:00",
+    "status": "completed",
+    "finalization": [
+     {
+      "action": "accept",
+      "missing": null,
+      "terminal_status": "completed"
+     }
+    ],
+    "staffing_reason_codes": []
+   }
+  },
+  {
+   "host": "zcode",
+   "harness_tag": "-ar442-zcode-3",
+   "native_session_id": null,
+   "elapsed_seconds": 28.907,
+   "header_lines_present": 5,
+   "header_present": true,
+   "response_head": "Agency/Agencies loaded: agency-steward\nAgency/Agencies delegated: none\nSkills loaded: none\nActual Model selected: none observed\nRecruited via: failed; workforce",
+   "store_run": {
+    "run_id": "95105e52-9292-413e-bce2-d908b3f15b5d",
+    "trace_id": "fde696be-e7d3-478c-8f30-41ad7f533ed1",
+    "started_at": "2026-09-11T19:27:19.173990+00:00",
+    "status": "preflight_failed",
+    "finalization": [],
+    "staffing_reason_codes": [
+     "staffing_critic_rejected",
+     "critic_wrong_neighbor_selection"
+    ]
+   }
+  }
+ ],
+ "per_host_summary": {
+  "claude": "2 fresh turns: first preflight_failed (recruiter provider_response_contract_invalid x3 then critic_wrong_neighbor_selection) with all five header lines in the response; second completed, finalization accept, all five lines.",
+  "hermes": "2 fresh turns: first preflight_failed (critic_wrong_neighbor_selection); the model called agency_finalize with a headerless draft and the bridge returned {\"action\":\"continue\",\"text\":\"\",\"missing\":[]}, so the response carried no header; second completed, finalization accept, all five lines.",
+  "zcode": "3 fresh turns, all preflight_failed at critic_wrong_neighbor_selection (unit-correction-proposal, technical-consultant); every response carried all five header lines with Recruited via: failed and the reason codes. No refusal and no response_invalid.",
+  "openclaw": "1 fresh turn: completed, finalization accept, all five lines.",
+  "codex": "1 fresh exec turn answered in 9.6 s with no Agency run in the store: the reinstall left codex at activation-required (trust screen owed to the owner), so codex is unmeasured on this runtime."
+ },
+ "response_invalid_since_2026_09_08": {
+  "before_measurement": {
+   "claude": 1,
+   "codex": 2,
+   "hermes": 4,
+   "openclaw": 0,
+   "zcode": 3
+  },
+  "after_measurement": {
+   "claude": 1,
+   "codex": 2,
+   "hermes": 4,
+   "zcode": 3
+  },
+  "new_during_measurement": 0
+ },
+ "hermes_finalizer_observation": "agency_runtime/adapters/hermes/bridge.py _finalize returns text \"\" for every non-accept result, which drops the failed-preflight diagnostic header finalize_response builds (finalize.py preflight_failed branch); pre-existing, not changed by AR-442.",
+ "limits": [
+  "codex unmeasured (activation-required after reinstall)",
+  "zcode never reached completed on this wording in three turns; the header behaviour is measured on preflight_failed turns",
+  "the gateway may replay identical answers; latencies were 57 to 154 s so these were live calls"
+ ]
+}
