@@ -73,7 +73,8 @@ bracketed blocks exactly that way.
   claude that block and a representative INITIAL snapshot (472 UTF-16
   units) fill 1,771 of the 2,000-unit reserve between the retrieval and
   native ceilings; a test pins the contract inside that reserve. The
-  measured four-card delivery sits at 4,990 of 10,000 units.
+  repository's four-card delivery scenario measures 5,040 of 10,000 units on
+  claude and 5,248 of 10,000 characters on hermes.
 - Whether the sentences change a host model's behaviour is a live question;
   the AR-442 acceptance measures one fresh run per host on the ordinary
   review wording against the ten failed finalizations since 2026-09-08.

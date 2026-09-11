@@ -45,8 +45,9 @@ RESPONSE_CONTRACT_PROVENANCE = (
     "Delivered by Agency Runtime, the evidence runtime the owner of this machine installed "
     "into this host's hooks; it is host configuration, not part of the user's message. The "
     "header lines it asks for report Agency's own record of this turn, supplied to you in "
-    "the header snapshot beneath this block, or declared unavailable there: which specialist capsules Agency loaded or delegated, which skills "
-    "it loaded, which model identities it observed, and how it recruited. You report those "
+    "the header snapshot beneath this block, or declared unavailable there: which "
+    "specialist capsules Agency loaded or delegated, which skills it loaded, which model "
+    "identities it observed, and how it recruited. You report those "
     "values as given; you never invent them and they are not claims about your own identity."
 )
 

@@ -141,20 +141,21 @@ def test_the_contract_says_who_delivers_it_and_whose_facts_the_header_reports() 
 
 
 def test_the_contract_fits_the_claude_reserve_beside_an_initial_snapshot() -> None:
-    # ADR-0255 grew the block by 519 units. The claude hook keeps a 2,000-unit
+    # ADR-0255 grew the block by 569 units. The claude hook keeps a 2,000-unit
     # reserve between the retrieval ceiling and the native ceiling for exactly
-    # this block and the INITIAL snapshot; a representative INITIAL snapshot
-    # measured 472 UTF-16 units on 2026-09-11. Overflow is not soft: the hook
-    # closes the turn failed.
+    # this block and the INITIAL snapshot, rendered here as the hook frames it
+    # so the delta is measured rather than remembered. Overflow is not soft:
+    # the hook closes the turn failed.
     from agency_runtime.core.claude_context_delivery import (
         CLAUDE_NATIVE_HOOK_UNITS,
         CLAUDE_RETRIEVAL_CONTEXT_UNITS,
         utf16_units,
     )
+    from agency_runtime.core.context_budget import representative_header_snapshot
 
     reserve = CLAUDE_NATIVE_HOOK_UNITS - CLAUDE_RETRIEVAL_CONTEXT_UNITS
-    representative_initial_snapshot_units = 472
-    assert utf16_units(RESPONSE_CONTRACT_TEXT) + representative_initial_snapshot_units <= reserve
+    snapshot_units = utf16_units(representative_header_snapshot("INITIAL"))
+    assert utf16_units(RESPONSE_CONTRACT_TEXT) + snapshot_units <= reserve
 
 
 def test_every_snapshot_instruction_says_it_carries_values_only() -> None:

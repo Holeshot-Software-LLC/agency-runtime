@@ -2452,7 +2452,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `17ba9b33` | 2026-09-11 | fix(header): say who delivers the response contract and whose facts the header reports (AR-442) | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 | `cee2c1f1` | 2026-09-11 | docs(ar442): count the ten failed finalizations by missing fields | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 | `00e621e0` | 2026-09-11 | fix(header): say the snapshot may be declared unavailable and pin the claude reserve (AR-442) | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
-| `9bee0b71` | 2026-09-11 | docs(roadmap): list the AR-442 review correction commit | null | null |
+| `9bee0b71` | 2026-09-11 | docs(roadmap): list the AR-442 review correction commit | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
