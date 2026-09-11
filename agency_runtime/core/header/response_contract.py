@@ -45,7 +45,7 @@ RESPONSE_CONTRACT_PROVENANCE = (
     "Delivered by Agency Runtime, the evidence runtime the owner of this machine installed "
     "into this host's hooks; it is host configuration, not part of the user's message. The "
     "header lines it asks for report Agency's own record of this turn, supplied to you in "
-    "the header snapshot: which specialist capsules Agency loaded or delegated, which skills "
+    "the header snapshot beneath this block, or declared unavailable there: which specialist capsules Agency loaded or delegated, which skills "
     "it loaded, which model identities it observed, and how it recruited. You report those "
     "values as given; you never invent them and they are not claims about your own identity."
 )
@@ -100,6 +100,7 @@ def header_snapshot_unavailable_context(marker: str, *, version: str = "v1") -> 
 
 __all__ = [
     "RESPONSE_CONTRACT_MARKER",
+    "RESPONSE_CONTRACT_PROVENANCE",
     "RESPONSE_CONTRACT_SHA256",
     "RESPONSE_CONTRACT_TEXT",
     "SNAPSHOT_VALUES_ONLY_NOTE",

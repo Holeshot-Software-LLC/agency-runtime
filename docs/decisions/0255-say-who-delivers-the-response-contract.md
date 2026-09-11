@@ -50,7 +50,8 @@ bracketed blocks exactly that way.
    runtime the owner of this machine installed into this host's hooks, that
    it is host configuration and not part of the user's message, that the
    header lines report Agency's own record of the turn supplied in the
-   header snapshot (the specialist capsules loaded or delegated, the skills
+   header snapshot beneath the block, or declared unavailable there (the
+   specialist capsules loaded or delegated, the skills
    loaded, the model identities observed, how it recruited), and that the
    model reports those values as given, never invents them, and that they
    are not claims about the model's own identity.
@@ -68,8 +69,11 @@ bracketed blocks exactly that way.
 - A model that refuses to assert facts about itself is told, in the block
   itself, that it is asked to report the runtime's facts, with the source
   named.
-- The block grows by about five hundred characters on every host; the
-  claude native hook ceiling of 10,000 units is still far off.
+- The block grows by 569 characters on every host, from 730 to 1,299. On
+  claude that block and a representative INITIAL snapshot (472 UTF-16
+  units) fill 1,771 of the 2,000-unit reserve between the retrieval and
+  native ceilings; a test pins the contract inside that reserve. The
+  measured four-card delivery sits at 4,990 of 10,000 units.
 - Whether the sentences change a host model's behaviour is a live question;
   the AR-442 acceptance measures one fresh run per host on the ordinary
   review wording against the ten failed finalizations since 2026-09-08.

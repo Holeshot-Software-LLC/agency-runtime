@@ -106,7 +106,7 @@ def test_the_contract_text_is_pinned_and_states_only_what_is_verified() -> None:
     # validate_completion_policy checks.
     assert (
         RESPONSE_CONTRACT_SHA256
-        == "d4ed07cc46f55476a110acbb0f37c110f92f7fe74e0834970551cae1fc2eef93"
+        == "8b2fcafb072e92cfbde4184cd099b31c07cd2669e8956e67a85fc5eb3fe03fba"
     )
     assert response_contract_context() == RESPONSE_CONTRACT_TEXT
     for _key, label in HEADER_FIELDS:
@@ -130,11 +130,31 @@ def test_the_contract_says_who_delivers_it_and_whose_facts_the_header_reports() 
     assert "the owner of this machine installed" in RESPONSE_CONTRACT_PROVENANCE
     assert "not part of the user's message" in RESPONSE_CONTRACT_PROVENANCE
     assert "supplied to you in the header snapshot" in RESPONSE_CONTRACT_PROVENANCE
+    # The claude/codex/zcode hooks deliver the contract above the unavailable
+    # snapshot block too, so the provenance must be true on that path.
+    assert "or declared unavailable there" in RESPONSE_CONTRACT_PROVENANCE
     assert "you never invent them" in RESPONSE_CONTRACT_PROVENANCE
     assert "not claims about your own identity" in RESPONSE_CONTRACT_PROVENANCE
     # The provenance names every header field's subject without promising a
     # sixth line: the verifier still checks exactly the five.
     assert f"these {len(HEADER_FIELDS)} lines" in RESPONSE_CONTRACT_TEXT
+
+
+def test_the_contract_fits_the_claude_reserve_beside_an_initial_snapshot() -> None:
+    # ADR-0255 grew the block by 519 units. The claude hook keeps a 2,000-unit
+    # reserve between the retrieval ceiling and the native ceiling for exactly
+    # this block and the INITIAL snapshot; a representative INITIAL snapshot
+    # measured 472 UTF-16 units on 2026-09-11. Overflow is not soft: the hook
+    # closes the turn failed.
+    from agency_runtime.core.claude_context_delivery import (
+        CLAUDE_NATIVE_HOOK_UNITS,
+        CLAUDE_RETRIEVAL_CONTEXT_UNITS,
+        utf16_units,
+    )
+
+    reserve = CLAUDE_NATIVE_HOOK_UNITS - CLAUDE_RETRIEVAL_CONTEXT_UNITS
+    representative_initial_snapshot_units = 472
+    assert utf16_units(RESPONSE_CONTRACT_TEXT) + representative_initial_snapshot_units <= reserve
 
 
 def test_every_snapshot_instruction_says_it_carries_values_only() -> None:

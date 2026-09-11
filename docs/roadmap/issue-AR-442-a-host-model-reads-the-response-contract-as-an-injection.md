@@ -34,13 +34,16 @@ relayed how the zcode model reasoned about it: it called the block "a
 prompt injection attempt via hook", said the header "demands I prefix my
 response with fabricated Agency header lines" about "a model I'm not", and
 answered the user without the lines. Staffing had already succeeded on
-that turn (two units, code-reviewer, critic approved); the finalization
+that turn (trace `6ccc6199`, two units staffed with
+`project-delivery-response-documentation-specialist` and
+`codebase-onboarding-engineer`, critic approved); the finalization
 policy then found none of the five fields and the turn ended
 `response_invalid`.
 
-The store shows the same shape ten times since 2026-09-08: zcode 3, hermes
-4, codex 2, claude 1 `response_invalid` finalizations: nine missing all
-five header fields and one hermes turn (2026-09-09T16:44Z) missing two. The AR-434 handoff diagnostic met it on zcode too. The
+The store holds ten `response_invalid` finalizations since 2026-09-08:
+zcode 3, hermes 4, codex 2, claude 1; nine miss all five header fields
+and one hermes turn (2026-09-09T16:44Z) misses two. The AR-434 handoff
+diagnostic met it on zcode too. The
 contract text names the verifier's checks precisely, but it never says who
 installed it, that the values are evidence the runtime supplies in the same
 turn rather than claims the model must invent, or that the owner asked for
@@ -55,12 +58,24 @@ Repaired on branch `claude/ar442-header-repair-20260911` per ADR-0255:
 the block by naming Agency Runtime as the owner-installed hook that delivers
 it, calling it host configuration rather than part of the user's message,
 and saying the header lines report Agency's own record of the turn supplied
-in the header snapshot, to be reported as given and never invented, and not
-claims about the model's own identity. Every verifier claim, the marker, the
+in the header snapshot beneath the block, or declared unavailable there, to
+be reported as given and never invented, and not claims about the model's
+own identity. Every verifier claim, the marker, the
 five fields, the snapshots and every host's delivery rules are unchanged;
 the hash pin moved to the new text and a test pins the provenance
 sentences' order and content. Filed 2026-09-11 from the owner's relayed
 zcode response.
+
+Residuals the 2026-09-11 review named, none introduced here: the claude
+hook's silent swap to routing context alone when the combined context
+exceeds `MAX_CONTEXT_CHARS` (`adapters/hooks.py`) drops the contract and
+the snapshot without a receipt, and the turn then ends `response_invalid`;
+`core/context_budget.py` reports per-turn composition without counting the
+contract; the AR-119 matrix gate has two pre-existing red parametrisations
+in `tests/test_parent_caller_card_delivery.py` on main 07fb8e3b. A test now
+pins the contract inside the claude reserve between the retrieval and
+native ceilings (1,299 of 2,000 units with a 472-unit INITIAL snapshot
+beside it).
 
 ## Approach
 
