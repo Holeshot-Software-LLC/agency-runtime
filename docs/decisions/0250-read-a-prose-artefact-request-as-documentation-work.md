@@ -42,14 +42,17 @@ asked for a document that says where the code lives.
 1. **One narrow predicate, shared.** `prose_artifact_request(request)` in
    `plan_policy` reads the negated-scope-stripped request in token order and
    is true only when every mutation verb takes a prose artefact (handoff,
-   capsule, note, memo, summary, writeup, and their plurals) as its object
-   within a few filler tokens, every code noun in the shared vocabulary
+   capsule, note, memo, summary, writeup, and their plurals) as its whole
+   object, the noun ending its phrase at a boundary, preposition, conjunction
+   or participle so "add a summary field" is not "add a summary", within a
+   few filler tokens, every code noun in the shared vocabulary
    (`CODE_NOUN_TOKENS`, the policy's nouns plus the planner's `async`,
    `codebase`, `patch`) is locative (`code`, `codebase`, `repo`,
    `repository`), and no strong code verb (`build`, `debug`, `fix`,
    `implement`, `optimize`, `refactor`, `repair`, `rewrite`, `remove`)
-   appears. The policy and the deterministic planner call it on the same
-   text, so both read the same request the same way.
+   appears. The policy and the deterministic planner both call it on the raw
+   request and it strips the AR-415 disclaimer and the negated scope itself,
+   in that order, so both read the same request the same way.
 2. **Such a request is documentation work.** The policy requires the
    documentation unit and its review, never implementation or tests; the
    deterministic planner emits the documentation plan. The planner's
