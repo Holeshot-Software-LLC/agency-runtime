@@ -2460,6 +2460,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5ecd04e3` | 2026-09-11 | docs(ar442): record the per-host measurement on runtime 50aae778c053 | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 | `3c90d90b` | 2026-09-11 | docs(ar442): name the focused suites and node ids in the test artifact | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 | `d8af1aa7` | 2026-09-11 | docs(ar442): acceptance record, criterion 1 satisfied and criterion 2 contradicted | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
+| `250fe45d` | 2026-09-11 | merge: AR-442 measurement and acceptance record (PR #894) | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
