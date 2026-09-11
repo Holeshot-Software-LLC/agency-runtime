@@ -2420,6 +2420,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `5a1e6b3a` | 2026-09-11 | fix(planner): merge PR866 prose-artefact documentation | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
 | `2575b0e7` | 2026-09-11 | Merge remote-tracking branch 'origin/main' into claude/ar438-unit-ceiling-20260911 | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 | `d1842b0b` | 2026-09-11 | docs(roadmap): record the AR-438 verification-pass coverage residuals | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
+| `244aee08` | 2026-09-11 | fix(planner): merge PR869 ordinary-ask unit ceiling | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
