@@ -80,6 +80,52 @@ _CODE = frozenset(
 _DOCS = frozenset(
     {"comment", "comments", "documentation", "docs", "guide", "markdown", "prose", "readme"}
 )
+# AR-434 / ADR-0250: a request to produce a prose artefact (a handoff, a note,
+# a capsule, a summary) that merely says where the code lives is documentation
+# work. Live on 2026-09-10 "create a handoff ... where the code is" read as a
+# code mutation, the planner was forced to add implementation and test units,
+# and the strict critic then vetoed the team for lacking the lifecycle
+# assurance those units implied. The exemption is narrow: a prose artefact is
+# named, the only code tokens are locative, and no strong code verb appears.
+PROSE_ARTIFACT_TOKENS = frozenset(
+    {
+        "capsule",
+        "capsules",
+        "handoff",
+        "handoffs",
+        "memo",
+        "memos",
+        "note",
+        "notes",
+        "summaries",
+        "summary",
+        "writeup",
+        "writeups",
+    }
+)
+LOCATIVE_CODE_TOKENS = frozenset({"code", "codebase", "repo", "repository"})
+_STRONG_CODE_VERBS = frozenset(
+    {"build", "debug", "fix", "implement", "optimize", "refactor", "repair", "rewrite", "remove"}
+)
+
+
+def prose_artifact_request(tokens: Collection[str], code_tokens: Collection[str]) -> bool:
+    """Return whether the request asks for a prose artefact that only locates the code.
+
+    ``code_tokens`` is the caller's own code vocabulary hits so the policy and
+    the deterministic planner, whose code sets differ slightly, agree on one
+    rule: every code hit must be locative and no strong code verb may appear.
+    """
+
+    hits = frozenset(tokens)
+    return bool(
+        hits & _MUTATION
+        and hits & PROSE_ARTIFACT_TOKENS
+        and not hits & _STRONG_CODE_VERBS
+        and frozenset(code_tokens) <= LOCATIVE_CODE_TOKENS
+    )
+
+
 _SECURITY = frozenset(
     {
         "auth",
@@ -323,7 +369,12 @@ def planner_acceptance_contract() -> dict[str, object]:
         "repository_security_or_code_path_mapping": {
             "required_predecessor": "software-engineering analysis that maps repository code paths"
         },
-        "documentation_mutation": {"required_artifact_kinds": ["documentation", "review-report"]},
+        "documentation_mutation": {
+            "required_artifact_kinds": ["documentation", "review-report"],
+            # AR-434 / ADR-0250: naming one of these artefacts while only
+            # locating the code is documentation work, not a code mutation.
+            "prose_artifacts_are_documentation": sorted(PROSE_ARTIFACT_TOKENS),
+        },
         "install_deploy_or_release": {
             "required_downstream_artifact": (
                 "test-evidence whose outcome names the install/deploy/release operation in "
@@ -601,10 +652,13 @@ def plan_policy_violations(
 
     actionable_request = _NEGATED_SCOPE.sub(" ", _NEGATED_REQUEST_SCOPE.sub(" ", request))
     tokens = frozenset(_TOKENS.findall(actionable_request.casefold()))
+    prose_artifact = prose_artifact_request(tokens, tokens & _CODE)
     docs_mutation = bool(
         tokens & _MUTATION
-        and tokens & _DOCS
-        and not tokens & _CODE.difference({"repo", "repository"})
+        and (
+            (tokens & _DOCS and not tokens & _CODE.difference({"repo", "repository"}))
+            or prose_artifact
+        )
     )
     code_mutation = bool(tokens & _MUTATION and tokens & _CODE and not docs_mutation)
     inventory = _PlanInventory.from_plan(plan)
@@ -669,12 +723,15 @@ def plan_policy_violations(
 
 
 __all__ = [
+    "LOCATIVE_CODE_TOKENS",
     "PLAN_POLICY_VIOLATION_CODES",
     "PLAN_RESPONSE_SEMANTIC_INVALID",
     "PLAN_VALIDATION_REASON_CODES",
+    "PROSE_ARTIFACT_TOKENS",
     "plan_policy_repair_guidance",
     "plan_policy_violations",
     "plan_semantic_validation_reason_codes",
     "planner_acceptance_contract",
+    "prose_artifact_request",
     "regulated_assurance_requirements",
 ]
