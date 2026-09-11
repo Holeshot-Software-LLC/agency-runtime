@@ -2456,6 +2456,10 @@ This registry connects repository history to the roadmap and to optional detail 
 | `8d7f3e12` | 2026-09-11 | fix(header): measure the snapshot beside the contract and correct the recorded sizes (AR-442) | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 | `efbd4ec3` | 2026-09-11 | docs(roadmap): list the AR-442 size correction commit | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 | `c8cad54b` | 2026-09-11 | merge: AR-442 say who delivers the response contract (PR #892) | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
+| `5c4e4787` | 2026-09-11 | merge: AR-442 provenance merge ledger (PR #893) | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
+| `5ecd04e3` | 2026-09-11 | docs(ar442): record the per-host measurement on runtime 50aae778c053 | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
+| `3c90d90b` | 2026-09-11 | docs(ar442): name the focused suites and node ids in the test artifact | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
+| `d8af1aa7` | 2026-09-11 | docs(ar442): acceptance record, criterion 1 satisfied and criterion 2 contradicted | [AR-442](../roadmap/issue-AR-442-a-host-model-reads-the-response-contract-as-an-injection.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
