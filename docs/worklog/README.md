@@ -2413,6 +2413,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `eaf2c97f` | 2026-09-11 | fix(planner): bind the prose-artefact rule to the verb's object and share its code vocabulary | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
 | `7bbf1a79` | 2026-09-11 | fix(planner): cap ordinary asks at two planned units | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 | `3546e701` | 2026-09-11 | fix(planner): lift the ceiling beside a change verb and pin it at the route | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
+| `164d80b3` | 2026-09-11 | fix(planner): keep the ceiling on documentation asks and pin the route wiring | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
