@@ -488,7 +488,7 @@ not stable internal identifiers.
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
 | [AR-427](issue-AR-427-preserve-complete-inferred-specialist-team.md) | `176adc19`, `b265f715`, `23ae46bf` | [ADR-0245](../decisions/0245-preserve-complete-inferred-teams-during-delivery.md) |
-| [AR-440](issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | `031f2893`, `396e12e0`, `95c0968b`, `072e5f19` | [ADR-0253](../decisions/0253-name-the-stale-hook-runtime-when-a-turn-cannot-be-verified.md) |
+| [AR-440](issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | `031f2893`, `396e12e0`, `95c0968b`, `072e5f19`, `1eb3beb2` | [ADR-0253](../decisions/0253-name-the-stale-hook-runtime-when-a-turn-cannot-be-verified.md) |
 | [AR-439](issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | `5c02ea89`, `f0266afc`, `a9e2aaa7`, `e3b67679`, `e734495d`, `85ade968`, `6ed0f117`, `a4b3e255`, `003d31e6`, `76d1683b`, `7641eaa6` | [ADR-0252](../decisions/0252-bind-mandatory-capabilities-to-the-unit-shape.md) |
 | [AR-438](issue-AR-438-cap-ordinary-asks-at-two-units.md) | `7bbf1a79`, `3546e701`, `164d80b3`, `5dbcd98b`, `2575b0e7`, `d1842b0b`, `244aee08`, `5a5d0ffa`, `0c47a382`, `2416bb38` | [ADR-0251](../decisions/0251-cap-ordinary-asks-at-two-planned-units.md) |
 | [AR-437](issue-AR-437-enforce-reviewer-independence-the-plan-calls-for.md) | `ad167dc3`, `55d44a54`, `277ef23d`, `fa11e544` | [ADR-0249](../decisions/0249-enforce-the-reviewer-independence-the-plan-calls-for.md), [ADR-0213](../decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md) |
