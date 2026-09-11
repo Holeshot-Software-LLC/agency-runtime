@@ -2422,6 +2422,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `d1842b0b` | 2026-09-11 | docs(roadmap): record the AR-438 verification-pass coverage residuals | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 | `244aee08` | 2026-09-11 | fix(planner): merge PR869 ordinary-ask unit ceiling | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 | `5a5d0ffa` | 2026-09-11 | docs(roadmap): record the AR-438 four-host measurement after the reinstall | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
+| `0c47a382` | 2026-09-11 | docs(roadmap): close AR-438 with its acceptance verification record | [AR-438](../roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
