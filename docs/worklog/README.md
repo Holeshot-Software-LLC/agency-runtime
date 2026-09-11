@@ -2435,6 +2435,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `85ade968` | 2026-09-11 | fix(verifier): read risk-analysis as a shape capability, advisory beside the owned one | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 | `6ed0f117` | 2026-09-11 | fix(planner): stop citing risk-analysis as a mandatory specialty in the planner prompt | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 | `a4b3e255` | 2026-09-11 | fix(verifier): merge PR879 risk-analysis shape capability | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
+| `003d31e6` | 2026-09-11 | docs(roadmap): record the AR-439 live measurement on the follow-up digest | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
