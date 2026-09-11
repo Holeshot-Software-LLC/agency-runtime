@@ -419,11 +419,11 @@
     }
   },
   "findings": [
-    "Batching cut the recruiter prompt from 77-95 KB to 53-70 KB, 47-51 KB and 25-33 KB for the three batches of a five-unit plan under the first draft, and to 37, 41 and 25 KB under the corrected slice (largest first batch 69,736 bytes with 82 cards in the first draft; the corrected slice shows only the batch rows' candidate cards).",
+    "Batching cut the recruiter prompt from 77-95 KB to 53-70 KB, 47-51 KB and 25-33 KB for the three batches of a five-unit plan in the first-draft samples (largest first batch 69,736 bytes with 82 cards) and to 37, 41 and 25 KB in the corrected-prompt sample; the slice code is the same in both, and the smaller first batch of the later sample comes from a different planner draw with fewer recall cards (34 against 49), not from a code change.",
     "Under the first draft (system prompt still asking for every planned unit) 7 of 12 batch calls were rejected on their first reply against 2 of 2 single calls; with n=2 the single-call rate is unmeasurable, and the batched turns spent 3 to 6 recruiter calls where the single call spent 2.",
     "Under the batch-aware system prompt, one independent turn (its twin was a gateway replay) was accepted with 1 rejection in 3 batch calls (invalid_ranking on the last batch) and 4 recruiter calls, no critic veto.",
     "Every rejected batch reply was repaired within its batch; two of the four first-draft batched turns were then vetoed by the strict critic with wrong-neighbour pointers on the discovery unit.",
-    "The baseline first replies were content failures too (provider_model_text_not_json and an unusable units object), not transport failures; the deployment rejects on shape at every size measured, and the batch-aware prompt is the one variable that moved the rate in the one sample taken."
+    "The baseline first replies were content failures too (provider_model_text_not_json and an unusable units object), not transport failures; the deployment rejects on shape at every size measured. The corrected-prompt sample differs from the first draft in the system prompt and in its planner and recall draw, so its lower rejection count cannot be attributed to the prompt alone."
   ],
   "limits": "Small samples; the batch-aware prompt was measured once (its twin was a replay); the single-call form has two samples; no controlled A/B beyond the same wording on the same day; batched documents carry a hybrid_recall block that the second baseline sample lacked because its reranker attempt was rejected."
 }

@@ -70,7 +70,8 @@ shipped default strict budget of five leaves the single call main makes);
 typed recall rows, the cards those rows' candidates, sole eligible coverers
 and hybrid additions reference, and the earlier batches' validated rows; a
 batch is asked with a batch-aware system prompt that names its listed units
-only; `_NominationAccumulator` gains a batch scope; after the last batch the
+only; the batch count also reserves the one whole-team repair call, so the
+owner machine's budget of eight asks two batches for five units; `_NominationAccumulator` gains a batch scope; after the last batch the
 whole team is assembled and verified once, and a finding re-asks only the
 failed units in one scoped call whose document carries those units' recall
 rows and cards, with the reply the verifier refused recorded rejected. A
@@ -86,7 +87,10 @@ fixed in the second commit.
 
 Measured in process
 ([evidence](evidence/AR-441-batching-in-process-20260911.json)): the
-five-unit wording's batch prompts are 37, 41 and 25 KB against 77 to 95 KB.
+five-unit wording's batch prompts were 53 to 70, 47 to 51 and 25 to 33 KB in
+the first-draft samples and 37, 41 and 25 KB in the corrected-prompt sample
+(a different planner draw with fewer recall cards; the slice code did not
+change) against 77 to 95 KB for the single call.
 Under the first draft 7 of 12 batch calls were rejected on their first reply
 (reply-shape failures) against 2 of 2 single calls, so batched turns spent 3
 to 6 recruiter calls where the single call spent 2, and two of four were

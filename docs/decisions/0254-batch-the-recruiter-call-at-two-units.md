@@ -70,19 +70,23 @@ shape and their prompt.
    Rows from different providers may meet in one proposal because the
    verifier judges the merged team deterministically.
 4. **Budget decides the batch count, never the outcome.** Every batch must
-   afford one repair beside the critic's reserve: when the remaining strict
-   budget cannot, the batches are widened evenly to what it can afford, down
-   to the single call main makes (the shipped default budget of five leaves
-   that single call); the receipt's recruiter attempt count shows how many
-   were made. The cache identity is the unsliced document, so a cached
+   afford one repair, and the whole-team repair after verification one more
+   call, beside the critic's reserve: when the remaining strict budget
+   cannot, the batches are widened evenly to what it can afford, down to
+   the single call main makes (the shipped default budget of five leaves
+   that single call; the owner machine's eight asks two batches for five
+   units, nine asks three); the receipt's recruiter attempt count shows how
+   many were made. The cache identity is the unsliced document, so a cached
    proposal is reused whole.
 5. **Nothing else moves.** The verifier, the critic, the validators, the
    hiring path and the receipt vocabulary are unchanged.
 
 ## Consequences
 
-- A five-unit plan is asked in three calls of 37, 41 and 25 KB instead of
-  one call of 77 to 95 KB, and a repair re-asks at most the failed units.
+- A five-unit plan is asked in two or three calls (by budget) whose measured
+  sizes ran from 25 to 70 KB against one call of 77 to 95 KB; the 37, 41
+  and 25 KB of the corrected-prompt sample came with a smaller recall draw,
+  not a smaller slicer. A repair re-asks at most the failed units.
 - The measured trade so far (same wording, same day, same deployment): the
   first draft, whose batches still carried the "every planned unit" system
   sentence, was rejected on 7 of 12 batch first replies against 2 of 2

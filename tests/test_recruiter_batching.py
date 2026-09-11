@@ -239,19 +239,26 @@ def test_the_split_is_two_units_in_plan_order_and_widens_to_the_budget() -> None
         }
     )
     assert RECRUITER_UNITS_PER_CALL == 2
-    assert _recruiter_batches(plan, _CallBudget(8), 1) == (
+    assert _recruiter_batches(plan, _CallBudget(8), 0) == (
         ("unit-1", "unit-2"),
         ("unit-3", "unit-4"),
         ("unit-5",),
     )
-    # Every batch must afford one repair beside the critic's reserve: five
-    # remaining calls less the reserve afford two batches, widened evenly.
+    # Every batch must afford one repair, plus one whole-team repair call,
+    # beside the critic's reserve: eight calls with the reserve afford two
+    # batches, widened evenly; nine afford three.
     budget = _CallBudget(8)
-    for _ in range(3):
-        budget.consume()
+    budget.consume()  # the planner's call
     assert _recruiter_batches(plan, budget, 1) == (
         ("unit-1", "unit-2", "unit-3"),
         ("unit-4", "unit-5"),
+    )
+    nine = _CallBudget(9)
+    nine.consume()
+    assert _recruiter_batches(plan, nine, 1) == (
+        ("unit-1", "unit-2"),
+        ("unit-3", "unit-4"),
+        ("unit-5",),
     )
     # The shipped default strict budget (5) leaves the single call main made.
     default = _CallBudget(5)
@@ -260,7 +267,7 @@ def test_the_split_is_two_units_in_plan_order_and_widens_to_the_budget() -> None
         ("unit-1", "unit-2", "unit-3", "unit-4", "unit-5"),
     )
     # Nothing affordable still asks once; the stage refuses on budget as before.
-    for _ in range(5):
+    for _ in range(6):
         budget.consume()
     assert _recruiter_batches(plan, budget, 1) == (
         ("unit-1", "unit-2", "unit-3", "unit-4", "unit-5"),
@@ -530,9 +537,9 @@ def test_a_verifier_finding_on_an_earlier_batch_is_repaired_with_that_units_card
     assert outcome.accepted, outcome.abstention_codes
     assert outcome.calls_used == 5
     statuses = [attempt.status for attempt in outcome.attempts if attempt.stage == "recruiter"]
-    # The last batch's reply completed a team the verifier refused: recorded
+    # The reply that staffed the refused unit (batch two) is recorded
     # rejected with the verifier's row, then one scoped repair.
-    assert statuses == ["applied", "applied", "rejected", "applied"]
+    assert statuses == ["applied", "rejected", "applied", "applied"]
     rejected = next(a for a in outcome.attempts if a.status == "rejected")
     assert rejected.validation_detail == (
         "workforce staffing verification failures: unit-review=review_reviewer_reused"
@@ -551,15 +558,15 @@ def test_a_verifier_finding_on_an_earlier_batch_is_repaired_with_that_units_card
 
 
 def test_the_budget_widens_the_batches_instead_of_failing_them() -> None:
-    # Budget 5: the planner spends one, four calls remain, which afford two
-    # batches with a repair each, so three and two units instead of three
-    # batches.
+    # Budget 6: the planner spends one, five calls remain, which afford two
+    # batches with a repair each plus the whole-team repair, so three and
+    # two units instead of three batches.
     outcome, prompts = _run(
         [
             _rows(["unit-discovery", "unit-implementation", "unit-tests"]),
             _rows(["unit-review", "unit-evidence"]),
         ],
-        budget=5,
+        budget=6,
     )
     assert outcome.accepted
     assert outcome.calls_used == 3

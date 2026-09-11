@@ -4286,10 +4286,11 @@ def _recruiter_batches(
     if len(unit_ids) <= RECRUITER_UNITS_PER_CALL:
         return (unit_ids,)
     wanted = -(-len(unit_ids) // RECRUITER_UNITS_PER_CALL)
-    # Every batch must be able to afford its own repair beside the critic's
+    # Every batch must be able to afford its own repair, and the whole-team
+    # repair after verification needs one more call, all beside the critic's
     # reserve; a budget that cannot asks fewer, wider batches, down to the
     # single call main made.
-    affordable = max(1, (budget.remaining - max(reserve, 0)) // 2)
+    affordable = max(1, (budget.remaining - max(reserve, 0) - 1) // 2)
     count = min(wanted, affordable)
     size, extra = divmod(len(unit_ids), count)
     batches: list[tuple[str, ...]] = []
@@ -4421,6 +4422,7 @@ def _recruit_in_batches(
     """
 
     attempts: list[WorkforceInferenceAttempt] = []
+    applied_index: dict[str, int] = {}
     for ordinal, batch_ids in enumerate(batches, start=1):
         batch_document, shown = _recruiter_batch_document(
             document,
@@ -4446,6 +4448,8 @@ def _recruit_in_batches(
         attempts.extend(batch_attempts)
         if rows is None:
             return None, attempts, failure or "workforce_inference_failed"
+        for unit_id in batch_ids:
+            applied_index[unit_id] = len(attempts) - 1
     try:
         return assemble(), attempts, ""
     except (_NominationValidationError, _StaffingVerificationError) as exc:
@@ -4456,12 +4460,13 @@ def _recruit_in_batches(
             exc.repair_unit_ids = failed
         else:
             failed = tuple(dict.fromkeys(f.unit_id for f in exc.failures))
-        if attempts and attempts[-1].status == "applied":
-            # The last reply was applied for its batch; the merged team it
-            # completed was refused, so it is recorded the way the
-            # single-call stage records a reply the verifier refused.
-            attempts[-1] = replace(
-                attempts[-1],
+        # The reply that staffed the first refused unit is recorded the way
+        # the single-call stage records a reply the verifier refused; the
+        # detail names every refused unit.
+        refused = applied_index.get(failed[0], len(attempts) - 1) if failed else len(attempts) - 1
+        if attempts and attempts[refused].status == "applied":
+            attempts[refused] = replace(
+                attempts[refused],
                 status="rejected",
                 reason_code="provider_response_contract_invalid",
                 validation_detail=_validation_detail(exc),
