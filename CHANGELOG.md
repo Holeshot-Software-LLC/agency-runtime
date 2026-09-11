@@ -86,10 +86,10 @@ changes rather than duplicating every commit.
 ## Unreleased
 
 - Refuse a review-report unit staffed by a worker selected on the unit it
-  reviews when the recruiter ranked an eligible alternative, as the repairable
-  verifier finding `review_reviewer_reused` with recruiter repair guidance;
-  without an alternative the reviewed unit keeps the advisory
-  `independent_assurance_missing` (AR-437, ADR-0249).
+  reviews when an independent covering team exists in the recruiter's own
+  ranking, as the repairable verifier finding `review_reviewer_reused` with
+  repair feedback naming the reused worker and the reviewed unit; when no such
+  team exists the verifier adds nothing (AR-437, ADR-0249).
 
 - Add an owner opt-in for durable dashboard access: `dashboard.durable_access`
   (or `agency dashboard service install --durable-access`) keeps one

@@ -5,9 +5,9 @@ analysis unit plus a review-report unit whose outcome said "independently
 review" it, with ``code-reviewer`` staffed on both while other eligible
 reviewers were ranked. The strict critic vetoed that shape on two hosts and
 approved it on two others. The verifier now refuses the reuse as a repairable
-failure when an eligible alternative was ranked, so the recruiter repairs the
-team before the critic sees it, and keeps it advisory when no alternative
-exists.
+failure when an independent covering team exists in the recruiter's own
+executable ranking, so the recruiter repairs the team before the critic sees
+it, and adds nothing when no such team exists.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ from agency_runtime.core.workforce.staffing_verifier import (
     ADVISORY_STAFFING_CODES,
     STAFFING_VERIFIER_REASON_CODES,
     AbstentionReason,
+    verify_staffing,
 )
 from tests.test_workforce_inference import (
     _config,
@@ -92,7 +93,7 @@ def _nomination(review_rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _run(*replies: dict[str, Any]) -> tuple[Any, list[str]]:
+def _run(*replies: dict[str, Any], contracts=None) -> tuple[Any, list[str]]:
     clear_workforce_caches()
     responses = iter((_result(_plan()), *(_result(reply) for reply in replies)))
     prompts: list[str] = []
@@ -103,7 +104,7 @@ def _run(*replies: dict[str, Any]) -> tuple[Any, list[str]]:
 
     outcome = plan_and_staff_workforce(
         _REQUEST,
-        _snapshot(_reviewer("code-reviewer"), _reviewer("silent-failure-hunter")),
+        _snapshot(*(contracts or (_reviewer("code-reviewer"), _reviewer("silent-failure-hunter")))),
         config=_config(),
         context=_context(),
         invoker=invoke,
@@ -134,6 +135,10 @@ def test_the_captured_shape_is_repaired_before_the_critic_sees_it() -> None:
         == (_STAFFING_VIOLATION_REPAIR_REQUIREMENTS["review_reviewer_reused"])
     )
     assert "not selected on any unit it reviews" in violation["required_correction"]
+    # The repair names what the verifier validated: the reused worker and the
+    # unit it reviews, identifiers only.
+    assert violation["reused_workers"] == ["code-reviewer"]
+    assert violation["reviewed_units"] == [_ANALYSIS]
     staffed = {unit.unit_id: unit.selected for unit in outcome.staffing.units}
     assert staffed == {_ANALYSIS: ("code-reviewer",), _REVIEW: ("silent-failure-hunter",)}
     assert outcome.staffing.abstention_reasons == ()
@@ -154,7 +159,10 @@ def test_the_finding_names_the_reused_worker_and_the_reviewed_unit() -> None:
     assert "review_reviewer_reused" not in ADVISORY_STAFFING_CODES
 
 
-def test_without_an_eligible_alternative_the_reuse_stays_advisory() -> None:
+def test_without_an_independent_team_the_verifier_adds_nothing() -> None:
+    # No other reviewer ranked: the team stays staffable and no code changes
+    # meaning (the advisory independent_assurance_missing stays a modify-unit
+    # finding, which keeps gap hiring's per-unit rule intact).
     only_reviewer = _nomination([_nominee("code-reviewer", 0.99)])
     outcome, _ = _run(only_reviewer)
 
@@ -164,9 +172,80 @@ def test_without_an_eligible_alternative_the_reuse_stays_advisory() -> None:
         _ANALYSIS: ("code-reviewer",),
         _REVIEW: ("code-reviewer",),
     }
-    assert outcome.staffing.abstention_reasons == (
-        AbstentionReason("independent_assurance_missing", _ANALYSIS),
+    assert outcome.staffing.abstention_reasons == ()
+
+
+def test_an_eligible_worker_that_cannot_cover_the_unit_alone_is_no_alternative() -> None:
+    # The candidate is eligible for the review unit but covers no review-report
+    # artifact, so no independent covering team exists and the reuse stands.
+    partial = replace(
+        _reviewer("partial-analyst"),
+        artifact_kinds=("analysis",),
+        lifecycle_phases=("discovery",),
     )
+    reused = _nomination(
+        [_nominee("code-reviewer", 0.99), _nominee("partial-analyst", 0.9, "acceptable")]
+    )
+    outcome, _ = _run(reused, contracts=(_reviewer("code-reviewer"), partial))
+
+    assert outcome.accepted
+    assert outcome.calls_used == 2
+    assert {unit.unit_id: unit.selected for unit in outcome.staffing.units} == {
+        _ANALYSIS: ("code-reviewer",),
+        _REVIEW: ("code-reviewer",),
+    }
+    assert outcome.staffing.abstention_reasons == ()
+
+
+def test_a_forbidden_candidate_is_no_alternative() -> None:
+    reused = _nomination(
+        [_nominee("code-reviewer", 0.99), _nominee("silent-failure-hunter", 0.9, "forbidden")]
+    )
+    outcome, _ = _run(reused)
+
+    assert outcome.accepted
+    assert outcome.calls_used == 2
+    assert outcome.staffing.abstention_reasons == ()
+
+
+def test_the_rule_reads_the_after_artifact_timing_like_its_siblings() -> None:
+    # A verify_staffing replay with the review row's timing altered shows the
+    # rule bound to the same predicate _has_assurance and _composition use.
+    reused = _nomination(
+        [_nominee("code-reviewer", 0.99), _nominee("silent-failure-hunter", 0.9, "acceptable")]
+    )
+    repaired = _nomination(
+        [_nominee("silent-failure-hunter", 0.99), _nominee("code-reviewer", 0.9, "acceptable")]
+    )
+    outcome, _ = _run(reused, repaired)
+    assert outcome.accepted
+    contracts = (_reviewer("code-reviewer"), _reviewer("silent-failure-hunter"))
+
+    def review_row(timing: str):
+        row = next(item for item in outcome.proposal.units if item.unit_id == _REVIEW)
+        # Put the reused reviewer back on the review unit; the ranking still
+        # holds the independent alternative, so only the timing decides.
+        return replace(
+            row,
+            selected=("code-reviewer",),
+            required=("code-reviewer",),
+            acceptable=("silent-failure-hunter",),
+            timing=timing,
+        )
+
+    def codes(timing: str) -> set[str]:
+        altered = replace(
+            outcome.proposal,
+            units=tuple(
+                review_row(timing) if row.unit_id == _REVIEW else row
+                for row in outcome.proposal.units
+            ),
+        )
+        decision = verify_staffing(outcome.plan, altered, contracts, context=_context())
+        return {reason.code for reason in decision.abstention_reasons}
+
+    assert "review_reviewer_reused" in codes("after_artifact")
+    assert "review_reviewer_reused" not in codes("immediate")
 
 
 def test_an_independent_team_passes_untouched() -> None:
