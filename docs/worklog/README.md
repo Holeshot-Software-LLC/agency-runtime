@@ -2433,6 +2433,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `e3b67679` | 2026-09-11 | docs(roadmap): state the AR-439 acceptance in the shipped advisory form | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 | `e734495d` | 2026-09-11 | fix(verifier): merge PR876 advisory shape capabilities | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 | `031f2893` | 2026-09-11 | docs(roadmap): file AR-440 stale hook runtime blocks every turn without naming itself | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
+| `396e12e0` | 2026-09-11 | fix(hooks): name the stale hook runtime when a turn cannot be verified | [AR-440](../roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
