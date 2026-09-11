@@ -35,7 +35,8 @@ carry the shortfall `retrieved_coverer_not_selected` and 4
 rejection spent a repair; 14 sit on seven failed turns, four of them on the
 one turn that died of `no_safe_sufficient_team` and the rest on turns the
 critic, the confidence gate or the reviewer-independence rule ended after
-the rejections had consumed the budget. In each the recruiter ranked the
+the rejections had consumed the budget, and one on a turn that ended as
+`inference_invalid`. In each the recruiter ranked the
 faithful specialists for the unit (a lone `code-reviewer` for a review unit,
 `software-test-engineer` first for a test unit, `codebase-onboarding-engineer`
 first for a repository analysis) and the verifier refused the team because
@@ -105,7 +106,10 @@ none of 95 modify-authority cards) is still mandatory and still starves under
 the ADR-0198 waiver rules; advisory rows are recorded only when a planner
 call is spent, so a measurement over cached plans undercounts them; the
 preflight-failure receipt's node budget leaves seven fully populated
-rejected attempts of headroom beside a 16-row advisory detail.
+rejected attempts of headroom beside a 16-row advisory detail. The recruiter
+prompt still shows the unit's full `required_capabilities` beside a typed
+requirement set that omits the advisory ones; no instruction asks it to
+cover the former, but a sentence saying so would remove the ambiguity.
 
 ## Approach
 
@@ -126,14 +130,16 @@ only with the wrong specialist.
 
 ## Acceptance
 
-- [ ] A planner-named capability whose support rule cannot be met by a card of
-      the unit's own shape is dropped by the compiler, and one whose rule can
-      be met, a specialty outside the shape vocabulary, and a declared novel
-      capability are kept; the observed shapes (`implementation` on a review-report,
-      `analysis` on a test-code unit, `coordination` on an implementation
-      change, `planning` on an analysis) are pinned, and the existing
-      compiler drops still hold.
-- [ ] Every dropped capability reaches both durable receipts as a closed row
+- [ ] A shape-defined capability the planner names beside the artifact-owned
+      one is no typed coverage requirement, while the owned capability, a
+      specialty outside the shape vocabulary and a declared novel capability
+      are; the unit keeps every planner-named capability; the observed shapes
+      (`implementation` on a review-report, `analysis` on a test-code unit,
+      `coordination` on an implementation change, `planning` on an analysis)
+      are pinned, a lone reviewer covers a review that named
+      `implementation`, an undeclared specialty still surfaces as a hiring
+      gap, and the existing compiler drops still hold.
+- [ ] Every advisory capability reaches both durable receipts as a closed row
       on the applied planner attempt, and a malformed row projects blank
       rather than partially; the focused, named fast and decision-conformance
       checks pass.

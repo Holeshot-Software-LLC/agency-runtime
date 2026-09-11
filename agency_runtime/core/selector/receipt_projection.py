@@ -105,7 +105,8 @@ _PLAN_ADVISORY_CODE = "plan_capability_advisory"
 _PLAN_ADVISORY_KEYS = frozenset({"unit_id", "reason_code", "advisory_capability_ids"})
 _MAX_PLAN_ADVISORY_ROWS = 16
 _MAX_ADVISORY_CAPABILITIES = 3
-# The ontology admits identifiers up to 128 characters (capability_ontology).
+# The reader admits any ontology identifier (up to 128 characters); the writer
+# only ever emits the closed shape vocabulary, whose longest id is 14.
 _CAPABILITY_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}$")
 _GLOBAL_UNIT = "global"
 # A waived typed requirement (ADR-0198) is, by construction, an identifier some

@@ -31,9 +31,9 @@ describes, and a plan must not describe a pool that contradicts itself.
 
 Every recruiter rejection recorded as `staff_without_safe_team` since
 2026-09-08 (17 unit rows: 3 on turns that later staffed, 14 on failed turns,
-of which 4 on the one turn that died of that code and the rest on turns the
-critic, confidence or reviewer-independence gates then ended) is on the
-capability axis. The compact intent planner names up to three
+of which 4 on the one turn that died of that code, 9 on turns the critic,
+confidence or reviewer-independence gates then ended, and 1 on a turn that
+ended as `inference_invalid`) is on the capability axis. The compact intent planner names up to three
 `capability_ids` per unit and the verifier turned each into a mandatory
 `capability:<id>` typed requirement. Coverage of a shape-defined capability
 is proven by `_CAPABILITY_RULES`, which read what a card is: `implementation`
@@ -82,9 +82,12 @@ mandates.
    projects the attempt blank rather than partially, as ADR-0246 does for
    critic pointers. A cached plan spends no attempt and records nothing new.
 4. **Nothing else moves.** The existing per-token compiler drops stay as
-   explicit pins. Artifact, lifecycle, stack and authority coverage, the
-   waiver of what the roster cannot serve (ADR-0198), eligibility, the
-   recruiter prompt, the critic and the validators are unchanged. The planner
+   explicit pins. Artifact, lifecycle, stack and authority coverage,
+   eligibility, the recruiter prompt, the critic and the validators are
+   unchanged. The ADR-0198 waiver mechanism is unchanged and its input set
+   only narrows: a shape capability can no longer become a waived token or a
+   roster-wide hiring gap, which today's roster never produced (every shape
+   capability has at least four declarers). The planner
    prompt says which capabilities are mandatory coverage.
 
 ## Consequences
