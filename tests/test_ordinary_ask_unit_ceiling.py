@@ -94,3 +94,15 @@ def test_planning_options_apply_the_ceiling_only_to_ordinary_asks() -> None:
         "required_planned_artifact_kind": "analysis",
     }
     assert _workforce_planning_options(decision, activation_canary=False) == {}
+
+
+def test_the_route_passes_the_request_text_to_the_planning_options() -> None:
+    # Review of the first draft: the whole live effect is one keyword argument
+    # at the route; pin it so a refactor cannot drop it with a green suite.
+    import inspect
+
+    from agency_runtime.core.selector import pipeline
+
+    source = inspect.getsource(pipeline)
+    assert "request_text=request.user_message," in source
+    assert source.count("_workforce_planning_options(") == 2

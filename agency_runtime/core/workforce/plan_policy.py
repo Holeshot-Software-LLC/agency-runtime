@@ -766,7 +766,6 @@ ORDINARY_UNIT_CEILING = 2
 # service" were capped while plainly changing code).
 _BROAD_CHANGE_VERBS = _MUTATION | frozenset(
     {
-        "complete",
         "continue",
         "convert",
         "delete",
@@ -795,7 +794,11 @@ def planning_unit_ceiling(request: str) -> int | None:
     profile = request_profile(request)
     if profile.shape_expanding:
         return None
-    if profile.tokens & _BROAD_CHANGE_VERBS and profile.tokens & CODE_NOUN_TOKENS:
+    if (
+        not profile.docs_mutation
+        and profile.tokens & _BROAD_CHANGE_VERBS
+        and profile.tokens & CODE_NOUN_TOKENS
+    ):
         return None
     return ORDINARY_UNIT_CEILING
 
