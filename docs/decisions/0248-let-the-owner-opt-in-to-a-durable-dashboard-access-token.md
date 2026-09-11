@@ -3,9 +3,10 @@ title: "Let the owner opt in to a durable dashboard access token"
 status: accepted
 category: decisions
 created: 2026-09-10
-updated: 2026-09-10
+updated: 2026-09-11
 tags: [dashboard, security, operations]
 related:
+  - docs/roadmap/issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md
   - docs/roadmap/issue-AR-436-durable-dashboard-access-without-a-terminal.md
   - docs/decisions/0029-secure-local-dashboard-and-bounded-observability.md
   - docs/decisions/0031-optional-user-dashboard-service-and-shared-configuration.md
