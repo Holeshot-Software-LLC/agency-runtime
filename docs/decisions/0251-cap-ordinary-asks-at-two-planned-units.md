@@ -6,6 +6,7 @@ created: 2026-09-11
 updated: 2026-09-11
 tags: [workforce, planner, plan-policy, inference]
 related:
+  - docs/roadmap/issue-AR-441-the-recruiter-answers-a-whole-expanded-plan-in-one-call.md
   - docs/roadmap/issue-AR-438-cap-ordinary-asks-at-two-units.md
   - docs/decisions/0250-read-a-prose-artefact-request-as-documentation-work.md
   - docs/decisions/0249-enforce-the-reviewer-independence-the-plan-calls-for.md

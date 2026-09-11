@@ -46,6 +46,7 @@ bounded package are in AR-404's
 | Internal ID | Item | Status | Priority | Epic | Tracker mapping |
 |---|---|---|---|---|---|
 | `AR-427` | [Preserve the complete inferred specialist team during hydration](issue-AR-427-preserve-complete-inferred-specialist-team.md) | done | p1 | reliability | [#825](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/825) |
+| `AR-441` | [The recruiter answers a whole expanded plan in one call](issue-AR-441-the-recruiter-answers-a-whole-expanded-plan-in-one-call.md) | open | p1 | reliability | [#887](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/887) |
 | `AR-440` | [A stale hook runtime blocks every turn without naming itself](issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | done | p2 | reliability | [#878](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/878) |
 | `AR-439` | [Planner method capabilities force incoherent team coverage](issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | done | p1 | reliability | [#875](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/875) |
 | `AR-438` | [Cap ordinary asks at two planned units](issue-AR-438-cap-ordinary-asks-at-two-units.md) | done | p1 | reliability | [#867](https://github.com/Holeshot-Software-LLC/agency-runtime/issues/867) |
@@ -488,6 +489,7 @@ not stable internal identifiers.
 | Roadmap item | Implementation commits | Governing decisions |
 |---|---|---|
 | [AR-427](issue-AR-427-preserve-complete-inferred-specialist-team.md) | `176adc19`, `b265f715`, `23ae46bf` | [ADR-0245](../decisions/0245-preserve-complete-inferred-teams-during-delivery.md) |
+| [AR-441](issue-AR-441-the-recruiter-answers-a-whole-expanded-plan-in-one-call.md) | (filed; no implementation commit) | [ADR-0254](../decisions/0254-batch-the-recruiter-call-at-two-units.md) |
 | [AR-440](issue-AR-440-a-stale-hook-runtime-blocks-every-turn-without-naming-itself.md) | `031f2893`, `396e12e0`, `95c0968b`, `072e5f19`, `1eb3beb2`, `df4e3faf`, `13d567d1`, `bebeae20`, `bdb47930` | [ADR-0253](../decisions/0253-name-the-stale-hook-runtime-when-a-turn-cannot-be-verified.md) |
 | [AR-439](issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | `5c02ea89`, `f0266afc`, `a9e2aaa7`, `e3b67679`, `e734495d`, `85ade968`, `6ed0f117`, `a4b3e255`, `003d31e6`, `76d1683b`, `7641eaa6` | [ADR-0252](../decisions/0252-bind-mandatory-capabilities-to-the-unit-shape.md) |
 | [AR-438](issue-AR-438-cap-ordinary-asks-at-two-units.md) | `7bbf1a79`, `3546e701`, `164d80b3`, `5dbcd98b`, `2575b0e7`, `d1842b0b`, `244aee08`, `5a5d0ffa`, `0c47a382`, `2416bb38` | [ADR-0251](../decisions/0251-cap-ordinary-asks-at-two-planned-units.md) |
