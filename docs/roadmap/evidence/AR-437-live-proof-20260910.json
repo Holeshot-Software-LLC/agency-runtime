@@ -1,0 +1,523 @@
+{
+  "issue": "AR-437",
+  "scope": "One fresh native ordinary-review turn per host on 2026-09-11 (UTC) after the 9a197830 rollout (runtime digest cd0e9c4e on all five hosts), observed on the critic route with the owner config restored byte-exact; store read-only. Single samples; planner and recruiter are stochastic. Two earlier batch launches were killed by the machine's low-memory watchdog before any provider call; the second of those left the critic profile pointed at the dead observer port, which was restored through the runtime's locked config writer before these runs.",
+  "runtime_digests": {
+    "claude": "cd0e9c4ea20d3ff1a55ad0a53c41994e519e4e83bdba531216f8e1e7cc8fc245",
+    "codex": "cd0e9c4ea20d3ff1a55ad0a53c41994e519e4e83bdba531216f8e1e7cc8fc245",
+    "hermes": "cd0e9c4ea20d3ff1a55ad0a53c41994e519e4e83bdba531216f8e1e7cc8fc245",
+    "zcode": "cd0e9c4ea20d3ff1a55ad0a53c41994e519e4e83bdba531216f8e1e7cc8fc245",
+    "openclaw": "cd0e9c4ea20d3ff1a55ad0a53c41994e519e4e83bdba531216f8e1e7cc8fc245"
+  },
+  "batches": {
+    "claude_hermes": {
+      "owner_config_restored_byte_exact": true,
+      "observer_errors": [],
+      "captured_packets": 1,
+      "hosts": {
+        "claude": {
+          "native_session_id": "8f3e085d-87ec-48b9-b235-00f27502aacf",
+          "exit_code": 0,
+          "timeout": false,
+          "elapsed_seconds": 137.363
+        },
+        "hermes": {
+          "native_session_id": "20260910_212733_139a38",
+          "exit_code": 0,
+          "timeout": false,
+          "elapsed_seconds": 131.68
+        }
+      },
+      "critic_packets": [
+        {
+          "capture": "1747826842037624.json",
+          "started_at_epoch": 1789090161.7456741,
+          "plan_units": [
+            [
+              "unit-analysis-defect",
+              "analysis",
+              []
+            ],
+            [
+              "unit-tests-proposed",
+              "test-code",
+              [
+                "unit-analysis-defect"
+              ]
+            ],
+            [
+              "unit-review-correctness",
+              "review-report",
+              [
+                "unit-analysis-defect",
+                "unit-tests-proposed"
+              ]
+            ]
+          ],
+          "proposal_rows": [
+            {
+              "unit_id": "unit-analysis-defect",
+              "selected": [
+                "code-reviewer"
+              ],
+              "ranked_executable": [
+                "code-reviewer"
+              ],
+              "timing": "immediate"
+            },
+            {
+              "unit_id": "unit-tests-proposed",
+              "selected": [
+                "software-test-engineer",
+                "document-generator"
+              ],
+              "ranked_executable": [
+                "software-test-engineer",
+                "python-application-engineer",
+                "document-generator"
+              ],
+              "timing": "immediate"
+            },
+            {
+              "unit_id": "unit-review-correctness",
+              "selected": [
+                "code-reviewer"
+              ],
+              "ranked_executable": [
+                "code-reviewer"
+              ],
+              "timing": "after_artifact"
+            }
+          ],
+          "verified_staffing": [
+            [
+              "unit-analysis-defect",
+              [
+                "code-reviewer"
+              ]
+            ],
+            [
+              "unit-tests-proposed",
+              [
+                "software-test-engineer",
+                "document-generator"
+              ]
+            ],
+            [
+              "unit-review-correctness",
+              [
+                "code-reviewer"
+              ]
+            ]
+          ],
+          "verifier_abstention_codes": [],
+          "contract_wrong_neighbor_pointer_required": true,
+          "critic_reply": {
+            "approved": false,
+            "reason_codes": [
+              "wrong-neighbor-selection"
+            ],
+            "wrong_neighbors": [
+              {
+                "unit_id": "unit-tests-proposed",
+                "selected_agent_id": "document-generator",
+                "neighbor_agent_id": "python-application-engineer"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "zcode_openclaw": {
+      "owner_config_restored_byte_exact": true,
+      "observer_errors": [],
+      "captured_packets": 1,
+      "hosts": {
+        "zcode": {
+          "native_session_id": null,
+          "exit_code": 0,
+          "timeout": false,
+          "elapsed_seconds": 69.803
+        },
+        "openclaw": {
+          "native_session_id": "agent:openclaw:ar433-liveness-3b",
+          "exit_code": 0,
+          "timeout": false,
+          "elapsed_seconds": 119.212
+        }
+      },
+      "critic_packets": [
+        {
+          "capture": "1747900712173827.json",
+          "started_at_epoch": 1789090236.6206415,
+          "plan_units": [
+            [
+              "unit-defect-analysis",
+              "analysis",
+              []
+            ],
+            [
+              "unit-correction-proposal",
+              "review-report",
+              [
+                "unit-defect-analysis"
+              ]
+            ]
+          ],
+          "proposal_rows": [
+            {
+              "unit_id": "unit-defect-analysis",
+              "selected": [
+                "code-reviewer"
+              ],
+              "ranked_executable": [
+                "code-reviewer",
+                "silent-failure-hunter"
+              ],
+              "timing": "immediate"
+            },
+            {
+              "unit_id": "unit-correction-proposal",
+              "selected": [
+                "code-reviewer"
+              ],
+              "ranked_executable": [
+                "code-reviewer"
+              ],
+              "timing": "after_artifact"
+            }
+          ],
+          "verified_staffing": [
+            [
+              "unit-defect-analysis",
+              [
+                "code-reviewer"
+              ]
+            ],
+            [
+              "unit-correction-proposal",
+              [
+                "code-reviewer"
+              ]
+            ]
+          ],
+          "verifier_abstention_codes": [],
+          "contract_wrong_neighbor_pointer_required": true,
+          "critic_reply": {
+            "approved": true,
+            "reason_codes": []
+          }
+        }
+      ]
+    }
+  },
+  "store_runs": [
+    {
+      "host": "claude",
+      "session_id": "a3f135ee-70f7-44ad-b679-08705c17425e",
+      "trace_id": "7340f877-80bd-490f-a0c4-d135cbf035a1",
+      "started_at": "2026-09-11T01:24:24.648259+00:00",
+      "status": "session_ended",
+      "specialists_loaded": [],
+      "failure_receipt": null,
+      "recruiter_and_critic_attempts": []
+    },
+    {
+      "host": "claude",
+      "session_id": "8f3e085d-87ec-48b9-b235-00f27502aacf",
+      "trace_id": "edbda945-957f-4645-be76-e68350e4d939",
+      "started_at": "2026-09-11T01:25:16.555118+00:00",
+      "status": "preflight_failed",
+      "specialists_loaded": [],
+      "failure_receipt": {
+        "reason_code": "workforce_inference_failed",
+        "staffing_reason_codes": [
+          "review_reviewer_reused"
+        ]
+      },
+      "recruiter_and_critic_attempts": [
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-defect-analysis"
+            }
+          ],
+          "validation_reason_codes": [
+            "recruiter_unit_row_shape_invalid"
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "maximum_selected_per_unit": 4,
+              "ranked_agent_ids": "software-architect~code-reviewer~backend-architect~type-design-analyzer~silent-failure-hunter",
+              "ranked_executable_count": 2,
+              "reason_code": "staff_without_safe_team",
+              "required_agent_count": 1,
+              "requirement_axis": "capability",
+              "safe_team_shortfall": "retrieved_coverer_not_selected",
+              "unit_id": "unit-correction-proposal"
+            }
+          ],
+          "validation_reason_codes": null
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "maximum_selected_per_unit": 4,
+              "ranked_agent_ids": "code-reviewer~backend-architect",
+              "ranked_executable_count": 2,
+              "reason_code": "staff_without_safe_team",
+              "required_agent_count": 1,
+              "requirement_axis": "capability",
+              "safe_team_shortfall": "retrieved_coverer_not_selected",
+              "unit_id": "unit-correction-proposal"
+            }
+          ],
+          "validation_reason_codes": null
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "reason_code": "review_reviewer_reused",
+              "unit_id": "unit-independent-review"
+            }
+          ],
+          "validation_reason_codes": null
+        }
+      ]
+    },
+    {
+      "host": "hermes",
+      "session_id": "20260910_212733_139a38",
+      "trace_id": "20260910_212733_139a38:19577095-97a4-4629-95ec-4a8c44ce22ea:b64f628e",
+      "started_at": "2026-09-11T01:27:45.419000+00:00",
+      "status": "preflight_failed",
+      "specialists_loaded": [],
+      "failure_receipt": {
+        "reason_code": "workforce_inference_failed",
+        "staffing_reason_codes": [
+          "staffing_critic_rejected",
+          "critic_wrong_neighbor_selection"
+        ]
+      },
+      "recruiter_and_critic_attempts": [
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "maximum_selected_per_unit": 4,
+              "ranked_agent_ids": "software-test-engineer~python-application-engineer~test-automation-engineer~minimal-change-engineer~solidity-smart-contract-engineer~threat-detection-engineer",
+              "ranked_executable_count": 3,
+              "reason_code": "staff_without_safe_team",
+              "required_agent_count": 1,
+              "requirement_axis": "capability",
+              "safe_team_shortfall": "retrieved_coverer_not_selected",
+              "unit_id": "unit-tests-proposed"
+            }
+          ],
+          "validation_reason_codes": null
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "maximum_selected_per_unit": 4,
+              "ranked_agent_ids": "software-test-engineer~test-automation-engineer~python-application-engineer~roblox-systems-scripter",
+              "ranked_executable_count": 3,
+              "reason_code": "staff_without_safe_team",
+              "required_agent_count": 1,
+              "requirement_axis": "capability",
+              "safe_team_shortfall": "retrieved_coverer_not_selected",
+              "unit_id": "unit-tests-proposed"
+            }
+          ],
+          "validation_reason_codes": null
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "maximum_selected_per_unit": 4,
+              "ranked_agent_ids": "software-test-engineer~python-application-engineer",
+              "ranked_executable_count": 2,
+              "reason_code": "staff_without_safe_team",
+              "required_agent_count": 1,
+              "requirement_axis": "capability",
+              "safe_team_shortfall": "retrieved_coverer_not_selected",
+              "unit_id": "unit-tests-proposed"
+            }
+          ],
+          "validation_reason_codes": null
+        },
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_failures": null,
+          "validation_reason_codes": null
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_failures": [
+            {
+              "neighbor_agent_id": "python-application-engineer",
+              "reason_code": "critic_wrong_neighbor_selection",
+              "selected_agent_id": "document-generator",
+              "unit_id": "unit-tests-proposed"
+            }
+          ],
+          "validation_reason_codes": null
+        }
+      ]
+    },
+    {
+      "host": "zcode",
+      "session_id": "sess_71b1593c-a3f0-4cf8-9a46-d9851c4bf9e4",
+      "trace_id": "720ad50e-3031-4535-a227-7f567d0ec04a",
+      "started_at": "2026-09-11T01:29:54.424868+00:00",
+      "status": "completed",
+      "specialists_loaded": [
+        "code-reviewer"
+      ],
+      "failure_receipt": null,
+      "recruiter_and_critic_attempts": [
+        {
+          "stage": "recruiter",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_failures": null,
+          "validation_reason_codes": null
+        },
+        {
+          "stage": "critic",
+          "status": "applied",
+          "reason_code": "structured_response_applied",
+          "validation_failures": null,
+          "validation_reason_codes": null
+        }
+      ]
+    },
+    {
+      "host": "openclaw",
+      "session_id": "agent:openclaw:ar433-liveness-3b",
+      "trace_id": "1cad97dc-1934-436f-9b1b-fd83504126fa",
+      "started_at": "2026-09-11T01:31:06.029000+00:00",
+      "status": "preflight_failed",
+      "specialists_loaded": [],
+      "failure_receipt": {
+        "reason_code": "workforce_inference_failed",
+        "staffing_reason_codes": [
+          "inference_invalid"
+        ]
+      },
+      "recruiter_and_critic_attempts": [
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-defect-analysis"
+            },
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-fix-proposal"
+            },
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-proposed-tests"
+            },
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-static-review"
+            }
+          ],
+          "validation_reason_codes": [
+            "recruiter_response_shape_invalid"
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "maximum_selected_per_unit": 4,
+              "ranked_agent_ids": "code-reviewer",
+              "ranked_executable_count": 1,
+              "reason_code": "staff_without_safe_team",
+              "required_agent_count": 1,
+              "requirement_axis": "capability",
+              "safe_team_shortfall": "retrieved_coverer_not_selected",
+              "unit_id": "unit-fix-proposal"
+            }
+          ],
+          "validation_reason_codes": null
+        },
+        {
+          "stage": "recruiter",
+          "status": "rejected",
+          "reason_code": "provider_response_contract_invalid",
+          "validation_failures": [
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-defect-analysis"
+            },
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-fix-proposal"
+            },
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-proposed-tests"
+            },
+            {
+              "reason_code": "missing_work_unit",
+              "unit_id": "unit-static-review"
+            }
+          ],
+          "validation_reason_codes": [
+            "recruiter_unit_row_shape_invalid"
+          ]
+        },
+        {
+          "stage": "recruiter",
+          "status": "failed",
+          "reason_code": "provider_model_text_not_json",
+          "validation_failures": null,
+          "validation_reason_codes": null
+        }
+      ]
+    }
+  ],
+  "findings": [
+    "claude: the recruiter was rejected four times (missing_work_unit, staff_without_safe_team twice, then review_reviewer_reused on unit-independent-review) and the turn ended preflight_failed with review_reviewer_reused on the receipt: the new rule fired live and is named on the durable receipt, but the recruiter's repair budget was already spent on coverage failures, so no repaired independent team was reached.",
+    "hermes: the recruiter ranked only code-reviewer on the review unit (executable ranking of one), so no independent covering team existed and the verifier added nothing, as designed; the strict critic then vetoed the test-code unit with a wrong-neighbor-selection claim carrying a verified pointer (document-generator -> python-application-engineer), the first live receipt row for the AR-433 pointer contract.",
+    "zcode: the recruiter again ranked only code-reviewer on the review unit; the reuse was accepted with no finding and the critic approved, consistent with the rule's no-alternative branch.",
+    "openclaw: the recruiter failed on missing_work_unit and staff_without_safe_team across four attempts on a four-unit plan and the turn ended inference_invalid; unrelated to this rule.",
+    "Follow-up: the rule can only bite when the recruiter ranks an independent reviewer; the recruiter contract does not yet ask it to, so a recruiter that ranks a single reviewer on a review unit leaves the reuse in place. Steering the recruiter to rank at least one reviewer not selected on the reviewed units is the next bounded lift."
+  ],
+  "raw_capture": "/home/holeshot/.agency-runtime/ephemeral/ar433-install-20260910/{critic-packets-3a,critic-packets-3b,runs-3a,runs-3b} (local, outside the repository)"
+}

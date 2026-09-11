@@ -12,6 +12,7 @@ related:
   - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
   - docs/decisions/0213-the-verifier-judges-safety-retrieval-judges-fit.md
   - docs/roadmap/evidence/AR-433-install-liveness-20260910.json
+  - docs/roadmap/evidence/AR-437-live-proof-20260910.json
 supersedes: []
 superseded_by: null
 type: issue
@@ -49,6 +50,21 @@ vetoed packet `silent-failure-hunter` and `type-design-analyzer` were ranked
 and eligible on the review unit.
 
 ## Current state
+
+Merged in PR862 at `277ef23d` (ledger PR863, main `9a197830`) and rolled out
+to all five hosts on runtime digest `cd0e9c4e`. Live on the exact
+ordinary-review request (one turn per host,
+[AR-437-live-proof-20260910.json](evidence/AR-437-live-proof-20260910.json)):
+on claude the rule fired and `review_reviewer_reused` reached the durable
+receipt, but the recruiter's repair budget had already gone to coverage
+failures so the turn ended unstaffed rather than repaired; on hermes and
+zcode the recruiter ranked only one reviewer on the review unit, so no
+independent team existed and the verifier added nothing (zcode staffed the
+reuse and the critic approved; hermes was vetoed on an unrelated, pointer-
+verified wrong-neighbour claim); openclaw failed at the recruiter for
+unrelated coverage reasons. The rule is live and consistent with its design;
+its next bounded lift is steering the recruiter to rank an independent
+reviewer so the fatal branch can repair instead of only refuse.
 
 Repaired on branch `claude/ar437-reviewer-independence-20260910` per ADR-0249:
 the verifier's `_reviewer_reuse` refuses a review-report unit staffed by a
