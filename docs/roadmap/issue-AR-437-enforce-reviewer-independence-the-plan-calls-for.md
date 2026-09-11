@@ -6,6 +6,7 @@ created: 2026-09-10
 updated: 2026-09-10
 tags: [workforce, staffing, verifier, critic, reliability]
 related:
+  - docs/decisions/0249-enforce-the-reviewer-independence-the-plan-calls-for.md
   - docs/roadmap/issue-AR-433-name-the-neighbour-a-wrong-neighbour-veto-points-at.md
   - docs/roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md
   - docs/decisions/0200-bind-the-strict-critic-to-the-advisory-doctrine.md
@@ -49,8 +50,15 @@ and eligible on the review unit.
 
 ## Current state
 
-Filed from the AR-433 install evidence; no repair yet. Evidence: the critic
-packets summarised in
+Repaired on branch `claude/ar437-reviewer-independence-20260910` per ADR-0249:
+the verifier's `_reviewer_reuse` refuses a review-report unit staffed by a
+worker selected on a unit it reviews as the repairable failure
+`review_reviewer_reused` when the recruiter ranked an eligible alternative,
+with repair guidance to rank a different worker as required for the review
+unit; without an alternative the reviewed unit keeps the advisory
+`independent_assurance_missing`. Regressions reproduce the captured shape,
+the finding's identity, the advisory case and an independent team. Evidence:
+the critic packets summarised in
 [AR-433-install-liveness-20260910.json](evidence/AR-433-install-liveness-20260910.json)
 and their raw captures beside the install directory.
 

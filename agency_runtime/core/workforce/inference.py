@@ -1186,6 +1186,14 @@ _STAFFING_VIOLATION_REPAIR_REQUIREMENTS: Final[Mapping[str, str]] = {
         "The derived teams together exceed maximum_selected_total; reduce required candidates "
         "across units."
     ),
+    # AR-437 / ADR-0249: the plan's review unit calls for an independent
+    # reviewer and the recruiter ranked an eligible one it did not select.
+    "review_reviewer_reused": (
+        "This review unit independently reviews an earlier unit, and a worker selected on "
+        "that reviewed unit is also selected here, so the review is not independent. Rank a "
+        "different eligible ranked worker as required for this review unit, one not selected "
+        "on any unit it reviews; the reviewed unit's own team may stay as it is."
+    ),
 }
 
 
