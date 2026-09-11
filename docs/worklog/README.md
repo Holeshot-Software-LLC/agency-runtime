@@ -2427,6 +2427,7 @@ This registry connects repository history to the roadmap and to optional detail 
 | `f31ad2a8` | 2026-09-11 | docs(roadmap): record the AR-434 fresh handoff diagnostic on five hosts | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
 | `c5e7fbd8` | 2026-09-11 | docs(roadmap): close AR-434 with its acceptance verification record | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
 | `ff2a093c` | 2026-09-11 | docs(roadmap): merge PR873 AR-434 handoff diagnostic and close-out | [AR-434](../roadmap/issue-AR-434-plan-policy-reads-a-handoff-request-as-a-code-mutation.md) | null |
+| `5c02ea89` | 2026-09-11 | docs(roadmap): file AR-439 planner method capabilities force incoherent coverage | [AR-439](../roadmap/issue-AR-439-planner-method-capabilities-force-incoherent-coverage.md) | null |
 <!-- worklog:end -->
 
 ## Provenance notes
