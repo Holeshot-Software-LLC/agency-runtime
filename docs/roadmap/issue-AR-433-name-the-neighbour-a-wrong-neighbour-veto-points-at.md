@@ -15,6 +15,7 @@ related:
   - docs/roadmap/evidence/AR-433-critic-veto-population-20260910.json
   - docs/roadmap/evidence/AR-433-live-diagnostic-20260910.json
   - docs/roadmap/evidence/AR-433-install-liveness-20260910.json
+  - docs/roadmap/evidence/AR-437-live-proof-20260910.json
   - docs/roadmap/issue-AR-435-install-into-the-openclaw-version-the-host-runs.md
 supersedes: []
 superseded_by: null
@@ -93,7 +94,12 @@ staffed teams; claude (twice) and openclaw were vetoed on
 `missing-lifecycle-assurance-the-plan-calls-for`, a ground this issue does not
 touch, so that veto is a new observation, not a regression of this repair.
 Codex re-enters `activation-required` after every digest change and needs the
-owner's Trust screen before a fresh Codex turn can prove anything. Details in
+owner's Trust screen before a fresh Codex turn can prove anything. On
+2026-09-11 a fresh hermes turn on the same request produced the first live
+verified pointer: the critic vetoed with `wrong-neighbor-selection` naming
+`unit-tests-proposed`, `document-generator` and `python-application-engineer`,
+and the row reached the durable receipt as designed
+([AR-437-live-proof-20260910.json](evidence/AR-437-live-proof-20260910.json)). Details in
 [AR-433-install-liveness-20260910.json](evidence/AR-433-install-liveness-20260910.json).
 
 Population evidence is in

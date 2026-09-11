@@ -47,8 +47,8 @@ The owner's "every other call" recruitment observation is AR-433/#847: 26 of
 card; ADR-0246 makes the veto name and verify its neighbour, and an ungrounded
 claim is re-asked and may approve. AR-434/#848 files the
 handoff-as-code-mutation plan-policy defect the same session exposed. All five
-hosts and the dashboard are on runtime digest c2d5c60e (main83994e2b) after the
-2026-09-10 reinstall; claude/hermes/zcode/openclaw proved live by observed
+hosts and the dashboard are on runtime digest cd0e9c4e (main9a197830, AR-435/
+AR-436/AR-437 included) after the 2026-09-10 reinstalls; claude/hermes/zcode/openclaw proved live by observed
 critic packets, codex waits on the owner's Trust screen (AR-435/#851 widened
 the OpenClaw version rule; the npm tree needed doctor --fix-perms).
 
